@@ -8,7 +8,7 @@ This is a watered down version of speckit, stripping all the unnecessary complex
 
 ```bash
 # Install from GitHub
-npm install -g github:YOUR_USERNAME/specdev-cli
+npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
 
@@ -16,13 +16,13 @@ specdev init
 
 ### Option 1: Install from GitHub (Recommended)
 ```bash
-npm install -g github:YOUR_USERNAME/specdev-cli
+npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
 
 ### Option 2: Clone and Link Locally
 ```bash
-git clone https://github.com/YOUR_USERNAME/specdev-cli.git
+git clone https://github.com/leiwu0227/specdev-cli.git
 cd specdev-cli
 npm install
 npm link
@@ -31,7 +31,7 @@ specdev init
 
 ### Option 3: Use npx directly (No installation)
 ```bash
-npx github:YOUR_USERNAME/specdev-cli init
+npx github:leiwu0227/specdev-cli init
 ```
 
 ### Option 4: From npm (when published)
