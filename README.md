@@ -2,6 +2,8 @@
 
 Initialize the SpecDev workflow system in any project. SpecDev provides structured markdown-based guides for planning, scaffolding, implementing, and validating features.
 
+This is a watered down version of speckit, stripping all the unnecessary complexities.
+
 ## Quick Start
 
 ```bash
