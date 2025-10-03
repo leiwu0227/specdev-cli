@@ -1,10 +1,12 @@
 # SpecDev CLI
 
-Initialize the SpecDev workflow system in any project. SpecDev provides structured markdown-based guides for planning, scaffolding, implementing, and validating assignments through quality gates.
+This is a watered down version of speckit, stripping all the unnecessary complexities.
+
+Initialize the SpecDev workflow system in any project. SpecDev provides structured markdown-based guides for coding agents. 
 
 ![Workflow Sequence](docs/workflow_sequence.png)
 
-This is a watered down version of speckit, stripping all the unnecessary complexities.
+
 
 ## Quick Start
 
