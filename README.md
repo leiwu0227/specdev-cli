@@ -1,6 +1,6 @@
 # SpecDev CLI
 
-A markdown-based workflow system for structured software development with coding agents.
+Adding spec based guidance for coding agent to your project. A watered down version of Speckit. 
 
 ![Workflow Sequence](docs/coding_workflow.png)
 
