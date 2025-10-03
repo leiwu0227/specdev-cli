@@ -2,8 +2,6 @@
 
 Initialize the SpecDev workflow system in any project. SpecDev provides structured markdown-based guides for planning, scaffolding, implementing, and validating assignments through quality gates.
 
-![Coding Workflow](docs/coding_workflow.png)
-![SpecDev Architecture](docs/specdev_architecture.png)
 ![Workflow Sequence](docs/workflow_sequence.png)
 
 This is a watered down version of speckit, stripping all the unnecessary complexities.
@@ -262,3 +260,8 @@ MIT
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## Diagrams
+
+![Coding Workflow](docs/coding_workflow.png)
+![SpecDev Architecture](docs/specdev_architecture.png)
