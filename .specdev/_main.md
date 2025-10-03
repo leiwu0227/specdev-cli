@@ -5,7 +5,7 @@
 SpecDev keeps work aligned through assignment folders under `.specdev/`. Use this page as a quick map before diving into the guides.
 
 ## Core pieces
-- `.specdev/router.md` – starting point that points you to the right guide.
+- `.specdev/_router.md` – starting point that points you to the right guide.
 - `.specdev/_guides/` – reference library for codestyle and assignment guidance.
   - `_guides/task/` – repeatable steps (planning, scaffolding, implementing, validation, research, presentation)
   - `_guides/workflow/` – domain-specific sequencing (feature, refactor, familiarization, bugfix)
@@ -22,7 +22,7 @@ SpecDev keeps work aligned through assignment folders under `.specdev/`. Use thi
 4. Implement tasks with Gate 2 checks, then clear Gates 3–5 (tests, integration, docs/scaffolding).
 
 ## First steps for new contributors
-- Read `.specdev/router.md` and the workflow guide for your assignment type.
+- Read `.specdev/_router.md` and the workflow guide for your assignment type.
 - Skim `project_notes/big_picture.md` and `assignment_progress.md` to understand current priorities.
 - Reuse templates or examples instead of rewriting boilerplate.
 

@@ -1,12 +1,16 @@
-# Project Description 
+# Project Big Picture
 
-The name of the project is specdev. 
+## What is SpecDev?
 
-This is a project that creates markdown files that will help to formalize the coding process in any project. 
+TODO: filled by user
 
-It contains generic guides to help coding agent completing various tasks. 
+## Goal
 
-The goal of the project is to write the markdown files incrementally. 
+## Key Principles
+
+
+## Living Documentation
+
 
 
 

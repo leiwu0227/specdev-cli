@@ -3,7 +3,7 @@
 ## Purpose
 Transform approved scaffolding into working code through structured tasks.
 
-**Reference Example**: See `.specdev/features/000_example_feature/implementation.md` for a complete task list example.
+**Reference Example**: See `.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/implementation.md` for a complete task list example.
 
 ## When to Implement
 After Gate 1 (scaffolding approval) passes.
@@ -46,7 +46,7 @@ Mark with `[P]` if tasks modify different files and have no dependencies:
 Otherwise, tasks run sequentially.
 
 ### Save Tasks
-Create `.specdev/features/###_featurename/implementation.md` with all tasks listed.
+Create `.specdev/assignments/#####_type_name/implementation.md` with all tasks listed.
 
 ---
 
@@ -96,8 +96,8 @@ Document blocker in implementation.md and move to next independent task if possi
 After all tasks complete:
 1. Gate 3: Write and run tests
 2. Gate 4: Test end-to-end integration
-3. Gate 5: Update documentation
-4. Mark feature complete in feature_progress.md
+3. Gate 5: Update documentation and project scaffolding
+4. Mark assignment complete in assignment_progress.md
 
 ---
 
@@ -125,4 +125,4 @@ Execution:
 - T001 → Gate 2 ✓ → Complete
 - T002 → Gate 2 ✓ → Complete
 - T003 → Gate 2 ✓ → Complete
-- Gates 3-5 → Feature DONE
+- Gates 3-5 → Assignment DONE

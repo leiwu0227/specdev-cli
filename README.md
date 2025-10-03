@@ -2,6 +2,8 @@
 
 A markdown-based workflow system for structured software development with coding agents.
 
+![Workflow Sequence](docs/coding_workflow.png)
+
 ## Quick Start
 
 ```bash

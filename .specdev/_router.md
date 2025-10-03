@@ -4,7 +4,7 @@ Based on the user provided content, identify the task that needs to be performed
 
 ## Getting Started
 
-- **New to the workflow?** Read `.specdev/main.md` for an overview of SpecDev
+- **New to the workflow?** Read `.specdev/_main.md` for an overview of SpecDev
 - **Guide index:** See `.specdev/_guides/README.md` for what's in task/ vs workflow/
 - **Project context:** Read `.specdev/project_notes/big_picture.md` to understand the project
 - **What's built:** See `.specdev/project_notes/feature_descriptions.md` for completed features and system architecture
