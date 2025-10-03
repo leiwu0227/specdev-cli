@@ -17,6 +17,17 @@ specdev init
 
 ```
 
+## Getting Started
+
+1. Ask your coding agent to read `.specdev/_main.md` to get started
+2. Update `.specdev/project_notes/big_picture.md` with your project info
+3. Start chatting with the coding agent
+
+**Examples:**
+- "I want to develop a new feature called ..."
+- "I want to get familiar with the code base in this folder ..."
+- "I want to refactor this file ..."
+- "I want to fix this bug ..."
 
 ## What Gets Created
 
