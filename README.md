@@ -4,7 +4,7 @@ This is a watered down version of speckit, stripping all the unnecessary complex
 
 Initialize the SpecDev workflow system in any project. SpecDev provides structured markdown-based guides for coding agents. 
 
-![Workflow Sequence](docs/workflow_sequence.png)
+![Workflow Sequence](docs/coding_workflow.png)
 
 
 
@@ -265,5 +265,5 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## Diagrams
 
-![Coding Workflow](docs/coding_workflow.png)
+![Coding Workflow](docs/workflow_sequence.png)
 ![SpecDev Architecture](docs/specdev_architecture.png)
