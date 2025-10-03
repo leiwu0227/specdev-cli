@@ -1,25 +1,50 @@
+Based on the user provided content, identify the task that needs to be performed. Use the following documents to route your work:
 
-Based on the user provided content, identify the task that needs to be performed. You can refer to the following documents for guidance. 
+---
 
+## Getting Started
 
-- If you are unsure of what the project is, read .specdev/project_notes/big_picture.md
+- **New to the workflow?** Read `.specdev/main.md` for an overview of SpecDev
+- **Guide index:** See `.specdev/_guides/README.md` for what's in task/ vs workflow/
+- **Project context:** Read `.specdev/project_notes/big_picture.md` to understand the project
+- **What's built:** See `.specdev/project_notes/feature_descriptions.md` for completed features and system architecture
 
-- For *CODING* related tasks, refer to .specdev/generic_guides/codestyle_guide.md, you MUST comply with the rules provided
+---
 
-- For *PLANNING* related tasks, refer to .specdev/generic_guides/planning_guide.md, you MUST follow the structure suggested in the guide 
+## Core Guides
 
-- For developing a new *FEATURE*, refer to .specdev/generic_guides/featuring_guide.md, you MUST follow exactly the steps suggested by the guide 
+- **Coding standards:** `.specdev/_guides/codestyle_guide.md` (MUST comply)
+- **New assignment:** `.specdev/_guides/assignment_guide.md` (MUST follow exactly)
+- **Assignment progress:** `.specdev/project_notes/assignment_progress.md`
 
-- For *SCAFFOLDING* code documents, refer to .specdev/generic_guides/scaffolding_guide.md, you MUST comply with the format suggested by the guide 
+---
 
-- For *IMPLEMENTING* the scaffolding tasks, refer to .specdev/generic_guides/implementing_guide.md, you MUST follow the steps suggested by the guide
+## Task Guides (`.specdev/_guides/task/`)
 
-- For *VALIDATION* and quality gates, refer to .specdev/generic_guides/validation_guide.md, you MUST follow the quality gates before marking features complete
+Repeatable steps for specific activities:
 
-- If you want to know current feature progress, read .specdev/project_notes/feature_progress.md 
+- **Planning:** `task/planning_guide.md` (MUST follow structure)
+- **Scaffolding:** `task/scaffolding_guide.md` (MUST comply with format)
+- **Implementation:** `task/implementing_guide.md` (MUST follow steps)
+- **Validation:** `task/validation_guide.md` (code quality gates)
+- **Documentation:** `task/documentation_guide.md` (finalize step - update feature_descriptions.md)
+- **Research:** `task/research_guide.md` (for familiarization)
+- **Presentation:** `task/presentation_guide.md` (for familiarization)
 
-- .specdev/features will contain the feature implementation. Each feature will be within one folder, with ### as prefix. E.g. .specdev/features/###_featurename will contain everything related to the first implemented feature
+---
 
+## Workflow Guides (`.specdev/_guides/workflow/`)
 
+Assignment-type-specific processes:
 
+- **Feature:** `workflow/feature_workflow.md` (building new capabilities)
+- **Refactor:** `workflow/refactor_workflow.md` (restructuring code)
+- **Bugfix:** `workflow/bugfix_workflow.md` (diagnosing and fixing defects)
+- **Familiarization:** `workflow/familiarization_workflow.md` (learning unfamiliar code)
 
+---
+
+## Assignment Structure
+
+`.specdev/assignments/` contains assignment documentation using format `#####_type_name`
+(e.g., `.specdev/assignments/00001_feature_auth-flow`)

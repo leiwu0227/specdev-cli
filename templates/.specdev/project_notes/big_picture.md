@@ -1,21 +1,28 @@
-# Project Description
+# Project Big Picture
 
-**TODO: Fill in your project information below**
+## What is SpecDev?
 
-## Project Name
-[Your project name here]
+SpecDev is a project that creates markdown files to formalize the coding process. It provides guides to help coding agents complete various tasks through structured assignments.
 
-## Project Overview
-[Brief description of what your project does]
+## Goal
 
-## Project Goals
-[Main objectives and goals of your project]
+Write markdown files incrementally to structure development workflows, making the development process repeatable and well-documented.
 
-## Technology Stack
-[Languages, frameworks, and tools used]
+## Key Principles
 
-## Additional Notes
-[Any other important information about your project] 
+- **Assignment-first approach**: All work happens through structured assignments (#####_type_name)
+- **Quality gates**: Validation checkpoints ensure quality at each step
+- **Documentation as code**: Scaffolding and documentation are first-class artifacts
+- **Incremental improvement**: Build the system by using the system
+
+## Living Documentation
+
+As assignments complete, update:
+- **assignment_progress.md** - Track status of ongoing work
+- **feature_descriptions.md** - Catalog what's been built (see documentation_guide.md)
+- **project_scaffolding/** - Mirror important source files with metadata
+
+This keeps documentation synchronized with the actual codebase. 
 
 
 

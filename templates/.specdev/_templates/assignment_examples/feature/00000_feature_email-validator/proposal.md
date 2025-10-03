@@ -1,7 +1,7 @@
 # Proposal: Email Validator Utility
 
-## Feature Name
-Email Validator Utility
+## Assignment Name
+Email Validator Utility (feature)
 
 ## Overview
 Create a utility module that validates email addresses according to standard RFC 5322 format. This will be used across the application to ensure email inputs are properly formatted before processing.

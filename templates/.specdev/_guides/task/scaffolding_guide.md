@@ -3,11 +3,11 @@
 ## Purpose
 Create detailed scaffolding documents that serve as blueprints for implementation. Good scaffolding reduces ambiguity, catches design issues early, and enables clear implementation.
 
-**Reference Example**: See `.specdev/features/000_example_feature/scaffold/` for complete scaffolding examples.
+**Reference Example**: See `.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/scaffold/` for complete scaffolding examples.
 
 ## When to Scaffold
 
-Create scaffolding documents during Step 3 of the feature development process, after plan.md is approved but before implementation begins.
+Create scaffolding documents during Step 3 of the assignment development process, after plan.md is approved but before implementation begins.
 
 ## File Mapping Rules
 

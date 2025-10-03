@@ -2,21 +2,34 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 
 const requiredFiles = [
+  '.specdev/main.md',
   '.specdev/router.md',
-  '.specdev/generic_guides/validation_guide.md',
-  '.specdev/generic_guides/scaffolding_guide.md',
-  '.specdev/generic_guides/planning_guide.md',
-  '.specdev/generic_guides/implementing_guide.md',
-  '.specdev/generic_guides/featuring_guide.md',
-  '.specdev/generic_guides/codestyle_guide.md',
+  '.specdev/_guides/README.md',
+  '.specdev/_guides/assignment_guide.md',
+  '.specdev/_guides/codestyle_guide.md',
+  '.specdev/_guides/task/planning_guide.md',
+  '.specdev/_guides/task/scaffolding_guide.md',
+  '.specdev/_guides/task/implementing_guide.md',
+  '.specdev/_guides/task/validation_guide.md',
+  '.specdev/_guides/task/documentation_guide.md',
+  '.specdev/_guides/task/research_guide.md',
+  '.specdev/_guides/task/presentation_guide.md',
+  '.specdev/_guides/workflow/feature_workflow.md',
+  '.specdev/_guides/workflow/refactor_workflow.md',
+  '.specdev/_guides/workflow/bugfix_workflow.md',
+  '.specdev/_guides/workflow/familiarization_workflow.md',
   '.specdev/project_notes/big_picture.md',
-  '.specdev/project_notes/feature_progress.md',
-  '.specdev/templates/scaffolding_template.md',
-  '.specdev/features/000_example_feature/proposal.md',
-  '.specdev/features/000_example_feature/plan.md',
-  '.specdev/features/000_example_feature/implementation.md',
-  '.specdev/features/000_example_feature/validation_checklist.md',
-  '.specdev/features/000_example_feature/scaffold/utils_validator.md'
+  '.specdev/project_notes/assignment_progress.md',
+  '.specdev/project_notes/feature_descriptions.md',
+  '.specdev/project_scaffolding/README.md',
+  '.specdev/_templates/gate_checklist.md',
+  '.specdev/_templates/scaffolding_template.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/proposal.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/plan.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/implementation.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/validation_checklist.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/scaffold/utils_validator.md',
+  '.specdev/assignments/.gitkeep'
 ]
 
 const testDir = './test-output'

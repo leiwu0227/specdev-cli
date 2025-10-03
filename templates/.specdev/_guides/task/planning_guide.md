@@ -1,6 +1,6 @@
 The planning stage is an iterative process, with the following phases:
 
-**Reference Example**: See `.specdev/features/000_example_feature/plan.md` for a complete example. 
+**Reference Example**: See `.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/plan.md` for a complete example. 
 
 - Gather Information: dependency check, read background, gather information 
 - Consolidate Findings: gather information and create initial plan 
@@ -10,7 +10,7 @@ The planning stage is an iterative process, with the following phases:
 
 Iterate above until user approves. Show progress update. 
 
-You can write your research notes to .specdev/features/###_featurename/research.md
+You can write your research notes to .specdev/assignments/#####_type_name/research.md
 
 *Progress Update*
 - [ ] Information Gathering

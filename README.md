@@ -1,12 +1,16 @@
 # SpecDev CLI
 
-Initialize the SpecDev workflow system in any project. SpecDev provides structured markdown-based guides for planning, scaffolding, implementing, and validating features.
+Initialize the SpecDev workflow system in any project. SpecDev provides structured markdown-based guides for planning, scaffolding, implementing, and validating assignments through quality gates.
+
+![Coding Workflow](docs/coding_workflow.png)
+![SpecDev Architecture](docs/specdev_architecture.png)
+![Workflow Sequence](docs/workflow_sequence.png)
 
 ## Quick Start
 
 ```bash
 # Install from GitHub
-npm install -g github:YOUR_USERNAME/specdev-cli
+npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
 
@@ -14,13 +18,13 @@ specdev init
 
 ### Option 1: Install from GitHub (Recommended)
 ```bash
-npm install -g github:YOUR_USERNAME/specdev-cli
+npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
 
 ### Option 2: Clone and Link Locally
 ```bash
-git clone https://github.com/YOUR_USERNAME/specdev-cli.git
+git clone https://github.com/leiwu0227/specdev-cli.git
 cd specdev-cli
 npm install
 npm link
@@ -29,7 +33,7 @@ specdev init
 
 ### Option 3: Use npx directly (No installation)
 ```bash
-npx github:YOUR_USERNAME/specdev-cli init
+npx github:leiwu0227/specdev-cli init
 ```
 
 ### Option 4: From npm (when published)
@@ -77,58 +81,104 @@ Show the installed version.
 
 ```
 .specdev/
-├── router.md                          # Central routing guide
-├── generic_guides/                    # Workflow guides
-│   ├── codestyle_guide.md            # Coding philosophy
-│   ├── featuring_guide.md            # Feature development workflow
-│   ├── planning_guide.md             # Planning phase guide
-│   ├── scaffolding_guide.md          # Scaffolding guide
-│   ├── implementing_guide.md         # Implementation guide
-│   └── validation_guide.md           # Quality gates
-├── project_notes/                     # Project documentation
-│   ├── big_picture.md                # Project description
-│   └── feature_progress.md           # Feature tracking
-├── templates/                         # Templates
-│   └── scaffolding_template.md       # Scaffolding format
-└── features/                          # Feature folders
-    └── 000_example_feature/          # Reference example
-        ├── proposal.md
-        ├── research.md
-        ├── plan.md
-        ├── implementation.md
-        ├── validation_checklist.md
-        └── scaffold/
-            ├── utils_validator.md
-            └── test_validator.md
+├── main.md                                # SpecDev overview
+├── router.md                              # Central routing guide
+├── _guides/                               # Guide library
+│   ├── assignment_guide.md               # Assignment workflow
+│   ├── codestyle_guide.md                # Coding philosophy
+│   ├── task/                             # Task-level guides
+│   │   ├── planning_guide.md             # Planning phase
+│   │   ├── scaffolding_guide.md          # Scaffolding format
+│   │   ├── implementing_guide.md         # Implementation
+│   │   ├── validation_guide.md           # Quality gates (Gates 1-4)
+│   │   ├── documentation_guide.md        # Documentation updates
+│   │   ├── research_guide.md             # Research (familiarization)
+│   │   └── presentation_guide.md         # Presentation (familiarization)
+│   └── workflow/                         # Assignment-type workflows
+│       ├── feature_workflow.md           # Building features
+│       ├── refactor_workflow.md          # Restructuring code
+│       ├── bugfix_workflow.md            # Fixing defects
+│       └── familiarization_workflow.md   # Learning code
+├── project_notes/                         # Project documentation
+│   ├── big_picture.md                    # Project goals
+│   ├── assignment_progress.md            # Assignment tracking
+│   └── feature_descriptions.md           # What's built catalog
+├── project_scaffolding/                   # Source code mirror
+│   └── README.md                         # Scaffolding guide
+├── _templates/                            # Templates
+│   ├── gate_checklist.md                 # Quality gate checklist
+│   ├── scaffolding_template.md           # Scaffolding format
+│   └── assignment_examples/              # Worked examples
+│       └── feature/
+│           └── 00000_feature_email-validator/
+│               ├── proposal.md
+│               ├── plan.md
+│               ├── implementation.md
+│               ├── validation_checklist.md
+│               └── scaffold/
+└── assignments/                           # Active work
+    └── .gitkeep
 ```
 
 ## Workflow Overview
 
-SpecDev provides a 6-step feature development workflow:
+SpecDev provides structured workflows for different assignment types:
 
-1. **Proposal** - Define feature goals and scope
-2. **Planning** - Create detailed implementation plan
-3. **Scaffolding** - Write pseudocode blueprints
-4. **Gate 1** - User approves scaffolding
-5. **Implementation** - Build features with task-by-task validation
-6. **Gates 3-5** - Testing, integration, and documentation validation
+### Assignment Types
 
-See `.specdev/features/000_example_feature/` for a complete worked example.
+**Feature** - Building new capabilities
+1. Proposal → 2. Plan → 3. Scaffolding (Gate 1) → 4. Implementation (Gate 2) → 5. Validation (Gates 3-4) → 6. Finalize
+
+**Refactor** - Restructuring without behavior change
+1. Proposal → 2. Plan → 3. Scaffolding (Gate 1) → 4. Implementation (Gate 2) → 5. Validation (Gates 3-4) → 6. Finalize
+
+**Bugfix** - Diagnosing and fixing defects
+1. Proposal → 2. Plan [optional] → 3. Scaffolding (Gate 1) → 4. Implementation (Gate 2) → 5. Validation (Gates 3-4) → 6. Finalize
+
+**Familiarization** - Learning unfamiliar code
+1. Proposal → 2. Research → 3. Presentation → 4. Finalize
+
+### Quality Gates
+
+- **Gate 1:** Scaffolding approval (before implementation)
+- **Gate 2:** Per-task validation (during implementation)
+- **Gate 3:** Testing (unit tests, coverage)
+- **Gate 4:** Integration (end-to-end, no breaking changes)
+- **Finalize:** Documentation updates (feature_descriptions.md, project_scaffolding)
+
+See `.specdev/_templates/assignment_examples/` for complete worked examples.
 
 ## Getting Started
 
 After running `specdev init`:
 
 1. **Read the router**: Start with `.specdev/router.md` to understand the workflow
-2. **Update project info**: Edit `.specdev/project_notes/big_picture.md`
-3. **Review the example**: Check `.specdev/features/000_example_feature/`
-4. **Start your first feature**: Create a `proposal.md` in a new feature folder
+2. **Read the overview**: Check `.specdev/main.md` for SpecDev overview
+3. **Update project info**: Edit `.specdev/project_notes/big_picture.md`
+4. **Review examples**: Check `.specdev/_templates/assignment_examples/`
+5. **Start your first assignment**: Create a `proposal.md` in `.specdev/assignments/00001_type_name/`
+
+## Assignment Structure
+
+Assignments use the format `#####_type_name` (e.g., `00001_feature_auth-flow`):
+
+```
+.specdev/assignments/00001_feature_auth-flow/
+├── proposal.md              # User-provided high-level description
+├── plan.md                  # Detailed implementation plan
+├── research.md              # Optional research notes
+├── implementation.md        # Task-by-task todo list
+├── validation_checklist.md  # Quality gates tracking
+└── scaffold/                # Scaffolding documents
+    ├── auth_login.md
+    └── auth_token.md
+```
 
 ## Development
 
 ### Setup
 ```bash
-git clone <repo-url>
+git clone https://github.com/leiwu0227/specdev-cli.git
 cd specdev-cli
 npm install
 ```
@@ -180,6 +230,14 @@ npm run release:major
 3. Bump version: `npm run release`
 4. Publish: `npm publish --access public`
 
+## Key Features
+
+- **Assignment-first approach**: All work happens through structured assignments
+- **Quality gates**: Validation checkpoints ensure quality at each step
+- **Task vs Workflow guides**: Repeatable steps + domain-specific sequencing
+- **Living documentation**: feature_descriptions.md, project_scaffolding stay synchronized
+- **Multiple assignment types**: Feature, Refactor, Bugfix, Familiarization workflows
+
 ## Contributing
 
 Contributions are welcome! Please:
@@ -196,7 +254,7 @@ MIT
 
 ## Support
 
-- Issues: [GitHub Issues](https://github.com/yourname/specdev-cli/issues)
+- Issues: [GitHub Issues](https://github.com/leiwu0227/specdev-cli/issues)
 - Documentation: See `.specdev/` folder after initialization
 
 ## Changelog

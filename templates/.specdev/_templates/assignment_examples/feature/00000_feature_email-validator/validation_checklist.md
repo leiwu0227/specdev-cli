@@ -24,21 +24,22 @@
 - [x] Coverage: 100%
 
 ## Gate 4: Integration
-- [x] Feature works end-to-end as described in proposal.md
-- [x] No breaking changes to existing features
+- [x] Assignment works end-to-end as described in proposal.md
+- [x] No breaking changes to existing assignments
 - [x] Dependencies properly declared
 - [x] Examples work (if examples were created)
 - [x] No hardcoded values (configs externalized)
 
-## Gate 5: Documentation
+## Gate 5: Documentation & Project Scaffolding
 - [x] proposal.md exists and is accurate
 - [x] plan.md reflects what was actually built
-- [x] README/docs updated if feature is user-facing
+- [x] README/docs updated if assignment is user-facing
 - [x] Complex algorithms have inline comments
 - [x] Examples exist in project_root/examples/ (if needed)
+- [x] .specdev/project_scaffolding updated with latest state
 
 ## Final Sign-off
 - [x] All gates passed
 - [x] Code committed to repository
-- [x] Feature marked DONE in feature_progress.md
+- [x] Assignment marked DONE in assignment_progress.md
 - [x] Date completed: 2025-01-15
