@@ -6,6 +6,8 @@ Initialize the SpecDev workflow system in any project. SpecDev provides structur
 ![SpecDev Architecture](docs/specdev_architecture.png)
 ![Workflow Sequence](docs/workflow_sequence.png)
 
+This is a watered down version of speckit, stripping all the unnecessary complexities.
+
 ## Quick Start
 
 ```bash
