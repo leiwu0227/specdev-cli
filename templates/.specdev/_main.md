@@ -4,6 +4,26 @@
 
 SpecDev keeps work aligned through assignment folders under `.specdev/`. Use this page as a quick map before diving into the guides.
 
+## 🚀 Getting Started (For Coding Agents)
+
+**First time here?** Follow these steps:
+
+1. **Understand the project**
+   - Read `project_notes/big_picture.md` to understand the project goals and context
+   - ⚠️ If `big_picture.md` is empty, ask the user to fill it out before proceeding
+
+2. **Check current status**
+   - Review `project_notes/assignment_progress.md` to see active assignments
+   - Check `project_notes/feature_descriptions.md` to understand what's already built
+
+3. **Learn the workflow**
+   - Read `_router.md` to understand which guide applies to your task
+   - Follow the appropriate workflow guide in `_guides/workflow/`
+
+4. **Start working**
+   - Follow the assignment guide in `_guides/assignment_guide.md`
+   - Use templates from `_templates/` as starting points
+
 ## Core pieces
 - `.specdev/_router.md` – starting point that points you to the right guide.
 - `.specdev/_guides/` – reference library for codestyle and assignment guidance.
