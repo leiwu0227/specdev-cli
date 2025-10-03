@@ -7,6 +7,7 @@ USAGE:
 
 COMMANDS:
   init              Initialize .specdev folder in current directory
+  update            Update system files while preserving project files
   help              Show this help message
   --version, -v     Show version number
 
@@ -27,6 +28,12 @@ EXAMPLES:
 
   # See what would be copied
   specdev init --dry-run
+
+  # Update system files (preserves project files)
+  specdev update
+
+  # Preview what would be updated
+  specdev update --dry-run
 
 QUICK START:
   npx @specdev/cli init

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { initCommand } from '../src/commands/init.js'
+import { updateCommand } from '../src/commands/update.js'
 import { helpCommand } from '../src/commands/help.js'
 
 const [,, command, ...args] = process.argv
@@ -29,6 +30,9 @@ args.forEach(arg => {
 switch(command) {
   case 'init':
     await initCommand(flags)
+    break
+  case 'update':
+    await updateCommand(flags)
     break
   case 'help':
   case '--help':
