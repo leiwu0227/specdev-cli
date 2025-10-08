@@ -23,7 +23,7 @@ Below is a list of proposed assignments and their completion progress.
 
 | # | Assignment Name | Status | Completed Date | Notes |
 |---|-----------------|--------|----------------|-------|
-| 00000 | Email Validator Utility (feature) | Done | 2025-01-15 | Reference example - see .specdev/_templates/assignment_examples/feature/00000_feature_email-validator/ |
+| 00000 | placholder | placholder | yyyy-mm-dd | placholder |
 
 ---
 
