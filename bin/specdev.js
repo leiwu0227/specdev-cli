@@ -3,6 +3,8 @@
 import { initCommand } from '../src/commands/init.js'
 import { updateCommand } from '../src/commands/update.js'
 import { helpCommand } from '../src/commands/help.js'
+import { ponderWorkflowCommand } from '../src/commands/ponder-workflow.js'
+import { ponderProjectCommand } from '../src/commands/ponder-project.js'
 
 const [,, command, ...args] = process.argv
 
@@ -34,6 +36,19 @@ switch(command) {
   case 'update':
     await updateCommand(flags)
     break
+  case 'ponder': {
+    const subcommand = positionalArgs[0]
+    if (subcommand === 'workflow') {
+      await ponderWorkflowCommand(flags)
+    } else if (subcommand === 'project') {
+      await ponderProjectCommand(flags)
+    } else {
+      console.error(`Unknown ponder subcommand: ${subcommand || '(none)'}`)
+      console.log('Usage: specdev ponder <workflow|project>')
+      process.exit(1)
+    }
+    break
+  }
   case 'help':
   case '--help':
   case '-h':

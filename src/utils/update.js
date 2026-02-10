@@ -40,6 +40,30 @@ export async function updateSpecdevSystem(source, destination) {
       updatedPaths.push(path)
     }
 
+    // Ensure new project directories exist (create if missing, never overwrite)
+    const ensurePaths = [
+      'knowledge/_index.md',
+      'knowledge/_workflow_feedback',
+      'knowledge/codestyle',
+      'knowledge/architecture',
+      'knowledge/domain',
+      'knowledge/workflow',
+    ]
+
+    for (const path of ensurePaths) {
+      const sourcePath = join(source, path)
+      const destPath = join(destination, path)
+
+      if (await fse.pathExists(destPath)) {
+        continue
+      }
+
+      if (await fse.pathExists(sourcePath)) {
+        await fse.copy(sourcePath, destPath)
+        updatedPaths.push(`${path} (created)`)
+      }
+    }
+
     return updatedPaths
   } catch (error) {
     throw new Error(`Update failed: ${error.message}`)

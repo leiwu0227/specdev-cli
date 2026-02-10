@@ -2,8 +2,9 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 
 const requiredFiles = [
-  '.specdev/main.md',
-  '.specdev/router.md',
+  // System files
+  '.specdev/_main.md',
+  '.specdev/_router.md',
   '.specdev/_guides/README.md',
   '.specdev/_guides/assignment_guide.md',
   '.specdev/_guides/codestyle_guide.md',
@@ -18,10 +19,7 @@ const requiredFiles = [
   '.specdev/_guides/workflow/refactor_workflow.md',
   '.specdev/_guides/workflow/bugfix_workflow.md',
   '.specdev/_guides/workflow/familiarization_workflow.md',
-  '.specdev/project_notes/big_picture.md',
-  '.specdev/project_notes/assignment_progress.md',
-  '.specdev/project_notes/feature_descriptions.md',
-  '.specdev/project_scaffolding/README.md',
+  // Templates
   '.specdev/_templates/gate_checklist.md',
   '.specdev/_templates/scaffolding_template.md',
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/proposal.md',
@@ -29,15 +27,35 @@ const requiredFiles = [
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/implementation.md',
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/validation_checklist.md',
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/scaffold/utils_validator.md',
-  '.specdev/assignments/.gitkeep'
+  // Assignment example — context (short-term knowledge)
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/context/decisions.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/context/progress.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/context/messages/.gitkeep',
+  // Assignment example — tasks (working knowledge)
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/tasks/_index.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/tasks/01_validator/spec.md',
+  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/tasks/01_validator/result.md',
+  // Project files
+  '.specdev/project_notes/big_picture.md',
+  '.specdev/project_notes/assignment_progress.md',
+  '.specdev/project_notes/feature_descriptions.md',
+  '.specdev/project_scaffolding/_README.md',
+  '.specdev/assignments/.gitkeep',
+  // Knowledge vault
+  '.specdev/knowledge/_index.md',
+  '.specdev/knowledge/_workflow_feedback/.gitkeep',
+  '.specdev/knowledge/codestyle/.gitkeep',
+  '.specdev/knowledge/architecture/.gitkeep',
+  '.specdev/knowledge/domain/.gitkeep',
+  '.specdev/knowledge/workflow/.gitkeep',
 ]
 
 const testDir = './test-output'
-const missing = requiredFiles.filter(f => !existsSync(join(testDir, f)))
+const missing = requiredFiles.filter((f) => !existsSync(join(testDir, f)))
 
 if (missing.length > 0) {
   console.error('❌ Verification failed - missing files:')
-  missing.forEach(f => console.error(`   - ${f}`))
+  missing.forEach((f) => console.error(`   - ${f}`))
   process.exit(1)
 }
 

@@ -12,10 +12,11 @@
     "templates/"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:verify && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:cleanup",
     "test:init": "node ./bin/specdev.js init --target=./test-output",
     "test:verify": "node ./tests/verify-output.js",
-    "test:cleanup": "rm -rf ./test-output ./test-manual",
+    "test:scan": "node ./tests/test-scan.js",
+    "test:cleanup": "rm -rf ./test-output ./test-manual ./test-scan-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
     "release": "npm version patch && npm publish",

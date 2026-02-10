@@ -6,10 +6,12 @@ USAGE:
   specdev <command> [options]
 
 COMMANDS:
-  init              Initialize .specdev folder in current directory
-  update            Update system files while preserving project files
-  help              Show this help message
-  --version, -v     Show version number
+  init                Initialize .specdev folder in current directory
+  update              Update system files while preserving project files
+  ponder workflow     Interactive: review & write workflow feedback
+  ponder project      Interactive: review & write local project knowledge
+  help                Show this help message
+  --version, -v       Show version number
 
 OPTIONS:
   --force, -f       Overwrite existing .specdev folder
@@ -35,9 +37,16 @@ EXAMPLES:
   # Preview what would be updated
   specdev update --dry-run
 
-QUICK START:
-  npx @specdev/cli init
+  # Reflect on workflow and capture observations
+  specdev ponder workflow
 
-For more information, visit: https://github.com/yourname/specdev-cli
+  # Reflect on project and capture knowledge
+  specdev ponder project
+
+QUICK START:
+  npm install -g github:leiwu0227/specdev-cli
+  specdev init
+
+For more information, visit: https://github.com/leiwu0227/specdev-cli
 `)
 }

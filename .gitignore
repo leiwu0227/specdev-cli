@@ -1,5 +1,7 @@
 node_modules/
 test-output/
+test-scan-output/
+test-manual/
 *.log
 .DS_Store
 .env
