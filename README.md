@@ -2,7 +2,30 @@
 
 Adding spec-based guidance for coding agents to your project. A watered down version of Speckit.
 
-![Workflow Sequence](docs/coding_workflow.png)
+```mermaid
+graph TD
+    P[Project] -->|breaks into| A[Assignments]
+    A -->|feature / refactor / bugfix| W1[Proposal → Plan → Scaffold → Implement → Validate]
+    A -->|familiarization| W2[Proposal → Research → Present]
+
+    W1 -->|decomposes into| T[Parallel Tasks]
+    T --> T1[Task 1<br/>spec → scratch → result]
+    T --> T2[Task 2<br/>spec → scratch → result]
+    T --> TN[Task N<br/>spec → scratch → result]
+
+    T1 & T2 & TN -->|distill working knowledge| CTX[Assignment Context<br/>decisions · progress · messages]
+    CTX -->|distill short-term knowledge| K[Knowledge Vault<br/>codestyle · architecture · domain · workflow]
+    K -->|informs future| A
+
+    K -->|ponder project| KL[Local Knowledge]
+    K -->|ponder workflow| KG[Workflow Feedback<br/>collected by maintainer]
+
+    style P fill:#e8f5e9,stroke:#2e7d32
+    style A fill:#e3f2fd,stroke:#1565c0
+    style K fill:#fff3e0,stroke:#e65100
+    style CTX fill:#fce4ec,stroke:#c62828
+    style KG fill:#f3e5f5,stroke:#6a1b9a
+```
 
 ## Quick Start
 
