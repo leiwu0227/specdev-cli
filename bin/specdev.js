@@ -8,6 +8,7 @@ import { ponderProjectCommand } from '../src/commands/ponder-project.js'
 import { skillsCommand } from '../src/commands/skills.js'
 import { reviewCommand } from '../src/commands/review.js'
 import { workCommand } from '../src/commands/work.js'
+import { checkCommand } from '../src/commands/check.js'
 
 const [,, command, ...args] = process.argv
 
@@ -50,6 +51,11 @@ switch(command) {
   case 'work': {
     const workSub = positionalArgs[0]
     await workCommand(workSub, flags)
+    break
+  }
+  case 'check': {
+    const checkSub = positionalArgs[0]
+    await checkCommand(checkSub, flags)
     break
   }
   case 'ponder': {
