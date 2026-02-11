@@ -53,6 +53,28 @@ Response protocol uses `.specdev/skills/receiving-code-review.md`.
 
 ---
 
+## Automated Review Agent (alternative to subagent review)
+
+For Gates 3-4, you can use a separate Claude Code session as an independent reviewer instead of self-review or subagent review. This eliminates self-review bias through true process separation.
+
+Invoke `.specdev/skills/review-agent.md`.
+
+### Implementer workflow
+
+1. Finish implementation and tests
+2. Run `specdev review request --gate=gate_3` to create `review_request.json`
+3. Run `specdev review wait` — blocks until the reviewer finishes
+4. If passed, proceed. If failed, read `review_report.md`, fix issues, and re-request
+
+### Reviewer workflow
+
+1. Run `specdev review run` to start (runs structural pre-flight automatically)
+2. Perform the gate review following the printed instructions
+3. Write `review_report.md` (template: `_templates/review_report_template.md`)
+4. Run `specdev review accept` or `specdev review reject --reason="..."`
+
+---
+
 ## Verification-before-completion gate
 
 Invoke `.specdev/skills/verification-before-completion.md`.

@@ -22,6 +22,8 @@ const requiredFiles = [
   // Templates
   '.specdev/_templates/gate_checklist.md',
   '.specdev/_templates/scaffolding_template.md',
+  '.specdev/_templates/review_request_schema.json',
+  '.specdev/_templates/review_report_template.md',
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/proposal.md',
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/plan.md',
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/implementation.md',
@@ -52,6 +54,7 @@ const requiredFiles = [
   '.specdev/skills/verification-before-completion.md',
   '.specdev/skills/micro-task-planning.md',
   '.specdev/skills/subagent-driven-development.md',
+  '.specdev/skills/review-agent.md',
   '.specdev/skills/skills_invoked_template.md',
   // Knowledge vault
   '.specdev/knowledge/_index.md',

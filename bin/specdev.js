@@ -6,7 +6,6 @@ import { helpCommand } from '../src/commands/help.js'
 import { ponderWorkflowCommand } from '../src/commands/ponder-workflow.js'
 import { ponderProjectCommand } from '../src/commands/ponder-project.js'
 import { skillsCommand } from '../src/commands/skills.js'
-import { reviewCommand } from '../src/commands/review.js'
 import { workCommand } from '../src/commands/work.js'
 import { checkCommand } from '../src/commands/check.js'
 
@@ -43,11 +42,6 @@ switch(command) {
   case 'skills':
     await skillsCommand(flags)
     break
-  case 'review': {
-    const reviewSub = positionalArgs[0]
-    await reviewCommand(reviewSub, flags)
-    break
-  }
   case 'work': {
     const workSub = positionalArgs[0]
     await workCommand(workSub, flags)

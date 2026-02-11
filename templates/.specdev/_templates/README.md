@@ -19,6 +19,27 @@ This directory contains reusable templates for SpecDev workflows.
 - Gate 5: Documentation & Project Scaffolding
 - Final sign-off checklist
 
+### review_request_schema.json
+**Purpose:** JSON schema for the review agent handoff protocol
+
+**Usage:** Reference when creating or validating `review_request.json` files in assignment directories
+
+**Contains:**
+- Field definitions for the file-based review handoff
+- Status lifecycle: pending → in_progress → passed / failed
+- Schema for assignment_id, gate, changed_files, etc.
+
+### review_report_template.md
+**Purpose:** Template for review reports written by the reviewer agent
+
+**Usage:** Copy into assignment folder as `review_report.md` and fill in during review
+
+**Contains:**
+- Pre-flight results section
+- Gate 3: Spec compliance review (requirements coverage, deviations)
+- Gate 4: Code quality review (findings with severity tags)
+- Verdict sections
+
 ### scaffolding_template.md
 **Purpose:** Format for scaffolding documents
 

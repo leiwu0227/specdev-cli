@@ -109,6 +109,18 @@ async function runTests() {
   if (!assert(statusFailed.status === 1, 'status exits non-zero for failed review')) failures++
   if (!assert(statusFailed.stdout.includes('failed'), 'status shows failed')) failures++
 
+  // Test: help text documents work and check commands
+  console.log('\nhelp text:')
+  const helpSource = readFileSync('./src/commands/help.js', 'utf-8')
+  if (!assert(
+    helpSource.includes('work <sub>') && helpSource.includes('check <sub>'),
+    'help documents work and check commands'
+  )) failures++
+  if (!assert(
+    !helpSource.includes('review <sub>'),
+    'help no longer documents review command'
+  )) failures++
+
   cleanup()
 
   console.log('')

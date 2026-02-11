@@ -193,6 +193,39 @@ async function scanTasks(tasksPath) {
 }
 
 /**
+ * Finds the latest (highest-numbered) assignment directory
+ *
+ * @param {string} specdevPath - Path to .specdev directory
+ * @returns {Promise<{name: string, path: string, id: string, type: string, label: string}|null>}
+ */
+export async function findLatestAssignment(specdevPath) {
+  const assignmentsDir = join(specdevPath, 'assignments')
+
+  if (!(await fse.pathExists(assignmentsDir))) {
+    return null
+  }
+
+  const entries = await fse.readdir(assignmentsDir, { withFileTypes: true })
+  const assignmentDirs = entries
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort()
+
+  if (assignmentDirs.length === 0) {
+    return null
+  }
+
+  const latest = assignmentDirs[assignmentDirs.length - 1]
+  const parsed = parseAssignmentName(latest)
+
+  return {
+    name: latest,
+    path: join(assignmentsDir, latest),
+    ...parsed,
+  }
+}
+
+/**
  * Reads existing knowledge from a branch
  *
  * @param {string} knowledgePath - Path to knowledge/ directory

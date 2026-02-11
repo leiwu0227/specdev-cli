@@ -24,6 +24,7 @@ Below is a list of proposed assignments and their completion progress.
 | # | Assignment Name | Status | Completed Date | Notes |
 |---|-----------------|--------|----------------|-------|
 | 00000 | Email Validator Utility (feature) | Done | 2025-01-15 | Reference example - see .specdev/_templates/assignment_examples/feature/00000_feature_email-validator/ |
+| 00002 | Automated Review Agent Handoff (feature) | Done | 2026-02-11 | File-based handoff protocol, verify-gates.sh, review-agent skill, specdev review CLI command |
 
 ---
 

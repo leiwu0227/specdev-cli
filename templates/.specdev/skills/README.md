@@ -22,6 +22,7 @@ Triggered by complexity gate or specific conditions during planning.
 - `parallel-worktrees.md` - Safe parallel execution model.
 - `micro-task-planning.md` - Ultra-granular planning for high-risk tasks.
 - `subagent-driven-development.md` - Fresh subagent per task with two-stage review loop.
+- `review-agent.md` - Independent reviewer agent handoff via file-based protocol.
 
 ## How to use
 
