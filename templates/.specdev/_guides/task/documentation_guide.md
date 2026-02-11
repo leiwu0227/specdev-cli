@@ -94,6 +94,21 @@ Add to "System Documentation" section:
 
 ---
 
+## Knowledge Capture
+
+After finalizing documentation, distill learnings into `knowledge/` branches:
+
+- `codestyle/` - naming conventions, error patterns, test structure discovered
+- `architecture/` - design decisions, module boundaries, dependency insights
+- `domain/` - business concepts and terminology clarified
+- `workflow/` - what worked/didn't in this assignment for this project
+
+If the assignment revealed improvements to the SpecDev workflow itself, note them in `knowledge/_workflow_feedback/`.
+
+Keep entries concise and actionable. This is reference material for future assignments, not a journal.
+
+---
+
 ## Checklist
 
 Before completing assignment:
@@ -102,3 +117,4 @@ Before completing assignment:
 - [ ] User-facing docs updated (if requested)
 - [ ] Inline comments added to complex code
 - [ ] Project scaffolding updated
+- [ ] Learnings captured in `knowledge/` branches

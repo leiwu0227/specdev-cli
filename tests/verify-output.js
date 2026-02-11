@@ -51,6 +51,7 @@ const requiredFiles = [
   '.specdev/skills/parallel-worktrees.md',
   '.specdev/skills/verification-before-completion.md',
   '.specdev/skills/micro-task-planning.md',
+  '.specdev/skills/subagent-driven-development.md',
   '.specdev/skills/skills_invoked_template.md',
   // Knowledge vault
   '.specdev/knowledge/_index.md',

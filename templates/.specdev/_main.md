@@ -37,10 +37,11 @@ SpecDev keeps work aligned through assignment folders under `.specdev/`.
 
 1. Confirm scope in `proposal.md`.
 2. Write `plan.md` and run complexity/risk gate.
-3. Invoke only required skills (for example, scaffolding-lite/full, debugging, worktrees).
+3. Invoke only required skills (for example, scaffolding-lite/full, debugging, subagent-driven-development).
 4. Implement via TDD with binary task completion criteria.
 5. Validate with two-stage review and verification evidence.
 6. Finalize documentation and assignment status.
+7. Capture learnings in `knowledge/` branches.
 
 ## Rules that always apply
 

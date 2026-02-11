@@ -40,6 +40,11 @@ Use complexity/risk gate from planning:
 - Record regression coverage
 - Update assignment status
 
+## Step 7: Knowledge Capture
+
+- Distill root cause and fix pattern into `knowledge/` (architecture or domain branch)
+- Note workflow observations in `knowledge/_workflow_feedback/` if applicable
+
 ## Checkpoints
 
 - reproducible failure captured

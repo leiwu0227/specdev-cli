@@ -41,6 +41,12 @@ Deliver a net-new feature with complexity-scaled rigor.
 - Guide: `.specdev/_guides/task/documentation_guide.md`
 - Update docs, scaffolding metadata, assignment status
 
+## Step 7: Knowledge Capture
+
+- Distill learnings into `knowledge/` branches (codestyle, architecture, domain, workflow)
+- Note workflow observations in `knowledge/_workflow_feedback/` if applicable
+- Keep entries concise and actionable
+
 ## Checkpoints
 
 - proposal exists before planning

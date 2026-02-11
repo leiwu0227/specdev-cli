@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
 - **`specdev skills`** command to list available skills
 - **Skills invocation tracking** -- `skills_invoked.md` per assignment
 - **Skills preserved on update** -- `specdev update` creates missing default skills without overwriting customizations
+- **Subagent-driven development skill** -- `skills/subagent-driven-development.md` with implementer, spec reviewer, and code quality reviewer prompt templates adapted from [obra/superpowers](https://github.com/obra/superpowers)
+- **Knowledge capture step** -- Step 7 in all workflow guides, distills learnings into `knowledge/` branches after finalize
 
 ### Changed
 - Implementing guide rewritten with superpowers-style TDD enforcement

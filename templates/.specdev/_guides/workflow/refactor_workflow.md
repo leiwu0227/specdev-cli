@@ -36,6 +36,11 @@ Restructure code while preserving observable behavior.
 
 - Update architecture notes and assignment status
 
+## Step 7: Knowledge Capture
+
+- Update `knowledge/architecture/` with new structure and design decisions
+- Note workflow observations in `knowledge/_workflow_feedback/` if applicable
+
 ## Checkpoints
 
 - behavior parity preserved

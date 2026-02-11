@@ -58,6 +58,7 @@ export async function updateSpecdevSystem(source, destination) {
       'skills/parallel-worktrees.md',
       'skills/verification-before-completion.md',
       'skills/micro-task-planning.md',
+      'skills/subagent-driven-development.md',
       'skills/skills_invoked_template.md',
     ]
 

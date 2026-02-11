@@ -249,25 +249,18 @@ Write to `.specdev/assignments/#####_type_name/implementation.md`.
 
 ## Subagent Isolation - Controller/Worker Model
 
-When dispatching subagents for task execution:
+When dispatching subagents for task execution, invoke `.specdev/skills/subagent-driven-development.md`.
 
-```
-GATE: Subagent dispatch protocol
-  1. Main agent reads plan.md ONCE, extracts all tasks with full text
-  2. For each task, main agent provides subagent with:
-     - Full task description (copy text, don't reference)
-     - Relevant scaffold content (copy text, don't reference)
-     - Scene-setting context (where task fits, dependencies)
-  3. Dispatch a FRESH subagent per task with all context in prompt
-     - Subagent NEVER reads plan files directly
-  4. Subagent asks ALL clarifying questions BEFORE writing code
-  IF subagent needs info not in its prompt -> surface to main agent, don't guess
-  IF task is ambiguous -> ask before working, not after
-```
+Key principles (full protocol and prompt templates in the skill):
+
+- Main agent reads plan ONCE, extracts all tasks with full text
+- Dispatch a FRESH subagent per task with all context copied into the prompt
+- Subagent NEVER reads plan files directly
+- Subagent asks ALL clarifying questions BEFORE writing code
+- Two-stage review after each task: spec compliance first, then code quality
+- Review loops until both reviewers approve before moving to next task
 
 **Why**: Subagents that read plan files accumulate stale context and make cross-task assumptions. Curated context keeps each task isolated.
-
-**Two-stage review after each task**: After subagent implements, dispatch spec reviewer (did you build what was asked?), then code quality reviewer (is it well-built?). See `validation_guide.md`.
 
 ---
 

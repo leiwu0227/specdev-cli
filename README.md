@@ -56,9 +56,10 @@ All work happens through assignments in `.specdev/assignments/#####_type_name/`.
 1. **Proposal** -- user defines scope
 2. **Plan** -- includes complexity/risk gate and TDD task decomposition
 3. **Architecture prep** -- conditional scaffolding based on complexity
-4. **Implement** -- TDD Red-Green-Refactor per task
+4. **Implement** -- TDD Red-Green-Refactor per task (optionally via subagent dispatch)
 5. **Validate** -- two-stage review (spec compliance, then code quality) with verification evidence
 6. **Finalize** -- documentation and assignment status
+7. **Knowledge capture** -- distill learnings into `knowledge/` branches
 
 ### Complexity gate
 
@@ -84,6 +85,7 @@ Skills are modular capabilities in `.specdev/skills/`. Two categories:
 - `requesting-code-review.md` -- standardized review packets
 - `parallel-worktrees.md` -- safe parallel execution
 - `micro-task-planning.md` -- ultra-granular planning for high-risk tasks
+- `subagent-driven-development.md` -- fresh subagent per task with two-stage review loop
 
 Each invoked skill must produce an artifact and be logged in `skills_invoked.md`.
 
@@ -95,11 +97,19 @@ The implementing guide enforces strict test-driven development adapted from [sup
 - 11-entry rationalization table countering common excuses
 - 13-item red flags checklist
 
+### Subagent-driven development
+
+For plans with multiple independent tasks, the `subagent-driven-development` skill dispatches a fresh subagent per task with curated context (full task text copied into prompt, never file references). Each task goes through: implement with TDD, spec compliance review, code quality review, with review loops until both reviewers approve. Adapted from [superpowers](https://github.com/obra/superpowers).
+
 ### Two-stage review
 
 After implementation, two independent reviews run in order:
 1. **Spec compliance** -- skeptical reviewer verifies implementation matches plan exactly
 2. **Code quality** -- issues tagged CRITICAL/IMPORTANT/MINOR with file:line references
+
+### Knowledge capture
+
+After finalize, agents distill learnings into `knowledge/` branches (codestyle, architecture, domain, workflow). Workflow-level observations go to `knowledge/_workflow_feedback/` for cross-project improvement.
 
 ## Ponder commands
 

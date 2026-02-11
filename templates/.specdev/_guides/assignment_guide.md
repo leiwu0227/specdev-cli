@@ -37,6 +37,10 @@ Read always-apply skills from `skills/README.md`: `verification-before-completio
 6. Finalize
    - Follow `task/documentation_guide.md`.
    - Update assignment status as DONE.
+7. Knowledge capture
+   - Distill learnings into `knowledge/` branches (codestyle, architecture, domain, workflow).
+   - If the assignment revealed workflow improvements, note them in `knowledge/_workflow_feedback/`.
+   - Keep entries concise and actionable — reference material, not a journal.
 
 ## Skill logging
 

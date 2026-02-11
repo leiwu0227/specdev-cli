@@ -55,6 +55,7 @@ Based on the user request, identify the assignment type and route work using the
 - `requesting-code-review.md`
 - `parallel-worktrees.md`
 - `micro-task-planning.md`
+- `subagent-driven-development.md`
 
 Record all skill usage in `assignments/#####_type_name/skills_invoked.md`.
 

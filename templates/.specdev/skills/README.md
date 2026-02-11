@@ -21,6 +21,7 @@ Triggered by complexity gate or specific conditions during planning.
 - `requesting-code-review.md` - Standardized review request packet for Gates 3-4.
 - `parallel-worktrees.md` - Safe parallel execution model.
 - `micro-task-planning.md` - Ultra-granular planning for high-risk tasks.
+- `subagent-driven-development.md` - Fresh subagent per task with two-stage review loop.
 
 ## How to use
 
