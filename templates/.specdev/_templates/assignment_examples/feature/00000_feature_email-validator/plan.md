@@ -3,6 +3,12 @@
 ## Summary
 Create a simple email validation utility module with a single public function that uses regex to validate email format.
 
+## Complexity Gate
+
+- Class: LOW
+- Rationale: single source file, no shared contract across modules, low blast radius
+- Required skills: none
+
 ## Tech Stack
 - Language: Python 3.8+
 - Dependencies: None (uses standard library only)
@@ -27,11 +33,13 @@ validate_email(email: str) -> tuple[bool, str]
 
 ## Implementation Steps
 
-1. Create `utils/validator.py` module
-2. Implement `validate_email()` function with regex validation
-3. Handle edge cases (empty, None, too long, etc.)
-4. Write comprehensive unit tests
-5. Create usage examples
+1. Setup: create `utils/validator.py` module and test framework
+2. Validate basic format: test rejects missing `@` -> implement check
+3. Validate empty/None: test rejects empty input -> implement guard
+4. Validate length: test rejects >254 chars -> implement length check
+5. Validate full regex: test accepts valid format -> implement regex
+6. Edge cases: test special chars, unicode, multiple `@` -> handle each
+7. Create usage examples
 
 ## Validation Approach
 - Check for None/empty

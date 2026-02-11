@@ -1,50 +1,53 @@
 # SpecDev workflow overview
 
-**Version:** 0.0.2 (assignment-first restructure)
+**Version:** 0.0.3 (skills-enabled workflow)
 
-SpecDev keeps work aligned through assignment folders under `.specdev/`. Use this page as a quick map before diving into the guides.
+SpecDev keeps work aligned through assignment folders under `.specdev/`.
 
 ## Getting Started (For Coding Agents)
 
-**First time here?** Follow these steps:
+1. Understand the project
+   - Read `project_notes/big_picture.md`
+   - If empty, ask user to fill it before implementation
 
-1. **Understand the project**
-   - Read `project_notes/big_picture.md` to understand the project goals and context
-   - If `big_picture.md` is empty, ask the user to fill it out before proceeding
+2. Check current status
+   - Read `project_notes/assignment_progress.md`
+   - Read `project_notes/feature_descriptions.md`
 
-2. **Check current status**
-   - Review `project_notes/assignment_progress.md` to see active assignments
-   - Check `project_notes/feature_descriptions.md` to understand what's already built
+3. Route correctly
+   - Read `_router.md`
+   - Read the assignment-type workflow in `_guides/workflow/`
 
-3. **Learn the workflow**
-   - Read `_router.md` to understand which guide applies to your task
-   - Follow the appropriate workflow guide in `_guides/workflow/`
-
-4. **Start working**
-   - Follow the assignment guide in `_guides/assignment_guide.md`
-   - Use templates from `_templates/` as starting points
+4. Apply complexity gate
+   - In planning, decide: no scaffold, `scaffolding-lite`, or `scaffolding-full`
+   - Invoke skills from `.specdev/skills/` only when needed
 
 ## Core pieces
-- `.specdev/_router.md` -- starting point that points you to the right guide.
-- `.specdev/_guides/` -- reference library for codestyle and assignment guidance.
-  - `_guides/task/` -- repeatable steps (planning, scaffolding, implementing, validation, research, presentation)
-  - `_guides/workflow/` -- domain-specific sequencing (feature, refactor, familiarization, bugfix)
-  - See `_guides/README.md` for the complete index
-- `.specdev/assignments/` -- active work, one `#####_type_name` folder per assignment tracked in `project_notes/assignment_progress.md`.
-- `.specdev/_templates/` -- scaffolding template, gate checklist, and worked examples you can copy when kicking off a similar assignment.
-- `.specdev/project_scaffolding/` -- lightweight mirror of important source files, updated at Gate 5.
-- `.specdev/project_notes/` -- shared context including big_picture.md (goals), assignment_progress.md (status), and feature_descriptions.md (what's built).
 
-## Assignment flow (very short version)
-1. Confirm scope in `proposal.md` (see `assignment_guide.md`).
-2. Plan and gather facts in `plan.md` -- each task must map to one TDD cycle.
-3. Scaffold each future source file, get Gate 1 approval.
-4. Implement via TDD (Red-Green-Refactor per task), dispatching isolated subagents per task. Gate 2 after each.
-5. Two-stage subagent review (spec compliance then code quality), then clear documentation gate.
+- `.specdev/_router.md` - starting point that routes to the right guide
+- `.specdev/_guides/` - workflow and task guides
+- `.specdev/_templates/` - templates and worked examples
+- `.specdev/skills/` - independent, on-demand skills
+- `.specdev/assignments/` - active work (`#####_type_name` folders)
+- `.specdev/project_notes/` - project context and progress
+- `.specdev/project_scaffolding/` - source mirror metadata
+- `.specdev/knowledge/` - long-term project knowledge
 
-## First steps for new contributors
-- Read `.specdev/_router.md` and the workflow guide for your assignment type.
-- Skim `project_notes/big_picture.md` and `assignment_progress.md` to understand current priorities.
-- Reuse templates or examples instead of rewriting boilerplate.
+## Assignment flow (short)
 
-Treat this directory as the source of truth: when the process evolves, update the relevant guide rather than duplicating details here.
+1. Confirm scope in `proposal.md`.
+2. Write `plan.md` and run complexity/risk gate.
+3. Invoke only required skills (for example, scaffolding-lite/full, debugging, worktrees).
+4. Implement via TDD with binary task completion criteria.
+5. Validate with two-stage review and verification evidence.
+6. Finalize documentation and assignment status.
+
+## Rules that always apply
+
+- Read always-apply skills at assignment start: `skills/verification-before-completion.md` and `skills/receiving-code-review.md`.
+- No completion claims without command evidence.
+- No performative agreement in code review responses.
+- Every invoked skill must produce an artifact.
+- Record invoked skills in `assignments/#####_type_name/skills_invoked.md`.
+
+Treat this directory as the source of truth and update guides when process changes.

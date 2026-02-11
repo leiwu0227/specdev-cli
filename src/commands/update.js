@@ -26,11 +26,13 @@ export async function updateCommand(flags = {}) {
     console.log('   - _router.md')
     console.log('   - _guides/ (all task and workflow guides)')
     console.log('   - _templates/ (scaffolding templates and examples)')
+    console.log('   - skills/ (default on-demand skills, missing files only)')
     console.log('   - project_scaffolding/_README.md')
     console.log('')
     console.log('📌 Preserved (not updated):')
     console.log('   - project_notes/ (your project documentation)')
     console.log('   - assignments/ (your active work)')
+    console.log('   - skills/ (existing customizations are preserved)')
     console.log('   - project_scaffolding/ (except _README.md)')
     return
   }
@@ -52,6 +54,7 @@ export async function updateCommand(flags = {}) {
     console.log('📌 Preserved:')
     console.log('   • project_notes/ (your project documentation)')
     console.log('   • assignments/ (your active work)')
+    console.log('   • skills/ (except missing defaults that were created)')
     console.log('   • project_scaffolding/ (except _README.md)')
     console.log('')
     console.log('💡 Your project-specific files remain untouched')

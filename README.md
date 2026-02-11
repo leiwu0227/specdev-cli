@@ -1,143 +1,123 @@
 # SpecDev CLI
 
-Adding spec-based guidance for coding agents to your project. A watered down version of Speckit.
+Spec-driven workflow guidance for coding agents. Enforces TDD discipline, complexity-scaled scaffolding, and two-stage code review through modular skills.
 
 ```mermaid
 graph LR
-    A[Assignment] --> T[Tasks]
-    T --> K[Knowledge]
-    K -->|informs| A
+    A[Assignment] --> P[Plan + Complexity Gate]
+    P --> S[Skills]
+    S --> I[Implement via TDD]
+    I --> V[Two-Stage Review]
+    V --> K[Knowledge]
 ```
 
 ## Quick Start
 
 ```bash
-# Install globally
 npm install -g github:leiwu0227/specdev-cli
-
-# Initialize in your project
 specdev init
-
-# After setting up, ask your coding agent to read .specdev/_main.md to get started
 ```
 
-## Getting Started
-
-1. Ask your coding agent to read `.specdev/_main.md` to get started
-2. Update `.specdev/project_notes/big_picture.md` with your project info
-3. Start chatting with the coding agent
-
-**Examples:**
-- "I want to develop a new feature called ..."
-- "I want to get familiar with the code base in this folder ..."
-- "I want to refactor this file ..."
-- "I want to fix this bug ..."
+After setup, ask your coding agent to read `.specdev/_main.md`.
 
 ## Commands
 
+```bash
+specdev init              # Initialize .specdev in current directory
+specdev update            # Update system files, preserve project files
+specdev skills            # List available skills
+specdev ponder workflow   # Review assignments, write workflow observations
+specdev ponder project    # Review assignments, write project knowledge
+specdev help
+specdev --version
 ```
-specdev init                    # Scaffold .specdev/ into project
-specdev update                  # Update system guides to latest
-specdev ponder workflow         # Interactive: review & write workflow feedback
-specdev ponder project          # Interactive: review & write local knowledge
-specdev help                    # Show usage info
-specdev --version               # Show version
-```
 
-### Options
+## What gets created
 
-| Flag | Description |
-|------|-------------|
-| `--force`, `-f` | Overwrite existing .specdev folder |
-| `--dry-run` | Show what would be copied without copying |
-| `--target=<path>` | Specify target directory (default: current) |
-
-## What Gets Created
-
-```
+```text
 .specdev/
-├── _main.md                    # System: SpecDev entry point for agents
-├── _router.md                  # System: Central routing guide
-├── _guides/                    # System: Task & workflow guides
-├── _templates/                 # System: Scaffolding templates & examples
-├── knowledge/                  # Project: Accumulated knowledge vault
-│   ├── _index.md               #   Routing to knowledge branches
-│   ├── _workflow_feedback/     #   Workflow improvement observations
-│   ├── codestyle/              #   Naming, error handling, test patterns
-│   ├── architecture/           #   Design patterns, dependencies, boundaries
-│   ├── domain/                 #   Business domain concepts
-│   └── workflow/               #   What worked/didn't in past assignments
-├── project_notes/              # Project: Your documentation
-├── project_scaffolding/        # Project: Source code mirror
-│   └── _README.md              #   Scaffolding guide
-└── assignments/                # Project: Your active work
+├── _main.md                  # Workflow entry point
+├── _router.md                # Routes to correct guide
+├── _guides/                  # Workflow and task guides
+├── _templates/               # Templates and worked examples
+├── skills/                   # Modular workflow skills
+├── knowledge/                # Long-term project knowledge
+├── project_notes/            # Project context and progress
+├── project_scaffolding/      # Source mirror metadata
+└── assignments/              # Active work
 ```
 
-**System** files (prefixed with `_`) are updated by `specdev update`. **Project** files are preserved.
+## Workflow model
 
-## How It Works
+All work happens through assignments in `.specdev/assignments/#####_type_name/`.
 
-All work happens through **assignments** in `.specdev/assignments/#####_type_name/`:
+### Default flow
 
-| Type | Flow |
-|------|------|
-| **Feature** | Proposal → Plan → Scaffold → Implement → Validate |
-| **Refactor** | Proposal → Plan → Scaffold → Implement → Validate |
-| **Bugfix** | Proposal → Plan → Scaffold → Implement → Validate |
-| **Familiarization** | Proposal → Research → Present |
+1. **Proposal** -- user defines scope
+2. **Plan** -- includes complexity/risk gate and TDD task decomposition
+3. **Architecture prep** -- conditional scaffolding based on complexity
+4. **Implement** -- TDD Red-Green-Refactor per task
+5. **Validate** -- two-stage review (spec compliance, then code quality) with verification evidence
+6. **Finalize** -- documentation and assignment status
 
-### Assignment Structure
+### Complexity gate
 
-Each assignment tracks its own context and can decompose into parallel tasks:
+Planning classifies each assignment:
 
-```
-assignments/00001_feature_auth/
-├── proposal.md
-├── plan.md
-├── context/                    # Short-term: decisions, progress, messages
-│   ├── decisions.md
-│   ├── progress.md
-│   └── messages/               # Inter-agent communication
-└── tasks/                      # Task decomposition for parallel work
-    ├── _index.md               # Task list with status & dependencies
-    └── 01_api/
-        ├── spec.md             # What to do
-        ├── scratch.md          # Working scratchpad
-        └── result.md           # What was done
-```
+| Class | Scaffolding | Gate 1 |
+|-------|-------------|--------|
+| `LOW` | None | Skip |
+| `MEDIUM` | `skills/scaffolding-lite.md` (contracts + dependency map) | User approves contracts |
+| `HIGH` | `skills/scaffolding-full.md` (full per-file blueprints) | User approves full architecture |
 
-### Knowledge System
+### Skills model
 
-Knowledge accumulates at three levels:
+Skills are modular capabilities in `.specdev/skills/`. Two categories:
 
-| Level | Scope | Location |
-|-------|-------|----------|
-| **Working** | Current task | `tasks/*/scratch.md` — discarded on task completion |
-| **Short-term** | Assignment | `context/` — decisions, progress, inter-agent messages |
-| **Long-term** | Project | `knowledge/` — persists across assignments |
+**Always-apply** (read at assignment start, follow throughout):
+- `verification-before-completion.md` -- no completion claims without command evidence
+- `receiving-code-review.md` -- evidence-based review response, no performative agreement
 
-After each assignment, insights distill upward: working → short-term → long-term.
+**Invoke-when-needed** (triggered by complexity gate or conditions):
+- `scaffolding-lite.md` / `scaffolding-full.md` -- architecture prep
+- `systematic-debugging.md` -- root-cause-first bugfix
+- `requesting-code-review.md` -- standardized review packets
+- `parallel-worktrees.md` -- safe parallel execution
+- `micro-task-planning.md` -- ultra-granular planning for high-risk tasks
 
-### Ponder Commands
+Each invoked skill must produce an artifact and be logged in `skills_invoked.md`.
 
-Use `specdev ponder` to interactively reflect on completed work:
+### TDD enforcement
 
-- **`specdev ponder workflow`** — scans assignments, suggests workflow-level observations (skipped phases, missing context, communication patterns), writes to `knowledge/_workflow_feedback/`
-- **`specdev ponder project`** — scans assignments, suggests project-specific knowledge (codestyle, architecture, domain), writes to `knowledge/<branch>/`
+The implementing guide enforces strict test-driven development adapted from [superpowers](https://github.com/obra/superpowers):
+- Iron law: no production code without a failing test first
+- Red-Green-Refactor cycle with mandatory verification at each phase
+- 11-entry rationalization table countering common excuses
+- 13-item red flags checklist
 
-Both commands present suggestions and let you accept, edit, reject, or add custom observations.
+### Two-stage review
+
+After implementation, two independent reviews run in order:
+1. **Spec compliance** -- skeptical reviewer verifies implementation matches plan exactly
+2. **Code quality** -- issues tagged CRITICAL/IMPORTANT/MINOR with file:line references
+
+## Ponder commands
+
+- `specdev ponder workflow` -- writes workflow-level observations to `knowledge/_workflow_feedback/`
+- `specdev ponder project` -- writes project-specific learnings to `knowledge/<branch>/`
 
 ## Updating
 
-When a new version is available:
-
 ```bash
-# Update the CLI itself
 npm install -g github:leiwu0227/specdev-cli
-
-# Update system files in your project (preserves your project files)
 specdev update
 ```
+
+`specdev update` updates system guides/templates and creates missing default skills without overwriting project-specific files or customized skills.
+
+## Acknowledgments
+
+TDD enforcement and verification patterns adapted from [obra/superpowers](https://github.com/obra/superpowers).
 
 ## License
 

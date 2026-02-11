@@ -1,50 +1,65 @@
-Based on the user provided content, identify the task that needs to be performed. Use the following documents to route your work:
+Based on the user request, identify the assignment type and route work using the documents below.
 
 ---
 
-## Getting Started
+## First reads
 
-- **New to the workflow?** Read `.specdev/_main.md` for an overview of SpecDev
-- **Guide index:** See `.specdev/_guides/README.md` for what's in task/ vs workflow/
-- **Project context:** Read `.specdev/project_notes/big_picture.md` to understand the project
-- **What's built:** See `.specdev/project_notes/feature_descriptions.md` for completed features and system architecture
-
----
-
-## Core Guides
-
-- **Coding standards:** `.specdev/_guides/codestyle_guide.md` (MUST comply)
-- **New assignment:** `.specdev/_guides/assignment_guide.md` (MUST follow exactly)
-- **Assignment progress:** `.specdev/project_notes/assignment_progress.md`
+- `.specdev/_main.md` - workflow overview
+- `.specdev/_guides/README.md` - guide index
+- `.specdev/project_notes/big_picture.md` - project context
+- `.specdev/project_notes/feature_descriptions.md` - what exists today
 
 ---
 
-## Task Guides (`.specdev/_guides/task/`)
+## Core guides
 
-Repeatable steps for specific activities:
-
-- **Planning:** `task/planning_guide.md` (MUST follow structure)
-- **Scaffolding:** `task/scaffolding_guide.md` (MUST comply with format)
-- **Implementation:** `task/implementing_guide.md` (MUST follow steps)
-- **Validation:** `task/validation_guide.md` (code quality gates)
-- **Documentation:** `task/documentation_guide.md` (finalize step - update feature_descriptions.md)
-- **Research:** `task/research_guide.md` (for familiarization)
-- **Presentation:** `task/presentation_guide.md` (for familiarization)
+- `.specdev/_guides/codestyle_guide.md` (must follow)
+- `.specdev/_guides/assignment_guide.md` (must follow)
+- `.specdev/project_notes/assignment_progress.md`
 
 ---
 
-## Workflow Guides (`.specdev/_guides/workflow/`)
+## Task guides (`.specdev/_guides/task/`)
 
-Assignment-type-specific processes:
-
-- **Feature:** `workflow/feature_workflow.md` (building new capabilities)
-- **Refactor:** `workflow/refactor_workflow.md` (restructuring code)
-- **Bugfix:** `workflow/bugfix_workflow.md` (diagnosing and fixing defects)
-- **Familiarization:** `workflow/familiarization_workflow.md` (learning unfamiliar code)
+- Planning: `task/planning_guide.md`
+- Scaffolding and architecture prep: `task/scaffolding_guide.md`
+- Implementation: `task/implementing_guide.md`
+- Validation: `task/validation_guide.md`
+- Documentation: `task/documentation_guide.md`
+- Research: `task/research_guide.md`
+- Presentation: `task/presentation_guide.md`
 
 ---
 
-## Assignment Structure
+## Workflow guides (`.specdev/_guides/workflow/`)
 
-`.specdev/assignments/` contains assignment documentation using format `#####_type_name`
-(e.g., `.specdev/assignments/00001_feature_auth-flow`)
+- Feature: `workflow/feature_workflow.md`
+- Refactor: `workflow/refactor_workflow.md`
+- Bugfix: `workflow/bugfix_workflow.md`
+- Familiarization: `workflow/familiarization_workflow.md`
+
+---
+
+## Skills (`.specdev/skills/`)
+
+### Always-apply (read at assignment start, follow throughout)
+
+- `verification-before-completion.md`
+- `receiving-code-review.md`
+
+### Invoke-when-needed (triggered by complexity gate or conditions)
+
+- `scaffolding-lite.md`
+- `scaffolding-full.md`
+- `systematic-debugging.md`
+- `requesting-code-review.md`
+- `parallel-worktrees.md`
+- `micro-task-planning.md`
+
+Record all skill usage in `assignments/#####_type_name/skills_invoked.md`.
+
+---
+
+## Assignment structure
+
+Assignments live in `.specdev/assignments/#####_type_name/` (for example `00001_feature_auth-flow`).

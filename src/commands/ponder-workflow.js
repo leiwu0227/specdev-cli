@@ -189,11 +189,11 @@ function generateWorkflowSuggestions(assignments) {
   )
   if (noScaffold.length > 0 && noScaffold.length < assignments.length) {
     suggestions.push({
-      title: 'Scaffolding not used consistently',
+      title: 'Scaffolding usage varies across assignments',
       body:
         `${noScaffold.length} non-familiarization assignment(s) had no scaffold/ directory.\n` +
-        `Scaffolding helps implementation agents understand the expected file structure.\n` +
-        `- **Assignments:** ${noScaffold.map((a) => a.name).join(', ')}`,
+        `This can be valid for low-complexity work, but ensure each assignment documents the complexity decision in plan.md.\n` +
+        `- **Assignments without scaffold:** ${noScaffold.map((a) => a.name).join(', ')}`,
     })
   }
 

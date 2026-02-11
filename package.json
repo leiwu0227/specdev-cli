@@ -1,6 +1,6 @@
 {
   "name": "@specdev/cli",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "CLI to initialize SpecDev workflow system",
   "type": "module",
   "bin": {

@@ -1,221 +1,322 @@
 # Implementation Guide
 
-**Reference Example**: See `_templates/assignment_examples/feature/00000_feature_email-validator/implementation.md`
+**Reference Example**: `_templates/assignment_examples/feature/00000_feature_email-validator/implementation.md`
+
+## Overview
+
+Write the test first. Watch it fail. Write minimal code to pass.
+
+**Core principle:** If you didn't watch the test fail, you don't know if it tests the right thing.
+
+**Violating the letter of the rules is violating the spirit of the rules.**
+
+## The Iron Law
+
+```
+NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
+```
+
+Write code before the test? Delete it. Start over.
+
+**No exceptions:**
+- Don't keep it as "reference"
+- Don't "adapt" it while writing tests
+- Don't look at it
+- Delete means delete
+
+Implement fresh from tests. Period.
+
+Thinking "skip TDD just this once"? Stop. That's rationalization.
 
 ---
 
-## The TDD Iron Law
+## Red-Green-Refactor
 
-**NO CODE WITHOUT A FAILING TEST FIRST.**
+Each task in `implementation.md` IS one Red-Green-Refactor cycle.
 
-If you wrote production code before writing a failing test for it: **delete it**. Not "keep as reference." Not "adapt it." DELETE means DELETE. Write the test first, watch it fail, then write the code.
+### RED - Write Failing Test
 
-No exceptions. No "just this once." No "it's too simple to need a test." No "I'll add tests after."
+Write one minimal test showing what should happen.
 
-### Rationalization Table
+<Good>
+```
+test('retries failed operations 3 times', async () => {
+  let attempts = 0;
+  const operation = () => {
+    attempts++;
+    if (attempts < 3) throw new Error('fail');
+    return 'success';
+  };
 
-When you catch yourself thinking any of these, STOP and follow the counter:
+  const result = await retryOperation(operation);
 
-| Excuse | Counter |
+  expect(result).toBe('success');
+  expect(attempts).toBe(3);
+});
+```
+Clear name, tests real behavior, one thing
+</Good>
+
+<Bad>
+```
+test('retry works', async () => {
+  const mock = jest.fn()
+    .mockRejectedValueOnce(new Error())
+    .mockRejectedValueOnce(new Error())
+    .mockResolvedValueOnce('success');
+  await retryOperation(mock);
+  expect(mock).toHaveBeenCalledTimes(3);
+});
+```
+Vague name, tests mock not code
+</Bad>
+
+**Requirements:**
+- One behavior
+- Clear name
+- Real code (no mocks unless unavoidable)
+
+### Verify RED - Watch It Fail
+
+**MANDATORY. Never skip.**
+
+Run the test. Confirm:
+- Test fails (not errors)
+- Failure message is expected
+- Fails because feature missing (not typos)
+
+**Test passes?** You're testing existing behavior. Fix test.
+
+**Test errors?** Fix error, re-run until it fails correctly.
+
+### GREEN - Minimal Code
+
+Write simplest code to pass the test.
+
+<Good>
+```
+async function retryOperation(fn) {
+  for (let i = 0; i < 3; i++) {
+    try { return await fn(); }
+    catch (e) { if (i === 2) throw e; }
+  }
+}
+```
+Just enough to pass
+</Good>
+
+<Bad>
+```
+async function retryOperation(fn, options = {
+  maxRetries: 3,
+  backoff: 'exponential',
+  onRetry: null
+}) { /* YAGNI */ }
+```
+Over-engineered for the test
+</Bad>
+
+Don't add features, refactor other code, or "improve" beyond the test.
+
+### Verify GREEN - Watch It Pass
+
+**MANDATORY.**
+
+Run the test. Confirm:
+- Test passes
+- Other tests still pass
+- Output pristine (no errors, warnings)
+
+**Test fails?** Fix code, not test.
+
+**Other tests fail?** Fix now.
+
+### REFACTOR - Clean Up
+
+After green only:
+- Remove duplication
+- Improve names
+- Extract helpers
+
+Keep tests green. Don't add behavior.
+
+---
+
+## Good Tests
+
+| Quality | Good | Bad |
+|---------|------|-----|
+| **Minimal** | One thing. "and" in name? Split it. | `test('validates email and domain and whitespace')` |
+| **Clear** | Name describes behavior | `test('test1')` |
+| **Shows intent** | Demonstrates desired API | Obscures what code should do |
+
+---
+
+## Common Rationalizations
+
+| Excuse | Reality |
 |--------|---------|
-| "This is too simple to need a test" | Simple code has simple tests. Write it in 30 seconds. |
-| "I'll add tests right after" | You won't. And if you do, you'll write tests that pass your code, not tests that verify behavior. |
-| "I already know this works" | Then proving it with a test costs nothing. Do it. |
-| "Testing this would be too complex" | That means your design is too coupled. Redesign, then test. |
-| "It's just a config/setup file" | If it can break the system, it needs a test. If it can't, it's not a task. |
-| "I need to see the shape of the code first" | Write the test to define the shape. That IS the design step. |
-| "The test framework isn't set up yet" | Setting up the test framework IS your first task. |
-| "This is a refactor, behavior doesn't change" | Then existing tests cover it. Run them. If they don't exist, write them first. |
-| "I'm blocked on dependencies" | Mock them. Test your logic in isolation. |
-| "The user didn't ask for tests" | SpecDev requires TDD. The user chose this workflow. |
-| "I'll write better tests once I understand the code" | You understand the code by writing tests for it. |
-| "This is exploratory / spike code" | Spikes go in research.md, not in source files. |
+| "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
+| "I'll test after" | Tests passing immediately prove nothing. |
+| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" |
+| "Already manually tested" | Ad-hoc is not systematic. No record, can't re-run. |
+| "Deleting X hours is wasteful" | Sunk cost fallacy. Keeping unverified code is technical debt. |
+| "Keep as reference, write tests first" | You'll adapt it. That's testing after. Delete means delete. |
+| "Need to explore first" | Fine. Throw away exploration, start with TDD. |
+| "Test hard = design unclear" | Listen to test. Hard to test = hard to use. |
+| "TDD will slow me down" | TDD faster than debugging. Pragmatic = test-first. |
+| "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change. |
+| "Existing code has no tests" | You're improving it. Add tests for existing code. |
 
 ---
 
-## Red-Green-Refactor Cycle
+## Why Order Matters
 
-Every task in `implementation.md` IS a Red-Green-Refactor unit. Not "implement then test" — each task cycles through all three phases.
+**"I'll write tests after to verify it works"**
+Tests written after code pass immediately. Passing immediately proves nothing. You never saw it catch the bug.
 
-### Phase 1: RED — Write a Failing Test
+**"I already manually tested all the edge cases"**
+Manual testing is ad-hoc. No record of what you tested. Can't re-run when code changes.
 
-```
-GATE: Before writing ANY production code for this task:
-  1. Write a test that describes the expected behavior
-  2. Run the test
-  3. VERIFY it fails for the RIGHT reason (missing function, wrong return value — not import error or typo)
-  IF test passes → you misunderstand the current state. Investigate.
-  IF test fails for wrong reason → fix test setup, not production code.
-  ONLY proceed to GREEN when test fails for the correct reason.
-```
+**"Deleting X hours of work is wasteful"**
+Sunk cost fallacy. The time is already gone. Keeping code you can't trust is technical debt.
 
-**Good Example:**
-```
-# T002: Implement validate_email
-# RED: Write test first
-def test_validate_email_rejects_missing_at():
-    assert validate_email("userexample.com") == False
-# Run → NameError: validate_email not defined ← correct failure
-# Now proceed to GREEN
-```
+**"TDD is dogmatic, being pragmatic means adapting"**
+TDD IS pragmatic. Finds bugs before commit. Prevents regressions. Documents behavior. Enables refactoring.
 
-**Bad Example:**
-```
-# T002: Implement validate_email
-# Wrote validate_email() function first
-# Then wrote test that calls it
-# Test passes immediately ← you tested nothing
-```
-
-### Phase 2: GREEN — Make the Test Pass
-
-```
-GATE: Write the MINIMUM code to make the failing test pass.
-  1. Implement only what the test demands — no more
-  2. Run the test
-  3. VERIFY it passes
-  4. Run ALL existing tests
-  IF new test passes but old tests break → fix without breaking new test.
-  IF new test still fails → debug the implementation, not the test.
-  ONLY proceed to REFACTOR when ALL tests pass.
-```
-
-**Good Example:**
-```
-# GREEN: Minimum code to pass
-def validate_email(email):
-    return "@" in email  # Just enough for this test
-# Run → test passes, all other tests pass
-```
-
-**Bad Example:**
-```
-# GREEN: Wrote full RFC-compliant email validator
-# with DNS lookup, internationalization support,
-# and custom error messages — for a test that only
-# checks for "@" presence
-```
-
-### Phase 3: REFACTOR — Clean Up
-
-```
-GATE: Only refactor when all tests are green.
-  1. Improve code structure, naming, duplication
-  2. DO NOT add new behavior (that requires a new RED phase)
-  3. Run ALL tests after each change
-  IF any test fails → undo last change, try different refactor.
-  ONLY mark task complete when all tests pass on clean code.
-```
+**"Tests after achieve the same goals - it's spirit not ritual"**
+No. Tests-after are biased by your implementation. You test what you built, not what's required. Tests-first force edge case discovery before implementing.
 
 ---
 
-## Task Structure
+## Red Flags - STOP and Start Over
 
-### Task Format
+- Code before test
+- Test after implementation
+- Test passes immediately
+- Can't explain why test failed
+- Tests added "later"
+- Rationalizing "just this once"
+- "I already manually tested it"
+- "Tests after achieve the same purpose"
+- "It's about spirit not ritual"
+- "Keep as reference" or "adapt existing code"
+- "Already spent X hours, deleting is wasteful"
+- "TDD is dogmatic, I'm being pragmatic"
+- "This is different because..."
+
+**All of these mean: Delete code. Start over with TDD.**
+
+---
+
+## Task Format
+
 Each task in `implementation.md`:
-- **Task ID**: T001, T002, etc.
-- **Action**: What behavior to implement (framed as what the test will verify)
-- **File**: Source file to create/modify
-- **Test File**: Test file to create/modify
-- **Scaffolding**: Which scaffold to reference
-- **Dependencies**: Which tasks must complete first
 
-### Task Ordering (TDD-First)
-```
-1. T001: Setup (test framework, project structure)
-2. T002: First behavior — RED test → GREEN code → REFACTOR
-3. T003: Next behavior — RED test → GREEN code → REFACTOR
-4. ...repeat per behavior slice...
-N. Final: Integration / examples (if needed)
-```
+- Task ID (T001, T002, ...)
+- Behavior objective (framed as what the test verifies)
+- Source file(s)
+- Test file(s)
+- Scaffolding reference (if applicable)
+- Dependencies
+- Binary success condition
 
-Tests and implementation are interleaved PER TASK, not separated into "implement all" then "test all."
+### Task Ordering
 
-**Good Task Ordering:**
-```
-T001: Setup project structure and test framework
-T002: validate_email rejects missing @ → test + impl
-T003: validate_email rejects empty string → test + impl
-T004: validate_email accepts valid format → test + impl
-T005: Create usage example
-```
+- Setup first (test framework, project structure)
+- Behavior slices next (each = one Red-Green-Refactor cycle)
+- Integration last (examples, end-to-end)
 
-**Bad Task Ordering:**
-```
-T001: Setup project structure
-T002: Implement validate_email (all logic)
-T003: Write all tests ← TOO LATE
-T004: Create usage example
-```
+Tests and implementation interleaved PER TASK. Never "implement all then test all."
 
-### Parallelizable Tasks
-Mark with `[P]` if tasks modify different files and have no dependency overlap:
-```
-T005: [P] Implement user model (test + impl)
-T006: [P] Implement post model (test + impl)
-```
+### Parallel Execution
+
+When tasks are independent, invoke `.specdev/skills/parallel-worktrees.md`.
+
+A task is parallel-safe only if:
+- no overlapping file writes
+- no shared schema/global config mutation
+- no hidden runtime coupling
+- independent test path
+
+Record worktree mapping and merge order in `implementation.md`.
 
 ### Save Tasks
-Write to `.specdev/assignments/#####_type_name/implementation.md`
+
+Write to `.specdev/assignments/#####_type_name/implementation.md`.
 
 ---
 
-## Subagent Isolation — Controller/Worker Model
+## Subagent Isolation - Controller/Worker Model
 
-When the main agent dispatches subagents for task execution:
+When dispatching subagents for task execution:
 
 ```
 GATE: Subagent dispatch protocol
-  1. Main agent reads plan.md ONCE, fully understands scope
-  2. For each task, main agent extracts:
+  1. Main agent reads plan.md ONCE, extracts all tasks with full text
+  2. For each task, main agent provides subagent with:
      - Full task description (copy text, don't reference)
      - Relevant scaffold content (copy text, don't reference)
-     - Relevant codestyle rules (copy text, don't reference)
-  3. Dispatch a FRESH subagent per task with:
-     - All context embedded in the prompt (subagent NEVER reads plan files)
-     - Clear success criteria
-     - File paths to create/modify
-  4. Subagent asks ALL clarifying questions BEFORE writing any code
-  IF subagent needs info not in its prompt → surface to main agent, don't guess.
-  IF task is ambiguous → ask before working, not after.
+     - Scene-setting context (where task fits, dependencies)
+  3. Dispatch a FRESH subagent per task with all context in prompt
+     - Subagent NEVER reads plan files directly
+  4. Subagent asks ALL clarifying questions BEFORE writing code
+  IF subagent needs info not in its prompt -> surface to main agent, don't guess
+  IF task is ambiguous -> ask before working, not after
 ```
 
-**Why**: Subagents that read plan files accumulate stale context and make cross-task assumptions. Curated context keeps each task isolated and focused.
+**Why**: Subagents that read plan files accumulate stale context and make cross-task assumptions. Curated context keeps each task isolated.
+
+**Two-stage review after each task**: After subagent implements, dispatch spec reviewer (did you build what was asked?), then code quality reviewer (is it well-built?). See `validation_guide.md`.
 
 ---
 
-## Red Flags Checklist
+## Bugfix Note
 
-STOP and reassess if you observe any of these:
-
-- [ ] Writing production code with no test file open
-- [ ] Test file created after production code is "done"
-- [ ] All tests pass on first run (tests may not be testing anything real)
-- [ ] Test only checks that function doesn't throw (not behavior)
-- [ ] "Implement X" task has no corresponding test file
-- [ ] Subagent is reading plan.md or other tasks' scaffolding
-- [ ] Tasks ordered as "all implementation" then "all testing"
-- [ ] GREEN phase code is significantly more than what the test requires
-- [ ] Refactoring while tests are red
-- [ ] Skipping RED because "this is obvious"
+If root cause is unclear, invoke `.specdev/skills/systematic-debugging.md` before implementing the fix.
 
 ---
 
-## Handling Issues
+## Gate 2 Checklist (per task)
 
-**Task fails Gate 2:** Fix → re-validate → don't proceed until passing.
-
-**Task too large:** Split into subtasks (T005a, T005b), each a full TDD cycle.
-
-**Scaffolding wrong:** Stop → fix scaffolding → get user approval (Gate 1 again) → resume.
-
-**Blocked task:** Document blocker in implementation.md → move to next independent task.
+- [ ] Test was written before production code
+- [ ] Test failed for the right reason
+- [ ] Minimum code was used to pass
+- [ ] New and existing tests pass
+- [ ] Code follows codestyle guide
+- [ ] Signature/contract matches planned artifacts
 
 ---
 
-## Final Validation
+## Verification Checklist
 
-After all tasks complete:
-1. Gates 3–4: Spec compliance review, then code quality review (see validation_guide.md)
-2. Gate 5: Documentation and project scaffolding updates
-3. Mark assignment complete in assignment_progress.md
+Before marking work complete:
+
+- [ ] Every new function/method has a test
+- [ ] Watched each test fail before implementing
+- [ ] Each test failed for expected reason (feature missing, not typo)
+- [ ] Wrote minimal code to pass each test
+- [ ] All tests pass
+- [ ] Output pristine (no errors, warnings)
+- [ ] Tests use real code (mocks only if unavoidable)
+- [ ] Edge cases and errors covered
+
+Can't check all boxes? You skipped TDD. Start over.
+
+---
+
+## When Stuck
+
+| Problem | Solution |
+|---------|----------|
+| Don't know how to test | Write wished-for API. Write assertion first. Ask the user. |
+| Test too complicated | Design too complicated. Simplify interface. |
+| Must mock everything | Code too coupled. Use dependency injection. |
+| Test setup huge | Extract helpers. Still complex? Simplify design. |
+
+---
+
+## Completion Rule
+
+Do not mark tasks complete without verification evidence.
+Invoke `.specdev/skills/verification-before-completion.md`.

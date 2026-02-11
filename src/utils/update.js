@@ -48,6 +48,17 @@ export async function updateSpecdevSystem(source, destination) {
       'knowledge/architecture',
       'knowledge/domain',
       'knowledge/workflow',
+      'skills',
+      'skills/README.md',
+      'skills/scaffolding-lite.md',
+      'skills/scaffolding-full.md',
+      'skills/systematic-debugging.md',
+      'skills/requesting-code-review.md',
+      'skills/receiving-code-review.md',
+      'skills/parallel-worktrees.md',
+      'skills/verification-before-completion.md',
+      'skills/micro-task-planning.md',
+      'skills/skills_invoked_template.md',
     ]
 
     for (const path of ensurePaths) {

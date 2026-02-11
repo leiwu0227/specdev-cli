@@ -1,55 +1,42 @@
 # Guides Overview
 
-This directory contains all guides for working with SpecDev assignments.
+This directory contains the core workflow guides for SpecDev.
 
 ---
 
 ## Structure
 
-### `/task/` - Repeatable Steps
-Task guides cover specific, repeatable activities that apply across all assignment types:
+### `/task/` - Repeatable steps
 
-- **planning_guide.md** - How to create detailed plans
-- **scaffolding_guide.md** - How to write scaffolding documents
-- **implementing_guide.md** - How to execute implementation tasks
-- **validation_guide.md** - Quality gates (code validation)
-- **documentation_guide.md** - How to update project documentation (finalize step)
-- **research_guide.md** - How to investigate unfamiliar code (familiarization)
-- **presentation_guide.md** - How to document findings (familiarization)
+- `planning_guide.md` - planning plus complexity/risk gate
+- `scaffolding_guide.md` - conditional architecture prep (`none` / lite / full)
+- `implementing_guide.md` - TDD execution and parallelization criteria
+- `validation_guide.md` - quality gates, review protocols, verification evidence
+- `documentation_guide.md` - assignment finalization
+- `research_guide.md` - familiarization investigation
+- `presentation_guide.md` - familiarization presentation
 
-### `/workflow/` - Domain-Specific Sequencing
-Workflow guides layer assignment-type-specific processes, combining task guides into complete workflows:
+### `/workflow/` - Assignment-specific sequence
 
-- **feature_workflow.md** - Building new capabilities
-- **refactor_workflow.md** - Restructuring existing code
-- **bugfix_workflow.md** - Diagnosing and fixing defects
-- **familiarization_workflow.md** - Learning unfamiliar code areas
+- `feature_workflow.md`
+- `refactor_workflow.md`
+- `bugfix_workflow.md`
+- `familiarization_workflow.md`
 
-### Root Level - General Guidance
-- **assignment_guide.md** - How to start and structure any assignment
-- **codestyle_guide.md** - Coding philosophy and standards
+### Root level
 
----
+- `assignment_guide.md` - how to start and structure assignments
+- `codestyle_guide.md` - coding standards
 
-## How to Use
+### Skills library
 
-1. **Starting an assignment?**
-   - Read `assignment_guide.md` first
-   - Check the relevant workflow guide for your assignment type
-
-2. **Need help with a specific step?**
-   - Jump directly to the task guide (planning, scaffolding, implementing, etc.)
-
-3. **Writing code?**
-   - Follow `codestyle_guide.md` principles
+Independent skills live in `.specdev/skills/` and are invoked on demand.
 
 ---
 
-## Quick Reference
+## How to use
 
-| Assignment Type | Workflow Guide | Key Task Guides Used |
-|----------------|----------------|---------------------|
-| Feature | feature_workflow.md | planning, scaffolding, implementing, validation, documentation |
-| Refactor | refactor_workflow.md | planning, scaffolding, implementing, validation, documentation |
-| Bugfix | bugfix_workflow.md | (planning optional), scaffolding, implementing, validation, documentation |
-| Familiarization | familiarization_workflow.md | research, presentation, documentation |
+1. Read `assignment_guide.md` and the matching workflow guide.
+2. During planning, run complexity/risk gate to decide required skills.
+3. Invoke only necessary skills and log each invocation artifact.
+4. Use task guides for execution details.

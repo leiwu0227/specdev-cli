@@ -8,6 +8,7 @@ USAGE:
 COMMANDS:
   init                Initialize .specdev folder in current directory
   update              Update system files while preserving project files
+  skills              List available .specdev skills in this project
   ponder workflow     Interactive: review & write workflow feedback
   ponder project      Interactive: review & write local project knowledge
   help                Show this help message
@@ -36,6 +37,9 @@ EXAMPLES:
 
   # Preview what would be updated
   specdev update --dry-run
+
+  # List available workflow skills
+  specdev skills
 
   # Reflect on workflow and capture observations
   specdev ponder workflow

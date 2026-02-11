@@ -41,6 +41,17 @@ const requiredFiles = [
   '.specdev/project_notes/feature_descriptions.md',
   '.specdev/project_scaffolding/_README.md',
   '.specdev/assignments/.gitkeep',
+  // Skills library
+  '.specdev/skills/README.md',
+  '.specdev/skills/scaffolding-lite.md',
+  '.specdev/skills/scaffolding-full.md',
+  '.specdev/skills/systematic-debugging.md',
+  '.specdev/skills/requesting-code-review.md',
+  '.specdev/skills/receiving-code-review.md',
+  '.specdev/skills/parallel-worktrees.md',
+  '.specdev/skills/verification-before-completion.md',
+  '.specdev/skills/micro-task-planning.md',
+  '.specdev/skills/skills_invoked_template.md',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',

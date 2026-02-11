@@ -5,6 +5,7 @@ import { updateCommand } from '../src/commands/update.js'
 import { helpCommand } from '../src/commands/help.js'
 import { ponderWorkflowCommand } from '../src/commands/ponder-workflow.js'
 import { ponderProjectCommand } from '../src/commands/ponder-project.js'
+import { skillsCommand } from '../src/commands/skills.js'
 
 const [,, command, ...args] = process.argv
 
@@ -35,6 +36,9 @@ switch(command) {
     break
   case 'update':
     await updateCommand(flags)
+    break
+  case 'skills':
+    await skillsCommand(flags)
     break
   case 'ponder': {
     const subcommand = positionalArgs[0]

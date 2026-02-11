@@ -1,73 +1,76 @@
 # Planning Guide
 
-**Reference Example**: See `_templates/assignment_examples/feature/00000_feature_email-validator/plan.md`
+**Reference Example**: `_templates/assignment_examples/feature/00000_feature_email-validator/plan.md`
 
-## Planning Phases
+## Planning phases
 
-Iterate until user approves. Show progress update after each phase.
+Iterate until user approves. Show progress after each phase.
 
-1. **Gather Information**: dependency check, read background, collect context
-2. **Consolidate Findings**: synthesize into initial plan
-3. **Identify Problems**: list issues needing user clarification
-4. **Clarify with User**: resolve issues one by one
-5. **Write Plan**: step-by-step plan, get user approval
+1. Gather information (dependencies, constraints, existing behavior)
+2. Consolidate findings
+3. Identify open questions
+4. Clarify with user
+5. Write plan and request approval
 
-Write research notes to `.specdev/assignments/#####_type_name/research.md`
-
----
-
-## Task Granularity Gate
-
-```
-GATE: For each task in the plan, verify:
-  1. Can this task be expressed as a single failing test?
-     - YES → task is correctly sized
-     - NO → decompose further until each sub-task maps to one test
-  2. Does this task have a clear, binary success condition?
-     - YES → keep it
-     - NO → rewrite until pass/fail is unambiguous
-  3. Can a subagent complete this task with ONLY its description + scaffold?
-     - YES → context is sufficient
-     - NO → add missing context to the task description
-```
-
-**Good Task Decomposition:**
-```
-T002: validate_email rejects missing @ symbol
-  - Test: assert validate_email("userexample.com") == False
-  - Impl: add @ check to validate_email
-  - One behavior, one test, one code change
-
-T003: validate_email rejects empty string
-  - Test: assert validate_email("") == False
-  - Impl: add empty-string guard
-  - One behavior, one test, one code change
-```
-
-**Bad Task Decomposition:**
-```
-T002: Implement validate_email
-  - Too broad — covers multiple behaviors in one task
-  - Can't be expressed as a single failing test
-  - Subagent won't know when it's "done"
-```
+Write research notes to `.specdev/assignments/#####_type_name/research.md`.
 
 ---
 
-## Verification
+## Complexity and risk gate
 
-Before presenting the plan to the user, check:
+After writing `plan.md`, classify assignment complexity:
 
+- `LOW`: files touched <= 2, no shared contract changes, low blast radius
+- `MEDIUM`: files touched 3-5, or new interface between modules
+- `HIGH`: files touched > 5, migrations, cross-module refactor, auth/security/data integrity risk
+
+### Required action by class
+
+- `LOW` -> no scaffolding required
+- `MEDIUM` -> invoke `skills/scaffolding-lite.md` and require Gate 1 approval (contracts only)
+- `HIGH` -> invoke `skills/scaffolding-full.md` and require Gate 1 approval (full architecture)
+
+Log the decision and reason in `plan.md` and `skills_invoked.md`.
+
+---
+
+## Task granularity gate
+
+For each task in the plan:
+
+1. Can this task be expressed as one failing test?
+   - YES: size is acceptable
+   - NO: decompose further
+2. Does it have a clear binary success condition?
+   - YES: keep
+   - NO: rewrite
+3. Can a subagent complete it with task text plus required artifacts?
+   - YES: context is sufficient
+   - NO: add missing context
+
+---
+
+## Optional micro-task mode
+
+If risk/unknowns are high, invoke `skills/micro-task-planning.md`.
+Use smaller tasks with per-task verification commands and rollback notes.
+
+---
+
+## Verification before presenting plan
+
+- [ ] Complexity/risk class documented (`LOW`/`MEDIUM`/`HIGH`)
+- [ ] Required skill invocations identified
 - [ ] Every task maps to one Red-Green-Refactor cycle
-- [ ] No task says "implement X and write tests" (tests are part of EACH task, not a separate step)
-- [ ] Task ordering follows TDD sequence: setup → behavior slices → integration
-- [ ] Each task description includes enough context for an isolated subagent
+- [ ] No task says "implement X and write tests later"
+- [ ] Task order follows setup -> behavior slices -> integration
+- [ ] Each task has enough context for isolated execution
 
 ---
 
-*Progress Update*
-- [ ] Information Gathering
-- [ ] Consolidate Findings
-- [ ] Identifying Problems
+*Progress update*
+- [ ] Information gathering
+- [ ] Consolidate findings
+- [ ] Identify problems
 - [ ] Clarification
-- [ ] Write Plan
+- [ ] Write plan
