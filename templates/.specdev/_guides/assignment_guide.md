@@ -14,8 +14,8 @@ Steps:
 2. Planning: refer to .specdev/_guides/task/planning_guide.md to write a detailed plan (NO IMPLEMENTATION, discussions only) and save it as #####_type_name/plan.md
 3. Code Scaffolding: follow .specdev/_guides/task/scaffolding_guide.md to write scaffolding documents
 4. Gate 1 - Scaffolding Review: use .specdev/_guides/task/validation_guide.md; the user must approve scaffolding before proceeding
-5. Implementation: follow .specdev/_guides/task/implementing_guide.md to implement the actual code, applying Gate 2 validation after each task
-6. Gate 3-5 - Final Validation: complete testing, integration, documentation, and project scaffolding gates per .specdev/_guides/task/validation_guide.md before marking the assignment as DONE 
+5. Implementation: follow .specdev/_guides/task/implementing_guide.md — each task is a TDD Red-Green-Refactor cycle (test first, then code). Dispatch isolated subagents per task using the controller/worker model. Apply Gate 2 TDD validation after each task.
+6. Gates 3-5 - Final Validation: run two-stage review (Stage 1: spec compliance, Stage 2: code quality) via subagent reviewers, then complete documentation and project scaffolding gates per .specdev/_guides/task/validation_guide.md before marking the assignment as DONE
 
 
 The structure of the assignment documentation folder will be

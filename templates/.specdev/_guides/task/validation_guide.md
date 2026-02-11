@@ -1,100 +1,163 @@
 # Validation & Quality Gates Guide
 
-## Purpose
-Define quality standards and checkpoints to ensure assignments are complete, correct, and maintainable before marking them as done.
+**Reference Example**: See `_templates/assignment_examples/feature/00000_feature_email-validator/validation_checklist.md`
 
-**Reference Example**: See `.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/validation_checklist.md` for a completed checklist example.
+**Template**: Copy `_templates/gate_checklist.md` into your assignment folder as `validation_checklist.md`.
 
-## Quality Gates
+---
 
-### Gate 1: Post-Scaffolding Review
-**When**: After scaffolding documents are created, before implementation starts
+## Gate 1: Post-Scaffolding Review
+
+**When**: After scaffolding documents created, before implementation.
 
 **Checklist**:
 - [ ] All functions/classes have clear purpose descriptions
 - [ ] Input/output types are specified
-- [ ] Edge cases are identified in pseudocode
-- [ ] Dependencies between files are documented
+- [ ] Edge cases identified in pseudocode
+- [ ] Dependencies between files documented
 - [ ] No circular dependencies in design
 
-**Action**: User must approve scaffolding before moving to implementation
+**Action**: User MUST approve scaffolding before proceeding.
 
-### Gate 2: Per-Task Validation
-**When**: After each implementation task (T001, T002, etc.) is completed
+---
+
+## Gate 2: Per-Task TDD Validation
+
+**When**: After each task's Red-Green-Refactor cycle completes.
 
 **Checklist**:
-- [ ] Code follows codestyle_guide.md principles
+- [ ] Failing test was written BEFORE production code
+- [ ] Test fails for the correct reason (not setup/import errors)
+- [ ] Production code is the minimum to pass the test
+- [ ] ALL tests pass (new + existing)
+- [ ] Code follows codestyle_guide.md
 - [ ] Function signatures match scaffolding
-- [ ] Docstrings present for public functions
-- [ ] No syntax errors (code runs/compiles)
+- [ ] No syntax errors
 
-**Action**: Move to next task only if validation passes
+**Action**: Move to next task ONLY if all items pass.
 
-### Gate 3: Testing Gate
-**When**: After core implementation, before marking the assignment complete
+---
 
-**Checklist**:
-- [ ] Unit tests exist for all public functions
-- [ ] Tests cover happy path
-- [ ] Tests cover error cases/edge cases
-- [ ] All tests pass
-- [ ] Test files in project_root/tests/
+## Gates 3–4: Two-Stage Review
 
-**Minimum Coverage**:
-- Core functionality: 80% coverage recommended
-- Utility functions: 100% coverage recommended
+After all implementation tasks complete, run two independent review stages IN ORDER. Never start Stage 2 before Stage 1 passes.
 
-### Gate 4: Integration Validation
-**When**: After all tasks complete, before assignment sign-off
+### Stage 1: Spec Compliance Review
 
-**Checklist**:
-- [ ] Assignment works end-to-end as described in proposal.md
-- [ ] No breaking changes to existing assignments
-- [ ] Dependencies properly declared
-- [ ] Examples work (if examples were created)
-- [ ] No hardcoded values (configs externalized)
-
-
-## Next Step
-
-After Gates 3-4 pass and user approves validation:
-- Move to finalize step (see workflow guide for your assignment type)
-
-## Rollback Procedures
-
-### When to Rollback
-- Critical bugs discovered during Gate 3 or 4
-- Implementation doesn't match approved plan
-- Assignment breaks existing functionality
-- User requests abandonment
-
-### Rollback Steps
-1. Document reason in assignment folder: `#####_type_name/rollback_notes.md`
-2. Revert code commits related to the assignment
-3. Mark assignment as "Rolled Back" in assignment_progress.md
-4. Decide: Fix and retry, or abandon the assignment
-
-### Partial Rollback
-If only some tasks are problematic:
-1. Keep working code
-2. Revert problematic tasks
-3. Update implementation.md with revised tasks
-4. Resume from Gate 2 for revised tasks
-
-## Validation Workflow
+**Purpose**: Verify the implementation matches what was planned.
 
 ```
-Scaffolding → Gate 1 ✓ → Implementation → Gate 2 (per task) ✓ →
-Gate 3 (testing) ✓ → Gate 4 (integration) ✓ → Gate 5 (docs) ✓ →
-DONE
+GATE: Dispatch spec reviewer subagent
+  1. Provide reviewer with:
+     - proposal.md content (full text)
+     - plan.md content (full text)
+     - List of files created/modified with paths
+  2. Reviewer MUST read actual source code files — never trust implementer claims
+  3. Reviewer checks EACH planned behavior against actual code
+  4. Output format: PASS or FAIL
+     - If FAIL: list each deviation as [file:line] — expected X, found Y
+  IF FAIL → implementer fixes deviations → re-run Stage 1 from scratch
+  IF PASS → proceed to Stage 2
 ```
 
-If any gate fails:
-- Document failures
-- Fix issues
-- Re-validate at that gate
-- Do not proceed until gate passes
+**Spec reviewer stance**: Skeptical. Assume the implementation drifted from spec until proven otherwise. Do not accept "it's equivalent" — verify exact compliance.
 
-## Quality Checklist Template
+**Spec reviewer checks**:
+- [ ] Every feature in proposal.md has corresponding implementation
+- [ ] Function signatures match scaffolding exactly
+- [ ] Edge cases from plan.md are handled
+- [ ] No unplanned features added (scope creep)
+- [ ] File structure matches plan.md
 
-**Use the template:** Copy `.specdev/_templates/gate_checklist.md` into your assignment folder as `validation_checklist.md` and track progress through each gate.
+### Stage 2: Code Quality Review
+
+**Purpose**: Verify code is production-ready.
+
+```
+GATE: Dispatch code quality reviewer subagent
+  1. Provide reviewer with:
+     - All source files (full text)
+     - All test files (full text)
+     - codestyle_guide.md (full text)
+  2. Reviewer evaluates across categories below
+  3. Each issue tagged: CRITICAL / IMPORTANT / MINOR
+  4. Verdict: READY TO MERGE or NOT READY
+     - CRITICAL issues → NOT READY (must fix)
+     - IMPORTANT issues → NOT READY (should fix, main agent may override with justification)
+     - MINOR only → READY TO MERGE (fix at discretion)
+```
+
+**Review categories**:
+
+| Category | What to check |
+|----------|---------------|
+| Code Quality | Naming, readability, duplication, complexity |
+| Architecture | Separation of concerns, dependency direction, coupling |
+| Testing | Coverage, edge cases, test isolation, assertion quality |
+| Requirements | Completeness vs proposal, no gold-plating |
+| Security | Input validation at boundaries, no injection vectors |
+
+---
+
+## Receiving Reviews — Anti-Sycophancy Protocol
+
+When the implementer receives review feedback:
+
+```
+GATE: Review response protocol
+  FORBIDDEN responses (any of these = protocol violation):
+    - "You're absolutely right!"
+    - "Great point!"
+    - "Thanks for catching that!"
+    - Any expression of gratitude or flattery toward reviewer
+    - Agreeing without verification
+
+  REQUIRED pattern:
+    1. READ the feedback completely
+    2. UNDERSTAND what specific change is requested
+    3. VERIFY by reading the actual code at [file:line]
+    4. EVALUATE: Is the feedback correct?
+       - If YES → implement the fix, cite what changed
+       - If NO → explain specifically why with code evidence
+    5. RESPOND with: "Fixed [file:line]: [what changed]" or "Disagree: [evidence]"
+    6. IMPLEMENT all accepted fixes
+```
+
+**Why no gratitude**: Sycophantic responses signal the agent is performing compliance rather than evaluating feedback. Genuine engagement means verifying claims against code, not thanking the reviewer.
+
+---
+
+## Rollback
+
+```
+GATE: When to rollback
+  IF critical bugs at Gates 3–4
+  OR implementation doesn't match approved plan
+  OR assignment breaks existing functionality
+  OR user requests abandonment
+  THEN:
+    1. Document reason in #####_type_name/rollback_notes.md
+    2. Revert code commits related to assignment
+    3. Mark "Rolled Back" in assignment_progress.md
+    4. Decide: fix and retry, or abandon
+
+  PARTIAL ROLLBACK (some tasks problematic):
+    1. Keep working code
+    2. Revert problematic tasks
+    3. Update implementation.md with revised tasks
+    4. Resume from Gate 2 for revised tasks
+```
+
+---
+
+## Validation Flow
+
+```
+Scaffolding → Gate 1 ✓ →
+  Implementation (per-task TDD + Gate 2) ✓ →
+    Stage 1: Spec review ✓ →
+      Stage 2: Code quality review ✓ →
+        Documentation ✓ → DONE
+```
+
+If any gate fails: fix → re-validate at that gate → do not proceed until it passes.

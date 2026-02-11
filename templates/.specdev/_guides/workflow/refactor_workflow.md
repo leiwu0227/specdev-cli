@@ -47,9 +47,9 @@ Guide coding agents through restructuring existing code without changing observa
 **Owner:** Agent implements
 **Guide:** `.specdev/_guides/task/implementing_guide.md`
 
-**Process:** Create implementation.md with incremental task list; implement each refactor task; **CRITICAL:** run existing tests after every meaningful change; apply Gate 2 validation per task (follows codestyle_guide.md; matches scaffolding; has docstrings; no syntax errors; all existing tests still pass).
+**Process:** Create implementation.md with TDD task list — each task is a Red-Green-Refactor cycle. For refactors, existing tests serve as the RED baseline; run them before and after each change. Dispatch isolated subagents per task using controller/worker model. Apply Gate 2 TDD validation per task.
 
-**Next:** All tasks complete → move to validation.
+**Next:** All tasks complete → move to two-stage review.
 
 ---
 
@@ -59,9 +59,9 @@ Guide coding agents through restructuring existing code without changing observa
 **Owner:** Agent validates
 **Guide:** `.specdev/_guides/task/validation_guide.md`
 
-**Gate 3 - Testing:** All existing tests pass (behavior parity confirmed); add regression tests if gaps discovered; verify baseline metrics maintained (performance, coverage).
+**Stage 1 - Spec Compliance:** Dispatch skeptical reviewer subagent to verify refactored code preserves all behavior from proposal.md. Binary PASS/FAIL with file:line references.
 
-**Gate 4 - Integration:** End-to-end system works as before refactor; no breaking changes to external interfaces; dependencies updated.
+**Stage 2 - Code Quality:** Dispatch quality reviewer subagent. Issues tagged CRITICAL/IMPORTANT/MINOR. Verify baseline metrics maintained. Verdict: READY TO MERGE or NOT READY. Never start Stage 2 before Stage 1 passes.
 
 **Next:** User approves validation → move to finalize.
 

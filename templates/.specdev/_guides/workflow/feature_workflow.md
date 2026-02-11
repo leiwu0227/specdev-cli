@@ -47,9 +47,9 @@ Guide coding agents through delivering a net-new feature with clear deliverables
 **Owner:** Agent implements
 **Guide:** `.specdev/_guides/task/implementing_guide.md`
 
-**Process:** Create implementation.md with task list (T001, T002...); implement each task following scaffolding; apply Gate 2 validation per task (follows codestyle_guide.md; matches scaffolding; has docstrings; no syntax errors).
+**Process:** Create implementation.md with TDD task list — each task is a Red-Green-Refactor cycle (failing test → minimum code → clean up). Dispatch isolated subagents per task using controller/worker model (full context in prompt, subagent never reads plan files). Apply Gate 2 TDD validation per task.
 
-**Next:** All tasks complete → move to validation.
+**Next:** All tasks complete → move to two-stage review.
 
 ---
 
@@ -59,9 +59,9 @@ Guide coding agents through delivering a net-new feature with clear deliverables
 **Owner:** Agent validates
 **Guide:** `.specdev/_guides/task/validation_guide.md`
 
-**Gate 3 - Testing:** Write/run unit tests; verify coverage; all tests pass.
+**Stage 1 - Spec Compliance:** Dispatch skeptical reviewer subagent to verify implementation matches proposal.md and plan.md exactly. Binary PASS/FAIL with file:line references.
 
-**Gate 4 - Integration:** End-to-end feature works as described in proposal.md; no breaking changes; dependencies declared.
+**Stage 2 - Code Quality:** Dispatch quality reviewer subagent. Issues tagged CRITICAL/IMPORTANT/MINOR. Verdict: READY TO MERGE or NOT READY. Never start Stage 2 before Stage 1 passes.
 
 **Next:** User approves validation → move to finalize.
 

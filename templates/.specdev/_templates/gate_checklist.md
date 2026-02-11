@@ -17,53 +17,68 @@ Copy this into your assignment folder as `validation_checklist.md` and track pro
 
 ---
 
-## Gate 2: Per-Task Validation
+## Gate 2: Per-Task TDD Validation
 
-Track each implementation task:
+Track each implementation task (each row = one Red-Green-Refactor cycle):
 
-| Task ID | Description | Status | Date |
-|---------|-------------|--------|------|
-| T001 | [Task name] | ⬜ / ✅ | YYYY-MM-DD |
-| T002 | [Task name] | ⬜ / ✅ | YYYY-MM-DD |
+| Task ID | Description | RED ✓ | GREEN ✓ | REFACTOR ✓ | Date |
+|---------|-------------|-------|---------|------------|------|
+| T001 | [Task name] | ⬜ / ✅ | ⬜ / ✅ | ⬜ / ✅ | YYYY-MM-DD |
+| T002 | [Task name] | ⬜ / ✅ | ⬜ / ✅ | ⬜ / ✅ | YYYY-MM-DD |
 
-**Per-task checklist:**
+**Per-task TDD checklist:**
+- [ ] Failing test written BEFORE production code
+- [ ] Test fails for the correct reason
+- [ ] Production code is minimum to pass test
+- [ ] ALL tests pass (new + existing)
 - [ ] Code follows codestyle_guide.md
 - [ ] Function signatures match scaffolding
-- [ ] Docstrings present for public functions
-- [ ] No syntax errors
 
 ---
 
-## Gate 3: Testing
+## Gate 3: Stage 1 — Spec Compliance Review
 
 **Status:** ⬜ Not Started / 🔄 In Progress / ✅ Passed
 
-- [ ] Unit tests exist for all public functions
-- [ ] Tests cover happy path
-- [ ] Tests cover error cases/edge cases
-- [ ] All tests pass
-- [ ] Test files in `project_root/tests/`
-- [ ] Coverage: _____% (target: 80%+ for core, 100% for utils)
+**Reviewer**: Spec compliance subagent (skeptical stance)
+
+- [ ] Every feature in proposal.md has corresponding implementation
+- [ ] Function signatures match scaffolding exactly
+- [ ] Edge cases from plan.md are handled
+- [ ] No unplanned features added (scope creep)
+- [ ] File structure matches plan.md
+
+**Verdict:** PASS / FAIL
+**Deviations found (if any):**
+- [file:line] — expected X, found Y
 
 ---
 
-## Gate 4: Integration
+## Gate 4: Stage 2 — Code Quality Review
 
 **Status:** ⬜ Not Started / 🔄 In Progress / ✅ Passed
 
-- [ ] Assignment works end-to-end as described in proposal.md
-- [ ] No breaking changes to existing assignments
-- [ ] Dependencies properly declared
-- [ ] Examples work (if created)
-- [ ] No hardcoded values (configs externalized)
+**Reviewer**: Code quality subagent
+
+| Category | Status | Issues |
+|----------|--------|--------|
+| Code Quality | ⬜ / ✅ | |
+| Architecture | ⬜ / ✅ | |
+| Testing | ⬜ / ✅ | |
+| Requirements | ⬜ / ✅ | |
+| Security | ⬜ / ✅ | |
+
+**Issues found:**
+- [ ] CRITICAL: (describe) — [file:line]
+- [ ] IMPORTANT: (describe) — [file:line]
+- [ ] MINOR: (describe) — [file:line]
+
+**Verdict:** READY TO MERGE / NOT READY
 
 **Assignment-specific:**
 - [ ] **Feature:** New capability works as specified
 - [ ] **Refactor:** Behavior unchanged, all existing tests pass
 - [ ] **Bugfix:** Bug cannot be reproduced, regression test added
-- [ ] **Familiarization:** Findings validated with user/SME
-
----
 
 ---
 
@@ -73,7 +88,7 @@ Track each implementation task:
 
 **Guide Reference:** `.specdev/_guides/task/documentation_guide.md`
 
-- [ ] `.specdev/project_notes/feature_descriptions.md` updated (feature/refactor/familiarization only)
+- [ ] `.specdev/project_notes/feature_descriptions.md` updated (feature/refactor only)
 - [ ] `.specdev/project_scaffolding/` updated with latest state
 - [ ] proposal.md and plan.md are accurate
 - [ ] README/docs updated if user-facing (when requested)
@@ -94,9 +109,9 @@ For each new/modified file, add/update entry in `.specdev/project_scaffolding/`:
 
 **Validation gates passed:**
 - [ ] Gate 1: Scaffolding ✅
-- [ ] Gate 2: Implementation ✅
-- [ ] Gate 3: Testing ✅
-- [ ] Gate 4: Integration ✅
+- [ ] Gate 2: Per-task TDD ✅
+- [ ] Gate 3: Spec compliance review ✅
+- [ ] Gate 4: Code quality review ✅
 
 **Documentation finalized:**
 - [ ] Documentation updates complete ✅

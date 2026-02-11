@@ -51,9 +51,9 @@ Guide coding agents through diagnosing, fixing, and validating defects.
 **Owner:** Agent implements
 **Guide:** `.specdev/_guides/task/implementing_guide.md`
 
-**Process:** Create implementation.md with task list; **CRITICAL:** first reproduce bug and add failing test; implement fix following scaffolding; apply Gate 2 validation per task (follows codestyle_guide.md; matches scaffolding; has docstrings; no syntax errors; new test passes; all existing tests pass).
+**Process:** Create implementation.md with TDD task list — T001 MUST be a failing regression test that reproduces the bug. Each subsequent task is a Red-Green-Refactor cycle. Dispatch isolated subagents per task using controller/worker model. Apply Gate 2 TDD validation per task.
 
-**Next:** All tasks complete → move to validation.
+**Next:** All tasks complete → move to two-stage review.
 
 ---
 
@@ -63,9 +63,9 @@ Guide coding agents through diagnosing, fixing, and validating defects.
 **Owner:** Agent validates
 **Guide:** `.specdev/_guides/task/validation_guide.md`
 
-**Gate 3 - Testing:** Reproduction test passes (bug is fixed); all existing tests pass (no regressions); edge cases covered; test coverage maintained or improved.
+**Stage 1 - Spec Compliance:** Dispatch skeptical reviewer subagent to verify fix matches proposal.md. Reproduction test must pass, all existing tests must pass. Binary PASS/FAIL with file:line references.
 
-**Gate 4 - Integration:** Fix works in representative environments; no breaking changes introduced; dependencies updated; bug cannot be reproduced in end-to-end testing.
+**Stage 2 - Code Quality:** Dispatch quality reviewer subagent. Issues tagged CRITICAL/IMPORTANT/MINOR. Verify no regressions introduced. Verdict: READY TO MERGE or NOT READY. Never start Stage 2 before Stage 1 passes.
 
 **Next:** User approves validation → move to finalize.
 
