@@ -149,7 +149,43 @@ if (tasks.length >= 2) {
 const badResult = spawnSync('bash', [extractScript, '/nonexistent/plan.md'], { encoding: 'utf-8' })
 assert(badResult.status !== 0, 'exits non-zero for missing file')
 
-// ---- Additional test sections will be appended here (task 3) ----
+// ---- Test track-progress.sh ----
+console.log('\ntrack-progress.sh:')
+
+const trackScript = join(SCRIPTS_DIR, 'track-progress.sh')
+
+// Mark task 1 as started
+const startResult = spawnSync('bash', [trackScript, planFile, '1', 'started'], { encoding: 'utf-8' })
+assert(startResult.status === 0, 'mark task 1 started exits 0')
+
+// Check progress file exists
+const progressFile = planFile + '.progress.json'
+assert(existsSync(progressFile), 'creates progress file next to plan')
+
+const progress1 = JSON.parse(readFileSync(progressFile, 'utf-8'))
+assert(progress1.tasks[0].status === 'in_progress', 'task 1 is in_progress')
+assert(progress1.tasks[0].number === 1, 'task 1 number is 1')
+
+// Mark task 1 as completed
+const completeResult = spawnSync('bash', [trackScript, planFile, '1', 'completed'], { encoding: 'utf-8' })
+assert(completeResult.status === 0, 'mark task 1 completed exits 0')
+
+const progress2 = JSON.parse(readFileSync(progressFile, 'utf-8'))
+assert(progress2.tasks[0].status === 'completed', 'task 1 is completed')
+assert(progress2.tasks[0].completed_at !== undefined && progress2.tasks[0].completed_at !== null, 'task 1 has completed_at timestamp')
+
+// Mark task 2 as started then completed
+spawnSync('bash', [trackScript, planFile, '2', 'started'], { encoding: 'utf-8' })
+spawnSync('bash', [trackScript, planFile, '2', 'completed'], { encoding: 'utf-8' })
+
+// Get summary
+const summaryResult = spawnSync('bash', [trackScript, planFile, 'summary', ''], { encoding: 'utf-8' })
+assert(summaryResult.status === 0, 'summary exits 0')
+assert(summaryResult.stdout.includes('2') && summaryResult.stdout.includes('completed'), 'summary shows completed count')
+
+// Test with bad args
+const badTrack = spawnSync('bash', [trackScript], { encoding: 'utf-8' })
+assert(badTrack.status !== 0, 'exits non-zero with no args')
 
 cleanup()
 
