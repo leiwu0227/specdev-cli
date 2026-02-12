@@ -41,8 +41,8 @@ assert(result.status === 0, 'exits with code 0')
 assert(result.stdout.includes('# Available Skills'), 'has header')
 
 // Should list folder-based skills
-assert(result.stdout.includes('planning'), 'lists planning skill')
-assert(result.stdout.includes('executing'), 'lists executing skill')
+assert(result.stdout.includes('brainstorming'), 'lists brainstorming skill')
+assert(result.stdout.includes('implementing'), 'lists implementing skill')
 assert(result.stdout.includes('orientation'), 'lists orientation skill')
 assert(result.stdout.includes('[folder]'), 'marks folder-based skills')
 

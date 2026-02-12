@@ -1,34 +1,35 @@
 # SpecDev Skills Library
 
-Skills keep the default workflow light while adding rigor when needed.
+Skills are organized as folder-based skills (with SKILL.md manuals, scripts, and prompts) and flat reference skills.
 
-## Two categories
+## Folder-based skills
 
-### Always-apply skills
+### Main agent (phases 1-3, 5)
 
-Read and follow on every assignment. Not optional.
+- `brainstorming/` — Interactive idea-to-design session
+- `breakdown/` — Turn design into bite-sized executable steps
+- `implementing/` — Execute plan with subagent dispatch and two-stage review
+- `knowledge-capture/` — Write diff files after assignment completion
 
-- `verification-before-completion.md` - No completion claims without command evidence.
-- `receiving-code-review.md` - Evidence-based review response protocol. No performative agreement.
+### Review agent (phase 4)
 
-### Invoke-when-needed skills
+- `review-agent/` — Holistic reviewer with file-based signals
 
-Triggered by complexity gate or specific conditions during planning.
+### Supporting
 
-- `scaffolding-lite.md` - Contracts and dependency map only (MEDIUM complexity).
-- `scaffolding-full.md` - Full per-file blueprint with pseudocode (HIGH complexity).
-- `systematic-debugging.md` - Root-cause-first bugfix workflow.
-- `requesting-code-review.md` - Standardized review request packet for Gates 3-4.
-- `parallel-worktrees.md` - Safe parallel execution model.
-- `micro-task-planning.md` - Ultra-granular planning for high-risk tasks.
-- `subagent-driven-development.md` - Fresh subagent per task with two-stage review loop.
-- `review-agent.md` - Independent reviewer agent handoff via file-based protocol.
+- `test-driven-development/` — RED-GREEN-REFACTOR with verify-tests.sh
+- `systematic-debugging/` — Root-cause-first debugging
+- `parallel-worktrees/` — Git worktree isolation for parallel tasks
+- `orientation/` — Router and decision tree
 
-## How to use
+## Flat reference skills
 
-1. Always-apply skills: read at assignment start, follow throughout.
-2. Invoke-when-needed skills: decide during planning (complexity gate), invoke only what's required.
-3. Record each invocation in `assignments/#####_type_name/skills_invoked.md`.
-4. Every invoked skill MUST produce a concrete artifact.
+### Always-apply
 
-Add project-specific skills here as needed.
+- `verification-before-completion.md` — No completion claims without evidence
+- `receiving-code-review.md` — No performative agreement in reviews
+
+### When needed
+
+- `scaffolding-lite.md` — Lightweight scaffolding (contracts + dependency map)
+- `scaffolding-full.md` — Full scaffolding (per-file blueprints)
