@@ -49,7 +49,7 @@ WORKTREE_PATH="$WORKTREE_BASE/$BRANCH_NAME"
 mkdir -p "$(dirname "$WORKTREE_PATH")"
 
 # Create the worktree with a new branch
-git -C "$PROJECT_ROOT" worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH" "$BASE_BRANCH" 2>/dev/null
+git -C "$PROJECT_ROOT" worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH" "$BASE_BRANCH" >/dev/null 2>&1
 
 # Output JSON
 node -e "

@@ -54,10 +54,10 @@ if [ -z "$TEST_CMD" ]; then
   fi
 fi
 
-# Run the test command and capture output
+# Run the test command from project root and capture output
 OUTPUT_FILE=$(mktemp)
 EXIT_CODE=0
-$TEST_CMD > "$OUTPUT_FILE" 2>&1 || EXIT_CODE=$?
+(cd "$PROJECT_ROOT" && $TEST_CMD) > "$OUTPUT_FILE" 2>&1 || EXIT_CODE=$?
 
 # Read output and truncate to a summary
 OUTPUT=$(cat "$OUTPUT_FILE" | tail -50)
