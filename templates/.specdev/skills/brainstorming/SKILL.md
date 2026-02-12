@@ -1,91 +1,87 @@
 ---
 name: brainstorming
-description: Question-by-question idea refinement before planning
+description: Interactive idea-to-design session — one question at a time, validated design sections
 ---
 
 # Brainstorming
 
 ## Contract
 
-- **Input:** A vague idea, feature wish, or problem statement
-- **Process:** Context gathering → diverge (one question at a time) → generate options (2-3 approaches) → converge (pick direction)
-- **Output:** A design brief — clear enough to hand off to the planning skill
-- **Next skill:** planning
+- **Input:** A vague idea, feature wish, bug report, or refactoring goal
+- **Process:** Context scan → Q&A (one question at a time) → explore approaches → present design sections → validate each section
+- **Output:** `brainstorm/proposal.md` + `brainstorm/design.md` in the assignment folder
+- **Next phase:** breakdown (automatic, triggered by user saying `auto next`)
 
 ## Scripts
 
-This skill has no scripts of its own. It references:
-
-| Script | Source | When to run |
-|--------|--------|-------------|
-| `planning/scripts/get-project-context.sh` | planning skill | At the start, to understand current project state |
+| Script | Purpose | When to run |
+|--------|---------|-------------|
+| `scripts/get-project-context.sh` | Scan repo structure, recent commits, knowledge files | At the start, before asking questions |
 
 ## Process
 
-### Phase 1: Context Gathering
+### Phase 1: Understand
 
-1. Run `planning/scripts/get-project-context.sh <project-root>` to understand the project
-2. Read the output — it tells you about repo structure, recent work, existing knowledge
-3. Use this context to ask informed questions
-
-### Phase 2: Diverge
-
-Explore the idea space — one question at a time.
-
-1. Ask the user ONE question to understand their idea better
-2. Wait for the answer before asking the next question
-3. Keep questions focused: what problem are you solving? who is the user? what constraints exist?
-4. Continue until you understand: purpose, constraints, success criteria, scope
-5. Do NOT jump to solutions yet
+1. Run `scripts/get-project-context.sh <project-root>` to get current state
+2. Read the output — repo structure, recent work, existing knowledge
+3. Ask the user ONE question at a time to understand their goal
+4. Prefer multiple-choice questions when possible
+5. Continue until you understand: purpose, constraints, success criteria
 
 **Rules:**
 - Only ONE question per message
-- Multiple choice is easier to answer than open-ended — prefer it
-- If a topic needs more exploration, break it into multiple questions
+- Multiple choice preferred over open-ended
 - Acknowledge each answer before asking the next question
+- Do not proceed until you understand what you are building
 
-### Phase 3: Generate Options
+### Phase 2: Explore Approaches
 
-Once the problem is clear, propose approaches.
-
-1. Present 2-3 different approaches with clear trade-offs
+1. Present 2-3 different approaches with trade-offs
 2. Lead with your recommended approach and explain why
-3. Each approach should include: description, pros, cons, rough effort estimate
-4. Keep it conversational — this is a discussion, not a presentation
+3. Keep it conversational — this is a discussion, not a presentation
+4. Let the user choose
 
-### Phase 4: Converge
+### Phase 3: Design Sections
 
-Pick a direction together.
+Present the design incrementally for validation.
 
-1. Let the user choose an approach (or combine elements)
-2. Confirm the chosen direction: "So we're going with [approach] because [reasons]"
-3. Identify any open questions that remain
-4. Resolve open questions one at a time
+1. Break the design into sections of 200-300 words
+2. Present one section at a time
+3. After each section, ask: "Does this look right so far?"
+4. Cover: architecture, components, data flow, error handling, testing approach
+5. Be ready to revise if something doesn't make sense
+6. Record key decisions and their reasoning as you go
 
-### Phase 5: Handoff
+### Phase 4: Write to Assignment
 
-Package the decision into a design brief for planning.
+Once all design sections are validated:
 
-1. Summarize the design brief:
-   - **Goal:** What we're building and why
-   - **Approach:** The chosen approach
-   - **Constraints:** Known limits and requirements
-   - **Success criteria:** How we'll know it works
-   - **Open items:** Anything the planning skill needs to resolve
-2. Offer to proceed to planning:
+1. Create the assignment folder (use register-assignment pattern)
+2. Write `brainstorm/proposal.md` — short (1-2 paragraphs), what and why
+3. Write `brainstorm/design.md` — full validated design including:
+   - Goal and approach
+   - Architecture and components
+   - Key decisions with reasoning
+   - Success criteria
+   - Testing approach
+4. Announce: "Brainstorm complete. Design written to assignment folder."
+5. Stop and wait for user
 
-> Design brief ready. Want to proceed to the **planning** skill to turn this into an executable plan?
+**After stopping**, the user may:
+- Launch the review agent to review the brainstorm: `review brainstorm`
+- Come back with review feedback for you to address
+- Say `auto next` to proceed to breakdown + implementation
 
 ## Red Flags
 
-- Committing to an approach too early — diverge before converging
-- Skipping context gathering — you need to know what exists before brainstorming
-- Asking multiple questions at once — one question per message, always
-- Jumping to implementation details — stay at the design level
-- Presenting only one option — always show 2-3 approaches with trade-offs
+- Asking multiple questions at once — one per message, always
+- Skipping get-project-context.sh — need context before asking questions
+- Committing to an approach before exploring alternatives — always show 2-3 options
+- Presenting the entire design at once — 200-300 word sections, validate each
+- Jumping to implementation details — stay at the design level during brainstorm
 
 ## Integration
 
 - **Before this skill:** orientation (if unsure whether brainstorming is needed)
-- **After this skill:** planning (to turn the design brief into an executable plan)
-- **Not needed if:** The user already has a clear, specific request — go straight to planning
+- **After this skill:** breakdown (automatic, turns design into executable steps)
+- **Review:** User may launch review agent between brainstorm and breakdown
