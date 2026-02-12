@@ -56,52 +56,37 @@ const requiredFiles = [
   '.specdev/skills/subagent-driven-development.md',
   '.specdev/skills/review-agent.md',
   '.specdev/skills/skills_invoked_template.md',
-  // Planning skill (directory-based)
-  '.specdev/skills/planning/SKILL.md',
-  '.specdev/skills/planning/scripts/get-project-context.sh',
-  '.specdev/skills/planning/scripts/scaffold-plan.sh',
-  '.specdev/skills/planning/scripts/validate-plan.sh',
-  '.specdev/skills/planning/scripts/register-assignment.sh',
-  // Executing skill (directory-based)
-  '.specdev/skills/executing/SKILL.md',
-  '.specdev/skills/executing/scripts/extract-tasks.sh',
-  '.specdev/skills/executing/scripts/track-progress.sh',
-  // Orientation skill (directory-based)
-  '.specdev/skills/orientation/SKILL.md',
-  '.specdev/skills/orientation/scripts/list-skills.sh',
   // Brainstorming skill (directory-based)
   '.specdev/skills/brainstorming/SKILL.md',
+  '.specdev/skills/brainstorming/scripts/get-project-context.sh',
+  // Breakdown skill (directory-based)
+  '.specdev/skills/breakdown/SKILL.md',
+  // Implementing skill (directory-based)
+  '.specdev/skills/implementing/SKILL.md',
+  '.specdev/skills/implementing/scripts/extract-tasks.sh',
+  '.specdev/skills/implementing/scripts/track-progress.sh',
+  '.specdev/skills/implementing/scripts/poll-for-feedback.sh',
+  '.specdev/skills/implementing/prompts/implementer.md',
+  '.specdev/skills/implementing/prompts/spec-reviewer.md',
+  '.specdev/skills/implementing/prompts/code-reviewer.md',
+  // Review-agent skill (directory-based)
+  '.specdev/skills/review-agent/SKILL.md',
+  '.specdev/skills/review-agent/scripts/poll-for-feedback.sh',
+  '.specdev/skills/review-agent/prompts/breakdown-reviewer.md',
+  '.specdev/skills/review-agent/prompts/implementation-reviewer.md',
+  // Knowledge-capture skill (directory-based)
+  '.specdev/skills/knowledge-capture/SKILL.md',
   // Test-driven-development skill (directory-based)
   '.specdev/skills/test-driven-development/SKILL.md',
   '.specdev/skills/test-driven-development/scripts/verify-tests.sh',
   // Systematic-debugging skill (directory-based)
   '.specdev/skills/systematic-debugging/SKILL.md',
-  // Verification skill (directory-based)
-  '.specdev/skills/verification/SKILL.md',
-  '.specdev/skills/verification/scripts/verify-gates.sh',
-  // Spec-review skill (directory-based)
-  '.specdev/skills/spec-review/SKILL.md',
-  '.specdev/skills/spec-review/scripts/get-assignment-context.sh',
-  // Code-review skill (directory-based)
-  '.specdev/skills/code-review/SKILL.md',
-  '.specdev/skills/code-review/prompts/code-reviewer.md',
-  '.specdev/skills/code-review/prompts/spec-reviewer.md',
-  // Gate-coordination skill (directory-based)
-  '.specdev/skills/gate-coordination/SKILL.md',
-  '.specdev/skills/gate-coordination/scripts/request-review.sh',
-  '.specdev/skills/gate-coordination/scripts/poll-review.sh',
-  // Subagent-dispatch skill (directory-based)
-  '.specdev/skills/subagent-dispatch/SKILL.md',
-  '.specdev/skills/subagent-dispatch/scripts/checkpoint.sh',
-  '.specdev/skills/subagent-dispatch/prompts/implementer.md',
   // Parallel-worktrees skill (directory-based)
   '.specdev/skills/parallel-worktrees/SKILL.md',
   '.specdev/skills/parallel-worktrees/scripts/setup-worktree.sh',
-  // Knowledge-capture-project skill (directory-based)
-  '.specdev/skills/knowledge-capture-project/SKILL.md',
-  '.specdev/skills/knowledge-capture-project/scripts/scan-assignment.sh',
-  // Knowledge-capture-specdev skill (directory-based)
-  '.specdev/skills/knowledge-capture-specdev/SKILL.md',
+  // Orientation skill (directory-based)
+  '.specdev/skills/orientation/SKILL.md',
+  '.specdev/skills/orientation/scripts/list-skills.sh',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
