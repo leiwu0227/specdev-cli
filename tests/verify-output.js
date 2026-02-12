@@ -56,6 +56,12 @@ const requiredFiles = [
   '.specdev/skills/subagent-driven-development.md',
   '.specdev/skills/review-agent.md',
   '.specdev/skills/skills_invoked_template.md',
+  // Planning skill (directory-based)
+  'skills/planning/SKILL.md',
+  'skills/planning/scripts/get-project-context.sh',
+  'skills/planning/scripts/scaffold-plan.sh',
+  'skills/planning/scripts/validate-plan.sh',
+  'skills/planning/scripts/register-assignment.sh',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
