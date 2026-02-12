@@ -86,7 +86,98 @@ assert(scaffoldResult.stdout.includes(expectedFile) || scaffoldResult.stdout.inc
 const scaffoldAgain = spawnSync('bash', [scaffoldScript, 'my-feature', TEST_DIR], { encoding: 'utf-8' })
 assert(scaffoldAgain.status !== 0, 'refuses to overwrite existing plan')
 
-// ---- Additional test sections will be appended here (tasks 5-6) ----
+// ---- Test validate-plan.sh ----
+console.log('\nvalidate-plan.sh:')
+
+const validateScript = join(SCRIPTS_DIR, 'validate-plan.sh')
+
+// Create a valid plan
+const validPlan = join(TEST_DIR, 'docs', 'plans', 'valid-plan.md')
+writeFileSync(validPlan, `# Test Plan
+
+> **For agent:** Use specdev:executing skill to implement this plan task-by-task.
+
+**Goal:** Test the validator
+
+**Architecture:** Simple test
+
+**Tech Stack:** Node.js
+
+---
+
+### Task 1: Add feature
+
+**Files:**
+- Create: \`src/feature.js\`
+- Test: \`tests/feature.test.js\`
+
+**Step 1: Write the failing test**
+
+\`\`\`javascript
+test('feature works', () => { expect(true).toBe(true) })
+\`\`\`
+
+**Step 2: Run test to verify it fails**
+
+Run: \`npm test\`
+Expected: FAIL
+
+**Step 3: Write minimal implementation**
+
+\`\`\`javascript
+function feature() { return true }
+\`\`\`
+
+**Step 4: Run test to verify it passes**
+
+Run: \`npm test\`
+Expected: PASS
+
+**Step 5: Commit**
+
+\`\`\`bash
+git add src/feature.js tests/feature.test.js
+git commit -m "feat: add feature"
+\`\`\`
+`)
+
+const validResult = spawnSync('bash', [validateScript, validPlan], { encoding: 'utf-8' })
+assert(validResult.status === 0, 'valid plan passes validation')
+assert(validResult.stdout.includes('1 task') || validResult.stdout.includes('1 found'), 'reports task count')
+
+// Create an incomplete plan (missing code blocks)
+const incompletePlan = join(TEST_DIR, 'docs', 'plans', 'incomplete-plan.md')
+writeFileSync(incompletePlan, `# Incomplete Plan
+
+> **For agent:** Use specdev:executing skill.
+
+**Goal:** Test
+
+---
+
+### Task 1: Do something
+
+**Files:**
+- Create: \`src/thing.js\`
+
+**Step 1: Write the failing test**
+
+Add some test code here.
+
+**Step 3: Write minimal implementation**
+
+Add implementation.
+`)
+
+const incompleteResult = spawnSync('bash', [validateScript, incompletePlan], { encoding: 'utf-8' })
+assert(incompleteResult.status !== 0, 'incomplete plan fails validation')
+assert(incompleteResult.stderr.includes('FAIL') || incompleteResult.stdout.includes('FAIL') || incompleteResult.stderr.includes('missing'), 'reports what is missing')
+
+// Missing file
+const missingResult = spawnSync('bash', [validateScript, '/nonexistent/plan.md'], { encoding: 'utf-8' })
+assert(missingResult.status !== 0, 'exits non-zero for missing file')
+
+// ---- Additional test sections will be appended here (task 6) ----
 
 cleanup()
 
