@@ -7,50 +7,53 @@ description: Router — helps you find the right skill for your situation
 
 ## Contract
 
-- **Input:** You're starting work and don't know which skill to use
-- **Process:** Assess the situation → match to the right skill
-- **Output:** Directs you to the correct skill's SKILL.md
-- **Next skill:** Whatever skill matches your situation
+- **Input:** You're starting work and don't know what to do
+- **Process:** Assess the situation → route to the right phase
+- **Output:** Directs you to the correct skill
+- **Next skill:** Whatever matches your situation
 
-## When to Read This
+## The 5-Phase Workflow
 
-Read this if:
-- You just started a session and need to figure out what to do
-- You're unsure which skill applies to your current situation
-- You want to see what skills are available
+1. **Brainstorm** → `skills/brainstorming/SKILL.md` — Interactive design session
+2. **Breakdown** → `skills/breakdown/SKILL.md` — Design to executable plan (automatic)
+3. **Implement** → `skills/implementing/SKILL.md` — Subagent per task with review (automatic)
+4. **Verify** → `skills/review-agent/SKILL.md` — Holistic review (separate session)
+5. **Capture** → `skills/knowledge-capture/SKILL.md` — Write diff files (automatic)
 
 ## Quick Decision Tree
 
-**Are you starting from scratch with an idea?**
-→ Use the **planning** skill
+**Starting from scratch with an idea?**
+→ Use **brainstorming**
 
-**Do you have a validated plan document?**
-→ Use the **executing** skill
+**Have a validated design, need a plan?**
+→ Use **breakdown**
 
-**Are you debugging a failing test or unexpected behavior?**
-→ Use the **systematic-debugging** skill (flat file: `skills/systematic-debugging.md`)
+**Have a plan, need to implement it?**
+→ Use **implementing**
 
-**Are you reviewing someone else's code?**
-→ Read `skills/receiving-code-review.md` (always-apply)
+**Need to review someone's work?**
+→ Use **review-agent** (launch in separate session)
 
-**Are you about to claim work is done?**
-→ Read `skills/verification-before-completion.md` (always-apply)
+**Debugging a failing test?**
+→ Use **systematic-debugging** (`skills/systematic-debugging/SKILL.md`)
+
+**Need parallel task execution?**
+→ Use **parallel-worktrees** (`skills/parallel-worktrees/SKILL.md`)
 
 ## Scripts
 
 | Script | Purpose | When to run |
 |--------|---------|-------------|
-| `scripts/list-skills.sh` | List all available skills with their contracts | When you need to discover available skills |
+| `scripts/list-skills.sh` | List all available skills | When discovering available skills |
 
-## How to Use list-skills.sh
+## Two Agents
 
-Run: `scripts/list-skills.sh <specdev-path>`
+**Main agent** (your session): brainstorming → breakdown → implementing → knowledge-capture
 
-It outputs a summary of every skill: name, type (folder or flat), description, and contract (if available). Use this to quickly find the right skill without reading every SKILL.md.
+**Review agent** (separate session): launched by user for holistic phase reviews
 
-## Always-Apply Skills
+The main agent handles everything except holistic review. The review agent is launched separately when the user wants phase-level verification.
 
-These skills should be read at the start of EVERY work session:
+## Integration
 
-1. **verification-before-completion** (`skills/verification-before-completion.md`) — No completion claims without evidence
-2. **receiving-code-review** (`skills/receiving-code-review.md`) — No performative agreement in reviews
+- This skill is the starting point — it routes to everything else
