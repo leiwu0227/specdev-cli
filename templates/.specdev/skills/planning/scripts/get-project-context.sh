@@ -64,10 +64,10 @@ if [ -d "$PROJECT_ROOT/.git" ]; then
   echo ""
 fi
 
-# --- Existing knowledge ---
-KNOWLEDGE_DIR="$PROJECT_ROOT/.specdev/knowledge/project"
-if [ -d "$KNOWLEDGE_DIR" ]; then
-  KNOWLEDGE_FILES=$(find "$KNOWLEDGE_DIR" -name '*.md' -type f 2>/dev/null)
+# --- Existing knowledge (scan all subdirectories) ---
+KNOWLEDGE_BASE="$PROJECT_ROOT/.specdev/knowledge"
+if [ -d "$KNOWLEDGE_BASE" ]; then
+  KNOWLEDGE_FILES=$(find "$KNOWLEDGE_BASE" -name '*.md' -not -name '_index.md' -type f 2>/dev/null)
   if [ -n "$KNOWLEDGE_FILES" ]; then
     echo "## Existing Knowledge"
     echo ""
