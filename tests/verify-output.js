@@ -94,6 +94,14 @@ const requiredFiles = [
   '.specdev/skills/subagent-dispatch/SKILL.md',
   '.specdev/skills/subagent-dispatch/scripts/checkpoint.sh',
   '.specdev/skills/subagent-dispatch/prompts/implementer.md',
+  // Parallel-worktrees skill (directory-based)
+  '.specdev/skills/parallel-worktrees/SKILL.md',
+  '.specdev/skills/parallel-worktrees/scripts/setup-worktree.sh',
+  // Knowledge-capture-project skill (directory-based)
+  '.specdev/skills/knowledge-capture-project/SKILL.md',
+  '.specdev/skills/knowledge-capture-project/scripts/scan-assignment.sh',
+  // Knowledge-capture-specdev skill (directory-based)
+  '.specdev/skills/knowledge-capture-specdev/SKILL.md',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
