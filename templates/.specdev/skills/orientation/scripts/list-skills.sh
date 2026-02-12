@@ -32,7 +32,7 @@ for dir in "$SKILLS_DIR"/*/; do
   [ -f "$SKILL_FILE" ] || continue
 
   NAME=$(basename "$dir")
-  DESC=$(grep '^description:' "$SKILL_FILE" | head -1 | sed 's/description:\s*//')
+  DESC=$(grep '^description:' "$SKILL_FILE" | head -1 | sed 's/description:\s*//' || true)
   HAS_SCRIPTS="no"
   [ -d "$dir/scripts" ] && HAS_SCRIPTS="yes"
 
@@ -41,7 +41,7 @@ for dir in "$SKILLS_DIR"/*/; do
   echo ""
 
   # Extract contract if present
-  CONTRACT=$(sed -n '/^## Contract/,/^## /p' "$SKILL_FILE" | head -n -1)
+  CONTRACT=$(sed -n '/^## Contract/,/^## /p' "$SKILL_FILE" | head -n -1 || true)
   if [ -n "$CONTRACT" ]; then
     echo "$CONTRACT"
     echo ""
@@ -57,7 +57,7 @@ for file in "$SKILLS_DIR"/*.md; do
 
   NAME="${BASENAME%.md}"
   # Read first meaningful line after any heading
-  FIRST_LINE=$(grep -v '^#\|^$\|^---' "$file" | head -1 | sed 's/^\*\*[^*]*\*\*\s*//')
+  FIRST_LINE=$(grep -v '^#\|^$\|^---' "$file" | head -1 | sed 's/^\*\*[^*]*\*\*\s*//' || true)
 
   echo "## $NAME [flat]"
   [ -n "$FIRST_LINE" ] && echo "$FIRST_LINE"
