@@ -1,41 +1,50 @@
 # SpecDev Workflow
 
-You are working in a project that uses SpecDev — a spec-driven development framework. Skills are manuals that teach you when and how to use scripts (deterministic tools). You are the brain.
+You are working in a project that uses SpecDev — a spec-driven development framework with a 5-phase workflow and 2-agent architecture.
 
 ## Getting Started
 
 1. Read `project_notes/big_picture.md` for project context
-2. Check `state/assignments/` for active work (or `assignments/` in older projects)
-3. List available skills: look in `skills/` for folders containing `SKILL.md`
-4. Each skill has a **Contract** section that tells you: Input → Process → Output → Next skill
+2. Check `assignments/` for active work
+3. Read `skills/orientation/SKILL.md` for the decision tree
+
+## The 5 Phases
+
+1. **Brainstorm** — Interactive Q&A → validated design (`brainstorm/proposal.md` + `design.md`)
+2. **Breakdown** — Automatic → detailed executable plan (`breakdown/plan.md`)
+3. **Implement** — Automatic → subagent per task, TDD, two-stage review per task
+4. **Verify** — Review agent (separate session) → holistic check at phase boundaries
+5. **Capture** — Automatic → two diff files (project notes gaps + workflow observations)
+
+## Two Agents
+
+**Main agent** (this session): Handles phases 1-3 and 5. Interactive during brainstorm, automatic after.
+
+**Review agent** (separate session): Handles phase 4. Launched by user for holistic phase reviews. Communicates via signal files in `review/`.
 
 ## How Skills Work
 
 ```
 skills/<name>/
-  SKILL.md        ← read this: it's the manual
-  scripts/        ← run these: they're deterministic tools
-  docs/           ← reference material
+  SKILL.md        ← the manual
+  scripts/        ← deterministic tools
   prompts/        ← subagent templates
 ```
 
-- **Read SKILL.md** to learn when and how to use a skill
-- **Run scripts** for reliable, deterministic operations (state management, validation, scaffolding)
-- Scripts accept arguments, write JSON/markdown output, and manage state files
-- You focus on reasoning and decisions; scripts handle mechanical tasks
+## Assignment Folder
 
-## Assignment Flow
-
-1. **Understand** — Run the planning skill's `get-project-context.sh`, ask questions one at a time
-2. **Plan** — Use the planning skill to create a self-executing plan document
-3. **Execute** — Follow the plan's header instruction (it tells you which skill to use)
-4. **Verify** — Use verification skill scripts to confirm completion
-5. **Capture** — Distill learnings into `knowledge/` for future reference
+```
+assignments/<id>/
+  brainstorm/     ← proposal.md + design.md
+  breakdown/      ← plan.md
+  implementation/ ← progress.json
+  review/         ← signal files (ready-for-review.md, review-feedback.md)
+```
 
 ## Rules That Always Apply
 
-- Read always-apply skills (verification-before-completion, receiving-code-review) at start of work
-- No completion claims without running verification scripts and confirming output
+- No completion claims without evidence
 - No performative agreement in reviews — verify technically before accepting
-- Every skill produces an artifact (document, state file, or report)
-- Scripts handle polling, state transitions, and validation — don't do these manually
+- Every phase produces an artifact
+- Scripts handle polling, state, and validation — don't do these manually
+- Per-task reviews use subagents (spec then quality). Holistic reviews use the review agent.

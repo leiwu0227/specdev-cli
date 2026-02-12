@@ -1,13 +1,13 @@
-Based on the user request, identify the assignment type and route work using the documents below.
+Based on the user request, identify the situation and route to the right skill.
 
 ---
 
 ## First reads
 
-- `.specdev/_main.md` - workflow overview
-- `.specdev/_guides/README.md` - guide index
-- `.specdev/project_notes/big_picture.md` - project context
-- `.specdev/project_notes/feature_descriptions.md` - what exists today
+- `.specdev/_main.md` — workflow overview
+- `.specdev/_guides/README.md` — guide index
+- `.specdev/project_notes/big_picture.md` — project context
+- `.specdev/project_notes/feature_descriptions.md` — what exists today
 
 ---
 
@@ -15,52 +15,38 @@ Based on the user request, identify the assignment type and route work using the
 
 - `.specdev/_guides/codestyle_guide.md` (must follow)
 - `.specdev/_guides/assignment_guide.md` (must follow)
-- `.specdev/project_notes/assignment_progress.md`
 
 ---
 
-## Task guides (`.specdev/_guides/task/`)
+## Skill routing
 
-- Planning: `task/planning_guide.md`
-- Scaffolding and architecture prep: `task/scaffolding_guide.md`
-- Implementation: `task/implementing_guide.md`
-- Validation: `task/validation_guide.md`
-- Documentation: `task/documentation_guide.md`
-- Research: `task/research_guide.md`
-- Presentation: `task/presentation_guide.md`
+### Main agent skills (phases 1-3, 5)
 
----
+- **Brainstorming:** `skills/brainstorming/SKILL.md` — start here for new work
+- **Breakdown:** `skills/breakdown/SKILL.md` — design → executable plan
+- **Implementing:** `skills/implementing/SKILL.md` — plan → code with subagent dispatch
+- **Knowledge Capture:** `skills/knowledge-capture/SKILL.md` — write diff files after completion
 
-## Workflow guides (`.specdev/_guides/workflow/`)
+### Review agent skill (phase 4)
 
-- Feature: `workflow/feature_workflow.md`
-- Refactor: `workflow/refactor_workflow.md`
-- Bugfix: `workflow/bugfix_workflow.md`
-- Familiarization: `workflow/familiarization_workflow.md`
+- **Review Agent:** `skills/review-agent/SKILL.md` — holistic phase reviews (separate session)
 
----
+### Supporting skills (use when needed)
 
-## Skills (`.specdev/skills/`)
+- **Test-Driven Development:** `skills/test-driven-development/SKILL.md` — RED-GREEN-REFACTOR
+- **Systematic Debugging:** `skills/systematic-debugging/SKILL.md` — root-cause analysis
+- **Parallel Worktrees:** `skills/parallel-worktrees/SKILL.md` — git worktree isolation
+- **Orientation:** `skills/orientation/SKILL.md` — decision tree for skill selection
 
-### Always-apply (read at assignment start, follow throughout)
+### Flat skills (reference guides)
 
-- `verification-before-completion.md`
-- `receiving-code-review.md`
-
-### Invoke-when-needed (triggered by complexity gate or conditions)
-
-- `scaffolding-lite.md`
-- `scaffolding-full.md`
-- `systematic-debugging.md`
-- `requesting-code-review.md`
-- `parallel-worktrees.md`
-- `micro-task-planning.md`
-- `subagent-driven-development.md`
-
-Record all skill usage in `assignments/#####_type_name/skills_invoked.md`.
+- `skills/scaffolding-lite.md` — lightweight scaffolding
+- `skills/scaffolding-full.md` — full scaffolding
+- `skills/verification-before-completion.md` — always-apply: evidence before claims
+- `skills/receiving-code-review.md` — always-apply: no performative agreement
 
 ---
 
 ## Assignment structure
 
-Assignments live in `.specdev/assignments/#####_type_name/` (for example `00001_feature_auth-flow`).
+Assignments live in `.specdev/assignments/<id>/` with subfolders: `brainstorm/`, `breakdown/`, `implementation/`, `review/`.
