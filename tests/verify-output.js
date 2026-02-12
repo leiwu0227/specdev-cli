@@ -69,6 +69,13 @@ const requiredFiles = [
   // Orientation skill (directory-based)
   '.specdev/skills/orientation/SKILL.md',
   '.specdev/skills/orientation/scripts/list-skills.sh',
+  // Brainstorming skill (directory-based)
+  '.specdev/skills/brainstorming/SKILL.md',
+  // Test-driven-development skill (directory-based)
+  '.specdev/skills/test-driven-development/SKILL.md',
+  '.specdev/skills/test-driven-development/scripts/verify-tests.sh',
+  // Systematic-debugging skill (directory-based)
+  '.specdev/skills/systematic-debugging/SKILL.md',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
