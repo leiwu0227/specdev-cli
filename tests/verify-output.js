@@ -86,6 +86,14 @@ const requiredFiles = [
   '.specdev/skills/code-review/SKILL.md',
   '.specdev/skills/code-review/prompts/code-reviewer.md',
   '.specdev/skills/code-review/prompts/spec-reviewer.md',
+  // Gate-coordination skill (directory-based)
+  '.specdev/skills/gate-coordination/SKILL.md',
+  '.specdev/skills/gate-coordination/scripts/request-review.sh',
+  '.specdev/skills/gate-coordination/scripts/poll-review.sh',
+  // Subagent-dispatch skill (directory-based)
+  '.specdev/skills/subagent-dispatch/SKILL.md',
+  '.specdev/skills/subagent-dispatch/scripts/checkpoint.sh',
+  '.specdev/skills/subagent-dispatch/prompts/implementer.md',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
