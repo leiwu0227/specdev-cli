@@ -62,6 +62,10 @@ const requiredFiles = [
   '.specdev/skills/planning/scripts/scaffold-plan.sh',
   '.specdev/skills/planning/scripts/validate-plan.sh',
   '.specdev/skills/planning/scripts/register-assignment.sh',
+  // Executing skill (directory-based)
+  '.specdev/skills/executing/SKILL.md',
+  '.specdev/skills/executing/scripts/extract-tasks.sh',
+  '.specdev/skills/executing/scripts/track-progress.sh',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
