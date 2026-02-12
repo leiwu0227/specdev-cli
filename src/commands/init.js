@@ -1,4 +1,4 @@
-import { existsSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { copySpecdev } from '../utils/copy.js'
@@ -6,13 +6,61 @@ import { copySpecdev } from '../utils/copy.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+// Platform adapter configurations
+const ADAPTERS = {
+  claude: {
+    path: 'CLAUDE.md',
+    content: [
+      '# CLAUDE.md',
+      '',
+      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
+      '',
+    ].join('\n'),
+  },
+  codex: {
+    path: 'AGENTS.md',
+    content: [
+      '# AGENTS.md',
+      '',
+      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
+      '',
+    ].join('\n'),
+  },
+  cursor: {
+    path: join('.cursor', 'rules'),
+    content: [
+      '# Cursor Rules',
+      '',
+      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
+      '',
+    ].join('\n'),
+  },
+  generic: {
+    path: 'AGENTS.md',
+    content: [
+      '# AGENTS.md',
+      '',
+      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
+      '',
+    ].join('\n'),
+  },
+}
+
 export async function initCommand(flags = {}) {
   const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
   const force = flags.force || flags.f
   const dryRun = flags['dry-run']
+  const platform = flags.platform || 'generic'
 
   const specdevPath = join(targetDir, '.specdev')
   const templatePath = join(__dirname, '../../templates/.specdev')
+
+  // Validate platform
+  if (!ADAPTERS[platform]) {
+    console.error(`❌ Unknown platform: ${platform}`)
+    console.log(`   Supported platforms: ${Object.keys(ADAPTERS).join(', ')}`)
+    process.exit(1)
+  }
 
   // Check if .specdev already exists
   if (existsSync(specdevPath) && !force) {
@@ -31,6 +79,22 @@ export async function initCommand(flags = {}) {
   // Copy the template
   try {
     await copySpecdev(templatePath, specdevPath, force)
+
+    // Generate platform adapter file (never overwrite existing)
+    const adapter = ADAPTERS[platform]
+    const adapterPath = join(targetDir, adapter.path)
+
+    if (!existsSync(adapterPath)) {
+      // Ensure parent directory exists (needed for .cursor/rules)
+      const adapterDir = dirname(adapterPath)
+      if (!existsSync(adapterDir)) {
+        mkdirSync(adapterDir, { recursive: true })
+      }
+      writeFileSync(adapterPath, adapter.content, 'utf-8')
+      console.log(`✅ Created ${adapter.path} for ${platform} platform`)
+    } else {
+      console.log(`ℹ️  ${adapter.path} already exists, skipping (preserving your customizations)`)
+    }
 
     console.log('✅ SpecDev initialized successfully!')
     console.log('')
