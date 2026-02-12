@@ -66,6 +66,9 @@ const requiredFiles = [
   '.specdev/skills/executing/SKILL.md',
   '.specdev/skills/executing/scripts/extract-tasks.sh',
   '.specdev/skills/executing/scripts/track-progress.sh',
+  // Orientation skill (directory-based)
+  '.specdev/skills/orientation/SKILL.md',
+  '.specdev/skills/orientation/scripts/list-skills.sh',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
