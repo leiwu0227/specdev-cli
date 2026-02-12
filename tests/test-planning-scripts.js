@@ -55,7 +55,38 @@ assert(result.stdout.includes('init'), 'includes recent commit history')
 const badResult = spawnSync('bash', [script, '/nonexistent'], { encoding: 'utf-8' })
 assert(badResult.status !== 0, 'exits non-zero for missing directory')
 
-// ---- Additional test sections will be appended here (tasks 4-6) ----
+// ---- Test scaffold-plan.sh ----
+console.log('\nscaffold-plan.sh:')
+
+const scaffoldScript = join(SCRIPTS_DIR, 'scaffold-plan.sh')
+
+// Create docs/plans directory
+mkdirSync(join(TEST_DIR, 'docs', 'plans'), { recursive: true })
+
+const scaffoldResult = spawnSync('bash', [scaffoldScript, 'my-feature', TEST_DIR], { encoding: 'utf-8' })
+
+assert(scaffoldResult.status === 0, 'exits with code 0')
+
+// Check the file was created with today's date
+const today = new Date().toISOString().split('T')[0]
+const expectedFile = join(TEST_DIR, 'docs', 'plans', `${today}-my-feature.md`)
+assert(existsSync(expectedFile), 'creates plan file with date prefix')
+
+const planContent = readFileSync(expectedFile, 'utf-8')
+assert(planContent.includes('Implementation Plan'), 'includes plan header')
+assert(planContent.includes('specdev:executing'), 'includes execution instruction')
+assert(planContent.includes('**Goal:**'), 'includes goal placeholder')
+assert(planContent.includes('### Task 1:'), 'includes task template')
+assert(planContent.includes('**Step 1: Write the failing test**'), 'includes TDD step template')
+
+// Outputs the file path
+assert(scaffoldResult.stdout.includes(expectedFile) || scaffoldResult.stdout.includes(`${today}-my-feature.md`), 'outputs created file path')
+
+// Fails if plan already exists (no overwrite)
+const scaffoldAgain = spawnSync('bash', [scaffoldScript, 'my-feature', TEST_DIR], { encoding: 'utf-8' })
+assert(scaffoldAgain.status !== 0, 'refuses to overwrite existing plan')
+
+// ---- Additional test sections will be appended here (tasks 5-6) ----
 
 cleanup()
 
