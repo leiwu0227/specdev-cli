@@ -57,11 +57,11 @@ const requiredFiles = [
   '.specdev/skills/review-agent.md',
   '.specdev/skills/skills_invoked_template.md',
   // Planning skill (directory-based)
-  'skills/planning/SKILL.md',
-  'skills/planning/scripts/get-project-context.sh',
-  'skills/planning/scripts/scaffold-plan.sh',
-  'skills/planning/scripts/validate-plan.sh',
-  'skills/planning/scripts/register-assignment.sh',
+  '.specdev/skills/planning/SKILL.md',
+  '.specdev/skills/planning/scripts/get-project-context.sh',
+  '.specdev/skills/planning/scripts/scaffold-plan.sh',
+  '.specdev/skills/planning/scripts/validate-plan.sh',
+  '.specdev/skills/planning/scripts/register-assignment.sh',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',

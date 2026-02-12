@@ -12,14 +12,16 @@
     "templates/"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:work && npm run test:check && npm run test:skills && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:skills && npm run test:planning && npm run test:init-platform && npm run test:work && npm run test:check && npm run test:cleanup",
     "test:skills": "node ./tests/test-skills.js",
+    "test:planning": "node ./tests/test-planning-scripts.js",
+    "test:init-platform": "node ./tests/test-init-platform.js",
     "test:init": "node ./bin/specdev.js init --target=./test-output",
     "test:verify": "node ./tests/verify-output.js",
     "test:scan": "node ./tests/test-scan.js",
     "test:work": "node ./tests/test-work.js",
     "test:check": "node ./tests/test-check.js",
-    "test:cleanup": "rm -rf ./test-output ./test-manual ./test-scan-output ./test-work-output ./test-check-output ./tests/test-skills-output",
+    "test:cleanup": "rm -rf ./test-output ./test-manual ./test-scan-output ./test-work-output ./test-check-output ./tests/test-skills-output ./tests/test-planning-output ./tests/test-init-platform-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
     "release": "npm version patch && npm publish",
