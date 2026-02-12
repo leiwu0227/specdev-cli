@@ -177,7 +177,53 @@ assert(incompleteResult.stderr.includes('FAIL') || incompleteResult.stdout.inclu
 const missingResult = spawnSync('bash', [validateScript, '/nonexistent/plan.md'], { encoding: 'utf-8' })
 assert(missingResult.status !== 0, 'exits non-zero for missing file')
 
-// ---- Additional test sections will be appended here (task 6) ----
+// ---- Test register-assignment.sh ----
+console.log('\nregister-assignment.sh:')
+
+const registerScript = join(SCRIPTS_DIR, 'register-assignment.sh')
+
+// Create state directory
+mkdirSync(join(TEST_DIR, '.specdev', 'state', 'assignments'), { recursive: true })
+
+// Register using the valid plan (validPlan was created in the validate-plan tests above)
+const registerResult = spawnSync('bash', [registerScript, validPlan, TEST_DIR, 'feature', 'test-feature'], { encoding: 'utf-8' })
+
+assert(registerResult.status === 0, 'exits with code 0')
+
+// Check assignment directory was created
+const stateDir = join(TEST_DIR, '.specdev', 'state', 'assignments')
+const entries = readdirSync(stateDir).filter(e => e !== '.gitkeep')
+assert(entries.length === 1, 'creates one assignment entry')
+assert(entries[0].includes('feature') && entries[0].includes('test-feature'), 'assignment name includes type and label')
+
+const assignmentDir = join(stateDir, entries[0])
+
+// Check proposal.md created
+assert(existsSync(join(assignmentDir, 'proposal.md')), 'creates proposal.md')
+
+// Check plan.md is linked/copied
+assert(existsSync(join(assignmentDir, 'plan.md')), 'creates plan.md')
+const planLink = readFileSync(join(assignmentDir, 'plan.md'), 'utf-8')
+assert(planLink.includes('valid-plan.md') || planLink.includes('Test Plan'), 'plan.md references or contains the plan')
+
+// Check context directory
+assert(existsSync(join(assignmentDir, 'context')), 'creates context/ directory')
+
+// Check tasks directory
+assert(existsSync(join(assignmentDir, 'tasks')), 'creates tasks/ directory')
+
+// Outputs assignment path
+assert(registerResult.stdout.includes(entries[0]), 'outputs assignment directory name')
+
+// Second registration gets next ID
+const registerResult2 = spawnSync('bash', [registerScript, validPlan, TEST_DIR, 'bugfix', 'fix-thing'], { encoding: 'utf-8' })
+assert(registerResult2.status === 0, 'second registration succeeds')
+const entries2 = readdirSync(stateDir).filter(e => e !== '.gitkeep')
+assert(entries2.length === 2, 'creates second assignment')
+
+// IDs should be sequential
+const ids = entries2.map(e => parseInt(e.split('_')[0])).sort((a,b) => a-b)
+assert(ids[1] === ids[0] + 1, 'assignment IDs are sequential')
 
 cleanup()
 
