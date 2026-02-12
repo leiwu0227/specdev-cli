@@ -76,6 +76,16 @@ const requiredFiles = [
   '.specdev/skills/test-driven-development/scripts/verify-tests.sh',
   // Systematic-debugging skill (directory-based)
   '.specdev/skills/systematic-debugging/SKILL.md',
+  // Verification skill (directory-based)
+  '.specdev/skills/verification/SKILL.md',
+  '.specdev/skills/verification/scripts/verify-gates.sh',
+  // Spec-review skill (directory-based)
+  '.specdev/skills/spec-review/SKILL.md',
+  '.specdev/skills/spec-review/scripts/get-assignment-context.sh',
+  // Code-review skill (directory-based)
+  '.specdev/skills/code-review/SKILL.md',
+  '.specdev/skills/code-review/prompts/code-reviewer.md',
+  '.specdev/skills/code-review/prompts/spec-reviewer.md',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
