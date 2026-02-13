@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { spawnSync } from 'child_process'
 
 const TEST_DIR = './test-check-output'
@@ -159,6 +160,12 @@ async function runTests() {
   const source = readFileSync(new URL('../src/commands/check.js', import.meta.url), 'utf-8')
   if (!assert(!source.includes('execSync('), 'check.js should not use execSync — use execFileSync instead')) failures++
   if (!assert(source.includes('execFileSync'), 'check.js should use execFileSync')) failures++
+
+  // Test: verify-gates.sh does not interpolate paths into node -e (security)
+  console.log('\nverify-gates.sh does not interpolate paths into node -e (security):')
+  const scriptPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'scripts', 'verify-gates.sh')
+  const scriptSource = readFileSync(scriptPath, 'utf-8')
+  if (!assert(!scriptSource.includes("readFileSync('$ASSIGNMENT_PATH"), 'verify-gates.sh should not interpolate $ASSIGNMENT_PATH into JS strings')) failures++
 
   console.log('')
   if (failures > 0) {

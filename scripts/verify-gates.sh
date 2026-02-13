@@ -124,7 +124,7 @@ if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
   if command -v node &>/dev/null; then
     VALID=$(node -e "
       try {
-        const r = JSON.parse(require('fs').readFileSync('$ASSIGNMENT_PATH/review_request.json','utf8'));
+        const r = JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
         const required = ['version', 'assignment_id', 'assignment_path', 'gate', 'status', 'timestamp'];
         const hasRequired = required.every((k) => Object.prototype.hasOwnProperty.call(r, k));
         const validVersion = r.version === 1;
@@ -135,7 +135,7 @@ if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
         const ok = hasRequired && validVersion && validId && validGate && validStatus && validTimestamp;
         console.log(ok ? 'valid' : 'invalid');
       } catch(e) { console.log('invalid'); }
-    " 2>/dev/null)
+    " "$ASSIGNMENT_PATH/review_request.json" 2>/dev/null)
     if [ "$VALID" = "valid" ]; then
       pass "review_request.json has required fields"
     else
@@ -165,11 +165,11 @@ section "Gate 4: Code Quality Review"
 if [ -f "$ASSIGNMENT_PATH/review_request.json" ] && command -v node &>/dev/null; then
   GATE3_STATUS=$(node -e "
     try {
-      const r = JSON.parse(require('fs').readFileSync('$ASSIGNMENT_PATH/review_request.json','utf8'));
+      const r = JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
       if (r.gate === 'gate_3') console.log(r.status);
       else console.log('n/a');
     } catch(e) { console.log('error'); }
-  " 2>/dev/null)
+  " "$ASSIGNMENT_PATH/review_request.json" 2>/dev/null)
 
   if [ "$GATE3_STATUS" = "passed" ]; then
     pass "Gate 3 passed (prerequisite for Gate 4)"
