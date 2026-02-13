@@ -1,6 +1,11 @@
 ---
 name: brainstorming
-description: Interactive idea-to-design session — one question at a time, validated design sections
+description: Interactive idea-to-design session with collaborative Q&A
+type: core
+phase: brainstorm
+input: User idea or request
+output: brainstorm/proposal.md + brainstorm/design.md
+next: breakdown
 ---
 
 # Brainstorming

@@ -1,6 +1,11 @@
 ---
 name: review-agent
-description: Holistic reviewer — runs in a separate session, checks phase outputs via file signals
+description: Holistic reviewer with file-based signals — runs in separate session
+type: core
+phase: verify
+input: review/ready-for-review.md
+output: review/review-feedback.md
+next: null
 ---
 
 # Review Agent

@@ -35,8 +35,8 @@ cleanup()
 const initResult = runCmd(['init', `--target=${TEST_DIR}`])
 assert(initResult.status === 0, 'init succeeds')
 
-// Create a folder-based skill manually for testing
-const testSkillDir = join(TEST_DIR, '.specdev', 'skills', 'test-folder-skill')
+// Create a folder-based tool skill manually for testing
+const testSkillDir = join(TEST_DIR, '.specdev', 'skills', 'tools', 'test-folder-skill')
 mkdirSync(testSkillDir, { recursive: true })
 writeFileSync(join(testSkillDir, 'SKILL.md'), '---\nname: test-folder-skill\ndescription: A test skill\n---\n# Test\n')
 mkdirSync(join(testSkillDir, 'scripts'), { recursive: true })

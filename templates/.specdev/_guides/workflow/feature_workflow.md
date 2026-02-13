@@ -19,15 +19,15 @@ Deliver a net-new feature with complexity-scaled rigor.
 
 - Guide: `.specdev/_guides/task/scaffolding_guide.md`
 - LOW: no scaffold
-- MEDIUM: invoke `skills/scaffolding-lite.md` and pass Gate 1 user approval (contracts)
-- HIGH: invoke `skills/scaffolding-full.md` and pass Gate 1 user approval (full architecture)
+- MEDIUM: invoke `skills/core/scaffolding-lite.md` and pass Gate 1 user approval (contracts)
+- HIGH: invoke `skills/core/scaffolding-full.md` and pass Gate 1 user approval (full architecture)
 
 ## Step 4: Implementation
 
 - Deliverable: source code + tests
 - Guide: `.specdev/_guides/task/implementing_guide.md`
 - Use TDD per task
-- Use `skills/parallel-worktrees.md` only for parallel-safe tasks
+- Use `skills/core/parallel-worktrees.md` only for parallel-safe tasks
 
 ## Step 5: Validation
 

@@ -1,6 +1,11 @@
 ---
 name: implementing
 description: Execute a plan task-by-task with fresh subagents and two-stage review per task
+type: core
+phase: implement
+input: breakdown/plan.md
+output: Implemented code, committed per-task
+next: knowledge-capture
 ---
 
 # Implementing
@@ -43,6 +48,8 @@ For each task in order:
 1. Run `scripts/track-progress.sh <plan-file> <N> started`
 2. **Dispatch implementer** — use `prompts/implementer.md` with FULL task text
    - Fresh subagent, no prior context
+   - If the task has a `Skills:` field, read each listed SKILL.md and inject content into the `{TASK_SKILLS}` placeholder
+   - Look for skills in `skills/core/` first, then `skills/tools/`
    - Subagent implements, tests, commits, self-reviews
 3. **Spec review** — dispatch `prompts/spec-reviewer.md`
    - If FAIL: implementer fixes -> re-review (loop until PASS)
@@ -66,6 +73,8 @@ For each task in order:
 - Skipping spec review — check spec BEFORE quality
 - Accepting first pass without fixing findings — loop until clean
 - Starting quality review before spec passes — wrong order
+- Ignoring Skills: field — if a task declares skills, load and inject them
+- Injecting skills not listed — only inject what the task declares
 
 ## Integration
 

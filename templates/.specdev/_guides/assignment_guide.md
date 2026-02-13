@@ -14,7 +14,7 @@
 
 ## Before starting
 
-Read always-apply skills from `skills/README.md`: `verification-before-completion.md` and `receiving-code-review.md`. These apply to every assignment throughout.
+Read always-apply skills from `skills/README.md`: `core/verification-before-completion.md` and `core/receiving-code-review.md`. These apply to every assignment throughout.
 
 ## Standard flow
 
@@ -25,8 +25,8 @@ Read always-apply skills from `skills/README.md`: `verification-before-completio
    - Run complexity/risk gate to decide required skills.
 3. Architecture prep (conditional)
    - If gate result is `none`, skip scaffolding.
-   - If `lite`, invoke `skills/scaffolding-lite.md` and require Gate 1 approval (contracts).
-   - If `full`, invoke `skills/scaffolding-full.md` and require Gate 1 approval (full architecture).
+   - If `lite`, invoke `skills/core/scaffolding-lite.md` and require Gate 1 approval (contracts).
+   - If `full`, invoke `skills/core/scaffolding-full.md` and require Gate 1 approval (full architecture).
 4. Implementation
    - Follow `task/implementing_guide.md`.
    - TDD per task, with binary success criteria.

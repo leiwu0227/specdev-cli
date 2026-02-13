@@ -23,7 +23,7 @@ Proceed directly to implementation.
 
 ### Mode B: scaffolding-lite (MEDIUM complexity)
 
-Invoke `.specdev/skills/scaffolding-lite.md`.
+Invoke `.specdev/skills/core/scaffolding-lite.md`.
 
 Required artifact:
 
@@ -33,7 +33,7 @@ Gate 1 user approval required before implementation (approve contracts and inter
 
 ### Mode C: scaffolding-full (HIGH complexity)
 
-Invoke `.specdev/skills/scaffolding-full.md`.
+Invoke `.specdev/skills/core/scaffolding-full.md`.
 
 Required artifacts:
 

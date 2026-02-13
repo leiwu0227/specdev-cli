@@ -62,12 +62,34 @@ while IFS= read -r header_line; do
   done <<< "$(echo "$TASK_SECTION" | grep -E '^\s*-\s*(Create|Modify|Test):' || true)"
   FILES_JSON+="]"
 
+  # Extract skills
+  SKILLS_LINE=$(echo "$TASK_SECTION" | grep '^\*\*Skills:\*\*' || true)
+  SKILLS_JSON="["
+  if [ -n "$SKILLS_LINE" ]; then
+    SKILLS_RAW=$(echo "$SKILLS_LINE" | sed 's/^\*\*Skills:\*\*\s*//')
+    FIRST_SKILL=true
+    IFS=',' read -ra SKILL_ARRAY <<< "$SKILLS_RAW"
+    for skill in "${SKILL_ARRAY[@]}"; do
+      skill=$(echo "$skill" | xargs)  # trim whitespace
+      if [ -n "$skill" ]; then
+        if [ "$FIRST_SKILL" = true ]; then
+          FIRST_SKILL=false
+        else
+          SKILLS_JSON+=","
+        fi
+        skill_esc=$(echo "$skill" | sed 's/"/\\"/g')
+        SKILLS_JSON+="\"${skill_esc}\""
+      fi
+    done
+  fi
+  SKILLS_JSON+="]"
+
   if [ "$TASK_NUM" -gt 1 ]; then
     echo ","
   fi
 
   TASK_NAME_ESC=$(echo "$TASK_NAME" | sed 's/"/\\"/g')
-  echo "  {\"number\":${TASK_NUM},\"name\":\"${TASK_NAME_ESC}\",\"files\":${FILES_JSON}}"
+  echo "  {\"number\":${TASK_NUM},\"name\":\"${TASK_NAME_ESC}\",\"files\":${FILES_JSON},\"skills\":${SKILLS_JSON}}"
 
 done <<< "$(echo "$CONTENT" | grep '^### Task [0-9]')"
 

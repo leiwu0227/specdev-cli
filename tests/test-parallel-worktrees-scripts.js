@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const SCRIPTS_DIR = join(__dirname, '..', 'templates', '.specdev', 'skills', 'parallel-worktrees', 'scripts')
+const SCRIPTS_DIR = join(__dirname, '..', 'templates', '.specdev', 'skills', 'core', 'parallel-worktrees', 'scripts')
 const TEST_DIR = join(__dirname, 'test-parallel-worktrees-output')
 const WORKTREES_DIR = join(__dirname, 'test-parallel-worktrees-output-worktrees')
 

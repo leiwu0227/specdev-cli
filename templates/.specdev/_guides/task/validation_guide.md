@@ -30,7 +30,7 @@ After each task cycle:
 
 ## Gate 3: Stage 1 spec compliance review
 
-Invoke `.specdev/skills/requesting-code-review.md`.
+Invoke `.specdev/skills/core/requesting-code-review.md`.
 
 Reviewer checks implementation against proposal/plan and outputs:
 
@@ -41,7 +41,7 @@ If FAIL, fix and rerun Gate 3 from scratch.
 
 ## Gate 4: Stage 2 code quality review
 
-Invoke `.specdev/skills/requesting-code-review.md`.
+Invoke `.specdev/skills/core/requesting-code-review.md`.
 
 Reviewer outputs:
 
@@ -49,7 +49,7 @@ Reviewer outputs:
 - findings tagged `CRITICAL`, `IMPORTANT`, `MINOR`
 - each finding includes `file:line`, impact, fix suggestion
 
-Response protocol uses `.specdev/skills/receiving-code-review.md`.
+Response protocol uses `.specdev/skills/core/receiving-code-review.md`.
 
 ---
 
@@ -57,7 +57,7 @@ Response protocol uses `.specdev/skills/receiving-code-review.md`.
 
 For Gates 3-4, you can use a separate Claude Code session as an independent reviewer instead of self-review or subagent review. This eliminates self-review bias through true process separation.
 
-Invoke `.specdev/skills/review-agent.md`.
+Invoke `.specdev/skills/core/review-agent.md`.
 
 ### Implementer workflow
 
@@ -77,7 +77,7 @@ Invoke `.specdev/skills/review-agent.md`.
 
 ## Verification-before-completion gate
 
-Invoke `.specdev/skills/verification-before-completion.md`.
+Invoke `.specdev/skills/core/verification-before-completion.md`.
 
 No completion claims are allowed without command evidence in `validation_checklist.md`.
 

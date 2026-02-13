@@ -40,7 +40,9 @@ specdev --version
 ├── _router.md                # Routes to correct guide
 ├── _guides/                  # Workflow and task guides
 ├── _templates/               # Templates and worked examples
-├── skills/                   # Modular workflow skills
+├── skills/
+│   ├── core/                 # Core workflow skills (managed by specdev update)
+│   └── tools/                # Project tool skills (user-owned)
 ├── knowledge/                # Long-term project knowledge
 ├── project_notes/            # Project context and progress
 ├── project_scaffolding/      # Source mirror metadata
@@ -68,12 +70,14 @@ Planning classifies each assignment:
 | Class | Scaffolding | Gate 1 |
 |-------|-------------|--------|
 | `LOW` | None | Skip |
-| `MEDIUM` | `skills/scaffolding-lite.md` (contracts + dependency map) | User approves contracts |
-| `HIGH` | `skills/scaffolding-full.md` (full per-file blueprints) | User approves full architecture |
+| `MEDIUM` | `skills/core/scaffolding-lite.md` (contracts + dependency map) | User approves contracts |
+| `HIGH` | `skills/core/scaffolding-full.md` (full per-file blueprints) | User approves full architecture |
 
 ### Skills model
 
-Skills are modular capabilities in `.specdev/skills/`. Two categories:
+Skills are modular capabilities in `.specdev/skills/`, split into two categories:
+
+**Core skills** (`skills/core/`) — managed by SpecDev, updated by `specdev update`. Two sub-categories:
 
 **Always-apply** (read at assignment start, follow throughout):
 - `verification-before-completion.md` -- no completion claims without command evidence
@@ -86,6 +90,10 @@ Skills are modular capabilities in `.specdev/skills/`. Two categories:
 - `parallel-worktrees.md` -- safe parallel execution
 - `micro-task-planning.md` -- ultra-granular planning for high-risk tasks
 - `subagent-driven-development.md` -- fresh subagent per task with two-stage review loop
+
+**Tool skills** (`skills/tools/`) — user-owned, never touched by update:
+- Project-specific tools, testing scripts, search integrations
+- Future: pulled from a SpecDev skill hub based on project type
 
 Each invoked skill must produce an artifact and be logged in `skills_invoked.md`.
 

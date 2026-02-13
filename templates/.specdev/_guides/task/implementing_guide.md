@@ -231,7 +231,7 @@ Tests and implementation interleaved PER TASK. Never "implement all then test al
 
 ### Parallel Execution
 
-When tasks are independent, invoke `.specdev/skills/parallel-worktrees.md`.
+When tasks are independent, invoke `.specdev/skills/core/parallel-worktrees.md`.
 
 A task is parallel-safe only if:
 - no overlapping file writes
@@ -249,7 +249,7 @@ Write to `.specdev/assignments/#####_type_name/implementation.md`.
 
 ## Subagent Isolation - Controller/Worker Model
 
-When dispatching subagents for task execution, invoke `.specdev/skills/subagent-driven-development.md`.
+When dispatching subagents for task execution, invoke `.specdev/skills/core/subagent-driven-development.md`.
 
 Key principles (full protocol and prompt templates in the skill):
 
@@ -266,7 +266,7 @@ Key principles (full protocol and prompt templates in the skill):
 
 ## Bugfix Note
 
-If root cause is unclear, invoke `.specdev/skills/systematic-debugging.md` before implementing the fix.
+If root cause is unclear, invoke `.specdev/skills/core/systematic-debugging.md` before implementing the fix.
 
 ---
 
@@ -312,4 +312,4 @@ Can't check all boxes? You skipped TDD. Start over.
 ## Completion Rule
 
 Do not mark tasks complete without verification evidence.
-Invoke `.specdev/skills/verification-before-completion.md`.
+Invoke `.specdev/skills/core/verification-before-completion.md`.

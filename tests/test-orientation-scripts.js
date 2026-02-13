@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
-const SCRIPTS_DIR = join(__dirname, '..', 'templates', '.specdev', 'skills', 'orientation', 'scripts')
+const SCRIPTS_DIR = join(__dirname, '..', 'templates', '.specdev', 'skills', 'core', 'orientation', 'scripts')
 const TEST_DIR = join(__dirname, 'test-orientation-output')
 
 let failures = 0

@@ -1,6 +1,11 @@
 ---
 name: knowledge-capture
-description: Write two diff files — project notes gaps and workflow observations
+description: Distill learnings into knowledge branches after assignment completion
+type: core
+phase: capture
+input: Completed assignment
+output: Knowledge diff files
+next: null
 ---
 
 # Knowledge Capture

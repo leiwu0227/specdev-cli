@@ -11,35 +11,57 @@ export async function skillsCommand(flags = {}) {
     process.exit(1)
   }
 
-  const entries = await fse.readdir(skillsPath, { withFileTypes: true })
   const skills = []
 
-  for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue
-    if (entry.name === 'README.md' || entry.name === 'skills_invoked_template.md') continue
+  // Scan a directory for skills (folder-based and flat .md)
+  async function scanDir(dir, category) {
+    if (!(await fse.pathExists(dir))) return
+    const entries = await fse.readdir(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      if (entry.name === 'README.md' || entry.name === 'skills_invoked_template.md') continue
 
-    if (entry.isDirectory()) {
-      // Folder-based skill: look for SKILL.md
-      const skillMd = join(skillsPath, entry.name, 'SKILL.md')
-      if (await fse.pathExists(skillMd)) {
-        const content = await fse.readFile(skillMd, 'utf-8')
-        const desc = parseFrontmatter(content).description || ''
-        const hasScripts = await fse.pathExists(join(skillsPath, entry.name, 'scripts'))
-        skills.push({ name: entry.name, type: 'folder', description: desc, hasScripts })
+      if (entry.isDirectory()) {
+        const skillMd = join(dir, entry.name, 'SKILL.md')
+        if (await fse.pathExists(skillMd)) {
+          const content = await fse.readFile(skillMd, 'utf-8')
+          const desc = parseFrontmatter(content).description || ''
+          const hasScripts = await fse.pathExists(join(dir, entry.name, 'scripts'))
+          skills.push({ name: entry.name, type: 'folder', category, description: desc, hasScripts })
+        }
+      } else if (entry.name.endsWith('.md')) {
+        skills.push({ name: entry.name.replace('.md', ''), type: 'flat', category, description: '', hasScripts: false })
       }
-    } else if (entry.name.endsWith('.md')) {
-      // Flat .md skill (legacy)
-      skills.push({ name: entry.name.replace('.md', ''), type: 'flat', description: '', hasScripts: false })
     }
   }
+
+  await scanDir(join(skillsPath, 'core'), 'core')
+  await scanDir(join(skillsPath, 'tools'), 'tool')
 
   skills.sort((a, b) => a.name.localeCompare(b.name))
 
   console.log(`\nAvailable skills (${skills.length}):\n`)
-  for (const skill of skills) {
-    const scripts = skill.hasScripts ? ' [scripts]' : ''
-    const desc = skill.description ? ` — ${skill.description}` : ''
-    console.log(`  ${skill.name}${scripts}${desc}`)
+  const coreSkills = skills.filter(s => s.category === 'core')
+  const toolSkills = skills.filter(s => s.category === 'tool')
+
+  if (coreSkills.length > 0) {
+    console.log('Core skills:')
+    for (const skill of coreSkills) {
+      const scripts = skill.hasScripts ? ' [scripts]' : ''
+      const desc = skill.description ? ` — ${skill.description}` : ''
+      console.log(`  ${skill.name}${scripts}${desc}`)
+    }
+    console.log()
+  }
+
+  if (toolSkills.length > 0) {
+    console.log('Tool skills:')
+    for (const skill of toolSkills) {
+      const scripts = skill.hasScripts ? ' [scripts]' : ''
+      const desc = skill.description ? ` — ${skill.description}` : ''
+      console.log(`  ${skill.name}${scripts}${desc}`)
+    }
+    console.log()
   }
   console.log()
 }

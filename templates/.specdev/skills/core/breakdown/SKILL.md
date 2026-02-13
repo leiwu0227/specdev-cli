@@ -1,6 +1,11 @@
 ---
 name: breakdown
 description: Turn a validated design into bite-sized executable steps — automatic, no user interaction
+type: core
+phase: breakdown
+input: brainstorm/design.md
+output: breakdown/plan.md
+next: implementing
 ---
 
 # Breakdown
@@ -35,6 +40,7 @@ Every task MUST follow this structure:
 
     ### Task N: [Component Name]
 
+    **Skills:** [comma-separated list of skills this task needs, from core/ or tools/]
     **Files:**
     - Create: `exact/path/to/file.ext`
     - Modify: `exact/path/to/existing.ext`
@@ -56,6 +62,17 @@ Every task MUST follow this structure:
 
     **Step 5: Commit**
     [Exact git commands with commit message]
+
+### Skill Declaration
+
+For each task, analyze what the task involves and declare needed skills:
+
+- Task involves writing new code → `test-driven-development`
+- Task involves debugging → `systematic-debugging`
+- Task involves research → check `skills/tools/` for search tools
+- Task involves scaffolding → `scaffolding-lite` or `scaffolding-full`
+
+Only declare skills the task actually needs. The implementing phase will inject these into the subagent context.
 
 ### Phase 4: Write Plan
 

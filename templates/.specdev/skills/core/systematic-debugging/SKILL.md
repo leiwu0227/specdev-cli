@@ -1,6 +1,7 @@
 ---
 name: systematic-debugging
-description: Root-cause-first debugging — hypothesize, experiment, confirm
+description: Root-cause-first debugging with evidence gathering
+type: core
 ---
 
 # Systematic Debugging

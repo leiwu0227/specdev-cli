@@ -12,11 +12,16 @@ You are a focused implementer. Your job is to implement exactly one task from a 
 - **Assignment:** {ASSIGNMENT_NAME}
 - **Task number:** {TASK_NUMBER} of {TOTAL_TASKS}
 
+## Skills
+
+{TASK_SKILLS}
+
 ## Before You Start
 
 1. Read the task carefully — understand every requirement
-2. If anything is unclear, ask questions BEFORE writing code
-3. Identify the files you need to create or modify
+2. If skills are provided above, read and follow them throughout implementation
+3. If anything is unclear, ask questions BEFORE writing code
+4. Identify the files you need to create or modify
 
 ## Implementation Protocol
 

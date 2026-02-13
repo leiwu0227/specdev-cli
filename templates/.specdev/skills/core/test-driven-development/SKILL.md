@@ -1,6 +1,7 @@
 ---
 name: test-driven-development
 description: Iron law — no production code without a failing test first
+type: core
 ---
 
 # Test-Driven Development

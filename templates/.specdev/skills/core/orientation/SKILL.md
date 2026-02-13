@@ -1,6 +1,7 @@
 ---
 name: orientation
 description: Router — helps you find the right skill for your situation
+type: core
 ---
 
 # Orientation
@@ -14,11 +15,11 @@ description: Router — helps you find the right skill for your situation
 
 ## The 5-Phase Workflow
 
-1. **Brainstorm** → `skills/brainstorming/SKILL.md` — Interactive design session
-2. **Breakdown** → `skills/breakdown/SKILL.md` — Design to executable plan (automatic)
-3. **Implement** → `skills/implementing/SKILL.md` — Subagent per task with review (automatic)
-4. **Verify** → `skills/review-agent/SKILL.md` — Holistic review (separate session)
-5. **Capture** → `skills/knowledge-capture/SKILL.md` — Write diff files (automatic)
+1. **Brainstorm** → `skills/core/brainstorming/SKILL.md` — Interactive design session
+2. **Breakdown** → `skills/core/breakdown/SKILL.md` — Design to executable plan (automatic)
+3. **Implement** → `skills/core/implementing/SKILL.md` — Subagent per task with review (automatic)
+4. **Verify** → `skills/core/review-agent/SKILL.md` — Holistic review (separate session)
+5. **Capture** → `skills/core/knowledge-capture/SKILL.md` — Write diff files (automatic)
 
 ## Quick Decision Tree
 
@@ -35,10 +36,13 @@ description: Router — helps you find the right skill for your situation
 → Use **review-agent** (launch in separate session)
 
 **Debugging a failing test?**
-→ Use **systematic-debugging** (`skills/systematic-debugging/SKILL.md`)
+→ Use **systematic-debugging** (`skills/core/systematic-debugging/SKILL.md`)
 
 **Need parallel task execution?**
-→ Use **parallel-worktrees** (`skills/parallel-worktrees/SKILL.md`)
+→ Use **parallel-worktrees** (`skills/core/parallel-worktrees/SKILL.md`)
+
+**Need a project-specific tool?**
+→ Check **skills/tools/** for available tool skills
 
 ## Scripts
 

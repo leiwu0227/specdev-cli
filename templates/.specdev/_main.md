@@ -6,7 +6,7 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 
 1. Read `project_notes/big_picture.md` for project context
 2. Check `assignments/` for active work
-3. Read `skills/orientation/SKILL.md` for the decision tree
+3. Read `skills/core/orientation/SKILL.md` for the decision tree
 
 ## The 5 Phases
 
@@ -24,12 +24,24 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 
 ## How Skills Work
 
+Skills live in two directories:
+
+**`skills/core/`** — Workflow skills managed by SpecDev:
 ```
-skills/<name>/
+skills/core/<name>/
   SKILL.md        ← the manual
   scripts/        ← deterministic tools
   prompts/        ← subagent templates
 ```
+
+**`skills/tools/`** — Project-specific tool skills (user-owned, never overwritten by update):
+```
+skills/tools/<name>/
+  SKILL.md        ← instructions and frontmatter
+  scripts/        ← executable tools
+```
+
+All skills use aligned frontmatter compatible with Claude Code's skill format.
 
 ## Assignment Folder
 

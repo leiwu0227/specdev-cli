@@ -1,6 +1,7 @@
 ---
 name: parallel-worktrees
-description: Git worktree isolation for safe parallel task execution
+description: Git worktree isolation for parallel task execution
+type: core
 ---
 
 # Parallel Worktrees

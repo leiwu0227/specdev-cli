@@ -22,28 +22,33 @@ Based on the user request, identify the situation and route to the right skill.
 
 ### Main agent skills (phases 1-3, 5)
 
-- **Brainstorming:** `skills/brainstorming/SKILL.md` — start here for new work
-- **Breakdown:** `skills/breakdown/SKILL.md` — design → executable plan
-- **Implementing:** `skills/implementing/SKILL.md` — plan → code with subagent dispatch
-- **Knowledge Capture:** `skills/knowledge-capture/SKILL.md` — write diff files after completion
+- **Brainstorming:** `skills/core/brainstorming/SKILL.md` — start here for new work
+- **Breakdown:** `skills/core/breakdown/SKILL.md` — design → executable plan
+- **Implementing:** `skills/core/implementing/SKILL.md` — plan → code with subagent dispatch
+- **Knowledge Capture:** `skills/core/knowledge-capture/SKILL.md` — write diff files after completion
 
 ### Review agent skill (phase 4)
 
-- **Review Agent:** `skills/review-agent/SKILL.md` — holistic phase reviews (separate session)
+- **Review Agent:** `skills/core/review-agent/SKILL.md` — holistic phase reviews (separate session)
 
 ### Supporting skills (use when needed)
 
-- **Test-Driven Development:** `skills/test-driven-development/SKILL.md` — RED-GREEN-REFACTOR
-- **Systematic Debugging:** `skills/systematic-debugging/SKILL.md` — root-cause analysis
-- **Parallel Worktrees:** `skills/parallel-worktrees/SKILL.md` — git worktree isolation
-- **Orientation:** `skills/orientation/SKILL.md` — decision tree for skill selection
+- **Test-Driven Development:** `skills/core/test-driven-development/SKILL.md` — RED-GREEN-REFACTOR
+- **Systematic Debugging:** `skills/core/systematic-debugging/SKILL.md` — root-cause analysis
+- **Parallel Worktrees:** `skills/core/parallel-worktrees/SKILL.md` — git worktree isolation
+- **Orientation:** `skills/core/orientation/SKILL.md` — decision tree for skill selection
 
 ### Flat skills (reference guides)
 
-- `skills/scaffolding-lite.md` — lightweight scaffolding
-- `skills/scaffolding-full.md` — full scaffolding
-- `skills/verification-before-completion.md` — always-apply: evidence before claims
-- `skills/receiving-code-review.md` — always-apply: no performative agreement
+- `skills/core/scaffolding-lite.md` — lightweight scaffolding
+- `skills/core/scaffolding-full.md` — full scaffolding
+- `skills/core/verification-before-completion.md` — always-apply: evidence before claims
+- `skills/core/receiving-code-review.md` — always-apply: no performative agreement
+
+### Tool skills (project-specific)
+
+- Check `skills/tools/` for project-specific tool skills
+- Tool skills can be referenced in plan tasks via the `Skills:` field
 
 ---
 

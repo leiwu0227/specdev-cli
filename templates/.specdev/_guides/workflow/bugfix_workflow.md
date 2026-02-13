@@ -12,15 +12,15 @@ Diagnose and fix defects with root-cause discipline.
 
 Use for complex/high-risk bugs. For simple obvious fixes, keep a short plan section in `implementation.md`.
 
-If root cause is unclear, invoke `skills/systematic-debugging.md`.
+If root cause is unclear, invoke `skills/core/systematic-debugging.md`.
 
 ## Step 3: Architecture Prep (conditional)
 
 Use complexity/risk gate from planning:
 
 - LOW: none
-- MEDIUM: `skills/scaffolding-lite.md` + Gate 1 approval (contracts)
-- HIGH: `skills/scaffolding-full.md` + Gate 1 approval (full architecture)
+- MEDIUM: `skills/core/scaffolding-lite.md` + Gate 1 approval (contracts)
+- HIGH: `skills/core/scaffolding-full.md` + Gate 1 approval (full architecture)
 
 ## Step 4: Implementation
 
@@ -32,7 +32,7 @@ Use complexity/risk gate from planning:
 
 - Stage 1: confirm bug scenario now passes and intended behavior remains
 - Stage 2: quality/regression review
-- Invoke `skills/verification-before-completion.md` before claiming fixed
+- Invoke `skills/core/verification-before-completion.md` before claiming fixed
 
 ## Step 6: Finalize
 

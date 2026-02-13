@@ -17,14 +17,14 @@ Restructure code while preserving observable behavior.
 ## Step 3: Architecture Prep (conditional)
 
 - LOW: none
-- MEDIUM: `skills/scaffolding-lite.md` + Gate 1 user approval (contracts)
-- HIGH: `skills/scaffolding-full.md` + Gate 1 user approval (full architecture)
+- MEDIUM: `skills/core/scaffolding-lite.md` + Gate 1 user approval (contracts)
+- HIGH: `skills/core/scaffolding-full.md` + Gate 1 user approval (full architecture)
 
 ## Step 4: Implementation
 
 - Existing tests are baseline; run before/after each step
 - Apply TDD slices for behavior parity checks
-- Optional parallel execution only if `skills/parallel-worktrees.md` criteria pass
+- Optional parallel execution only if `skills/core/parallel-worktrees.md` criteria pass
 
 ## Step 5: Validation
 

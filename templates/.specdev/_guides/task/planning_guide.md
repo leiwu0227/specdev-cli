@@ -27,8 +27,8 @@ After writing `plan.md`, classify assignment complexity:
 ### Required action by class
 
 - `LOW` -> no scaffolding required
-- `MEDIUM` -> invoke `skills/scaffolding-lite.md` and require Gate 1 approval (contracts only)
-- `HIGH` -> invoke `skills/scaffolding-full.md` and require Gate 1 approval (full architecture)
+- `MEDIUM` -> invoke `skills/core/scaffolding-lite.md` and require Gate 1 approval (contracts only)
+- `HIGH` -> invoke `skills/core/scaffolding-full.md` and require Gate 1 approval (full architecture)
 
 Log the decision and reason in `plan.md` and `skills_invoked.md`.
 
@@ -52,7 +52,7 @@ For each task in the plan:
 
 ## Optional micro-task mode
 
-If risk/unknowns are high, invoke `skills/micro-task-planning.md`.
+If risk/unknowns are high, invoke `skills/core/micro-task-planning.md`.
 Use smaller tasks with per-task verification commands and rollback notes.
 
 ---

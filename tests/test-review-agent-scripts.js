@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const SCRIPTS_DIR = join(__dirname, '..', 'templates', '.specdev', 'skills', 'review-agent', 'scripts')
+const SCRIPTS_DIR = join(__dirname, '..', 'templates', '.specdev', 'skills', 'core', 'review-agent', 'scripts')
 const TEST_DIR = join(__dirname, 'test-review-agent-output')
 
 let failures = 0
