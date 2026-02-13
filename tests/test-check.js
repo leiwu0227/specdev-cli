@@ -154,6 +154,12 @@ async function runTests() {
 
   cleanup()
 
+  // Test 7: check.js does not use execSync (security)
+  console.log('\ncheck.js does not use execSync (security):')
+  const source = readFileSync(new URL('../src/commands/check.js', import.meta.url), 'utf-8')
+  if (!assert(!source.includes('execSync('), 'check.js should not use execSync — use execFileSync instead')) failures++
+  if (!assert(source.includes('execFileSync'), 'check.js should use execFileSync')) failures++
+
   console.log('')
   if (failures > 0) {
     console.error(`❌ ${failures} check test(s) failed`)

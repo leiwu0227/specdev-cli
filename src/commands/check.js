@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import fse from 'fs-extra'
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 import { findLatestAssignment } from '../utils/scan.js'
 
 /**
@@ -217,7 +217,7 @@ async function checkRun(flags) {
   console.log('')
 
   try {
-    const output = execSync(`bash "${scriptPath}" "${assignmentPath}"`, {
+    const output = execFileSync('bash', [scriptPath, assignmentPath], {
       encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
     })
     console.log(output)
