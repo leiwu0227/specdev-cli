@@ -101,11 +101,18 @@ async function workRequest(flags) {
 
   let changedFiles = []
   try {
-    const diff = execSync('git diff --name-only HEAD~1', {
+    // Try staged + unstaged changes first, fall back to last commit diff
+    let diff = execSync('git diff --name-only HEAD', {
       encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
     }).trim()
+    if (!diff) {
+      // No working tree changes — use last commit diff (skip on initial commit)
+      diff = execSync('git diff --name-only HEAD~1 HEAD', {
+        encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim()
+    }
     if (diff) changedFiles = diff.split('\n').filter(Boolean)
-  } catch { /* can't get diff */ }
+  } catch { /* not in git repo or initial commit */ }
 
   const request = {
     version: 1,

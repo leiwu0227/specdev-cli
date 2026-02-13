@@ -130,7 +130,7 @@ if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
         const validVersion = r.version === 1;
         const validId = typeof r.assignment_id === 'string' && /^\\d{5}$/.test(r.assignment_id);
         const validGate = r.gate === 'gate_3' || r.gate === 'gate_4';
-        const validStatus = ['pending', 'in_progress', 'passed', 'failed'].includes(r.status);
+        const validStatus = ['pending', 'in_progress', 'awaiting_approval', 'passed', 'failed'].includes(r.status);
         const validTimestamp = typeof r.timestamp === 'string' && !Number.isNaN(Date.parse(r.timestamp));
         const ok = hasRequired && validVersion && validId && validGate && validStatus && validTimestamp;
         console.log(ok ? 'valid' : 'invalid');
@@ -143,7 +143,7 @@ if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
     fi
   fi
 else
-  warn "review_request.json not yet created (run 'specdev review request' to create)"
+  warn "review_request.json not yet created (run 'specdev work request' to create)"
 fi
 
 if [ -f "$ASSIGNMENT_PATH/proposal.md" ]; then

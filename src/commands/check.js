@@ -1,4 +1,5 @@
 import { join, resolve, relative } from 'path'
+import { fileURLToPath } from 'url'
 import fse from 'fs-extra'
 import { execSync } from 'child_process'
 import { findLatestAssignment } from '../utils/scan.js'
@@ -138,6 +139,11 @@ async function checkStatus(flags) {
 
 async function showReviewStatus(assignmentPath) {
   const requestPath = join(assignmentPath, 'review_request.json')
+  if (!(await fse.pathExists(requestPath))) {
+    const assignmentName = assignmentPath.split(/[/\\]/).pop()
+    console.log(`ℹ️  No review request found for ${assignmentName}`)
+    return
+  }
   const request = await fse.readJson(requestPath)
   const assignmentName = assignmentPath.split(/[/\\]/).pop()
 
@@ -206,7 +212,7 @@ async function checkRun(flags) {
   await fse.writeFile(lockPath, new Date().toISOString())
 
   // Preflight
-  const scriptPath = resolve(new URL('../../scripts/verify-gates.sh', import.meta.url).pathname)
+  const scriptPath = fileURLToPath(new URL('../../scripts/verify-gates.sh', import.meta.url))
   console.log('── Pre-flight: verify-gates.sh ──')
   console.log('')
 
@@ -291,6 +297,12 @@ async function checkResume(flags) {
 
   const request = await fse.readJson(requestPath)
   const assignmentName = assignmentPath.split(/[/\\]/).pop()
+
+  if (request.status === 'passed' || request.status === 'failed') {
+    console.error(`❌ Review is already ${request.status} — cannot resume a terminal review`)
+    console.log('   To re-review, create a new request with: specdev work request')
+    process.exit(1)
+  }
 
   if (!(await fse.pathExists(progressPath))) {
     console.log('ℹ️  No progress file found — starting fresh')
