@@ -2,7 +2,7 @@ import { join } from 'path'
 import { fileURLToPath } from 'url'
 import fse from 'fs-extra'
 import { execFileSync } from 'child_process'
-import { findLatestAssignment } from '../utils/scan.js'
+import { resolveAssignmentPath, assignmentName, formatStatus, timeSince } from '../utils/assignment.js'
 
 /**
  * specdev check <subcommand> [options]
@@ -37,32 +37,6 @@ export async function checkCommand(subcommand, flags = {}) {
       console.log('  reject [--reason="..."]          Mark review as failed')
       process.exit(1)
   }
-}
-
-async function resolveAssignmentPath(flags) {
-  const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
-  const specdevPath = join(targetDir, '.specdev')
-
-  if (!(await fse.pathExists(specdevPath))) {
-    console.error('❌ No .specdev directory found')
-    process.exit(1)
-  }
-
-  if (flags.assignment) {
-    const assignmentPath = join(specdevPath, 'assignments', flags.assignment)
-    if (!(await fse.pathExists(assignmentPath))) {
-      console.error(`❌ Assignment not found: ${flags.assignment}`)
-      process.exit(1)
-    }
-    return assignmentPath
-  }
-
-  const latest = await findLatestAssignment(specdevPath)
-  if (!latest) {
-    console.error('❌ No assignments found')
-    process.exit(1)
-  }
-  return latest.path
 }
 
 /**
@@ -140,14 +114,14 @@ async function checkStatus(flags) {
 async function showReviewStatus(assignmentPath) {
   const requestPath = join(assignmentPath, 'review_request.json')
   if (!(await fse.pathExists(requestPath))) {
-    const assignmentName = assignmentPath.split(/[/\\]/).pop()
-    console.log(`ℹ️  No review request found for ${assignmentName}`)
+    const name = assignmentName(assignmentPath)
+    console.log(`ℹ️  No review request found for ${name}`)
     return
   }
   const request = await fse.readJson(requestPath)
-  const assignmentName = assignmentPath.split(/[/\\]/).pop()
+  const name = assignmentName(assignmentPath)
 
-  console.log(`📋 ${assignmentName}`)
+  console.log(`📋 ${name}`)
   console.log(`   Gate: ${request.gate} | Mode: ${request.mode || 'auto'} | Status: ${formatStatus(request.status)}`)
 
   const progressPath = join(assignmentPath, 'review_progress.json')
@@ -253,8 +227,8 @@ async function checkRun(flags) {
   }
   await fse.writeJson(progressPath, progress, { spaces: 2 })
 
-  const assignmentName = assignmentPath.split(/[/\\]/).pop()
-  console.log(`🔍 Starting review: ${assignmentName}`)
+  const name = assignmentName(assignmentPath)
+  console.log(`🔍 Starting review: ${name}`)
   console.log(`   Gate: ${request.gate} | Mode: ${request.mode || 'auto'}`)
   console.log('')
 
@@ -299,7 +273,7 @@ async function checkResume(flags) {
   }
 
   const request = await fse.readJson(requestPath)
-  const assignmentName = assignmentPath.split(/[/\\]/).pop()
+  const name = assignmentName(assignmentPath)
 
   if (request.status === 'passed' || request.status === 'failed') {
     console.error(`❌ Review is already ${request.status} — cannot resume a terminal review`)
@@ -325,7 +299,7 @@ async function checkResume(flags) {
   progress.last_activity = new Date().toISOString()
   await fse.writeJson(progressPath, progress, { spaces: 2 })
 
-  console.log(`🔄 Resuming review: ${assignmentName}`)
+  console.log(`🔄 Resuming review: ${name}`)
   console.log(`   Gate: ${request.gate} | Phase: ${progress.phase}`)
   console.log(`   Progress: ${reviewed.length}/${total} files reviewed, ${progress.findings_so_far || 0} findings`)
   console.log('')
@@ -393,8 +367,8 @@ async function checkAccept(flags) {
     } catch { /* skip */ }
   }
 
-  const assignmentName = assignmentPath.split(/[/\\]/).pop()
-  console.log(`✅ Review passed: ${assignmentName}`)
+  const name = assignmentName(assignmentPath)
+  console.log(`✅ Review passed: ${name}`)
   console.log(`   Gate: ${request.gate}`)
 
   if (request.gate === 'gate_3') {
@@ -434,8 +408,8 @@ async function checkReject(flags) {
   const lockPath = join(assignmentPath, 'review_request.lock')
   await fse.remove(lockPath)
 
-  const assignmentName = assignmentPath.split(/[/\\]/).pop()
-  console.log(`❌ Review failed: ${assignmentName}`)
+  const name = assignmentName(assignmentPath)
+  console.log(`❌ Review failed: ${name}`)
   console.log(`   Gate: ${request.gate}`)
   console.log(`   Reason: ${reason}`)
   console.log('')
@@ -443,21 +417,3 @@ async function checkReject(flags) {
   console.log(`   specdev work request --gate=${request.gate}`)
 }
 
-function formatStatus(status) {
-  const icons = {
-    pending: '⏳ pending',
-    in_progress: '🔄 in_progress',
-    awaiting_approval: '👀 awaiting_approval',
-    passed: '✅ passed',
-    failed: '❌ failed',
-  }
-  return icons[status] || status
-}
-
-function timeSince(isoString) {
-  const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
-  if (seconds < 60) return `${seconds}s ago`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  return `${Math.floor(minutes / 60)}h ago`
-}
