@@ -1,5 +1,6 @@
 import fse from 'fs-extra'
-import { join, basename } from 'path'
+import { join } from 'path'
+import { parseAssignmentId } from './assignment.js'
 
 const WORKFLOW_PHASES = [
   'proposal.md',
@@ -46,7 +47,7 @@ export async function scanAssignments(specdevPath) {
  * @returns {Promise<object|null>}
  */
 async function scanSingleAssignment(assignmentPath, name) {
-  const parsed = parseAssignmentName(name)
+  const parsed = parseAssignmentId(name)
 
   // Detect which phases exist
   const phases = {}
@@ -83,18 +84,6 @@ async function scanSingleAssignment(assignmentPath, name) {
     scaffoldCount,
     hasScaffold,
   }
-}
-
-/**
- * Parse assignment directory name into components
- * e.g. "00001_feature_auth" -> { id: "00001", type: "feature", label: "auth" }
- */
-function parseAssignmentName(name) {
-  const match = name.match(/^(\d+)_(\w+?)_(.+)$/)
-  if (match) {
-    return { id: match[1], type: match[2], label: match[3] }
-  }
-  return { id: null, type: null, label: name }
 }
 
 /**
@@ -216,7 +205,7 @@ export async function findLatestAssignment(specdevPath) {
   }
 
   const latest = assignmentDirs[assignmentDirs.length - 1]
-  const parsed = parseAssignmentName(latest)
+  const parsed = parseAssignmentId(latest)
 
   return {
     name: latest,
