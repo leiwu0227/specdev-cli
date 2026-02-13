@@ -12,7 +12,8 @@
     "templates/"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:skills && npm run test:orientation && npm run test:tdd && npm run test:implementing && npm run test:review-agent && npm run test:parallel-worktrees && npm run test:init-platform && npm run test:work && npm run test:check && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:assignment-utils && npm run test:skills && npm run test:orientation && npm run test:tdd && npm run test:implementing && npm run test:review-agent && npm run test:parallel-worktrees && npm run test:init-platform && npm run test:work && npm run test:check && npm run test:cleanup",
+    "test:assignment-utils": "node ./tests/test-assignment-utils.js",
     "test:skills": "node ./tests/test-skills.js",
     "test:orientation": "node ./tests/test-orientation-scripts.js",
     "test:tdd": "node ./tests/test-tdd-scripts.js",
