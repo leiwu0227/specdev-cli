@@ -1,7 +1,7 @@
 import { join, relative } from 'path'
 import fse from 'fs-extra'
 import { execFileSync } from 'child_process'
-import { findLatestAssignment } from '../utils/scan.js'
+import { resolveAssignmentPath, parseAssignmentId, assignmentName, formatStatus, timeSince } from '../utils/assignment.js'
 
 /**
  * specdev work <subcommand> [options]
@@ -24,39 +24,6 @@ export async function workCommand(subcommand, flags = {}) {
       console.log('  status                                               Check review status')
       process.exit(1)
   }
-}
-
-async function resolveAssignmentPath(flags) {
-  const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
-  const specdevPath = join(targetDir, '.specdev')
-
-  if (!(await fse.pathExists(specdevPath))) {
-    console.error('❌ No .specdev directory found')
-    console.log('   Run "specdev init" first')
-    process.exit(1)
-  }
-
-  if (flags.assignment) {
-    const assignmentPath = join(specdevPath, 'assignments', flags.assignment)
-    if (!(await fse.pathExists(assignmentPath))) {
-      console.error(`❌ Assignment not found: ${flags.assignment}`)
-      process.exit(1)
-    }
-    return assignmentPath
-  }
-
-  const latest = await findLatestAssignment(specdevPath)
-  if (!latest) {
-    console.error('❌ No assignments found')
-    process.exit(1)
-  }
-  return latest.path
-}
-
-function parseAssignmentId(name) {
-  const match = name.match(/^(\d+)_(\w+?)_(.+)$/)
-  if (match) return { id: match[1], type: match[2], label: match[3] }
-  return { id: null, type: null, label: name }
 }
 
 /**
@@ -89,8 +56,8 @@ async function workRequest(flags) {
     }
   }
 
-  const assignmentName = assignmentPath.split(/[/\\]/).pop()
-  const parsed = parseAssignmentId(assignmentName)
+  const name = assignmentName(assignmentPath)
+  const parsed = parseAssignmentId(name)
 
   const gitOpts = { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], cwd: targetDir }
 
@@ -119,7 +86,7 @@ async function workRequest(flags) {
 
   const request = {
     version: 1,
-    assignment_id: parsed.id || assignmentName,
+    assignment_id: parsed.id || name,
     assignment_path: relative(targetDir, assignmentPath).split('\\').join('/'),
     gate,
     status: 'pending',
@@ -133,7 +100,7 @@ async function workRequest(flags) {
   await fse.writeJson(requestPath, request, { spaces: 2 })
 
   console.log(`✅ Review request created`)
-  console.log(`   Assignment: ${assignmentName}`)
+  console.log(`   Assignment: ${name}`)
   console.log(`   Gate: ${gate}`)
   console.log(`   Mode: ${mode}`)
   console.log('')
@@ -154,7 +121,7 @@ async function workStatus(flags) {
   }
 
   const request = await fse.readJson(requestPath)
-  const assignmentName = assignmentPath.split(/[/\\]/).pop()
+  const name = assignmentName(assignmentPath)
 
   // Read progress if available
   const progressPath = join(assignmentPath, 'review_progress.json')
@@ -163,7 +130,7 @@ async function workStatus(flags) {
     try { progress = await fse.readJson(progressPath) } catch { /* malformed */ }
   }
 
-  console.log(`📋 Review Status: ${assignmentName}`)
+  console.log(`📋 Review Status: ${name}`)
   console.log(`   Gate: ${request.gate} | Mode: ${request.mode || 'auto'}`)
   console.log(`   Status: ${formatStatus(request.status)}`)
 
@@ -194,23 +161,4 @@ async function workStatus(flags) {
   if (request.status === 'failed') {
     process.exit(1)
   }
-}
-
-function formatStatus(status) {
-  const icons = {
-    pending: '⏳ pending',
-    in_progress: '🔄 in_progress',
-    awaiting_approval: '👀 awaiting_approval',
-    passed: '✅ passed',
-    failed: '❌ failed',
-  }
-  return icons[status] || status
-}
-
-function timeSince(isoString) {
-  const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
-  if (seconds < 60) return `${seconds}s ago`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  return `${Math.floor(minutes / 60)}h ago`
 }
