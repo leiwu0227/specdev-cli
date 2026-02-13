@@ -1,6 +1,6 @@
 import { join, relative } from 'path'
 import fse from 'fs-extra'
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 import { findLatestAssignment } from '../utils/scan.js'
 
 /**
@@ -96,22 +96,22 @@ async function workRequest(flags) {
 
   let headCommit = ''
   try {
-    headCommit = execSync('git rev-parse --short HEAD', gitOpts).trim()
+    headCommit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], gitOpts).trim()
   } catch { /* not in git repo */ }
 
   let changedFiles = []
   try {
     // Tracked changes (staged + unstaged) against HEAD
-    let diff = execSync('git diff --name-only HEAD', gitOpts).trim()
+    let diff = execFileSync('git', ['diff', '--name-only', 'HEAD'], gitOpts).trim()
     if (!diff) {
       // No working tree changes — use last commit diff (skip on initial commit)
-      diff = execSync('git diff --name-only HEAD~1 HEAD', gitOpts).trim()
+      diff = execFileSync('git', ['diff', '--name-only', 'HEAD~1', 'HEAD'], gitOpts).trim()
     }
     if (diff) changedFiles = diff.split('\n').filter(Boolean)
   } catch { /* no commits yet or not in git repo */ }
   try {
     // Include untracked files so new files aren't missed in review scope
-    const untracked = execSync('git ls-files --others --exclude-standard', {
+    const untracked = execFileSync('git', ['ls-files', '--others', '--exclude-standard'], {
       ...gitOpts, maxBuffer: 10 * 1024 * 1024,
     }).trim()
     if (untracked) changedFiles.push(...untracked.split('\n').filter(Boolean))
