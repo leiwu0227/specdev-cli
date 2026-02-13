@@ -111,7 +111,9 @@ async function workRequest(flags) {
   } catch { /* no commits yet or not in git repo */ }
   try {
     // Include untracked files so new files aren't missed in review scope
-    const untracked = execSync('git ls-files --others --exclude-standard', gitOpts).trim()
+    const untracked = execSync('git ls-files --others --exclude-standard', {
+      ...gitOpts, maxBuffer: 10 * 1024 * 1024,
+    }).trim()
     if (untracked) changedFiles.push(...untracked.split('\n').filter(Boolean))
   } catch { /* not in git repo */ }
 
