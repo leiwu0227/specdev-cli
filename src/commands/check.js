@@ -1,4 +1,4 @@
-import { join, resolve, relative } from 'path'
+import { join } from 'path'
 import { fileURLToPath } from 'url'
 import fse from 'fs-extra'
 import { execSync } from 'child_process'

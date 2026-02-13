@@ -92,26 +92,25 @@ async function workRequest(flags) {
   const assignmentName = assignmentPath.split(/[/\\]/).pop()
   const parsed = parseAssignmentId(assignmentName)
 
+  const gitOpts = { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], cwd: targetDir }
+
   let headCommit = ''
   try {
-    headCommit = execSync('git rev-parse --short HEAD', {
-      encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim()
+    headCommit = execSync('git rev-parse --short HEAD', gitOpts).trim()
   } catch { /* not in git repo */ }
 
   let changedFiles = []
   try {
-    // Try staged + unstaged changes first, fall back to last commit diff
-    let diff = execSync('git diff --name-only HEAD', {
-      encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim()
+    // Tracked changes (staged + unstaged) against HEAD
+    let diff = execSync('git diff --name-only HEAD', gitOpts).trim()
     if (!diff) {
       // No working tree changes — use last commit diff (skip on initial commit)
-      diff = execSync('git diff --name-only HEAD~1 HEAD', {
-        encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
-      }).trim()
+      diff = execSync('git diff --name-only HEAD~1 HEAD', gitOpts).trim()
     }
     if (diff) changedFiles = diff.split('\n').filter(Boolean)
+    // Include untracked files so new files aren't missed in review scope
+    const untracked = execSync('git ls-files --others --exclude-standard', gitOpts).trim()
+    if (untracked) changedFiles.push(...untracked.split('\n').filter(Boolean))
   } catch { /* not in git repo or initial commit */ }
 
   const request = {
