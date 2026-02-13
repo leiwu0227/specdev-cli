@@ -1,49 +1,21 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { copySpecdev } from '../utils/copy.js'
+import fse from 'fs-extra'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Platform adapter configurations
+function adapterContent(heading) {
+  return `# ${heading}\n\nRead \`.specdev/_main.md\` for the full SpecDev workflow and rules.\n`
+}
+
 const ADAPTERS = {
-  claude: {
-    path: 'CLAUDE.md',
-    content: [
-      '# CLAUDE.md',
-      '',
-      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
-      '',
-    ].join('\n'),
-  },
-  codex: {
-    path: 'AGENTS.md',
-    content: [
-      '# AGENTS.md',
-      '',
-      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
-      '',
-    ].join('\n'),
-  },
-  cursor: {
-    path: join('.cursor', 'rules'),
-    content: [
-      '# Cursor Rules',
-      '',
-      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
-      '',
-    ].join('\n'),
-  },
-  generic: {
-    path: 'AGENTS.md',
-    content: [
-      '# AGENTS.md',
-      '',
-      'Read `.specdev/_main.md` for the full SpecDev workflow and rules.',
-      '',
-    ].join('\n'),
-  },
+  claude:  { path: 'CLAUDE.md',              heading: 'CLAUDE.md' },
+  codex:   { path: 'AGENTS.md',              heading: 'AGENTS.md' },
+  cursor:  { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
+  generic: { path: 'AGENTS.md',              heading: 'AGENTS.md' },
 }
 
 export async function initCommand(flags = {}) {
@@ -78,7 +50,13 @@ export async function initCommand(flags = {}) {
 
   // Copy the template
   try {
-    await copySpecdev(templatePath, specdevPath, force)
+    if (force) {
+      await fse.remove(specdevPath)
+    }
+    await fse.copy(templatePath, specdevPath, {
+      overwrite: force,
+      errorOnExist: !force,
+    })
 
     // Generate platform adapter file (never overwrite existing)
     const adapter = ADAPTERS[platform]
@@ -90,7 +68,7 @@ export async function initCommand(flags = {}) {
       if (!existsSync(adapterDir)) {
         mkdirSync(adapterDir, { recursive: true })
       }
-      writeFileSync(adapterPath, adapter.content, 'utf-8')
+      writeFileSync(adapterPath, adapterContent(adapter.heading), 'utf-8')
       console.log(`✅ Created ${adapter.path} for ${platform} platform`)
     } else {
       console.log(`ℹ️  ${adapter.path} already exists, skipping (preserving your customizations)`)
