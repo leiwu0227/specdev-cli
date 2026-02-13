@@ -200,16 +200,19 @@ async function checkRun(flags) {
     process.exit(1)
   }
 
-  // Lock
+  // Lock (atomic — wx flag fails if file exists)
   const lockPath = join(assignmentPath, 'review_request.lock')
-  if (await fse.pathExists(lockPath)) {
-    console.error('❌ Lock file exists — another reviewer may be active')
-    console.log(`   Lock: ${lockPath}`)
-    console.log('   If stale, run: specdev check resume')
-    process.exit(1)
+  try {
+    await fse.writeFile(lockPath, new Date().toISOString(), { flag: 'wx' })
+  } catch (err) {
+    if (err.code === 'EEXIST') {
+      console.error('❌ Lock file exists — another reviewer may be active')
+      console.log(`   Lock: ${lockPath}`)
+      console.log('   If stale, run: specdev check resume')
+      process.exit(1)
+    }
+    throw err
   }
-
-  await fse.writeFile(lockPath, new Date().toISOString())
 
   // Preflight
   const scriptPath = fileURLToPath(new URL('../../scripts/verify-gates.sh', import.meta.url))

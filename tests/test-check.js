@@ -167,6 +167,12 @@ async function runTests() {
   const scriptSource = readFileSync(scriptPath, 'utf-8')
   if (!assert(!scriptSource.includes("readFileSync('$ASSIGNMENT_PATH"), 'verify-gates.sh should not interpolate $ASSIGNMENT_PATH into JS strings')) failures++
 
+  // Test: check.js uses wx flag for atomic lock file creation (TOCTOU fix)
+  console.log('\ncheck run creates lock atomically with wx flag:')
+  const checkSource = readFileSync(new URL('../src/commands/check.js', import.meta.url), 'utf-8')
+  if (!assert(checkSource.includes("flag: 'wx'") || checkSource.includes('flag: "wx"'),
+    'check.js should use wx flag for atomic lock file creation')) failures++
+
   console.log('')
   if (failures > 0) {
     console.error(`❌ ${failures} check test(s) failed`)
