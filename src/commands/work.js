@@ -108,10 +108,12 @@ async function workRequest(flags) {
       diff = execSync('git diff --name-only HEAD~1 HEAD', gitOpts).trim()
     }
     if (diff) changedFiles = diff.split('\n').filter(Boolean)
+  } catch { /* no commits yet or not in git repo */ }
+  try {
     // Include untracked files so new files aren't missed in review scope
     const untracked = execSync('git ls-files --others --exclude-standard', gitOpts).trim()
     if (untracked) changedFiles.push(...untracked.split('\n').filter(Boolean))
-  } catch { /* not in git repo or initial commit */ }
+  } catch { /* not in git repo */ }
 
   const request = {
     version: 1,

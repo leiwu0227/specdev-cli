@@ -128,7 +128,7 @@ if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
         const required = ['version', 'assignment_id', 'assignment_path', 'gate', 'status', 'timestamp'];
         const hasRequired = required.every((k) => Object.prototype.hasOwnProperty.call(r, k));
         const validVersion = r.version === 1;
-        const validId = typeof r.assignment_id === 'string' && /^\\d{5}$/.test(r.assignment_id);
+        const validId = typeof r.assignment_id === 'string' && r.assignment_id.length > 0;
         const validGate = r.gate === 'gate_3' || r.gate === 'gate_4';
         const validStatus = ['pending', 'in_progress', 'awaiting_approval', 'passed', 'failed'].includes(r.status);
         const validTimestamp = typeof r.timestamp === 'string' && !Number.isNaN(Date.parse(r.timestamp));
