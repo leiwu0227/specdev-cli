@@ -64,6 +64,54 @@ assert(existsSync(join(TEST_DIR, '.cursor', 'rules')), 'creates .cursor/rules')
 const cursorRules = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
 assert(cursorRules.includes('.specdev/_main.md'), '.cursor/rules points to _main.md')
 
+// ---- Test adapter contains "Using specdev:" instruction ----
+console.log('\nadapter drift-detection instruction:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`, '--platform=claude'])
+const driftCheck = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
+assert(driftCheck.includes('Using specdev:'), 'adapter includes "Using specdev:" prefix instruction')
+
+// ---- Test --platform=claude installs skills ----
+console.log('\nclaude skills installation:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`, '--platform=claude'])
+const skillsDir = join(TEST_DIR, '.claude', 'skills')
+assert(existsSync(skillsDir), '.claude/skills/ directory created')
+assert(existsSync(join(skillsDir, 'specdev-remind.md')), 'specdev-remind.md installed')
+assert(existsSync(join(skillsDir, 'specdev-rewind.md')), 'specdev-rewind.md installed')
+assert(existsSync(join(skillsDir, 'specdev-brainstorm.md')), 'specdev-brainstorm.md installed')
+assert(existsSync(join(skillsDir, 'specdev-continue.md')), 'specdev-continue.md installed')
+assert(existsSync(join(skillsDir, 'specdev-review.md')), 'specdev-review.md installed')
+const remindSkill = readFileSync(join(skillsDir, 'specdev-remind.md'), 'utf-8')
+assert(remindSkill.includes('specdev remind'), 'remind skill references specdev remind command')
+assert(remindSkill.includes('Using specdev:'), 'remind skill includes prefix instruction')
+
+const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind.md'), 'utf-8')
+assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
+
+const brainstormSkill = readFileSync(join(skillsDir, 'specdev-brainstorm.md'), 'utf-8')
+assert(brainstormSkill.includes('skills/core/brainstorming/SKILL.md'), 'brainstorm skill references brainstorming SKILL.md')
+
+const continueSkill = readFileSync(join(skillsDir, 'specdev-continue.md'), 'utf-8')
+assert(continueSkill.includes('watching.json'), 'continue skill references watching.json for auto-detection')
+
+const reviewSkill = readFileSync(join(skillsDir, 'specdev-review.md'), 'utf-8')
+assert(reviewSkill.includes('skills/core/review-agent/SKILL.md'), 'review skill references review-agent SKILL.md')
+
+// ---- Test generic platform does NOT install skills ----
+console.log('\ngeneric skips skills:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+assert(!existsSync(join(TEST_DIR, '.claude', 'skills')), 'generic platform does not create .claude/skills/')
+
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`, '--platform=codex'])
+assert(!existsSync(join(TEST_DIR, '.claude', 'skills')), 'codex platform does not create .claude/skills/')
+
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`, '--platform=cursor'])
+assert(!existsSync(join(TEST_DIR, '.claude', 'skills')), 'cursor platform does not create .claude/skills/')
+
 // ---- Test adapter does NOT overwrite existing file ----
 console.log('\nno-overwrite:')
 cleanup()

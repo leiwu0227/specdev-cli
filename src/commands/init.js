@@ -8,7 +8,13 @@ const __dirname = dirname(__filename)
 
 // Platform adapter configurations
 function adapterContent(heading) {
-  return `# ${heading}\n\nRead \`.specdev/_main.md\` for the full SpecDev workflow and rules.\n`
+  return `# ${heading}
+
+Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
+
+IMPORTANT: Before starting any subtask, announce "Using specdev: <what you're doing>".
+If you stop announcing subtasks, the user will assume you've stopped following the workflow.
+`
 }
 
 const ADAPTERS = {
@@ -16,6 +22,70 @@ const ADAPTERS = {
   codex:   { path: 'AGENTS.md',              heading: 'AGENTS.md' },
   cursor:  { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
   generic: { path: 'AGENTS.md',              heading: 'AGENTS.md' },
+}
+
+export const SKILL_FILES = {
+  'specdev-remind.md': `---
+name: specdev-remind
+description: Re-anchor to the specdev workflow with a phase-aware context refresh
+---
+
+Run \`specdev remind\` and present the output to the user. This shows your current assignment, phase, and the rules that apply right now.
+
+After reading the output, continue your work following those rules. Announce every subtask with "Using specdev: <action>".
+`,
+  'specdev-rewind.md': `---
+name: specdev-rewind
+description: Fully re-read the specdev workflow and re-anchor from scratch
+---
+
+You have drifted from the specdev workflow. Stop what you're doing and:
+
+1. Read \`.specdev/_main.md\` completely
+2. Run \`specdev remind\` to confirm your current assignment and phase
+3. Resume work following the workflow rules
+
+Announce every subtask with "Using specdev: <action>".
+`,
+  'specdev-brainstorm.md': `---
+name: specdev-brainstorm
+description: Start the specdev brainstorm phase for a new feature or change
+---
+
+Read \`.specdev/skills/core/brainstorming/SKILL.md\` and follow it exactly.
+
+Start by reading \`.specdev/_main.md\` for workflow context, then begin
+the interactive brainstorm process with the user.
+`,
+  'specdev-continue.md': `---
+name: specdev-continue
+description: Resume specdev work from where you left off
+---
+
+1. Run \`specdev remind\` to see current assignment state and phase
+2. Check if \`.specdev/assignments/<current>/review/watching.json\` exists
+   - If yes: a review agent is active. Use auto mode with polling.
+   - If no: manual mode. Proceed without polling.
+3. Read the skill for your current phase:
+   - brainstorm → \`.specdev/skills/core/brainstorming/SKILL.md\`
+   - breakdown → \`.specdev/skills/core/breakdown/SKILL.md\`
+   - implementation → \`.specdev/skills/core/implementing/SKILL.md\`
+4. Pick up from where the assignment state indicates
+
+Announce every subtask with "Using specdev: <action>".
+`,
+  'specdev-review.md': `---
+name: specdev-review
+description: Start a specdev review agent session
+---
+
+You are the review agent. Read \`.specdev/skills/core/review-agent/SKILL.md\`
+and follow it exactly.
+
+Ask the user which mode to use:
+- \`review <phase>\` — one-shot review of a specific phase
+- \`autoreview <phases>\` — watch and review phases automatically
+`,
 }
 
 export async function initCommand(flags = {}) {
@@ -72,6 +142,18 @@ export async function initCommand(flags = {}) {
       console.log(`✅ Created ${adapter.path} for ${platform} platform`)
     } else {
       console.log(`ℹ️  ${adapter.path} already exists, skipping (preserving your customizations)`)
+    }
+
+    // Install skills for claude platform
+    if (platform === 'claude') {
+      const skillsDir = join(targetDir, '.claude', 'skills')
+      if (!existsSync(skillsDir)) {
+        mkdirSync(skillsDir, { recursive: true })
+      }
+      for (const [filename, content] of Object.entries(SKILL_FILES)) {
+        writeFileSync(join(skillsDir, filename), content, 'utf-8')
+      }
+      console.log(`✅ Installed ${Object.keys(SKILL_FILES).length} skills to .claude/skills/`)
     }
 
     console.log('✅ SpecDev initialized successfully!')
