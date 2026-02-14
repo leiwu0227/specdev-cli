@@ -46,7 +46,7 @@ export async function scanAssignments(specdevPath) {
  * @param {string} name - Directory name (e.g. "00001_feature_auth")
  * @returns {Promise<object|null>}
  */
-async function scanSingleAssignment(assignmentPath, name) {
+export async function scanSingleAssignment(assignmentPath, name) {
   const parsed = parseAssignmentId(name)
 
   // Detect which phases exist

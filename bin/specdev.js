@@ -8,6 +8,7 @@ import { ponderProjectCommand } from '../src/commands/ponder-project.js'
 import { skillsCommand } from '../src/commands/skills.js'
 import { workCommand } from '../src/commands/work.js'
 import { checkCommand } from '../src/commands/check.js'
+import { remindCommand } from '../src/commands/remind.js'
 
 const [,, command, ...args] = process.argv
 
@@ -52,6 +53,9 @@ switch(command) {
     await checkCommand(checkSub, flags)
     break
   }
+  case 'remind':
+    await remindCommand(flags)
+    break
   case 'ponder': {
     const subcommand = positionalArgs[0]
     if (subcommand === 'workflow') {

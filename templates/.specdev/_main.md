@@ -1,5 +1,9 @@
 # SpecDev Workflow
 
+> **Quick ref:** 5 phases (brainstorm → breakdown → implement → verify → capture).
+> TDD always. No completion claims without evidence. Announce subtasks with
+> "Using specdev: <action>". When stuck: `specdev remind`.
+
 You are working in a project that uses SpecDev — a spec-driven development framework with a 5-phase workflow and 2-agent architecture.
 
 ## Getting Started

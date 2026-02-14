@@ -1,4 +1,4 @@
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 
 const requiredFiles = [
@@ -101,3 +101,19 @@ if (missing.length > 0) {
 
 console.log('✅ All required files present')
 console.log(`   Verified ${requiredFiles.length} files`)
+
+// Content checks
+const mainMd = readFileSync(join(testDir, '.specdev', '_main.md'), 'utf-8')
+if (!mainMd.includes('Quick ref:')) {
+  console.error('❌ _main.md missing quick-ref blockquote at top')
+  process.exit(1)
+}
+if (!mainMd.includes('Using specdev:')) {
+  console.error('❌ _main.md missing "Using specdev:" in quick-ref')
+  process.exit(1)
+}
+if (!mainMd.includes('specdev remind')) {
+  console.error('❌ _main.md missing "specdev remind" in quick-ref')
+  process.exit(1)
+}
+console.log('✅ _main.md quick-ref blockquote present')
