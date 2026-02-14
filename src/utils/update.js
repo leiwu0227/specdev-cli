@@ -1,3 +1,4 @@
+import { existsSync, writeFileSync } from 'fs'
 import fse from 'fs-extra'
 import { join } from 'path'
 
@@ -98,4 +99,27 @@ export async function isValidSpecdevInstallation(specdevPath) {
   }
 
   return true
+}
+
+/**
+ * Updates skill files in .claude/skills/ if they exist
+ * Auto-detects by checking for specdev-remind.md
+ *
+ * @param {string} targetDir - Project root directory
+ * @param {Record<string, string>} skillFiles - Map of filename to content
+ * @returns {number} Number of files updated, or 0 if skipped
+ */
+export function updateSkillFiles(targetDir, skillFiles) {
+  const skillsDir = join(targetDir, '.claude', 'skills')
+  const markerFile = join(skillsDir, 'specdev-remind.md')
+
+  if (!existsSync(markerFile)) {
+    return 0
+  }
+
+  for (const [filename, content] of Object.entries(skillFiles)) {
+    writeFileSync(join(skillsDir, filename), content, 'utf-8')
+  }
+
+  return Object.keys(skillFiles).length
 }

@@ -1,6 +1,7 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { updateSpecdevSystem, isValidSpecdevInstallation } from '../utils/update.js'
+import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles } from '../utils/update.js'
+import { SKILL_FILES } from './init.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -51,6 +52,12 @@ export async function updateCommand(flags = {}) {
     updatedPaths.forEach(path => {
       console.log(`   ✓ ${path}`)
     })
+
+    // Update skill files if installed
+    const skillCount = updateSkillFiles(targetDir, SKILL_FILES)
+    if (skillCount > 0) {
+      console.log(`   ✓ .claude/skills/ (${skillCount} skill files)`)
+    }
     console.log('')
     console.log('📌 Preserved:')
     console.log('   • project_notes/ (your project documentation)')
