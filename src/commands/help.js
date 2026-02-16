@@ -1,6 +1,6 @@
 export function helpCommand() {
   console.log(`
-📋 SpecDev CLI - Workflow System Initializer
+📋 SpecDev CLI - Spec-Driven Workflow for Coding Agents
 
 USAGE:
   specdev <command> [options]
@@ -9,8 +9,11 @@ COMMANDS:
   init                Initialize .specdev folder in current directory
   update              Update system files while preserving project files
   skills              List available .specdev skills in this project
-  main <sub>          Implementer commands (request-review|status|poll-review)
-  review <sub>        Reviewer commands (status|start|poll-main|resume|accept|reject)
+  start               Check/fill project context (big_picture.md)
+  assignment [name]   Create assignment and start brainstorm phase
+  breakdown           Validate brainstorm, start breakdown phase
+  implement           Validate plan, start implementation phase
+  review              Phase-aware manual review (separate session)
   ponder workflow     Interactive: review & write workflow feedback
   ponder project      Interactive: review & write local project knowledge
   help                Show this help message
@@ -20,46 +23,21 @@ OPTIONS:
   --force, -f       Overwrite existing .specdev folder
   --dry-run         Show what would be copied without copying
   --target=<path>   Specify target directory (default: current directory)
+  --assignment=<id> Specify assignment (default: latest)
 
-EXAMPLES:
-  # Initialize in current directory
-  specdev init
+WORKFLOW:
+  specdev init --platform=claude
+  specdev start                     # Fill in project context
+  specdev assignment my-feature     # Create assignment, start brainstorm
+  specdev breakdown                 # Decompose design into tasks
+  specdev implement                 # Execute tasks with TDD
 
-  # Request a review (implementer)
-  specdev main request-review
-  specdev main request-review --mode=manual
+  # Optional: manual review in separate session
+  specdev review
 
-  # Check review status (implementer)
-  specdev main status
-
-  # Wait for review feedback (implementer)
-  specdev main poll-review
-
-  # Scan for pending reviews (reviewer)
-  specdev review status
-
-  # Start reviewing (reviewer)
-  specdev review start
-
-  # Wait for implementer to signal ready (reviewer)
-  specdev review poll-main
-
-  # Resume interrupted review (reviewer)
-  specdev review resume
-
-  # Accept or reject (reviewer)
-  specdev review accept --notes="looks good"
-  specdev review reject --reason="missing tests"
-
-  # Reflect on workflow and capture observations
+  # Knowledge capture
   specdev ponder workflow
-
-  # Reflect on project and capture knowledge
   specdev ponder project
-
-QUICK START:
-  npm install -g github:leiwu0227/specdev-cli
-  specdev init
 
 For more information, visit: https://github.com/leiwu0227/specdev-cli
 `)
