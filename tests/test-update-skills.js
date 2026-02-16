@@ -34,12 +34,12 @@ runCmd(['init', `--target=${TEST_DIR}`, '--platform=claude'])
 
 // ---- Test update overwrites skill files ----
 console.log('\nupdate overwrites skills:')
-const remindPath = join(TEST_DIR, '.claude', 'skills', 'specdev-remind', 'SKILL.md')
-writeFileSync(remindPath, '# tampered content\n')
+const assignmentPath = join(TEST_DIR, '.claude', 'skills', 'specdev-assignment', 'SKILL.md')
+writeFileSync(assignmentPath, '# tampered content\n')
 let result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds')
-const afterUpdate = readFileSync(remindPath, 'utf-8')
-assert(afterUpdate.includes('specdev remind'), 'skill file restored after update')
+const afterUpdate = readFileSync(assignmentPath, 'utf-8')
+assert(afterUpdate.includes('specdev assignment'), 'skill file restored after update')
 assert(!afterUpdate.includes('tampered'), 'tampered content replaced')
 
 // ---- Test update reports skill update ----

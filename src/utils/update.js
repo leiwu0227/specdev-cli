@@ -103,7 +103,7 @@ export async function isValidSpecdevInstallation(specdevPath) {
 
 /**
  * Updates skill files in .claude/skills/ if they exist
- * Auto-detects by checking for specdev-remind/SKILL.md
+ * Auto-detects by checking for specdev-assignment/SKILL.md
  *
  * @param {string} targetDir - Project root directory
  * @param {Record<string, string>} skillFiles - Map of skill name to content
@@ -111,7 +111,7 @@ export async function isValidSpecdevInstallation(specdevPath) {
  */
 export function updateSkillFiles(targetDir, skillFiles) {
   const skillsDir = join(targetDir, '.claude', 'skills')
-  const markerFile = join(skillsDir, 'specdev-remind', 'SKILL.md')
+  const markerFile = join(skillsDir, 'specdev-assignment', 'SKILL.md')
 
   if (!existsSync(markerFile)) {
     return 0

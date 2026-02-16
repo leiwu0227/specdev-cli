@@ -112,8 +112,8 @@ if (!mainMd.includes('Using specdev:')) {
   console.error('❌ _main.md missing "Using specdev:" in quick-ref')
   process.exit(1)
 }
-if (!mainMd.includes('specdev remind')) {
-  console.error('❌ _main.md missing "specdev remind" in quick-ref')
+if (!mainMd.includes('specdev review')) {
+  console.error('❌ _main.md missing "specdev review" in content')
   process.exit(1)
 }
 console.log('✅ _main.md quick-ref blockquote present')

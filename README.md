@@ -1,6 +1,6 @@
 # SpecDev CLI
 
-Spec-driven workflow guidance for coding agents. 5-phase workflow with a 2-agent architecture: TDD enforcement, subagent dispatch, and file-based review coordination.
+Spec-driven workflow guidance for coding agents. 5-phase CLI-driven workflow: TDD enforcement, subagent dispatch, and phase-aware review coordination.
 
 ```mermaid
 graph LR
@@ -17,7 +17,7 @@ npm install -g github:leiwu0227/specdev-cli
 specdev init --platform=claude
 ```
 
-With `--platform=claude`, slash-command skills are installed to `.claude/skills/`. Use `/specdev-start` to fill in your project context interactively, then `/specdev-brainstorm` to begin your first feature.
+With `--platform=claude`, slash-command skills are installed to `.claude/skills/`. Use `/specdev-start` to fill in your project context interactively, then `/specdev-assignment` to begin your first feature.
 
 For other platforms, fill in `.specdev/project_notes/big_picture.md` manually, then ask your coding agent to read `.specdev/_main.md`.
 
@@ -29,19 +29,12 @@ specdev init [--platform=claude]    # Initialize .specdev in current directory
 specdev update                      # Update core skills, preserve project files
 specdev skills                      # List available skills
 
-# Main agent (implementer)
-specdev remind                      # Phase-aware context refresh
-specdev main request-review         # Signal ready for review
-specdev main status                 # Check review status (non-blocking)
-specdev main poll-review            # Block until review feedback arrives
-
-# Review agent (separate session)
-specdev review status               # Scan for pending reviews
-specdev review start                # Run preflight + start review
-specdev review poll-main            # Block until ready-for-review.md appears
-specdev review resume               # Resume interrupted review
-specdev review accept [--notes=""]  # Mark review as passed
-specdev review reject [--reason=""] # Mark review as failed
+# Workflow (coding agent)
+specdev start                       # Check/fill project context
+specdev assignment [name]           # Create assignment, start brainstorm
+specdev breakdown                   # Validate brainstorm, start breakdown
+specdev implement                   # Validate plan, start implementation
+specdev review                      # Phase-aware manual review (separate session)
 
 # Knowledge
 specdev ponder workflow             # Write workflow observations
@@ -65,13 +58,11 @@ specdev ponder project              # Write project-specific learnings
 └── assignments/              # Active work
 ```
 
-## Two-Agent Architecture
+## Workflow Architecture
 
-SpecDev splits work across two agents that communicate via signal files:
+SpecDev guides a single coding agent through a 5-phase workflow. Each phase is driven by a CLI command that validates the previous phase's output, then hands the agent the appropriate skill.
 
-**Main agent** (your session) handles phases 1-3 and 5. Interactive during brainstorm, automatic after.
-
-**Review agent** (separate session) handles phase 4. Launched by the user for holistic phase reviews. Communicates via `review_request.json` and `review_report.md` in the assignment folder.
+The agent runs interactively during brainstorm and review, and automatically during breakdown and implementation. Review can be run in the same session or a separate one via `specdev review`.
 
 ## The 5 Phases
 
@@ -103,13 +94,13 @@ Tasks can declare skills via the `Skills:` field in the plan, and those skill co
 
 **Produces:** committed code per task, `implementation/progress.json`
 
-When done: `specdev main request-review`
+When done: run `specdev review` to start inline review, or open a separate session.
 
 ### 4. Verify
 
 Skill: `skills/core/review-agent/SKILL.md`
 
-Runs in a **separate session**. The review agent picks up pending reviews, runs preflight checks, and performs a single holistic review covering both spec compliance and code quality.
+Can run in the same session or a **separate session** via `specdev review`. The review agent runs preflight checks and performs a single holistic review covering both spec compliance and code quality.
 
 Up to 3 review rounds. Communication happens through `review_request.json` (status, progress, verdict).
 
