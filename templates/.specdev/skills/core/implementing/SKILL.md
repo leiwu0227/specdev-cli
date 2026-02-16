@@ -23,7 +23,7 @@ next: knowledge-capture
 |--------|---------|-------------|
 | `scripts/extract-tasks.sh` | Parse plan into structured JSON task list | At the start |
 | `scripts/track-progress.sh` | Mark tasks started/completed, get summary | After each task |
-| `scripts/poll-for-feedback.sh` | Block until review agent responds | After signaling ready-for-review |
+| `scripts/poll-for-feedback.sh` | Block until review feedback arrives | After dispatching subagent review |
 
 ## Prompts
 
@@ -60,11 +60,11 @@ For each task in order:
 ### Phase 3: Final Review
 
 1. Run full test suite one final time
-2. Run `specdev main request-review` to signal ready for review
-3. Check `review/watching.json`:
-   - If present: run `scripts/poll-for-feedback.sh`, read feedback, fix if needed (up to 3 rounds)
-   - If absent: proceed to knowledge capture
-4. Run `scripts/track-progress.sh <plan-file> summary`
+2. Run `scripts/track-progress.sh <plan-file> summary`
+3. Present a summary to the user inline: what was built, tests passing, any notable decisions
+4. Ask the user for approval to proceed to knowledge capture
+   - If user approves: proceed to knowledge capture
+   - If user requests changes: address feedback and re-present
 
 ## Red Flags
 
@@ -80,4 +80,4 @@ For each task in order:
 
 - **Before this skill:** breakdown (creates the plan)
 - **After this skill:** knowledge-capture (distill learnings)
-- **Review agent:** May do holistic review after all tasks complete
+- **Review:** User may run `specdev review` for optional holistic review after all tasks complete

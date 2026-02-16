@@ -44,31 +44,24 @@ Reviewer checks:
 
 Verdict: `READY TO MERGE` or `NOT READY`
 
-If NOT READY, fix issues and re-request with `specdev main request-review`.
+If NOT READY, fix issues and re-run the subagent review.
 
 Response protocol uses `.specdev/skills/core/receiving-code-review.md`.
 
 ---
 
-## Automated Review Agent (alternative to subagent review)
+## Manual Review (optional)
 
-You can use a separate Claude Code session as an independent reviewer instead of self-review or subagent review. This eliminates self-review bias through true process separation.
+For holistic review beyond the automatic subagent reviews, the user can run `specdev review` in a separate session. This provides a phase-aware, interactive review.
 
-Invoke `.specdev/skills/core/review-agent.md`.
+The `specdev review` command:
 
-### Implementer workflow
+1. Detects the current assignment phase automatically
+2. Reads the relevant phase artifacts
+3. Performs a holistic review
+4. Discusses findings interactively with the user
 
-1. Finish implementation and tests
-2. Run `specdev main request-review` to create `review_request.json`
-3. Run `specdev main status` to check review progress
-4. If passed, proceed. If failed, read `review_report.md`, fix issues, and re-request
-
-### Reviewer workflow
-
-1. Run `specdev review start` to start (runs structural pre-flight automatically)
-2. Perform the review following the printed instructions
-3. Write `review_report.md` (template: `_templates/review_report_template.md`)
-4. Run `specdev review accept` or `specdev review reject --reason="..."`
+This is optional — the primary review mechanism is automatic subagent reviews (spec + code quality) that run per-task during implementation.
 
 ---
 

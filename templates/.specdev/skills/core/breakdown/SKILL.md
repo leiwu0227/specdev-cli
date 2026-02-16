@@ -94,10 +94,9 @@ Only declare skills the task actually needs. The implementing phase will inject 
 
 2. Write all tasks in order
 3. Save to `breakdown/plan.md` in the assignment folder
-4. Write `review/ready-for-review.md` with phase: breakdown
-5. Check for `review/watching.json`:
-   - If present: run `implementing/scripts/poll-for-feedback.sh` and wait
-   - If absent: proceed to implementing phase immediately
+4. A subagent review (1-2 rounds) will check the plan for completeness and correctness
+   - If the review finds issues: address them and re-run the review
+   - Once approved: proceed to implementing phase automatically
 
 ## Rules
 
@@ -120,4 +119,4 @@ Only declare skills the task actually needs. The implementing phase will inject 
 
 - **Before this skill:** brainstorming (produces the design this skill reads)
 - **After this skill:** implementing (executes the plan)
-- **Review:** Review agent may check the plan before implementation starts
+- **Review:** Subagent review (1-2 rounds) checks the plan before implementation starts
