@@ -17,9 +17,9 @@ npm install -g github:leiwu0227/specdev-cli
 specdev init --platform=claude
 ```
 
-After setup, ask your coding agent to read `.specdev/_main.md`.
+With `--platform=claude`, slash-command skills are installed to `.claude/skills/`. Use `/specdev-start` to fill in your project context interactively, then `/specdev-brainstorm` to begin your first feature.
 
-With `--platform=claude`, slash-command skills are installed to `.claude/skills/` for easy access (`/specdev-brainstorm`, `/specdev-continue`, `/specdev-remind`, `/specdev-review`).
+For other platforms, fill in `.specdev/project_notes/big_picture.md` manually, then ask your coding agent to read `.specdev/_main.md`.
 
 ## Commands
 
