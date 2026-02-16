@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import fse from 'fs-extra'
@@ -199,6 +199,19 @@ export async function initCommand(flags = {}) {
         writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
       }
       console.log(`✅ Installed ${Object.keys(SKILL_FILES).length} skills to .claude/skills/`)
+
+      // Install SessionStart hook
+      const hookDir = join(targetDir, '.claude', 'hooks')
+      mkdirSync(hookDir, { recursive: true })
+
+      const hookScriptSrc = join(__dirname, '../../hooks/session-start.sh')
+      const hookScriptDest = join(hookDir, 'specdev-session-start.sh')
+
+      if (existsSync(hookScriptSrc)) {
+        const hookContent = readFileSync(hookScriptSrc, 'utf-8')
+        writeFileSync(hookScriptDest, hookContent, { mode: 0o755 })
+        console.log('✅ Installed SessionStart hook to .claude/hooks/')
+      }
     }
 
     console.log('✅ SpecDev initialized successfully!')
@@ -213,7 +226,6 @@ export async function initCommand(flags = {}) {
       console.log('   /specdev-start        Interactive project context setup')
       console.log('   /specdev-brainstorm   Start the brainstorm phase')
       console.log('   /specdev-continue     Resume from current phase')
-      console.log('   /specdev-remind       Phase-aware context refresh')
       console.log('   /specdev-rewind       Full workflow re-read')
       console.log('   /specdev-review       Start a review agent session')
     } else {
@@ -222,9 +234,8 @@ export async function initCommand(flags = {}) {
       console.log('   3. Describe what you want to build — the agent will start brainstorming')
       console.log('')
       console.log('Useful commands:')
-      console.log('   specdev remind        Phase-aware context refresh')
-      console.log('   specdev main request-review  Signal ready for review')
-      console.log('   specdev main status          Check review progress')
+      console.log('   specdev assignment <name>    Create or resume an assignment')
+      console.log('   specdev main status          Check assignment progress')
     }
   } catch (error) {
     console.error('❌ Failed to initialize SpecDev:', error.message)
