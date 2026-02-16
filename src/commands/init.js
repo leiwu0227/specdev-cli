@@ -71,14 +71,16 @@ Read \`.specdev/project_notes/big_picture.md\`.
 
 4. Show the user the final content and ask them to confirm or request changes before writing.
 `,
-  'specdev-remind': `---
-name: specdev-remind
-description: Re-anchor to the specdev workflow with a phase-aware context refresh
+  'specdev-assignment': `---
+name: specdev-assignment
+description: Create a new assignment and start the brainstorm phase
 ---
 
-Run \`specdev remind\` and present the output to the user. This shows your current assignment, phase, and the rules that apply right now.
+Run \`specdev assignment <name>\` where <name> describes the feature.
 
-After reading the output, continue your work following those rules. Announce every subtask with "Using specdev: <action>".
+Then read \`.specdev/skills/core/brainstorming/SKILL.md\` and follow it exactly.
+
+Announce every subtask with "Using specdev: <action>".
 `,
   'specdev-rewind': `---
 name: specdev-rewind
@@ -88,7 +90,7 @@ description: Fully re-read the specdev workflow and re-anchor from scratch
 You have drifted from the specdev workflow. Stop what you're doing and:
 
 1. Read \`.specdev/_main.md\` completely
-2. Run \`specdev remind\` to confirm your current assignment and phase
+2. Check the latest assignment in \`.specdev/assignments/\` and determine current phase
 3. Resume work following the workflow rules
 
 Announce every subtask with "Using specdev: <action>".
@@ -108,29 +110,26 @@ name: specdev-continue
 description: Resume specdev work from where you left off
 ---
 
-1. Run \`specdev remind\` to see current assignment state and phase
-2. Check if \`.specdev/assignments/<current>/review/watching.json\` exists
-   - If yes: a review agent is active. Use auto mode with polling.
-   - If no: manual mode. Proceed without polling.
-3. Read the skill for your current phase:
-   - brainstorm → \`.specdev/skills/core/brainstorming/SKILL.md\`
-   - breakdown → \`.specdev/skills/core/breakdown/SKILL.md\`
-   - implementation → \`.specdev/skills/core/implementing/SKILL.md\`
-4. Pick up from where the assignment state indicates
+1. Run \`specdev start\` to check project context
+2. Check the latest assignment in \`.specdev/assignments/\`
+3. Determine current phase from artifacts:
+   - No brainstorm artifacts → run \`specdev assignment <name>\`
+   - Has design, no plan → run \`specdev breakdown\`
+   - Has plan, no implementation → run \`specdev implement\`
+   - Has implementation → check if all tasks complete
+4. Read the skill for your current phase and continue
 
 Announce every subtask with "Using specdev: <action>".
 `,
   'specdev-review': `---
 name: specdev-review
-description: Start a specdev review agent session
+description: Phase-aware manual review of the current assignment
 ---
 
-You are the review agent. Read \`.specdev/skills/core/review-agent/SKILL.md\`
-and follow it exactly.
+Run \`specdev review\` to see the current assignment's phase and review context.
 
-Ask the user which mode to use:
-- \`review <phase>\` — one-shot review of a specific phase
-- \`autoreview <phases>\` — watch and review phases automatically
+Follow the printed instructions to review the appropriate artifacts.
+Discuss findings with the user before concluding.
 `,
 }
 
@@ -224,10 +223,11 @@ export async function initCommand(flags = {}) {
       console.log('')
       console.log('Installed slash commands:')
       console.log('   /specdev-start        Interactive project context setup')
-      console.log('   /specdev-brainstorm   Start the brainstorm phase')
+      console.log('   /specdev-brainstorm   Start brainstorm for a new assignment')
+      console.log('   /specdev-assignment   Create a new assignment')
       console.log('   /specdev-continue     Resume from current phase')
       console.log('   /specdev-rewind       Full workflow re-read')
-      console.log('   /specdev-review       Start a review agent session')
+      console.log('   /specdev-review       Phase-aware manual review')
     } else {
       console.log('   1. Fill in .specdev/project_notes/big_picture.md with your project context')
       console.log('   2. Ask your coding agent to read .specdev/_main.md')
@@ -235,7 +235,7 @@ export async function initCommand(flags = {}) {
       console.log('')
       console.log('Useful commands:')
       console.log('   specdev assignment <name>    Create or resume an assignment')
-      console.log('   specdev main status          Check assignment progress')
+      console.log('   specdev start                Check project context and status')
     }
   } catch (error) {
     console.error('❌ Failed to initialize SpecDev:', error.message)

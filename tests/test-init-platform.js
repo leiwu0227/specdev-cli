@@ -78,7 +78,7 @@ runCmd(['init', `--target=${TEST_DIR}`, '--platform=claude'])
 const skillsDir = join(TEST_DIR, '.claude', 'skills')
 assert(existsSync(skillsDir), '.claude/skills/ directory created')
 assert(existsSync(join(skillsDir, 'specdev-start', 'SKILL.md')), 'specdev-start/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-remind', 'SKILL.md')), 'specdev-remind/SKILL.md installed')
+assert(existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')), 'specdev-assignment/SKILL.md installed')
 assert(existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')), 'specdev-rewind/SKILL.md installed')
 assert(existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), 'specdev-brainstorm/SKILL.md installed')
 assert(existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')), 'specdev-continue/SKILL.md installed')
@@ -87,9 +87,9 @@ const startSkill = readFileSync(join(skillsDir, 'specdev-start', 'SKILL.md'), 'u
 assert(startSkill.includes('big_picture.md'), 'start skill references big_picture.md')
 assert(startSkill.includes('What does this project do'), 'start skill includes Q&A instructions')
 
-const remindSkill = readFileSync(join(skillsDir, 'specdev-remind', 'SKILL.md'), 'utf-8')
-assert(remindSkill.includes('specdev remind'), 'remind skill references specdev remind command')
-assert(remindSkill.includes('Using specdev:'), 'remind skill includes prefix instruction')
+const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
+assert(assignmentSkill.includes('specdev assignment'), 'assignment skill references specdev assignment command')
+assert(assignmentSkill.includes('Using specdev:'), 'assignment skill includes prefix instruction')
 
 const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
@@ -98,10 +98,10 @@ const brainstormSkill = readFileSync(join(skillsDir, 'specdev-brainstorm', 'SKIL
 assert(brainstormSkill.includes('skills/core/brainstorming/SKILL.md'), 'brainstorm skill references brainstorming SKILL.md')
 
 const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
-assert(continueSkill.includes('watching.json'), 'continue skill references watching.json for auto-detection')
+assert(continueSkill.includes('specdev start'), 'continue skill references specdev start command')
 
 const reviewSkill = readFileSync(join(skillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
-assert(reviewSkill.includes('skills/core/review-agent/SKILL.md'), 'review skill references review-agent SKILL.md')
+assert(reviewSkill.includes('specdev review'), 'review skill references specdev review command')
 
 // ---- Test generic platform does NOT install skills ----
 console.log('\ngeneric skips skills:')
