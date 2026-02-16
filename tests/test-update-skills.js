@@ -34,7 +34,7 @@ runCmd(['init', `--target=${TEST_DIR}`, '--platform=claude'])
 
 // ---- Test update overwrites skill files ----
 console.log('\nupdate overwrites skills:')
-const remindPath = join(TEST_DIR, '.claude', 'skills', 'specdev-remind.md')
+const remindPath = join(TEST_DIR, '.claude', 'skills', 'specdev-remind', 'SKILL.md')
 writeFileSync(remindPath, '# tampered content\n')
 let result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds')

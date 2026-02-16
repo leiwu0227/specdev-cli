@@ -25,7 +25,7 @@ const ADAPTERS = {
 }
 
 export const SKILL_FILES = {
-  'specdev-remind.md': `---
+  'specdev-remind': `---
 name: specdev-remind
 description: Re-anchor to the specdev workflow with a phase-aware context refresh
 ---
@@ -34,7 +34,7 @@ Run \`specdev remind\` and present the output to the user. This shows your curre
 
 After reading the output, continue your work following those rules. Announce every subtask with "Using specdev: <action>".
 `,
-  'specdev-rewind.md': `---
+  'specdev-rewind': `---
 name: specdev-rewind
 description: Fully re-read the specdev workflow and re-anchor from scratch
 ---
@@ -47,7 +47,7 @@ You have drifted from the specdev workflow. Stop what you're doing and:
 
 Announce every subtask with "Using specdev: <action>".
 `,
-  'specdev-brainstorm.md': `---
+  'specdev-brainstorm': `---
 name: specdev-brainstorm
 description: Start the specdev brainstorm phase for a new feature or change
 ---
@@ -57,7 +57,7 @@ Read \`.specdev/skills/core/brainstorming/SKILL.md\` and follow it exactly.
 Start by reading \`.specdev/_main.md\` for workflow context, then begin
 the interactive brainstorm process with the user.
 `,
-  'specdev-continue.md': `---
+  'specdev-continue': `---
 name: specdev-continue
 description: Resume specdev work from where you left off
 ---
@@ -74,7 +74,7 @@ description: Resume specdev work from where you left off
 
 Announce every subtask with "Using specdev: <action>".
 `,
-  'specdev-review.md': `---
+  'specdev-review': `---
 name: specdev-review
 description: Start a specdev review agent session
 ---
@@ -147,11 +147,10 @@ export async function initCommand(flags = {}) {
     // Install skills for claude platform
     if (platform === 'claude') {
       const skillsDir = join(targetDir, '.claude', 'skills')
-      if (!existsSync(skillsDir)) {
-        mkdirSync(skillsDir, { recursive: true })
-      }
-      for (const [filename, content] of Object.entries(SKILL_FILES)) {
-        writeFileSync(join(skillsDir, filename), content, 'utf-8')
+      for (const [skillName, content] of Object.entries(SKILL_FILES)) {
+        const skillDir = join(skillsDir, skillName)
+        mkdirSync(skillDir, { recursive: true })
+        writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
       }
       console.log(`✅ Installed ${Object.keys(SKILL_FILES).length} skills to .claude/skills/`)
     }

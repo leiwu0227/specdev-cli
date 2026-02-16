@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import fse from 'fs-extra'
 import { join } from 'path'
 
@@ -103,22 +103,26 @@ export async function isValidSpecdevInstallation(specdevPath) {
 
 /**
  * Updates skill files in .claude/skills/ if they exist
- * Auto-detects by checking for specdev-remind.md
+ * Auto-detects by checking for specdev-remind/SKILL.md
  *
  * @param {string} targetDir - Project root directory
- * @param {Record<string, string>} skillFiles - Map of filename to content
+ * @param {Record<string, string>} skillFiles - Map of skill name to content
  * @returns {number} Number of files updated, or 0 if skipped
  */
 export function updateSkillFiles(targetDir, skillFiles) {
   const skillsDir = join(targetDir, '.claude', 'skills')
-  const markerFile = join(skillsDir, 'specdev-remind.md')
+  const markerFile = join(skillsDir, 'specdev-remind', 'SKILL.md')
 
   if (!existsSync(markerFile)) {
     return 0
   }
 
-  for (const [filename, content] of Object.entries(skillFiles)) {
-    writeFileSync(join(skillsDir, filename), content, 'utf-8')
+  for (const [skillName, content] of Object.entries(skillFiles)) {
+    const skillDir = join(skillsDir, skillName)
+    if (!existsSync(skillDir)) {
+      mkdirSync(skillDir, { recursive: true })
+    }
+    writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
   }
 
   return Object.keys(skillFiles).length
