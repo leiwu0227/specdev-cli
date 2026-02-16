@@ -1,128 +1,175 @@
 # SpecDev CLI
 
-Spec-driven workflow guidance for coding agents. Enforces TDD discipline, complexity-scaled scaffolding, and two-stage code review through modular skills.
+Spec-driven workflow guidance for coding agents. 5-phase workflow with a 2-agent architecture: TDD enforcement, subagent dispatch, and file-based review coordination.
 
 ```mermaid
 graph LR
-    A[Assignment] --> P[Plan + Complexity Gate]
-    P --> S[Skills]
-    S --> I[Implement via TDD]
-    I --> V[Two-Stage Review]
-    V --> K[Knowledge]
+    B[Brainstorm] --> D[Breakdown]
+    D --> I[Implement]
+    I --> V[Verify]
+    V --> C[Capture]
 ```
 
 ## Quick Start
 
 ```bash
 npm install -g github:leiwu0227/specdev-cli
-specdev init
+specdev init --platform=claude
 ```
 
 After setup, ask your coding agent to read `.specdev/_main.md`.
 
+With `--platform=claude`, slash-command skills are installed to `.claude/skills/` for easy access (`/specdev-brainstorm`, `/specdev-continue`, `/specdev-remind`, `/specdev-review`).
+
 ## Commands
 
 ```bash
-specdev init              # Initialize .specdev in current directory
-specdev update            # Update system files, preserve project files
-specdev skills            # List available skills
-specdev ponder workflow   # Review assignments, write workflow observations
-specdev ponder project    # Review assignments, write project knowledge
-specdev help
-specdev --version
+# Setup
+specdev init [--platform=claude]    # Initialize .specdev in current directory
+specdev update                      # Update core skills, preserve project files
+specdev skills                      # List available skills
+
+# Main agent (implementer)
+specdev remind                      # Phase-aware context refresh
+specdev work request --gate=<gate>  # Signal ready for review (gate_3 or gate_4)
+specdev work status                 # Check review status (non-blocking)
+
+# Review agent (separate session)
+specdev check status                # Scan for pending reviews
+specdev check run                   # Run preflight + start review
+specdev check resume                # Resume interrupted review
+specdev check accept [--notes=""]   # Mark review as passed
+specdev check reject [--reason=""]  # Mark review as failed
+
+# Knowledge
+specdev ponder workflow             # Write workflow observations
+specdev ponder project              # Write project-specific learnings
 ```
 
 ## What gets created
 
 ```text
 .specdev/
-├── _main.md                  # Workflow entry point
-├── _router.md                # Routes to correct guide
+├── _main.md                  # Workflow entry point (start here)
+├── _router.md                # Routes to correct skill
 ├── _guides/                  # Workflow and task guides
 ├── _templates/               # Templates and worked examples
 ├── skills/
-│   ├── core/                 # Core workflow skills (managed by specdev update)
-│   └── tools/                # Project tool skills (user-owned)
+│   ├── core/                 # Phase skills + supporting skills (managed by specdev update)
+│   └── tools/                # Project-specific tool skills (user-owned)
 ├── knowledge/                # Long-term project knowledge
 ├── project_notes/            # Project context and progress
 ├── project_scaffolding/      # Source mirror metadata
 └── assignments/              # Active work
 ```
 
-## Workflow model
+## Two-Agent Architecture
 
-All work happens through assignments in `.specdev/assignments/#####_type_name/`.
+SpecDev splits work across two agents that communicate via signal files:
 
-### Default flow
+**Main agent** (your session) handles phases 1-3 and 5. Interactive during brainstorm, automatic after.
 
-1. **Proposal** -- user defines scope
-2. **Plan** -- includes complexity/risk gate and TDD task decomposition
-3. **Architecture prep** -- conditional scaffolding based on complexity
-4. **Implement** -- TDD Red-Green-Refactor per task (optionally via subagent dispatch)
-5. **Validate** -- two-stage review (spec compliance, then code quality) with verification evidence
-6. **Finalize** -- documentation and assignment status
-7. **Knowledge capture** -- distill learnings into `knowledge/` branches
+**Review agent** (separate session) handles phase 4. Launched by the user for holistic phase reviews. Communicates via `review_request.json` and `review_report.md` in the assignment folder.
 
-### Complexity gate
+## The 5 Phases
 
-Planning classifies each assignment:
+All work happens through assignments in `.specdev/assignments/<id>/`.
 
-| Class | Scaffolding | Gate 1 |
-|-------|-------------|--------|
-| `LOW` | None | Skip |
-| `MEDIUM` | `skills/core/scaffolding-lite.md` (contracts + dependency map) | User approves contracts |
-| `HIGH` | `skills/core/scaffolding-full.md` (full per-file blueprints) | User approves full architecture |
+### 1. Brainstorm
 
-### Skills model
+Skill: `skills/core/brainstorming/SKILL.md`
 
-Skills are modular capabilities in `.specdev/skills/`, split into two categories:
+Interactive Q&A with the user to validate scope and design. One question at a time, design sections validated incrementally.
 
-**Core skills** (`skills/core/`) — managed by SpecDev, updated by `specdev update`. Two sub-categories:
+**Produces:** `brainstorm/proposal.md` + `brainstorm/design.md`
 
-**Always-apply** (read at assignment start, follow throughout):
-- `verification-before-completion.md` -- no completion claims without command evidence
-- `receiving-code-review.md` -- evidence-based review response, no performative agreement
+### 2. Breakdown
 
-**Invoke-when-needed** (triggered by complexity gate or conditions):
-- `scaffolding-lite.md` / `scaffolding-full.md` -- architecture prep
-- `systematic-debugging.md` -- root-cause-first bugfix
-- `requesting-code-review.md` -- standardized review packets
-- `parallel-worktrees.md` -- safe parallel execution
-- `micro-task-planning.md` -- ultra-granular planning for high-risk tasks
-- `subagent-driven-development.md` -- fresh subagent per task with two-stage review loop
+Skill: `skills/core/breakdown/SKILL.md`
 
-**Tool skills** (`skills/tools/`) — user-owned, never touched by update:
-- Project-specific tools, testing scripts, search integrations
-- Future: pulled from a SpecDev skill hub based on project type
+Automatic decomposition of the design into executable TDD tasks. Each task is small, self-contained, and includes exact file paths, code, and commands.
 
-Each invoked skill must produce an artifact and be logged in `skills_invoked.md`.
+**Produces:** `breakdown/plan.md`
 
-### TDD enforcement
+### 3. Implement
 
-The implementing guide enforces strict test-driven development adapted from [superpowers](https://github.com/obra/superpowers):
-- Iron law: no production code without a failing test first
-- Red-Green-Refactor cycle with mandatory verification at each phase
-- 11-entry rationalization table countering common excuses
-- 13-item red flags checklist
+Skill: `skills/core/implementing/SKILL.md`
 
-### Subagent-driven development
+A fresh subagent is dispatched per task. Each subagent follows strict TDD (Red-Green-Refactor) and goes through two per-task reviews (spec compliance, then code quality) before the task is considered done.
 
-For plans with multiple independent tasks, the `subagent-driven-development` skill dispatches a fresh subagent per task with curated context (full task text copied into prompt, never file references). Each task goes through: implement with TDD, spec compliance review, code quality review, with review loops until both reviewers approve. Adapted from [superpowers](https://github.com/obra/superpowers).
+Tasks can declare skills via the `Skills:` field in the plan, and those skill contents are injected into the subagent prompt.
 
-### Two-stage review
+**Produces:** committed code per task, `implementation/progress.json`
 
-After implementation, two independent reviews run in order:
-1. **Spec compliance** -- skeptical reviewer verifies implementation matches plan exactly
-2. **Code quality** -- issues tagged CRITICAL/IMPORTANT/MINOR with file:line references
+When done: `specdev work request --gate=gate_3`
 
-### Knowledge capture
+### 4. Verify
 
-After finalize, agents distill learnings into `knowledge/` branches (codestyle, architecture, domain, workflow). Workflow-level observations go to `knowledge/_workflow_feedback/` for cross-project improvement.
+Skill: `skills/core/review-agent/SKILL.md`
 
-## Ponder commands
+Runs in a **separate session**. The review agent picks up pending reviews, runs preflight checks, and performs holistic review against the spec and code quality standards.
 
-- `specdev ponder workflow` -- writes workflow-level observations to `knowledge/_workflow_feedback/`
-- `specdev ponder project` -- writes project-specific learnings to `knowledge/<branch>/`
+Two gates:
+- **Gate 3** — Spec compliance: does the implementation match the design?
+- **Gate 4** — Code quality: architecture, testing, style
+
+Up to 3 review rounds per gate. Communication happens through `review_request.json` (status, progress, verdict).
+
+**Produces:** `review_report.md`
+
+### 5. Capture
+
+Skill: `skills/core/knowledge-capture/SKILL.md`
+
+Automatic distillation of learnings after the assignment is complete.
+
+**Produces:** `knowledge/project-notes-diff.md` (documentation gaps) + `knowledge/workflow-diff.md` (workflow observations)
+
+## Assignment Folder Structure
+
+```text
+.specdev/assignments/<id>/
+├── brainstorm/
+│   ├── proposal.md              # What was requested
+│   └── design.md                # Validated design
+├── breakdown/
+│   └── plan.md                  # Executable task list
+├── implementation/
+│   └── progress.json            # Task completion tracking
+├── review_request.json          # Review coordination (status, gate, changed files)
+├── review_progress.json         # File-by-file review progress
+└── review_report.md             # Review findings
+```
+
+## Skills Model
+
+Skills are modular capabilities in `.specdev/skills/`:
+
+```text
+skills/core/<name>/
+  SKILL.md        # The manual (with frontmatter)
+  scripts/        # Deterministic tools (bash)
+  prompts/        # Subagent templates
+```
+
+**Core skills** (`skills/core/`) — managed by SpecDev, updated via `specdev update`:
+
+| Skill | Type | Purpose |
+|-------|------|---------|
+| `brainstorming` | Phase | Interactive design Q&A |
+| `breakdown` | Phase | Design to executable plan |
+| `implementing` | Phase | Subagent dispatch + TDD |
+| `review-agent` | Phase | Holistic review (separate session) |
+| `knowledge-capture` | Phase | Post-assignment learning capture |
+| `test-driven-development` | Supporting | Red-Green-Refactor enforcement |
+| `systematic-debugging` | Supporting | Root-cause-first bugfix |
+| `parallel-worktrees` | Supporting | Git worktree isolation |
+| `orientation` | Supporting | Decision tree for skill selection |
+| `verification-before-completion` | Always-apply | No claims without evidence |
+| `receiving-code-review` | Always-apply | No performative agreement |
+| `scaffolding-lite` / `scaffolding-full` | On-demand | Architecture prep |
+
+**Tool skills** (`skills/tools/`) — user-owned, never overwritten by update. Project-specific tools, testing scripts, integrations.
 
 ## Updating
 
@@ -131,7 +178,7 @@ npm install -g github:leiwu0227/specdev-cli
 specdev update
 ```
 
-`specdev update` updates system guides/templates and creates missing default skills without overwriting project-specific files or customized skills.
+`specdev update` refreshes core skills and system guides while preserving project-specific files and customized tool skills.
 
 ## Acknowledgments
 
