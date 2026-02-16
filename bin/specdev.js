@@ -6,9 +6,11 @@ import { helpCommand } from '../src/commands/help.js'
 import { ponderWorkflowCommand } from '../src/commands/ponder-workflow.js'
 import { ponderProjectCommand } from '../src/commands/ponder-project.js'
 import { skillsCommand } from '../src/commands/skills.js'
-import { mainCommand } from '../src/commands/main.js'
+import { startCommand } from '../src/commands/start.js'
+import { assignmentCommand } from '../src/commands/assignment.js'
+import { breakdownCommand } from '../src/commands/breakdown.js'
+import { implementCommand } from '../src/commands/implement.js'
 import { reviewCommand } from '../src/commands/review.js'
-import { remindCommand } from '../src/commands/remind.js'
 
 const [,, command, ...args] = process.argv
 
@@ -43,18 +45,20 @@ switch(command) {
   case 'skills':
     await skillsCommand(flags)
     break
-  case 'main': {
-    const mainSub = positionalArgs[0]
-    await mainCommand(mainSub, flags)
+  case 'start':
+    await startCommand(flags)
     break
-  }
-  case 'review': {
-    const reviewSub = positionalArgs[0]
-    await reviewCommand(reviewSub, flags)
+  case 'assignment':
+    await assignmentCommand(positionalArgs, flags)
     break
-  }
-  case 'remind':
-    await remindCommand(flags)
+  case 'breakdown':
+    await breakdownCommand(flags)
+    break
+  case 'implement':
+    await implementCommand(flags)
+    break
+  case 'review':
+    await reviewCommand(flags)
     break
   case 'ponder': {
     const subcommand = positionalArgs[0]
