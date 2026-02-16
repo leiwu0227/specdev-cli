@@ -31,7 +31,7 @@ specdev skills                      # List available skills
 
 # Main agent (implementer)
 specdev remind                      # Phase-aware context refresh
-specdev work request --gate=<gate>  # Signal ready for review (gate_3 or gate_4)
+specdev work request                # Signal ready for review
 specdev work status                 # Check review status (non-blocking)
 
 # Review agent (separate session)
@@ -101,19 +101,15 @@ Tasks can declare skills via the `Skills:` field in the plan, and those skill co
 
 **Produces:** committed code per task, `implementation/progress.json`
 
-When done: `specdev work request --gate=gate_3`
+When done: `specdev work request`
 
 ### 4. Verify
 
 Skill: `skills/core/review-agent/SKILL.md`
 
-Runs in a **separate session**. The review agent picks up pending reviews, runs preflight checks, and performs holistic review against the spec and code quality standards.
+Runs in a **separate session**. The review agent picks up pending reviews, runs preflight checks, and performs a single holistic review covering both spec compliance and code quality.
 
-Two gates:
-- **Gate 3** — Spec compliance: does the implementation match the design?
-- **Gate 4** — Code quality: architecture, testing, style
-
-Up to 3 review rounds per gate. Communication happens through `review_request.json` (status, progress, verdict).
+Up to 3 review rounds. Communication happens through `review_request.json` (status, progress, verdict).
 
 **Produces:** `review_report.md`
 

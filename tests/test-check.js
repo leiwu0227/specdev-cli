@@ -59,7 +59,7 @@ async function runTests() {
     version: 1,
     assignment_id: '00001',
     assignment_path: '.specdev/assignments/00001_feature_test-check',
-    gate: 'gate_3',
+    gate: 'review',
     status: 'pending',
     mode: 'auto',
     timestamp: new Date().toISOString(),
@@ -91,7 +91,7 @@ async function runTests() {
   // Test 4: check accept (from in_progress)
   console.log('\ncheck accept:')
   writeFileSync(join(assignment, 'review_request.json'), JSON.stringify({
-    version: 1, assignment_id: '00001', gate: 'gate_3',
+    version: 1, assignment_id: '00001', gate: 'review',
     status: 'in_progress', mode: 'auto', timestamp: new Date().toISOString(),
   }, null, 2))
   writeFileSync(join(assignment, 'review_request.lock'), new Date().toISOString())
@@ -111,7 +111,7 @@ async function runTests() {
   // Test 5: check reject (from in_progress)
   console.log('\ncheck reject:')
   writeFileSync(join(assignment, 'review_request.json'), JSON.stringify({
-    version: 1, assignment_id: '00001', gate: 'gate_3',
+    version: 1, assignment_id: '00001', gate: 'review',
     status: 'in_progress', mode: 'auto', timestamp: new Date().toISOString(),
   }, null, 2))
   writeFileSync(join(assignment, 'review_request.lock'), new Date().toISOString())
@@ -130,7 +130,7 @@ async function runTests() {
   // Test 6: check resume with progress file
   console.log('\ncheck resume:')
   writeFileSync(join(assignment, 'review_request.json'), JSON.stringify({
-    version: 1, assignment_id: '00001', gate: 'gate_3',
+    version: 1, assignment_id: '00001', gate: 'review',
     status: 'in_progress', mode: 'auto', timestamp: new Date().toISOString(),
   }, null, 2))
   writeFileSync(join(assignment, 'review_progress.json'), JSON.stringify({

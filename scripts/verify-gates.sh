@@ -113,9 +113,9 @@ if [ -f "$ASSIGNMENT_PATH/implementation.md" ]; then
   fi
 fi
 
-# ── Gate 3: Spec Compliance Review ──
+# ── Review: Spec Compliance + Code Quality ──
 
-section "Gate 3: Spec Compliance Review"
+section "Review: Spec Compliance + Code Quality"
 
 if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
   pass "review_request.json exists"
@@ -129,7 +129,7 @@ if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
         const hasRequired = required.every((k) => Object.prototype.hasOwnProperty.call(r, k));
         const validVersion = r.version === 1;
         const validId = typeof r.assignment_id === 'string' && r.assignment_id.length > 0;
-        const validGate = r.gate === 'gate_3' || r.gate === 'gate_4';
+        const validGate = r.gate === 'review' || r.gate === 'gate_3' || r.gate === 'gate_4';
         const validStatus = ['pending', 'in_progress', 'awaiting_approval', 'passed', 'failed'].includes(r.status);
         const validTimestamp = typeof r.timestamp === 'string' && !Number.isNaN(Date.parse(r.timestamp));
         const ok = hasRequired && validVersion && validId && validGate && validStatus && validTimestamp;
@@ -156,30 +156,6 @@ if [ -f "$ASSIGNMENT_PATH/plan.md" ]; then
   pass "plan.md exists (needed for spec comparison)"
 else
   fail "plan.md missing (needed for spec compliance review)"
-fi
-
-# ── Gate 4: Code Quality Review ──
-
-section "Gate 4: Code Quality Review"
-
-if [ -f "$ASSIGNMENT_PATH/review_request.json" ] && command -v node &>/dev/null; then
-  GATE3_STATUS=$(node -e "
-    try {
-      const r = JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
-      if (r.gate === 'gate_3') console.log(r.status);
-      else console.log('n/a');
-    } catch(e) { console.log('error'); }
-  " "$ASSIGNMENT_PATH/review_request.json" 2>/dev/null)
-
-  if [ "$GATE3_STATUS" = "passed" ]; then
-    pass "Gate 3 passed (prerequisite for Gate 4)"
-  elif [ "$GATE3_STATUS" = "n/a" ]; then
-    pass "Review request targets gate_4 directly"
-  else
-    warn "Gate 3 status: ${GATE3_STATUS:-unknown} (must pass before Gate 4)"
-  fi
-else
-  warn "Cannot check Gate 3 status (no review_request.json)"
 fi
 
 # ── Structural Checks ──

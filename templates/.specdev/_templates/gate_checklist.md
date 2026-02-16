@@ -40,23 +40,17 @@ Per-task checks:
 
 ---
 
-## Gate 3: Stage 1 Spec Compliance Review
+## Review: Spec Compliance + Code Quality
 
 **Status:** ⬜ Not Started / 🔄 In Progress / ✅ Passed
 
 - [ ] Review packet prepared with changed files + plan/proposal scope
-- [ ] Verdict captured: PASS / FAIL
+- [ ] Spec compliance checked: implementation matches design
 - [ ] Deviations listed as `file:line` with expected vs actual
-
----
-
-## Gate 4: Stage 2 Code Quality Review
-
-**Status:** ⬜ Not Started / 🔄 In Progress / ✅ Passed
-
-- [ ] Verdict captured: READY TO MERGE / NOT READY
+- [ ] Code quality reviewed: architecture, testing, style
 - [ ] Findings tagged CRITICAL / IMPORTANT / MINOR
 - [ ] Each finding has `file:line`, impact, proposed fix
+- [ ] Verdict captured: READY TO MERGE / NOT READY
 - [ ] Feedback disposition captured (fixed/disagree with evidence)
 
 ---

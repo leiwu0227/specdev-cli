@@ -7,8 +7,8 @@ import { resolveAssignmentPath, parseAssignmentId, assignmentName, formatStatus,
  * specdev work <subcommand> [options]
  *
  * Implementer-side commands:
- *   request  --gate=gate_3|gate_4 [--mode=auto|manual]  Create review request
- *   status                                                Check review status (non-blocking)
+ *   request  [--mode=auto|manual]  Create review request
+ *   status                          Check review status (non-blocking)
  */
 export async function workCommand(subcommand, flags = {}) {
   switch (subcommand) {
@@ -20,21 +20,17 @@ export async function workCommand(subcommand, flags = {}) {
       console.error(`Unknown work subcommand: ${subcommand || '(none)'}`)
       console.log('Usage: specdev work <request|status>')
       console.log('')
-      console.log('  request  --gate=gate_3|gate_4 [--mode=auto|manual]  Create review request')
+      console.log('  request  [--mode=auto|manual]  Create review request')
       console.log('  status                                               Check review status')
       process.exit(1)
   }
 }
 
 /**
- * specdev work request --gate=gate_3|gate_4 [--mode=auto|manual]
+ * specdev work request [--mode=auto|manual]
  */
 async function workRequest(flags) {
-  const gate = flags.gate
-  if (!gate || !['gate_3', 'gate_4'].includes(gate)) {
-    console.error('❌ --gate is required (gate_3 or gate_4)')
-    process.exit(1)
-  }
+  const gate = 'review'
 
   const mode = flags.mode || 'auto'
   if (!['auto', 'manual'].includes(mode)) {
@@ -101,7 +97,6 @@ async function workRequest(flags) {
 
   console.log(`✅ Review request created`)
   console.log(`   Assignment: ${name}`)
-  console.log(`   Gate: ${gate}`)
   console.log(`   Mode: ${mode}`)
   console.log('')
   console.log('   Reviewer picks this up with: specdev check run')
@@ -116,7 +111,7 @@ async function workStatus(flags) {
 
   if (!(await fse.pathExists(requestPath))) {
     console.log('ℹ️  No review request found')
-    console.log('   Create one with: specdev work request --gate=gate_3')
+    console.log('   Create one with: specdev work request')
     return
   }
 

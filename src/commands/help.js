@@ -26,8 +26,8 @@ EXAMPLES:
   specdev init
 
   # Request a review (implementer)
-  specdev work request --gate=gate_3
-  specdev work request --gate=gate_3 --mode=manual
+  specdev work request
+  specdev work request --mode=manual
 
   # Check review status (implementer)
   specdev work status

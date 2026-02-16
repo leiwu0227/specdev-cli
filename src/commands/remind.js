@@ -2,13 +2,12 @@ import { join, basename } from 'path'
 import fse from 'fs-extra'
 import { findLatestAssignment, scanSingleAssignment } from '../utils/scan.js'
 
-const PHASE_ORDER = ['proposal.md', 'plan.md', 'implementation.md', 'validation_checklist.md']
+const PHASE_ORDER = ['proposal.md', 'plan.md', 'implementation.md']
 
 const PHASE_NAMES = {
   'proposal.md': 'brainstorm',
   'plan.md': 'breakdown',
   'implementation.md': 'implementation',
-  'validation_checklist.md': 'validation',
 }
 
 const PHASE_RULES = {
@@ -26,20 +25,14 @@ const PHASE_RULES = {
     'TDD: write failing test → make it pass → refactor',
     'No completion claims without running tests',
     'One task at a time via subagents',
-    'When done: specdev work request --gate=gate_3',
-  ],
-  validation: [
-    'Run full test suite and verify all pass',
-    'Check spec compliance against design.md',
-    'When done: specdev work request --gate=gate_4',
+    'When done: specdev work request',
   ],
 }
 
 const PHASE_NEXT = {
   brainstorm: 'Finalize design, then move to breakdown',
   breakdown: 'Complete plan.md, then start implementation',
-  implementation: 'Complete remaining tasks, then request gate 3 review',
-  validation: 'Verify everything passes, then request gate 4 review',
+  implementation: 'Complete remaining tasks, then request review',
 }
 
 export async function remindCommand(flags = {}) {

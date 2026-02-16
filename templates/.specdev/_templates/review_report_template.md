@@ -1,7 +1,6 @@
 # Review Report
 
 **Assignment:** [assignment_id] — [assignment_name]
-**Gate:** [gate_3 / gate_4]
 **Reviewer:** [agent / human]
 **Date:** YYYY-MM-DD
 
@@ -17,9 +16,7 @@
 
 ---
 
-## Gate 3: Spec Compliance Review
-
-> Skip this section if reviewing gate_4 only.
+## Spec Compliance
 
 ### Proposal/Plan Scope
 
@@ -37,17 +34,9 @@
 |---|---|---|---|
 | [location] | [what was planned] | [what was implemented] | CRITICAL / IMPORTANT / MINOR |
 
-### Verdict
-
-**PASS** / **FAIL**
-
-[Justification]
-
 ---
 
-## Gate 4: Code Quality Review
-
-> Skip this section if reviewing gate_3 only.
+## Code Quality
 
 ### Findings
 
@@ -61,7 +50,9 @@
 - IMPORTANT: [count]
 - MINOR: [count]
 
-### Verdict
+---
+
+## Verdict
 
 **READY TO MERGE** / **NOT READY**
 

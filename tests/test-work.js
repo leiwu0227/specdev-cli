@@ -46,7 +46,6 @@ async function runTests() {
     './bin/specdev.js', 'work', 'request',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-work',
-    '--gate=gate_3',
   ])
   if (!assert(req.status === 0, 'creates a review request')) failures++
 
@@ -55,6 +54,7 @@ async function runTests() {
 
   const reviewReq = JSON.parse(readFileSync(requestPath, 'utf-8'))
   if (!assert(reviewReq.status === 'pending', 'status is pending')) failures++
+  if (!assert(reviewReq.gate === 'review', 'gate is review')) failures++
   if (!assert(
     reviewReq.assignment_path === '.specdev/assignments/00001_feature_test-work',
     'writes project-relative assignment_path'
@@ -78,7 +78,6 @@ async function runTests() {
     './bin/specdev.js', 'work', 'request',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-work',
-    '--gate=gate_3',
     '--mode=manual',
   ])
   if (!assert(reqMode.status === 0, 'creates request with mode flag')) failures++

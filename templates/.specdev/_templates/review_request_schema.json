@@ -21,8 +21,8 @@
     },
     "gate": {
       "type": "string",
-      "enum": ["gate_3", "gate_4"],
-      "description": "Which gate to review"
+      "enum": ["review"],
+      "description": "Review type"
     },
     "status": {
       "type": "string",

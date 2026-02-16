@@ -232,23 +232,15 @@ async function checkRun(flags) {
   console.log(`   Gate: ${request.gate} | Mode: ${request.mode || 'auto'}`)
   console.log('')
 
-  // Print gate-specific instructions
-  if (request.gate === 'gate_3') {
-    console.log('Gate 3: Spec Compliance Review')
-    console.log('1. Read proposal.md — what was requested')
-    console.log('2. Read plan.md — the approved approach')
-    console.log('3. Read changed files — what was built')
-    console.log('4. Compare against spec, write findings in review_report.md')
-    console.log('5. Update review_progress.json after each file')
-    console.log('6. Run: specdev check accept  OR  specdev check reject --reason="..."')
-  } else if (request.gate === 'gate_4') {
-    console.log('Gate 4: Code Quality Review')
-    console.log('1. Read all changed files')
-    console.log('2. Review for quality, architecture, testing, style')
-    console.log('3. Write findings in review_report.md')
-    console.log('4. Update review_progress.json after each file')
-    console.log('5. Run: specdev check accept  OR  specdev check reject --reason="..."')
-  }
+  // Print review instructions
+  console.log('Review: Spec Compliance + Code Quality')
+  console.log('1. Read proposal.md and plan.md — what was requested and approved')
+  console.log('2. Read changed files — what was built')
+  console.log('3. Check spec compliance: compare implementation against the design')
+  console.log('4. Check code quality: architecture, testing, style')
+  console.log('5. Write findings in review_report.md')
+  console.log('6. Update review_progress.json after each file')
+  console.log('7. Run: specdev check accept  OR  specdev check reject --reason="..."')
 
   if (request.changed_files && request.changed_files.length > 0) {
     console.log('')
@@ -369,13 +361,6 @@ async function checkAccept(flags) {
 
   const name = assignmentName(assignmentPath)
   console.log(`✅ Review passed: ${name}`)
-  console.log(`   Gate: ${request.gate}`)
-
-  if (request.gate === 'gate_3') {
-    console.log('')
-    console.log('   Next: implementer requests Gate 4 with:')
-    console.log('   specdev work request --gate=gate_4')
-  }
 }
 
 /**
@@ -410,10 +395,9 @@ async function checkReject(flags) {
 
   const name = assignmentName(assignmentPath)
   console.log(`❌ Review failed: ${name}`)
-  console.log(`   Gate: ${request.gate}`)
   console.log(`   Reason: ${reason}`)
   console.log('')
   console.log('   Implementer should fix issues and re-request:')
-  console.log(`   specdev work request --gate=${request.gate}`)
+  console.log('   specdev work request')
 }
 

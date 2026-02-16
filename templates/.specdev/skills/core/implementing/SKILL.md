@@ -60,7 +60,7 @@ For each task in order:
 ### Phase 3: Final Review
 
 1. Run full test suite one final time
-2. Write `review/ready-for-review.md` (phase: implementation)
+2. Run `specdev work request` to signal ready for review
 3. Check `review/watching.json`:
    - If present: run `scripts/poll-for-feedback.sh`, read feedback, fix if needed (up to 3 rounds)
    - If absent: proceed to knowledge capture
