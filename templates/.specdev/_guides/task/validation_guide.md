@@ -44,7 +44,7 @@ Reviewer checks:
 
 Verdict: `READY TO MERGE` or `NOT READY`
 
-If NOT READY, fix issues and re-request with `specdev work request`.
+If NOT READY, fix issues and re-request with `specdev main request-review`.
 
 Response protocol uses `.specdev/skills/core/receiving-code-review.md`.
 
@@ -59,16 +59,16 @@ Invoke `.specdev/skills/core/review-agent.md`.
 ### Implementer workflow
 
 1. Finish implementation and tests
-2. Run `specdev work request` to create `review_request.json`
-3. Run `specdev work status` to check review progress
+2. Run `specdev main request-review` to create `review_request.json`
+3. Run `specdev main status` to check review progress
 4. If passed, proceed. If failed, read `review_report.md`, fix issues, and re-request
 
 ### Reviewer workflow
 
-1. Run `specdev check run` to start (runs structural pre-flight automatically)
+1. Run `specdev review start` to start (runs structural pre-flight automatically)
 2. Perform the review following the printed instructions
 3. Write `review_report.md` (template: `_templates/review_report_template.md`)
-4. Run `specdev check accept` or `specdev check reject --reason="..."`
+4. Run `specdev review accept` or `specdev review reject --reason="..."`
 
 ---
 

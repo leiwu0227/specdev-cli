@@ -40,10 +40,10 @@ async function runTests() {
   writeFileSync(join(assignment, 'plan.md'), '# Plan\n\n**Complexity: LOW**\n')
   writeFileSync(join(assignment, 'proposal.md'), '# Proposal\n')
 
-  // Test 1: work request creates review_request.json
-  console.log('work request:')
+  // Test 1: main request-review creates review_request.json
+  console.log('main request-review:')
   const req = runCmd([
-    './bin/specdev.js', 'work', 'request',
+    './bin/specdev.js', 'main', 'request-review',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-work',
   ])
@@ -60,22 +60,22 @@ async function runTests() {
     'writes project-relative assignment_path'
   )) failures++
 
-  // Test 2: work status shows current state
-  console.log('\nwork status:')
+  // Test 2: main status shows current state
+  console.log('\nmain status:')
   const status = runCmd([
-    './bin/specdev.js', 'work', 'status',
+    './bin/specdev.js', 'main', 'status',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-work',
   ])
   if (!assert(status.status === 0, 'status returns success')) failures++
   if (!assert(status.stdout.includes('pending'), 'status output shows pending')) failures++
 
-  // Test 3: work status with mode flag
-  console.log('\nwork request with mode:')
+  // Test 3: main request-review with mode flag
+  console.log('\nmain request-review with mode:')
   // Remove existing request first
   rmSync(requestPath)
   const reqMode = runCmd([
-    './bin/specdev.js', 'work', 'request',
+    './bin/specdev.js', 'main', 'request-review',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-work',
     '--mode=manual',
@@ -84,50 +84,46 @@ async function runTests() {
   const reqWithMode = JSON.parse(readFileSync(requestPath, 'utf-8'))
   if (!assert(reqWithMode.mode === 'manual', 'mode is stored in request')) failures++
 
-  // Test 4: work status detects passed review
-  console.log('\nwork status after pass:')
+  // Test 4: main status detects passed review
+  console.log('\nmain status after pass:')
   const passedReq = { ...reqWithMode, status: 'passed', completed_at: new Date().toISOString() }
   writeFileSync(requestPath, JSON.stringify(passedReq, null, 2))
   const statusPassed = runCmd([
-    './bin/specdev.js', 'work', 'status',
+    './bin/specdev.js', 'main', 'status',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-work',
   ])
   if (!assert(statusPassed.status === 0, 'status returns success for passed review')) failures++
   if (!assert(statusPassed.stdout.includes('passed'), 'status shows passed')) failures++
 
-  // Test 5: work status detects failed review (exits non-zero)
-  console.log('\nwork status after fail:')
+  // Test 5: main status detects failed review (exits non-zero)
+  console.log('\nmain status after fail:')
   const failedReq = { ...reqWithMode, status: 'failed', reviewer_notes: 'missing tests', completed_at: new Date().toISOString() }
   writeFileSync(requestPath, JSON.stringify(failedReq, null, 2))
   const statusFailed = runCmd([
-    './bin/specdev.js', 'work', 'status',
+    './bin/specdev.js', 'main', 'status',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-work',
   ])
   if (!assert(statusFailed.status === 1, 'status exits non-zero for failed review')) failures++
   if (!assert(statusFailed.stdout.includes('failed'), 'status shows failed')) failures++
 
-  // Test: help text documents work and check commands
+  // Test: help text documents main and review commands
   console.log('\nhelp text:')
   const helpSource = readFileSync('./src/commands/help.js', 'utf-8')
   if (!assert(
-    helpSource.includes('work <sub>') && helpSource.includes('check <sub>'),
-    'help documents work and check commands'
-  )) failures++
-  if (!assert(
-    !helpSource.includes('review <sub>'),
-    'help no longer documents review command'
+    helpSource.includes('main <sub>') && helpSource.includes('review <sub>'),
+    'help documents main and review commands'
   )) failures++
 
   cleanup()
 
   console.log('')
   if (failures > 0) {
-    console.error(`❌ ${failures} work test(s) failed`)
+    console.error(`❌ ${failures} main test(s) failed`)
     process.exit(1)
   }
-  console.log('✅ All work tests passed')
+  console.log('✅ All main tests passed')
 }
 
 runTests()

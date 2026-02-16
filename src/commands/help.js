@@ -9,8 +9,8 @@ COMMANDS:
   init                Initialize .specdev folder in current directory
   update              Update system files while preserving project files
   skills              List available .specdev skills in this project
-  work <sub>          Implementer commands (request|status)
-  check <sub>         Reviewer commands (status|run|resume|accept|reject)
+  main <sub>          Implementer commands (request-review|status|poll-review)
+  review <sub>        Reviewer commands (status|start|poll-main|resume|accept|reject)
   ponder workflow     Interactive: review & write workflow feedback
   ponder project      Interactive: review & write local project knowledge
   help                Show this help message
@@ -26,24 +26,30 @@ EXAMPLES:
   specdev init
 
   # Request a review (implementer)
-  specdev work request
-  specdev work request --mode=manual
+  specdev main request-review
+  specdev main request-review --mode=manual
 
   # Check review status (implementer)
-  specdev work status
+  specdev main status
+
+  # Wait for review feedback (implementer)
+  specdev main poll-review
 
   # Scan for pending reviews (reviewer)
-  specdev check status
+  specdev review status
 
   # Start reviewing (reviewer)
-  specdev check run
+  specdev review start
+
+  # Wait for implementer to signal ready (reviewer)
+  specdev review poll-main
 
   # Resume interrupted review (reviewer)
-  specdev check resume
+  specdev review resume
 
   # Accept or reject (reviewer)
-  specdev check accept --notes="looks good"
-  specdev check reject --reason="missing tests"
+  specdev review accept --notes="looks good"
+  specdev review reject --reason="missing tests"
 
   # Reflect on workflow and capture observations
   specdev ponder workflow

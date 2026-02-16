@@ -223,8 +223,8 @@ export async function initCommand(flags = {}) {
       console.log('')
       console.log('Useful commands:')
       console.log('   specdev remind        Phase-aware context refresh')
-      console.log('   specdev work request  Signal ready for review')
-      console.log('   specdev work status   Check review progress')
+      console.log('   specdev main request-review  Signal ready for review')
+      console.log('   specdev main status          Check review progress')
     }
   } catch (error) {
     console.error('❌ Failed to initialize SpecDev:', error.message)

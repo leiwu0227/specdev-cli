@@ -143,7 +143,7 @@ if [ -f "$ASSIGNMENT_PATH/review_request.json" ]; then
     fi
   fi
 else
-  warn "review_request.json not yet created (run 'specdev work request' to create)"
+  warn "review_request.json not yet created (run 'specdev main request-review' to create)"
 fi
 
 if [ -f "$ASSIGNMENT_PATH/proposal.md" ]; then

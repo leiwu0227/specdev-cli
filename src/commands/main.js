@@ -1,35 +1,40 @@
 import { join, relative } from 'path'
 import fse from 'fs-extra'
 import { execFileSync } from 'child_process'
+import { fileURLToPath } from 'url'
 import { resolveAssignmentPath, parseAssignmentId, assignmentName, formatStatus, timeSince } from '../utils/assignment.js'
 
 /**
- * specdev work <subcommand> [options]
+ * specdev main <subcommand> [options]
  *
  * Implementer-side commands:
- *   request  [--mode=auto|manual]  Create review request
- *   status                          Check review status (non-blocking)
+ *   request-review  [--mode=auto|manual]  Create review request
+ *   status                                Check review status (non-blocking)
+ *   poll-review     [--timeout=<seconds>] Block until review feedback arrives
  */
-export async function workCommand(subcommand, flags = {}) {
+export async function mainCommand(subcommand, flags = {}) {
   switch (subcommand) {
-    case 'request':
-      return await workRequest(flags)
+    case 'request-review':
+      return await mainRequestReview(flags)
     case 'status':
-      return await workStatus(flags)
+      return await mainStatus(flags)
+    case 'poll-review':
+      return await mainPollReview(flags)
     default:
-      console.error(`Unknown work subcommand: ${subcommand || '(none)'}`)
-      console.log('Usage: specdev work <request|status>')
+      console.error(`Unknown main subcommand: ${subcommand || '(none)'}`)
+      console.log('Usage: specdev main <request-review|status|poll-review>')
       console.log('')
-      console.log('  request  [--mode=auto|manual]  Create review request')
-      console.log('  status                                               Check review status')
+      console.log('  request-review  [--mode=auto|manual]   Create review request')
+      console.log('  status                                 Check review status')
+      console.log('  poll-review     [--timeout=<seconds>]  Block until review feedback arrives')
       process.exit(1)
   }
 }
 
 /**
- * specdev work request [--mode=auto|manual]
+ * specdev main request-review [--mode=auto|manual]
  */
-async function workRequest(flags) {
+async function mainRequestReview(flags) {
   const gate = 'review'
 
   const mode = flags.mode || 'auto'
@@ -99,19 +104,19 @@ async function workRequest(flags) {
   console.log(`   Assignment: ${name}`)
   console.log(`   Mode: ${mode}`)
   console.log('')
-  console.log('   Reviewer picks this up with: specdev check run')
+  console.log('   Reviewer picks this up with: specdev review start')
 }
 
 /**
- * specdev work status — non-blocking check of review state
+ * specdev main status — non-blocking check of review state
  */
-async function workStatus(flags) {
+async function mainStatus(flags) {
   const assignmentPath = await resolveAssignmentPath(flags)
   const requestPath = join(assignmentPath, 'review_request.json')
 
   if (!(await fse.pathExists(requestPath))) {
     console.log('ℹ️  No review request found')
-    console.log('   Create one with: specdev work request')
+    console.log('   Create one with: specdev main request-review')
     return
   }
 
@@ -154,6 +159,31 @@ async function workStatus(flags) {
 
   // Exit code signals result to the agent
   if (request.status === 'failed') {
+    process.exit(1)
+  }
+}
+
+/**
+ * specdev main poll-review [--timeout=<seconds>]
+ * Block until review/review-feedback.md appears
+ */
+async function mainPollReview(flags) {
+  const assignmentPath = await resolveAssignmentPath(flags)
+  const timeout = flags.timeout ? parseInt(flags.timeout, 10) : 1800
+
+  const scriptPath = fileURLToPath(new URL('../../templates/.specdev/skills/core/implementing/scripts/poll-for-feedback.sh', import.meta.url))
+
+  try {
+    const output = execFileSync('bash', [scriptPath, assignmentPath, 'implementation', String(timeout)], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: (timeout + 10) * 1000,
+    })
+    console.log(output)
+  } catch (err) {
+    if (err.stderr) console.error(err.stderr)
+    if (err.stdout) console.log(err.stdout)
+    console.error('❌ Timed out waiting for review feedback')
     process.exit(1)
   }
 }

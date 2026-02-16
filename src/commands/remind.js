@@ -25,7 +25,7 @@ const PHASE_RULES = {
     'TDD: write failing test → make it pass → refactor',
     'No completion claims without running tests',
     'One task at a time via subagents',
-    'When done: specdev work request',
+    'When done: specdev main request-review',
   ],
 }
 

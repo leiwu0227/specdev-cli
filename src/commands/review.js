@@ -5,36 +5,40 @@ import { execFileSync } from 'child_process'
 import { resolveAssignmentPath, assignmentName, formatStatus, timeSince } from '../utils/assignment.js'
 
 /**
- * specdev check <subcommand> [options]
+ * specdev review <subcommand> [options]
  *
  * Reviewer-side commands:
  *   status                              Show pending/active reviews (non-blocking)
- *   run     [--assignment=...]          Run preflight + start review
+ *   start   [--assignment=...]          Run preflight + start review
+ *   poll-main [--timeout=<seconds>]     Block until ready-for-review.md appears
  *   resume  [--assignment=...]          Resume interrupted review from checkpoint
  *   accept  [--notes="..."]             Mark review as passed
  *   reject  [--reason="..."]            Mark review as failed
  */
-export async function checkCommand(subcommand, flags = {}) {
+export async function reviewCommand(subcommand, flags = {}) {
   switch (subcommand) {
     case 'status':
-      return await checkStatus(flags)
-    case 'run':
-      return await checkRun(flags)
+      return await reviewStatus(flags)
+    case 'start':
+      return await reviewStart(flags)
+    case 'poll-main':
+      return await reviewPollMain(flags)
     case 'resume':
-      return await checkResume(flags)
+      return await reviewResume(flags)
     case 'accept':
-      return await checkAccept(flags)
+      return await reviewAccept(flags)
     case 'reject':
-      return await checkReject(flags)
+      return await reviewReject(flags)
     default:
-      console.error(`Unknown check subcommand: ${subcommand || '(none)'}`)
-      console.log('Usage: specdev check <status|run|resume|accept|reject>')
+      console.error(`Unknown review subcommand: ${subcommand || '(none)'}`)
+      console.log('Usage: specdev review <status|start|poll-main|resume|accept|reject>')
       console.log('')
-      console.log('  status                          Show pending/active reviews')
-      console.log('  run    [--assignment=...]        Run preflight + start review')
-      console.log('  resume [--assignment=...]        Resume interrupted review from checkpoint')
-      console.log('  accept [--notes="..."]           Mark review as passed')
-      console.log('  reject [--reason="..."]          Mark review as failed')
+      console.log('  status                              Show pending/active reviews')
+      console.log('  start    [--assignment=...]          Run preflight + start review')
+      console.log('  poll-main [--timeout=<seconds>]      Block until ready-for-review.md appears')
+      console.log('  resume   [--assignment=...]          Resume interrupted review from checkpoint')
+      console.log('  accept   [--notes="..."]             Mark review as passed')
+      console.log('  reject   [--reason="..."]            Mark review as failed')
       process.exit(1)
   }
 }
@@ -64,9 +68,9 @@ async function findPendingReview(specdevPath) {
 }
 
 /**
- * specdev check status — non-blocking scan for reviews
+ * specdev review status — non-blocking scan for reviews
  */
-async function checkStatus(flags) {
+async function reviewStatus(flags) {
   const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
   const specdevPath = join(targetDir, '.specdev')
 
@@ -141,9 +145,9 @@ async function showReviewStatus(assignmentPath) {
 }
 
 /**
- * specdev check run — run preflight and start review
+ * specdev review start — run preflight and start review
  */
-async function checkRun(flags) {
+async function reviewStart(flags) {
   const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
   const specdevPath = join(targetDir, '.specdev')
 
@@ -182,7 +186,7 @@ async function checkRun(flags) {
     if (err.code === 'EEXIST') {
       console.error('❌ Lock file exists — another reviewer may be active')
       console.log(`   Lock: ${lockPath}`)
-      console.log('   If stale, run: specdev check resume')
+      console.log('   If stale, run: specdev review resume')
       process.exit(1)
     }
     throw err
@@ -240,7 +244,7 @@ async function checkRun(flags) {
   console.log('4. Check code quality: architecture, testing, style')
   console.log('5. Write findings in review_report.md')
   console.log('6. Update review_progress.json after each file')
-  console.log('7. Run: specdev check accept  OR  specdev check reject --reason="..."')
+  console.log('7. Run: specdev review accept  OR  specdev review reject --reason="..."')
 
   if (request.changed_files && request.changed_files.length > 0) {
     console.log('')
@@ -252,9 +256,37 @@ async function checkRun(flags) {
 }
 
 /**
- * specdev check resume — resume interrupted review from checkpoint
+ * specdev review poll-main [--timeout=<seconds>]
+ * Block until review/ready-for-review.md appears
  */
-async function checkResume(flags) {
+async function reviewPollMain(flags) {
+  const assignmentPath = await resolveAssignmentPath(flags)
+  const timeout = flags.timeout ? parseInt(flags.timeout, 10) : 1800
+  const readyFile = join(assignmentPath, 'review', 'ready-for-review.md')
+
+  const interval = 5
+  let elapsed = 0
+
+  console.error(`Waiting for ready-for-review.md (timeout: ${timeout}s)...`)
+
+  while (elapsed < timeout) {
+    if (await fse.pathExists(readyFile)) {
+      const content = await fse.readFile(readyFile, 'utf-8')
+      console.log(content)
+      return
+    }
+    await new Promise(resolve => setTimeout(resolve, interval * 1000))
+    elapsed += interval
+  }
+
+  console.error(`❌ Timed out waiting for ready-for-review.md after ${timeout}s`)
+  process.exit(1)
+}
+
+/**
+ * specdev review resume — resume interrupted review from checkpoint
+ */
+async function reviewResume(flags) {
   const assignmentPath = await resolveAssignmentPath(flags)
   const requestPath = join(assignmentPath, 'review_request.json')
   const progressPath = join(assignmentPath, 'review_progress.json')
@@ -269,13 +301,13 @@ async function checkResume(flags) {
 
   if (request.status === 'passed' || request.status === 'failed') {
     console.error(`❌ Review is already ${request.status} — cannot resume a terminal review`)
-    console.log('   To re-review, create a new request with: specdev work request')
+    console.log('   To re-review, create a new request with: specdev main request-review')
     process.exit(1)
   }
 
   if (!(await fse.pathExists(progressPath))) {
     console.log('ℹ️  No progress file found — starting fresh')
-    console.log('   Run: specdev check run')
+    console.log('   Run: specdev review start')
     return
   }
 
@@ -321,9 +353,9 @@ async function checkResume(flags) {
 }
 
 /**
- * specdev check accept [--notes="..."]
+ * specdev review accept [--notes="..."]
  */
-async function checkAccept(flags) {
+async function reviewAccept(flags) {
   const assignmentPath = await resolveAssignmentPath(flags)
   const requestPath = join(assignmentPath, 'review_request.json')
 
@@ -364,9 +396,9 @@ async function checkAccept(flags) {
 }
 
 /**
- * specdev check reject --reason="..."
+ * specdev review reject --reason="..."
  */
-async function checkReject(flags) {
+async function reviewReject(flags) {
   const assignmentPath = await resolveAssignmentPath(flags)
   const requestPath = join(assignmentPath, 'review_request.json')
 
@@ -398,6 +430,5 @@ async function checkReject(flags) {
   console.log(`   Reason: ${reason}`)
   console.log('')
   console.log('   Implementer should fix issues and re-request:')
-  console.log('   specdev work request')
+  console.log('   specdev main request-review')
 }
-

@@ -31,15 +31,17 @@ specdev skills                      # List available skills
 
 # Main agent (implementer)
 specdev remind                      # Phase-aware context refresh
-specdev work request                # Signal ready for review
-specdev work status                 # Check review status (non-blocking)
+specdev main request-review         # Signal ready for review
+specdev main status                 # Check review status (non-blocking)
+specdev main poll-review            # Block until review feedback arrives
 
 # Review agent (separate session)
-specdev check status                # Scan for pending reviews
-specdev check run                   # Run preflight + start review
-specdev check resume                # Resume interrupted review
-specdev check accept [--notes=""]   # Mark review as passed
-specdev check reject [--reason=""]  # Mark review as failed
+specdev review status               # Scan for pending reviews
+specdev review start                # Run preflight + start review
+specdev review poll-main            # Block until ready-for-review.md appears
+specdev review resume               # Resume interrupted review
+specdev review accept [--notes=""]  # Mark review as passed
+specdev review reject [--reason=""] # Mark review as failed
 
 # Knowledge
 specdev ponder workflow             # Write workflow observations
@@ -101,7 +103,7 @@ Tasks can declare skills via the `Skills:` field in the plan, and those skill co
 
 **Produces:** committed code per task, `implementation/progress.json`
 
-When done: `specdev work request`
+When done: `specdev main request-review`
 
 ### 4. Verify
 

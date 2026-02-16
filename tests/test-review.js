@@ -44,17 +44,17 @@ async function runTests() {
   writeFileSync(join(assignment, 'plan.md'), '# Plan\n\n**Complexity: LOW**\n')
   writeFileSync(join(assignment, 'proposal.md'), '# Proposal\n')
 
-  // Test 1: check status with no pending review
-  console.log('check status (no review):')
+  // Test 1: review status with no pending review
+  console.log('review status (no review):')
   const noReview = runCmd([
-    './bin/specdev.js', 'check', 'status',
+    './bin/specdev.js', 'review', 'status',
     `--target=${TEST_DIR}`,
   ])
   if (!assert(noReview.status === 0, 'returns success when no reviews pending')) failures++
   if (!assert(noReview.stdout.includes('No pending'), 'reports no pending reviews')) failures++
 
-  // Test 2: check status finds pending review
-  console.log('\ncheck status (pending review):')
+  // Test 2: review status finds pending review
+  console.log('\nreview status (pending review):')
   writeFileSync(join(assignment, 'review_request.json'), JSON.stringify({
     version: 1,
     assignment_id: '00001',
@@ -67,17 +67,17 @@ async function runTests() {
   }, null, 2))
 
   const pending = runCmd([
-    './bin/specdev.js', 'check', 'status',
+    './bin/specdev.js', 'review', 'status',
     `--target=${TEST_DIR}`,
   ])
   if (!assert(pending.status === 0, 'returns success for pending review')) failures++
   if (!assert(pending.stdout.includes('pending'), 'shows pending status')) failures++
   if (!assert(pending.stdout.includes('00001'), 'shows assignment id')) failures++
 
-  // Test 3: check run triggers preflight (should fail — missing structural files)
-  console.log('\ncheck run (preflight failure):')
+  // Test 3: review start triggers preflight (should fail — missing structural files)
+  console.log('\nreview start (preflight failure):')
   const run = runCmd([
-    './bin/specdev.js', 'check', 'run',
+    './bin/specdev.js', 'review', 'start',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-check',
   ])
@@ -88,8 +88,8 @@ async function runTests() {
   // Lock file should be cleaned up
   if (!assert(!existsSync(join(assignment, 'review_request.lock')), 'lock file removed on failure')) failures++
 
-  // Test 4: check accept (from in_progress)
-  console.log('\ncheck accept:')
+  // Test 4: review accept (from in_progress)
+  console.log('\nreview accept:')
   writeFileSync(join(assignment, 'review_request.json'), JSON.stringify({
     version: 1, assignment_id: '00001', gate: 'review',
     status: 'in_progress', mode: 'auto', timestamp: new Date().toISOString(),
@@ -97,7 +97,7 @@ async function runTests() {
   writeFileSync(join(assignment, 'review_request.lock'), new Date().toISOString())
 
   const accept = runCmd([
-    './bin/specdev.js', 'check', 'accept',
+    './bin/specdev.js', 'review', 'accept',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-check',
     '--notes=looks good',
@@ -108,8 +108,8 @@ async function runTests() {
   if (!assert(accepted.reviewer_notes === 'looks good', 'reviewer notes stored')) failures++
   if (!assert(!existsSync(join(assignment, 'review_request.lock')), 'lock removed after accept')) failures++
 
-  // Test 5: check reject (from in_progress)
-  console.log('\ncheck reject:')
+  // Test 5: review reject (from in_progress)
+  console.log('\nreview reject:')
   writeFileSync(join(assignment, 'review_request.json'), JSON.stringify({
     version: 1, assignment_id: '00001', gate: 'review',
     status: 'in_progress', mode: 'auto', timestamp: new Date().toISOString(),
@@ -117,7 +117,7 @@ async function runTests() {
   writeFileSync(join(assignment, 'review_request.lock'), new Date().toISOString())
 
   const reject = runCmd([
-    './bin/specdev.js', 'check', 'reject',
+    './bin/specdev.js', 'review', 'reject',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-check',
     '--reason=missing error handling',
@@ -127,8 +127,8 @@ async function runTests() {
   if (!assert(rejected.status === 'failed', 'status is failed after reject')) failures++
   if (!assert(rejected.reviewer_notes === 'missing error handling', 'rejection reason stored')) failures++
 
-  // Test 6: check resume with progress file
-  console.log('\ncheck resume:')
+  // Test 6: review resume with progress file
+  console.log('\nreview resume:')
   writeFileSync(join(assignment, 'review_request.json'), JSON.stringify({
     version: 1, assignment_id: '00001', gate: 'review',
     status: 'in_progress', mode: 'auto', timestamp: new Date().toISOString(),
@@ -145,7 +145,7 @@ async function runTests() {
   }, null, 2))
 
   const resume = runCmd([
-    './bin/specdev.js', 'check', 'resume',
+    './bin/specdev.js', 'review', 'resume',
     `--target=${TEST_DIR}`,
     '--assignment=00001_feature_test-check',
   ])
@@ -155,11 +155,11 @@ async function runTests() {
 
   cleanup()
 
-  // Test 7: check.js does not use execSync (security)
-  console.log('\ncheck.js does not use execSync (security):')
-  const source = readFileSync(new URL('../src/commands/check.js', import.meta.url), 'utf-8')
-  if (!assert(!source.includes('execSync('), 'check.js should not use execSync — use execFileSync instead')) failures++
-  if (!assert(source.includes('execFileSync'), 'check.js should use execFileSync')) failures++
+  // Test 7: review.js does not use execSync (security)
+  console.log('\nreview.js does not use execSync (security):')
+  const source = readFileSync(new URL('../src/commands/review.js', import.meta.url), 'utf-8')
+  if (!assert(!source.includes('execSync('), 'review.js should not use execSync — use execFileSync instead')) failures++
+  if (!assert(source.includes('execFileSync'), 'review.js should use execFileSync')) failures++
 
   // Test: verify-gates.sh does not interpolate paths into node -e (security)
   console.log('\nverify-gates.sh does not interpolate paths into node -e (security):')
@@ -167,18 +167,18 @@ async function runTests() {
   const scriptSource = readFileSync(scriptPath, 'utf-8')
   if (!assert(!scriptSource.includes("readFileSync('$ASSIGNMENT_PATH"), 'verify-gates.sh should not interpolate $ASSIGNMENT_PATH into JS strings')) failures++
 
-  // Test: check.js uses wx flag for atomic lock file creation (TOCTOU fix)
-  console.log('\ncheck run creates lock atomically with wx flag:')
-  const checkSource = readFileSync(new URL('../src/commands/check.js', import.meta.url), 'utf-8')
-  if (!assert(checkSource.includes("flag: 'wx'") || checkSource.includes('flag: "wx"'),
-    'check.js should use wx flag for atomic lock file creation')) failures++
+  // Test: review.js uses wx flag for atomic lock file creation (TOCTOU fix)
+  console.log('\nreview start creates lock atomically with wx flag:')
+  const reviewSource = readFileSync(new URL('../src/commands/review.js', import.meta.url), 'utf-8')
+  if (!assert(reviewSource.includes("flag: 'wx'") || reviewSource.includes('flag: "wx"'),
+    'review.js should use wx flag for atomic lock file creation')) failures++
 
   console.log('')
   if (failures > 0) {
-    console.error(`❌ ${failures} check test(s) failed`)
+    console.error(`❌ ${failures} review test(s) failed`)
     process.exit(1)
   }
-  console.log('✅ All check tests passed')
+  console.log('✅ All review tests passed')
 }
 
 runTests()
