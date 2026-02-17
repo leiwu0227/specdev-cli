@@ -28,9 +28,9 @@ function cleanup() {
   if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true })
 }
 
-// ---- Setup: init with claude platform ----
+// ---- Setup: init (all adapters + claude extras installed by default) ----
 cleanup()
-runCmd(['init', `--target=${TEST_DIR}`, '--platform=claude'])
+runCmd(['init', `--target=${TEST_DIR}`])
 
 // ---- Test update overwrites skill files ----
 console.log('\nupdate overwrites skills:')
@@ -42,16 +42,17 @@ const afterUpdate = readFileSync(assignmentPath, 'utf-8')
 assert(afterUpdate.includes('specdev assignment'), 'skill file restored after update')
 assert(!afterUpdate.includes('tampered'), 'tampered content replaced')
 
-// ---- Test update reports skill update ----
-assert(result.stdout.includes('.claude/skills'), 'update output mentions skills')
-
-// ---- Test update skips skills when .claude/skills does not exist ----
-console.log('\nupdate skips when no .claude/skills:')
+// ---- Test update refreshes hook script ----
+console.log('\nupdate refreshes hook script:')
 cleanup()
-runCmd(['init', `--target=${TEST_DIR}`])  // generic platform, no skills
+runCmd(['init', `--target=${TEST_DIR}`])
+const hookPath = join(TEST_DIR, '.claude', 'hooks', 'specdev-session-start.sh')
+writeFileSync(hookPath, '#!/usr/bin/env bash\n# tampered hook\n')
 result = runCmd(['update', `--target=${TEST_DIR}`])
-assert(result.status === 0, 'update succeeds without skills')
-assert(!existsSync(join(TEST_DIR, '.claude', 'skills')), 'does not create .claude/skills')
+assert(result.status === 0, 'update with hook succeeds')
+const hookAfterUpdate = readFileSync(hookPath, 'utf-8')
+assert(hookAfterUpdate.includes('SessionStart hook for specdev'), 'hook script restored after update')
+assert(!hookAfterUpdate.includes('tampered'), 'tampered hook content replaced')
 
 cleanup()
 

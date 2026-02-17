@@ -103,4 +103,4 @@ State the correction factually and move on.
 
 ## Deliverable
 
-Append a feedback disposition section to `validation_checklist.md` with status for each finding.
+Append a feedback disposition section to `review/validation_checklist.md` with status for each finding.

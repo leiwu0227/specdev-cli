@@ -1,6 +1,6 @@
 # Implementation Guide
 
-**Reference Example**: `_templates/assignment_examples/feature/00000_feature_email-validator/implementation.md`
+**Reference Example**: `_templates/assignment_examples/feature/00000_feature_email-validator/implementation/implementation.md`
 
 ## Overview
 
@@ -32,7 +32,7 @@ Thinking "skip TDD just this once"? Stop. That's rationalization.
 
 ## Red-Green-Refactor
 
-Each task in `implementation.md` IS one Red-Green-Refactor cycle.
+Each task in `implementation/implementation.md` IS one Red-Green-Refactor cycle.
 
 ### RED - Write Failing Test
 
@@ -211,7 +211,7 @@ No. Tests-after are biased by your implementation. You test what you built, not 
 
 ## Task Format
 
-Each task in `implementation.md`:
+Each task in `implementation/implementation.md`:
 
 - Task ID (T001, T002, ...)
 - Behavior objective (framed as what the test verifies)
@@ -239,11 +239,11 @@ A task is parallel-safe only if:
 - no hidden runtime coupling
 - independent test path
 
-Record worktree mapping and merge order in `implementation.md`.
+Record worktree mapping and merge order in `implementation/implementation.md`.
 
 ### Save Tasks
 
-Write to `.specdev/assignments/#####_type_name/implementation.md`.
+Write to `.specdev/assignments/#####_type_name/implementation/implementation.md`.
 
 ---
 

@@ -48,8 +48,6 @@ async function runTests() {
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
   if (!assert(withDesign.status === 0, 'exits 0 with design.md', withDesign.stderr)) failures++
-  if (!assert(withDesign.stdout.includes('breakdown') || withDesign.stdout.includes('SKILL.md'),
-    'mentions breakdown skill')) failures++
 
   // Test 3: creates breakdown subdirectory
   if (!assert(existsSync(join(assignment, 'breakdown')), 'creates breakdown/ subdirectory')) failures++

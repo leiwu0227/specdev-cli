@@ -1,15 +1,15 @@
 import { join } from 'path'
 import fse from 'fs-extra'
+import {
+  resolveTargetDir,
+  requireSpecdevDirectory,
+} from '../utils/command-context.js'
+import { blankLine } from '../utils/output.js'
 
 export async function assignmentCommand(args = [], flags = {}) {
-  const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
+  const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
-
-  if (!(await fse.pathExists(specdevPath))) {
-    console.error('❌ No .specdev directory found')
-    console.log('   Run "specdev init" first')
-    process.exit(1)
-  }
+  await requireSpecdevDirectory(specdevPath)
 
   // Check big_picture.md is filled
   const bigPicturePath = join(specdevPath, 'project_notes', 'big_picture.md')
@@ -46,7 +46,7 @@ export async function assignmentCommand(args = [], flags = {}) {
 
   console.log(`✅ Assignment created: ${dirName}`)
   console.log(`   Path: ${assignmentPath}`)
-  console.log('')
+  blankLine()
   console.log('Start brainstorming:')
   console.log('   Read .specdev/skills/core/brainstorming/SKILL.md and follow it.')
   console.log(`   Write outputs to: ${dirName}/brainstorm/`)

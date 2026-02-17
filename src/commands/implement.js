@@ -1,6 +1,7 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { blankLine } from '../utils/output.js'
 
 export async function implementCommand(flags = {}) {
   const assignmentPath = await resolveAssignmentPath(flags)
@@ -16,14 +17,19 @@ export async function implementCommand(flags = {}) {
   }
 
   // Ensure implementation directory exists
-  await fse.ensureDir(join(assignmentPath, 'implementation'))
+  const implementationDir = join(assignmentPath, 'implementation')
+  const progressPath = join(implementationDir, 'progress.json')
+  await fse.ensureDir(implementationDir)
+  if (!(await fse.pathExists(progressPath))) {
+    await fse.writeFile(progressPath, '{}\n', 'utf-8')
+  }
 
   console.log(`🔨 Implement: ${name}`)
-  console.log('')
+  blankLine()
   console.log('Read .specdev/skills/core/implementing/SKILL.md and follow it.')
   console.log(`   Input: ${name}/breakdown/plan.md`)
   console.log(`   Output: committed code per task`)
-  console.log('')
+  blankLine()
   console.log('Per-task flow:')
   console.log('  1. Dispatch implementer subagent (TDD: red → green → refactor)')
   console.log('  2. Spec review subagent (loop until PASS, max 10 rounds)')

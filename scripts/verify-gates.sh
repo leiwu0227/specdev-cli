@@ -44,14 +44,14 @@ if [ ! -d "$ASSIGNMENT_PATH" ]; then
   exit 1
 fi
 
-# Detect complexity class from plan.md
+# Detect complexity class from breakdown/plan.md
 COMPLEXITY=""
-if [ -f "$ASSIGNMENT_PATH/plan.md" ]; then
-  if grep -qiE '\bLOW\b' "$ASSIGNMENT_PATH/plan.md"; then
+if [ -f "$ASSIGNMENT_PATH/breakdown/plan.md" ]; then
+  if grep -qiE '\bLOW\b' "$ASSIGNMENT_PATH/breakdown/plan.md"; then
     COMPLEXITY="LOW"
-  elif grep -qiE '\bHIGH\b' "$ASSIGNMENT_PATH/plan.md"; then
+  elif grep -qiE '\bHIGH\b' "$ASSIGNMENT_PATH/breakdown/plan.md"; then
     COMPLEXITY="HIGH"
-  elif grep -qiE '\bMEDIUM\b' "$ASSIGNMENT_PATH/plan.md"; then
+  elif grep -qiE '\bMEDIUM\b' "$ASSIGNMENT_PATH/breakdown/plan.md"; then
     COMPLEXITY="MEDIUM"
   fi
 fi
@@ -60,16 +60,16 @@ fi
 
 section "Gate 0: Planning"
 
-if [ -f "$ASSIGNMENT_PATH/plan.md" ]; then
-  pass "plan.md exists"
+if [ -f "$ASSIGNMENT_PATH/breakdown/plan.md" ]; then
+  pass "breakdown/plan.md exists"
 else
-  fail "plan.md missing"
+  fail "breakdown/plan.md missing"
 fi
 
 if [ -n "$COMPLEXITY" ]; then
   pass "Complexity class detected: $COMPLEXITY"
 else
-  warn "No complexity class (LOW/MEDIUM/HIGH) found in plan.md"
+  warn "No complexity class (LOW/MEDIUM/HIGH) found in breakdown/plan.md"
 fi
 
 if [ -f "$ASSIGNMENT_PATH/skills_invoked.md" ]; then
@@ -98,19 +98,43 @@ fi
 
 section "Gate 2: Implementation & TDD"
 
-if [ -f "$ASSIGNMENT_PATH/implementation.md" ]; then
-  pass "implementation.md exists"
+if [ -d "$ASSIGNMENT_PATH/implementation" ]; then
+  pass "implementation/ directory exists"
 else
-  fail "implementation.md missing"
+  fail "implementation/ directory missing"
 fi
 
-if [ -f "$ASSIGNMENT_PATH/implementation.md" ]; then
-  # Check for TDD table entries (lines with | T... or | task patterns)
-  if grep -qE '^\|.*\b(T[0-9]+|task)' "$ASSIGNMENT_PATH/implementation.md" 2>/dev/null; then
-    pass "TDD table has entries in implementation.md"
-  else
-    warn "No TDD table entries detected in implementation.md"
+if [ -f "$ASSIGNMENT_PATH/implementation/progress.json" ]; then
+  pass "implementation/progress.json exists"
+else
+  fail "implementation/progress.json missing"
+fi
+
+# Require implementation evidence:
+# - V4: at least one tasks/*/result.md
+# - V3 legacy: implementation.md with task table entries
+HAS_V4_RESULTS=0
+if [ -d "$ASSIGNMENT_PATH/tasks" ]; then
+  if find "$ASSIGNMENT_PATH/tasks" -mindepth 2 -maxdepth 2 -type f -name "result.md" | grep -q .; then
+    HAS_V4_RESULTS=1
   fi
+fi
+
+HAS_V3_TDD=0
+if [ -f "$ASSIGNMENT_PATH/implementation.md" ]; then
+  if grep -qE '^\|.*\b(T[0-9]+|task)' "$ASSIGNMENT_PATH/implementation.md" 2>/dev/null; then
+    HAS_V3_TDD=1
+  fi
+fi
+
+if [ "$HAS_V4_RESULTS" -eq 1 ]; then
+  pass "V4 implementation evidence found (tasks/*/result.md)"
+elif [ "$HAS_V3_TDD" -eq 1 ]; then
+  pass "Legacy implementation.md has TDD table entries"
+elif [ -f "$ASSIGNMENT_PATH/implementation.md" ]; then
+  fail "Legacy implementation.md found but no TDD table entries"
+else
+  fail "No implementation evidence found (expected tasks/*/result.md or legacy implementation.md)"
 fi
 
 # ── Review: Spec Compliance + Code Quality ──
@@ -146,26 +170,26 @@ else
   warn "review_request.json not yet created"
 fi
 
-if [ -f "$ASSIGNMENT_PATH/proposal.md" ]; then
-  pass "proposal.md exists (needed for spec comparison)"
+if [ -f "$ASSIGNMENT_PATH/brainstorm/proposal.md" ] || [ -f "$ASSIGNMENT_PATH/brainstorm/design.md" ]; then
+  pass "brainstorm artifacts exist (needed for spec comparison)"
 else
-  fail "proposal.md missing (needed for spec compliance review)"
+  fail "brainstorm artifacts missing (needed for spec compliance review)"
 fi
 
-if [ -f "$ASSIGNMENT_PATH/plan.md" ]; then
-  pass "plan.md exists (needed for spec comparison)"
+if [ -f "$ASSIGNMENT_PATH/breakdown/plan.md" ]; then
+  pass "breakdown/plan.md exists (needed for spec comparison)"
 else
-  fail "plan.md missing (needed for spec compliance review)"
+  fail "breakdown/plan.md missing (needed for spec compliance review)"
 fi
 
 # ── Structural Checks ──
 
 section "Structural Checks"
 
-if [ -f "$ASSIGNMENT_PATH/validation_checklist.md" ]; then
-  pass "validation_checklist.md exists"
+if [ -f "$ASSIGNMENT_PATH/review_report.md" ]; then
+  pass "review_report.md exists"
 else
-  fail "validation_checklist.md missing"
+  warn "review_report.md missing (review may still be in progress)"
 fi
 
 # Check for required assignment structure

@@ -50,7 +50,7 @@ Required artifacts:
 ## Quality checklist
 
 - [ ] Mode selected from complexity gate
-- [ ] Mode rationale documented in `plan.md`
+- [ ] Mode rationale documented in `breakdown/plan.md`
 - [ ] Skill invocation logged in `skills_invoked.md`
 - [ ] Required artifact(s) produced
 - [ ] Dependencies and edge cases are explicit

@@ -9,7 +9,7 @@ This directory contains reusable templates for SpecDev workflows.
 ### gate_checklist.md
 **Purpose:** Quality gate tracking template for assignments
 
-**Usage:** Copy into your assignment folder as `validation_checklist.md` when starting a new assignment
+**Usage:** Copy into your assignment folder as `review/validation_checklist.md` when starting a new assignment
 
 **Contains:**
 - Gate 0: Planning Complexity and Skill Selection

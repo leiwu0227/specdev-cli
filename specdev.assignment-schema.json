@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "name": "specdev-assignment-schema",
+  "required_directories": [
+    "brainstorm",
+    "context"
+  ],
+  "phases": [
+    {
+      "id": "brainstorm",
+      "mode": "any",
+      "artifacts": [
+        "brainstorm/proposal.md",
+        "brainstorm/design.md"
+      ]
+    },
+    {
+      "id": "breakdown",
+      "mode": "all",
+      "artifacts": [
+        "breakdown/plan.md"
+      ]
+    },
+    {
+      "id": "implementation",
+      "mode": "all",
+      "artifacts": [
+        "implementation",
+        "implementation/progress.json"
+      ]
+    },
+    {
+      "id": "review",
+      "mode": "all",
+      "artifacts": [
+        "review_report.md"
+      ]
+    }
+  ],
+  "optional_paths": [
+    "tasks",
+    "scaffold",
+    "review_request.json",
+    "review/validation_checklist.md",
+    "implementation/implementation.md"
+  ]
+}

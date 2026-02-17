@@ -1,6 +1,6 @@
 # Planning Guide
 
-**Reference Example**: `_templates/assignment_examples/feature/00000_feature_email-validator/plan.md`
+**Reference Example**: `_templates/assignment_examples/feature/00000_feature_email-validator/breakdown/plan.md`
 
 ## Planning phases
 
@@ -18,7 +18,7 @@ Write research notes to `.specdev/assignments/#####_type_name/research.md`.
 
 ## Complexity and risk gate
 
-After writing `plan.md`, classify assignment complexity:
+After writing `breakdown/plan.md`, classify assignment complexity:
 
 - `LOW`: files touched <= 2, no shared contract changes, low blast radius
 - `MEDIUM`: files touched 3-5, or new interface between modules
@@ -30,7 +30,7 @@ After writing `plan.md`, classify assignment complexity:
 - `MEDIUM` -> invoke `skills/core/scaffolding-lite.md` and require Gate 1 approval (contracts only)
 - `HIGH` -> invoke `skills/core/scaffolding-full.md` and require Gate 1 approval (full architecture)
 
-Log the decision and reason in `plan.md` and `skills_invoked.md`.
+Log the decision and reason in `breakdown/plan.md` and `skills_invoked.md`.
 
 ---
 

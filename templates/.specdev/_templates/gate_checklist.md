@@ -1,6 +1,6 @@
 # Gate Checklist Template
 
-Copy this into assignment folder as `validation_checklist.md`.
+Copy this into assignment folder as `review/validation_checklist.md`.
 
 ---
 

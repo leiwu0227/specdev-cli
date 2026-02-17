@@ -1,8 +1,8 @@
 # Validation and Quality Gates Guide
 
-**Reference example**: `_templates/assignment_examples/feature/00000_feature_email-validator/validation_checklist.md`
+**Reference example**: `_templates/assignment_examples/feature/00000_feature_email-validator/review/validation_checklist.md`
 
-Copy `_templates/gate_checklist.md` to assignment root as `validation_checklist.md`.
+Copy `_templates/gate_checklist.md` to `review/validation_checklist.md` in the assignment folder.
 
 ---
 
@@ -69,7 +69,7 @@ This is optional — the primary review mechanism is automatic subagent reviews 
 
 Invoke `.specdev/skills/core/verification-before-completion.md`.
 
-No completion claims are allowed without command evidence in `validation_checklist.md`.
+No completion claims are allowed without command evidence in `review/validation_checklist.md`.
 
 Required evidence format:
 

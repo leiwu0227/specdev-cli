@@ -9,7 +9,7 @@
   - `#####` is the next 5-digit assignment number from `project_notes/assignment_progress.md`.
   - `type` is `feature`, `refactor`, `bugfix`, `familiarization`, etc.
   - `name` is kebab-case.
-- Copy `.specdev/_templates/gate_checklist.md` to `validation_checklist.md`.
+- Copy `.specdev/_templates/gate_checklist.md` to `review/validation_checklist.md`.
 - Copy `.specdev/skills/skills_invoked_template.md` to `skills_invoked.md`.
 
 ## Before starting
@@ -19,9 +19,9 @@ Read always-apply skills from `skills/README.md`: `core/verification-before-comp
 ## Standard flow
 
 1. Proposal
-   - User creates `proposal.md`.
+   - User creates `brainstorm/proposal.md`.
 2. Plan
-   - Agent writes `plan.md` using `task/planning_guide.md`.
+   - Agent writes `breakdown/plan.md` using `task/planning_guide.md`.
    - Run complexity/risk gate to decide required skills.
 3. Architecture prep (conditional)
    - If gate result is `none`, skip scaffolding.
@@ -56,10 +56,13 @@ For each invoked skill, add one row in `skills_invoked.md` including:
 
 `.specdev/assignments/[#####_type_name]/`
 
-- `proposal.md` (user)
-- `plan.md`
+- `brainstorm/proposal.md` (user)
+- `brainstorm/design.md`
+- `breakdown/plan.md`
 - `research.md` (optional)
-- `implementation.md`
-- `validation_checklist.md`
+- `implementation/implementation.md`
+- `implementation/progress.json`
+- `review/validation_checklist.md`
+- `review_request.json` / `review_report.md`
 - `skills_invoked.md`
 - `scaffold/` (only when complexity gate requires it)

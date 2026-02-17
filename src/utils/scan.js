@@ -1,13 +1,7 @@
 import fse from 'fs-extra'
 import { join } from 'path'
 import { parseAssignmentId } from './assignment.js'
-
-const WORKFLOW_PHASES = [
-  'proposal.md',
-  'plan.md',
-  'implementation.md',
-  'validation_checklist.md',
-]
+import { ASSIGNMENT_PHASES } from './assignment-schema.js'
 
 /**
  * Scans all assignments in the .specdev/assignments/ directory
@@ -51,8 +45,12 @@ export async function scanSingleAssignment(assignmentPath, name) {
 
   // Detect which phases exist
   const phases = {}
-  for (const phase of WORKFLOW_PHASES) {
-    phases[phase] = await fse.pathExists(join(assignmentPath, phase))
+  for (const phase of ASSIGNMENT_PHASES) {
+    const checks = await Promise.all(
+      phase.artifacts.map((artifact) => fse.pathExists(join(assignmentPath, artifact)))
+    )
+    phases[phase.id] =
+      phase.mode === 'all' ? checks.every(Boolean) : checks.some(Boolean)
   }
 
   // Detect skipped phases (a later phase exists but an earlier one doesn't)
@@ -90,7 +88,7 @@ export async function scanSingleAssignment(assignmentPath, name) {
  * Detect phases that were skipped (a later phase exists without an earlier one)
  */
 function detectSkippedPhases(phases) {
-  const ordered = WORKFLOW_PHASES
+  const ordered = ASSIGNMENT_PHASES.map((phase) => phase.id)
   const skipped = []
   let foundLater = false
 

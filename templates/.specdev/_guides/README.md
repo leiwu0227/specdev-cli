@@ -27,6 +27,7 @@ This directory contains the core workflow guides for SpecDev.
 
 - `assignment_guide.md` - how to start and structure assignments
 - `codestyle_guide.md` - coding standards
+- `migration_guide.md` - how to migrate legacy assignment artifacts to V4
 
 ### Skills library
 

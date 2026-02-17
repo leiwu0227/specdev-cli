@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import fse from 'fs-extra'
 import { join } from 'path'
 
@@ -126,4 +126,29 @@ export function updateSkillFiles(targetDir, skillFiles) {
   }
 
   return Object.keys(skillFiles).length
+}
+
+/**
+ * Updates the SessionStart hook script if it exists in the target project
+ * Auto-detects by checking for .claude/hooks/specdev-session-start.sh
+ *
+ * @param {string} targetDir - Project root directory
+ * @param {string} hookSrcDir - Directory containing source hook scripts (package hooks/)
+ * @returns {number} 1 if updated, 0 if skipped
+ */
+export function updateHookScript(targetDir, hookSrcDir) {
+  const hookDest = join(targetDir, '.claude', 'hooks', 'specdev-session-start.sh')
+
+  if (!existsSync(hookDest)) {
+    return 0
+  }
+
+  const hookSrc = join(hookSrcDir, 'session-start.sh')
+  if (!existsSync(hookSrc)) {
+    return 0
+  }
+
+  const content = readFileSync(hookSrc, 'utf-8')
+  writeFileSync(hookDest, content, { mode: 0o755 })
+  return 1
 }

@@ -9,8 +9,8 @@ Below is a list of proposed assignments and their completion progress.
 | ##### | Short assignment name | Status | YYYY-MM-DD | Optional notes |
 
 **Status Values:**
-- **Proposed**: Assignment idea documented in proposal.md
-- **Planning**: Working on plan.md
+- **Proposed**: Assignment idea documented in brainstorm/proposal.md
+- **Planning**: Working on breakdown/plan.md
 - **Scaffolding**: Creating scaffold documents
 - **In Progress**: Implementing tasks
 - **Testing**: Running validation gates

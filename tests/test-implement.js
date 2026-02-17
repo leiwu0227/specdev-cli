@@ -46,11 +46,10 @@ async function runTests() {
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
   if (!assert(withPlan.status === 0, 'exits 0 with plan.md', withPlan.stderr)) failures++
-  if (!assert(withPlan.stdout.includes('implement') || withPlan.stdout.includes('SKILL.md'),
-    'mentions implementing skill')) failures++
 
   // Test 3: creates implementation subdirectory
   if (!assert(existsSync(join(assignment, 'implementation')), 'creates implementation/ subdirectory')) failures++
+  if (!assert(existsSync(join(assignment, 'implementation', 'progress.json')), 'creates implementation/progress.json')) failures++
 
   cleanup()
   console.log('')

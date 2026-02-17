@@ -9,10 +9,12 @@
   "files": [
     "bin/",
     "src/",
-    "templates/"
+    "templates/",
+    "hooks/",
+    "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:assignment-utils && npm run test:skills && npm run test:orientation && npm run test:tdd && npm run test:implementing && npm run test:review-agent && npm run test:parallel-worktrees && npm run test:init-platform && npm run test:start && npm run test:assignment && npm run test:breakdown && npm run test:implement && npm run test:review-cmd && npm run test:update-skills && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:assignment-schema && npm run test:assignment-utils && npm run test:skills && npm run test:orientation && npm run test:tdd && npm run test:implementing && npm run test:review-agent && npm run test:parallel-worktrees && npm run test:init-platform && npm run test:start && npm run test:assignment && npm run test:breakdown && npm run test:implement && npm run test:migrate && npm run test:review-cmd && npm run test:update-skills && npm run test:cleanup",
     "test:assignment-utils": "node ./tests/test-assignment-utils.js",
     "test:skills": "node ./tests/test-skills.js",
     "test:orientation": "node ./tests/test-orientation-scripts.js",
@@ -24,13 +26,15 @@
     "test:init": "node ./bin/specdev.js init --target=./test-output",
     "test:verify": "node ./tests/verify-output.js",
     "test:scan": "node ./tests/test-scan.js",
+    "test:assignment-schema": "node ./tests/test-assignment-schema-script.js",
     "test:start": "node ./tests/test-start.js",
     "test:assignment": "node ./tests/test-assignment.js",
     "test:breakdown": "node ./tests/test-breakdown.js",
     "test:implement": "node ./tests/test-implement.js",
+    "test:migrate": "node ./tests/test-migrate.js",
     "test:review-cmd": "node ./tests/test-review-cmd.js",
     "test:update-skills": "node ./tests/test-update-skills.js",
-    "test:cleanup": "rm -rf ./test-output ./test-manual ./test-scan-output ./test-work-output ./test-check-output ./tests/test-skills-output ./tests/test-orientation-output ./tests/test-tdd-output ./tests/test-implementing-output ./tests/test-review-agent-output ./tests/test-parallel-worktrees-output ./tests/test-parallel-worktrees-output-worktrees ./tests/test-init-platform-output ./tests/test-update-skills-output ./test-start-output ./test-assignment-output ./test-breakdown-output ./test-implement-output ./test-review-cmd-output",
+    "test:cleanup": "rm -rf ./test-output ./test-manual ./test-scan-output ./test-work-output ./test-check-output ./tests/test-skills-output ./tests/test-skills-output-debug ./tests/test-skills-output-debug2 ./tests/test-orientation-output ./tests/test-tdd-output ./tests/test-implementing-output ./tests/test-review-agent-output ./tests/test-parallel-worktrees-output ./tests/test-parallel-worktrees-output-worktrees ./tests/test-init-platform-output ./tests/test-update-skills-output ./tests/test-assignment-schema-output ./test-start-output ./test-assignment-output ./test-breakdown-output ./test-implement-output ./test-migrate-output ./test-review-cmd-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
     "release": "npm version patch && npm publish",

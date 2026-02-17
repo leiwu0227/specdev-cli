@@ -1,6 +1,7 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { blankLine } from '../utils/output.js'
 
 export async function breakdownCommand(flags = {}) {
   const assignmentPath = await resolveAssignmentPath(flags)
@@ -8,7 +9,6 @@ export async function breakdownCommand(flags = {}) {
 
   // Check brainstorm artifacts exist
   const designPath = join(assignmentPath, 'brainstorm', 'design.md')
-  const proposalPath = join(assignmentPath, 'brainstorm', 'proposal.md')
 
   if (!(await fse.pathExists(designPath))) {
     console.error('\u274C No brainstorm/design.md found')
@@ -20,7 +20,7 @@ export async function breakdownCommand(flags = {}) {
   await fse.ensureDir(join(assignmentPath, 'breakdown'))
 
   console.log(`\uD83D\uDCCB Breakdown: ${name}`)
-  console.log('')
+  blankLine()
   console.log('Read .specdev/skills/core/breakdown/SKILL.md and follow it.')
   console.log(`   Input: ${name}/brainstorm/design.md`)
   console.log(`   Output: ${name}/breakdown/plan.md`)

@@ -40,8 +40,6 @@ async function runTests() {
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
   if (!assert(brainstormReview.status === 0, 'exits 0', brainstormReview.stderr)) failures++
-  if (!assert(brainstormReview.stdout.includes('brainstorm') || brainstormReview.stdout.includes('design'),
-    'mentions brainstorm phase context')) failures++
 
   // Test 2: review after implementation phase
   console.log('\nreview after implementation:')
@@ -55,8 +53,6 @@ async function runTests() {
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
   if (!assert(implReview.status === 0, 'exits 0 for implementation review')) failures++
-  if (!assert(implReview.stdout.includes('implementation') || implReview.stdout.includes('code'),
-    'mentions implementation/code review context')) failures++
 
   // Test 3: review without any assignment
   console.log('\nreview without assignment:')

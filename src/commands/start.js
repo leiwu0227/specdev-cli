@@ -1,15 +1,15 @@
 import { join } from 'path'
 import fse from 'fs-extra'
+import {
+  resolveTargetDir,
+  requireSpecdevDirectory,
+} from '../utils/command-context.js'
+import { blankLine } from '../utils/output.js'
 
 export async function startCommand(flags = {}) {
-  const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
+  const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
-
-  if (!(await fse.pathExists(specdevPath))) {
-    console.error('❌ No .specdev directory found')
-    console.log('   Run "specdev init" first')
-    process.exit(1)
-  }
+  await requireSpecdevDirectory(specdevPath)
 
   const bigPicturePath = join(specdevPath, 'project_notes', 'big_picture.md')
 
@@ -19,7 +19,7 @@ export async function startCommand(flags = {}) {
 
     if (isFilled) {
       console.log('📋 Current project context:')
-      console.log('')
+      blankLine()
       console.log(content)
     } else {
       console.log('📝 big_picture.md needs to be filled in')
@@ -29,7 +29,7 @@ export async function startCommand(flags = {}) {
     console.log('📝 big_picture.md not found')
   }
 
-  console.log('')
+  blankLine()
   console.log('Fill in big_picture.md with your project context:')
   console.log('  - What does this project do?')
   console.log('  - Who are the users?')

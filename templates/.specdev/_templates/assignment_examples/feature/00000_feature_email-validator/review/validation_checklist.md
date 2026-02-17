@@ -24,15 +24,15 @@
 - [x] Coverage: 100%
 
 ## Gate 4: Integration
-- [x] Assignment works end-to-end as described in proposal.md
+- [x] Assignment works end-to-end as described in brainstorm/proposal.md
 - [x] No breaking changes to existing assignments
 - [x] Dependencies properly declared
 - [x] Examples work (if examples were created)
 - [x] No hardcoded values (configs externalized)
 
 ## Gate 5: Documentation & Project Scaffolding
-- [x] proposal.md exists and is accurate
-- [x] plan.md reflects what was actually built
+- [x] brainstorm/proposal.md exists and is accurate
+- [x] breakdown/plan.md reflects what was actually built
 - [x] README/docs updated if assignment is user-facing
 - [x] Complex algorithms have inline comments
 - [x] Examples exist in project_root/examples/ (if needed)

@@ -1,8 +1,9 @@
 import { join } from 'path'
 import fse from 'fs-extra'
+import { resolveTargetDir } from '../utils/command-context.js'
 
 export async function skillsCommand(flags = {}) {
-  const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
+  const targetDir = resolveTargetDir(flags)
   const skillsPath = join(targetDir, '.specdev', 'skills')
 
   if (!(await fse.pathExists(skillsPath))) {

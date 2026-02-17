@@ -10,11 +10,12 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 
 1. Read `project_notes/big_picture.md` for project context
 2. Check `assignments/` for active work
-3. Read `skills/core/orientation/SKILL.md` for the decision tree
+3. If assignments use legacy root files, run `specdev migrate`
+4. Read `skills/core/orientation/SKILL.md` for the decision tree
 
 ## The 5 Phases
 
-1. **Brainstorm** — Interactive Q&A → validated design (`brainstorm/proposal.md` + `design.md`)
+1. **Brainstorm** — Interactive Q&A → validated design (`brainstorm/proposal.md` + `brainstorm/design.md`)
 2. **Breakdown** — Automatic → detailed executable plan (`breakdown/plan.md`)
 3. **Implement** — Automatic → subagent per task, TDD, two-stage subagent review per task
 4. **Verify** — Inline user approval after implementation; optional `specdev review` for manual review
@@ -56,7 +57,7 @@ assignments/<id>/
   brainstorm/     ← proposal.md + design.md
   breakdown/      ← plan.md
   implementation/ ← progress.json
-  review/         ← review-feedback.md (if manual review used)
+  review_request.json / review_report.md
 ```
 
 ## Rules That Always Apply

@@ -5,12 +5,12 @@ Diagnose and fix defects with root-cause discipline.
 
 ## Step 1: Proposal
 
-- Deliverable: `proposal.md`
+- Deliverable: `brainstorm/proposal.md`
 - Include reproduction steps, expected vs actual, impact
 
 ## Step 2: Plan (optional)
 
-Use for complex/high-risk bugs. For simple obvious fixes, keep a short plan section in `implementation.md`.
+Use for complex/high-risk bugs. For simple obvious fixes, keep a short plan section in `breakdown/plan.md`.
 
 If root cause is unclear, invoke `skills/core/systematic-debugging.md`.
 

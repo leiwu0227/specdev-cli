@@ -5,12 +5,12 @@ Restructure code while preserving observable behavior.
 
 ## Step 1: Proposal
 
-- Deliverable: `proposal.md`
+- Deliverable: `brainstorm/proposal.md`
 - Include baseline behavior/metrics and risk notes
 
 ## Step 2: Plan
 
-- Deliverable: `plan.md`
+- Deliverable: `breakdown/plan.md`
 - Include current vs target architecture and rollback strategy
 - Run complexity/risk gate and choose required skills
 

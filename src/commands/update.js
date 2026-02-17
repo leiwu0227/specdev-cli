@@ -1,13 +1,15 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles } from '../utils/update.js'
+import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript } from '../utils/update.js'
 import { SKILL_FILES } from './init.js'
+import { resolveTargetDir } from '../utils/command-context.js'
+import { blankLine, printBullets, printSection } from '../utils/output.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export async function updateCommand(flags = {}) {
-  const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
+  const targetDir = resolveTargetDir(flags)
   const dryRun = flags['dry-run']
 
   const specdevPath = join(targetDir, '.specdev')
@@ -22,33 +24,37 @@ export async function updateCommand(flags = {}) {
   }
 
   if (dryRun) {
-    console.log('🔍 Dry run mode - would update:')
-    console.log('   - _main.md')
-    console.log('   - _router.md')
-    console.log('   - _guides/ (all task and workflow guides)')
-    console.log('   - _templates/ (scaffolding templates and examples)')
-    console.log('   - skills/core/ (all core workflow skills, fully overwritten)')
-    console.log('   - skills/README.md')
-    console.log('   - project_scaffolding/_README.md')
-    console.log('')
-    console.log('📌 Preserved (not updated):')
-    console.log('   - project_notes/ (your project documentation)')
-    console.log('   - assignments/ (your active work)')
-    console.log('   - skills/tools/ (your custom tool skills)')
-    console.log('   - project_scaffolding/ (except _README.md)')
+    printSection('🔍 Dry run mode - would update:')
+    printBullets([
+      '_main.md',
+      '_router.md',
+      '_guides/ (all task and workflow guides)',
+      '_templates/ (scaffolding templates and examples)',
+      'skills/core/ (all core workflow skills, fully overwritten)',
+      'skills/README.md',
+      'project_scaffolding/_README.md',
+    ], '   - ')
+    blankLine()
+    printSection('📌 Preserved (not updated):')
+    printBullets([
+      'project_notes/ (your project documentation)',
+      'assignments/ (your active work)',
+      'skills/tools/ (your custom tool skills)',
+      'project_scaffolding/ (except _README.md)',
+    ], '   - ')
     return
   }
 
   // Update system files
   try {
     console.log('🔄 Updating SpecDev system files...')
-    console.log('')
+    blankLine()
 
     const updatedPaths = await updateSpecdevSystem(templatePath, specdevPath)
 
     console.log('✅ SpecDev system files updated successfully!')
-    console.log('')
-    console.log('📝 Updated:')
+    blankLine()
+    printSection('📝 Updated:')
     updatedPaths.forEach(path => {
       console.log(`   ✓ ${path}`)
     })
@@ -58,14 +64,24 @@ export async function updateCommand(flags = {}) {
     if (skillCount > 0) {
       console.log(`   ✓ .claude/skills/ (${skillCount} skill files)`)
     }
-    console.log('')
-    console.log('📌 Preserved:')
-    console.log('   • project_notes/ (your project documentation)')
-    console.log('   • assignments/ (your active work)')
-    console.log('   • skills/tools/ (your custom tool skills)')
-    console.log('   • project_scaffolding/ (except _README.md)')
-    console.log('')
+
+    // Update hook script if installed
+    const hookSrcDir = join(__dirname, '../../hooks')
+    const hookUpdated = updateHookScript(targetDir, hookSrcDir)
+    if (hookUpdated > 0) {
+      console.log('   ✓ .claude/hooks/specdev-session-start.sh')
+    }
+    blankLine()
+    printSection('📌 Preserved:')
+    printBullets([
+      'project_notes/ (your project documentation)',
+      'assignments/ (your active work)',
+      'skills/tools/ (your custom tool skills)',
+      'project_scaffolding/ (except _README.md)',
+    ], '   • ')
+    blankLine()
     console.log('💡 Your project-specific files remain untouched')
+    console.log('💡 If this project has legacy assignments, run: specdev migrate')
   } catch (error) {
     console.error('❌ Failed to update SpecDev:', error.message)
     process.exit(1)

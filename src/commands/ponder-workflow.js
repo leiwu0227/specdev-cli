@@ -2,26 +2,26 @@ import { join } from 'path'
 import fse from 'fs-extra'
 import { scanAssignments } from '../utils/scan.js'
 import {
+  resolveTargetDir,
+  requireSpecdevDirectory,
+} from '../utils/command-context.js'
+import {
   presentSuggestion,
   askCustomObservation,
   askYesNo,
 } from '../utils/prompt.js'
+import { blankLine } from '../utils/output.js'
 
 /**
  * Interactive command that reviews recent assignments and helps
  * the user write workflow-level observations to _workflow_feedback/
  */
 export async function ponderWorkflowCommand(flags = {}) {
-  const targetDir =
-    typeof flags.target === 'string' ? flags.target : process.cwd()
+  const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
 
   // Verify .specdev exists
-  if (!(await fse.pathExists(specdevPath))) {
-    console.error('❌ No .specdev directory found')
-    console.log('   Run "specdev init" first')
-    process.exit(1)
-  }
+  await requireSpecdevDirectory(specdevPath)
 
   const knowledgePath = join(specdevPath, 'knowledge')
   const feedbackDir = join(knowledgePath, '_workflow_feedback')
@@ -30,7 +30,7 @@ export async function ponderWorkflowCommand(flags = {}) {
   await fse.ensureDir(feedbackDir)
 
   console.log('🔍 Scanning assignments for workflow observations...')
-  console.log('')
+  blankLine()
 
   const assignments = await scanAssignments(specdevPath)
 
@@ -46,7 +46,7 @@ export async function ponderWorkflowCommand(flags = {}) {
   const suggestions = generateWorkflowSuggestions(assignments)
 
   if (suggestions.length === 0) {
-    console.log('')
+    blankLine()
     console.log('No workflow observations detected from scanning.')
   } else {
     console.log(`Generated ${suggestions.length} suggestion(s) to review`)
@@ -74,7 +74,7 @@ export async function ponderWorkflowCommand(flags = {}) {
   }
 
   if (accepted.length === 0) {
-    console.log('')
+    blankLine()
     console.log('No observations to save. Done!')
     return
   }
@@ -101,7 +101,7 @@ export async function ponderWorkflowCommand(flags = {}) {
 
   await fse.writeFile(filepath, content, 'utf-8')
 
-  console.log('')
+  blankLine()
   console.log(`✅ Saved ${accepted.length} observation(s) to:`)
   console.log(`   ${filepath}`)
 }
@@ -121,7 +121,7 @@ function generateWorkflowSuggestions(assignments) {
   }
 
   for (const [phase, count] of Object.entries(skippedPhaseCounts)) {
-    const phaseName = phase.replace('.md', '').replace('_', ' ')
+    const phaseName = formatPhaseName(phase)
     if (count >= 2) {
       suggestions.push({
         title: `${phaseName} phase frequently skipped`,
@@ -198,4 +198,12 @@ function generateWorkflowSuggestions(assignments) {
   }
 
   return suggestions
+}
+
+function formatPhaseName(phase) {
+  return phase
+    .replace('.md', '')
+    .replace(/[\/_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }

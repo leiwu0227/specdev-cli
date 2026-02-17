@@ -8,7 +8,7 @@ Guide coding agents through investigating unfamiliar code areas.
 ## Process
 
 ### 1. Start
-- Read proposal.md to understand learning objectives
+- Read brainstorm/proposal.md to understand learning objectives
 - Find entry points (main files, API endpoints)
 - Skim code for big picture
 

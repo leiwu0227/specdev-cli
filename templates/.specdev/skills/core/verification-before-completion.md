@@ -75,7 +75,7 @@ Skip any step = lying, not verifying
 
 ## Deliverable
 
-Add a `Verification Evidence` section in `validation_checklist.md` with the table above.
+Add a `Verification Evidence` section in `review/validation_checklist.md` with the table above.
 
 ## Acceptance
 

@@ -7,7 +7,7 @@ Guide coding agents through structured research and learning of unfamiliar code 
 
 ## Step 1: Proposal
 
-**Deliverable:** `proposal.md`
+**Deliverable:** `brainstorm/proposal.md`
 **Owner:** User
 **Guide:** User creates this file
 
@@ -23,7 +23,7 @@ Guide coding agents through structured research and learning of unfamiliar code 
 **Owner:** Agent researches and documents
 **Guide:** `.specdev/_guides/task/research_guide.md`
 
-**Process:** Read proposal.md; conduct structured investigation (read code, follow function calls, run with debugger, test different inputs, write spike code); document findings in research.md (entry points, architecture, data flows, key concepts, code examples, hypotheses tested, open questions).
+**Process:** Read brainstorm/proposal.md; conduct structured investigation (read code, follow function calls, run with debugger, test different inputs, write spike code); document findings in research.md (entry points, architecture, data flows, key concepts, code examples, hypotheses tested, open questions).
 
 **Next:** Present findings to user for review.
 

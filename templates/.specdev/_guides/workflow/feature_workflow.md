@@ -5,12 +5,12 @@ Deliver a net-new feature with complexity-scaled rigor.
 
 ## Step 1: Proposal
 
-- Deliverable: `proposal.md`
+- Deliverable: `brainstorm/proposal.md`
 - Owner: user
 
 ## Step 2: Plan
 
-- Deliverable: `plan.md`
+- Deliverable: `breakdown/plan.md`
 - Owner: agent writes, user approves
 - Guide: `.specdev/_guides/task/planning_guide.md`
 - Must include complexity/risk class and required skills

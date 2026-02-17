@@ -2,12 +2,17 @@ import { join } from 'path'
 import fse from 'fs-extra'
 import { scanAssignments, readKnowledgeBranch } from '../utils/scan.js'
 import {
+  resolveTargetDir,
+  requireSpecdevDirectory,
+} from '../utils/command-context.js'
+import {
   ask,
   askMultiLine,
   presentSuggestion,
   askChoice,
   askYesNo,
 } from '../utils/prompt.js'
+import { blankLine } from '../utils/output.js'
 
 const KNOWLEDGE_BRANCHES = [
   'codestyle',
@@ -21,16 +26,11 @@ const KNOWLEDGE_BRANCHES = [
  * the user build local project knowledge in knowledge/<branches>
  */
 export async function ponderProjectCommand(flags = {}) {
-  const targetDir =
-    typeof flags.target === 'string' ? flags.target : process.cwd()
+  const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
 
   // Verify .specdev exists
-  if (!(await fse.pathExists(specdevPath))) {
-    console.error('❌ No .specdev directory found')
-    console.log('   Run "specdev init" first')
-    process.exit(1)
-  }
+  await requireSpecdevDirectory(specdevPath)
 
   const knowledgePath = join(specdevPath, 'knowledge')
 
@@ -40,7 +40,7 @@ export async function ponderProjectCommand(flags = {}) {
   }
 
   console.log('🔍 Scanning assignments for project knowledge...')
-  console.log('')
+  blankLine()
 
   const assignments = await scanAssignments(specdevPath)
 
@@ -68,7 +68,7 @@ export async function ponderProjectCommand(flags = {}) {
   )
 
   if (suggestions.length === 0) {
-    console.log('')
+    blankLine()
     console.log('No new project knowledge suggestions detected.')
   } else {
     console.log(`Generated ${suggestions.length} suggestion(s) to review`)
@@ -129,7 +129,7 @@ export async function ponderProjectCommand(flags = {}) {
   )
 
   if (totalAccepted === 0) {
-    console.log('')
+    blankLine()
     console.log('No observations to save. Done!')
     return
   }
@@ -163,7 +163,7 @@ export async function ponderProjectCommand(flags = {}) {
   // Update _index.md
   await updateKnowledgeIndex(knowledgePath)
 
-  console.log('')
+  blankLine()
   console.log(`✅ Saved ${totalAccepted} observation(s) across ${Object.keys(accepted).length} branch(es)`)
 }
 

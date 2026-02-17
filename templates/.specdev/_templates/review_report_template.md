@@ -18,9 +18,9 @@
 
 ## Spec Compliance
 
-### Proposal/Plan Scope
+### Brainstorm/Breakdown Scope
 
-[Summarize the approved scope from proposal.md and plan.md]
+[Summarize the approved scope from brainstorm/proposal.md and breakdown/plan.md]
 
 ### Implementation Coverage
 

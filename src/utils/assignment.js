@@ -1,6 +1,10 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { findLatestAssignment } from './scan.js'
+import {
+  resolveTargetDir,
+  requireSpecdevDirectory,
+} from './command-context.js'
 
 /**
  * Parse assignment directory name into components
@@ -16,14 +20,9 @@ export function parseAssignmentId(name) {
  * Resolve assignment path from flags (--assignment or latest)
  */
 export async function resolveAssignmentPath(flags) {
-  const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
+  const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
-
-  if (!(await fse.pathExists(specdevPath))) {
-    console.error('❌ No .specdev directory found')
-    console.log('   Run "specdev init" first')
-    process.exit(1)
-  }
+  await requireSpecdevDirectory(specdevPath)
 
   if (flags.assignment) {
     const assignmentPath = join(specdevPath, 'assignments', flags.assignment)

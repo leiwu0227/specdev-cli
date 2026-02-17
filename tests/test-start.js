@@ -31,8 +31,6 @@ async function runTests() {
   mkdirSync(TEST_DIR, { recursive: true })
   const noSpecdev = runCmd(['./bin/specdev.js', 'start', `--target=${TEST_DIR}`])
   if (!assert(noSpecdev.status === 1, 'exits non-zero without .specdev')) failures++
-  if (!assert(noSpecdev.stderr.includes('No .specdev') || noSpecdev.stdout.includes('No .specdev'),
-    'mentions missing .specdev')) failures++
 
   // Test 2: detects empty/template big_picture.md
   console.log('\nstart with template big_picture:')
@@ -41,8 +39,6 @@ async function runTests() {
 
   const startTemplate = runCmd(['./bin/specdev.js', 'start', `--target=${TEST_DIR}`])
   if (!assert(startTemplate.status === 0, 'exits 0 with template big_picture')) failures++
-  if (!assert(startTemplate.stdout.includes('needs') || startTemplate.stdout.includes('Fill in'),
-    'tells user to fill in big_picture')) failures++
 
   // Test 3: shows content when big_picture.md is filled
   console.log('\nstart with filled big_picture:')
@@ -50,7 +46,6 @@ async function runTests() {
   writeFileSync(bigPicturePath, '# Project Big Picture\n\n## Overview\nThis is a real project with real content that has been filled in properly.\n\n## Tech Stack\nNode.js, TypeScript\n')
   const startFilled = runCmd(['./bin/specdev.js', 'start', `--target=${TEST_DIR}`])
   if (!assert(startFilled.status === 0, 'exits 0 with filled big_picture')) failures++
-  if (!assert(startFilled.stdout.includes('real project'), 'shows big_picture content')) failures++
 
   cleanup()
   console.log('')

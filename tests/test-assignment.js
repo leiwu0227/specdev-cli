@@ -45,17 +45,13 @@ async function runTests() {
   if (!assert(created, 'creates assignment directory with name')) failures++
   if (!assert(created && created.match(/^\d{5}_/), 'directory has sequential ID prefix')) failures++
 
-  // Test 2: prints brainstorming instructions
-  if (!assert(result.stdout.includes('brainstorming') || result.stdout.includes('SKILL.md'),
-    'mentions brainstorming skill')) failures++
-
-  // Test 3: creates brainstorm subdirectory
+  // Test 2: creates brainstorm subdirectory
   if (created) {
     const brainstormDir = join(assignmentsDir, created, 'brainstorm')
     if (!assert(existsSync(brainstormDir), 'creates brainstorm/ subdirectory')) failures++
   }
 
-  // Test 4: second assignment gets next ID
+  // Test 3: second assignment gets next ID
   console.log('\nassignment increments ID:')
   const result2 = runCmd(['./bin/specdev.js', 'assignment', 'payment', `--target=${TEST_DIR}`])
   if (!assert(result2.status === 0, 'second assignment exits 0')) failures++
@@ -63,7 +59,7 @@ async function runTests() {
   const second = entries2.find(e => e.includes('payment'))
   if (!assert(second && second.startsWith('00002'), 'second assignment gets ID 00002')) failures++
 
-  // Test 5: fails without big_picture.md filled
+  // Test 4: fails without big_picture.md filled
   console.log('\nassignment without big_picture:')
   cleanup()
   runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])

@@ -13,9 +13,13 @@ function setup() {
   mkdirSync(join(a1, 'context/messages'), { recursive: true })
   mkdirSync(join(a1, 'tasks/01_api'), { recursive: true })
   mkdirSync(join(a1, 'scaffold'), { recursive: true })
-  writeFileSync(join(a1, 'proposal.md'), '# Proposal')
-  writeFileSync(join(a1, 'plan.md'), '# Plan')
-  writeFileSync(join(a1, 'implementation.md'), '# Impl')
+  mkdirSync(join(a1, 'brainstorm'), { recursive: true })
+  mkdirSync(join(a1, 'breakdown'), { recursive: true })
+  mkdirSync(join(a1, 'implementation'), { recursive: true })
+  writeFileSync(join(a1, 'brainstorm', 'proposal.md'), '# Proposal')
+  writeFileSync(join(a1, 'brainstorm', 'design.md'), '# Design')
+  writeFileSync(join(a1, 'breakdown', 'plan.md'), '# Plan')
+  writeFileSync(join(a1, 'implementation', 'progress.json'), '{}')
   writeFileSync(join(a1, 'context/decisions.md'), '# Decisions\n## Decision 1')
   writeFileSync(join(a1, 'context/progress.md'), '# Progress')
   writeFileSync(join(a1, 'context/messages/001_msg.md'), 'hello')
@@ -25,9 +29,10 @@ function setup() {
 
   // Assignment with skipped phases (has implementation but no plan)
   const a2 = join(SPECDEV, 'assignments/00002_bugfix_login')
-  mkdirSync(a2, { recursive: true })
-  writeFileSync(join(a2, 'proposal.md'), '# Proposal')
-  writeFileSync(join(a2, 'implementation.md'), '# Impl')
+  mkdirSync(join(a2, 'brainstorm'), { recursive: true })
+  mkdirSync(join(a2, 'implementation'), { recursive: true })
+  writeFileSync(join(a2, 'brainstorm', 'proposal.md'), '# Proposal')
+  writeFileSync(join(a2, 'implementation', 'progress.json'), '{}')
 
   // Knowledge branch
   const kb = join(SPECDEV, 'knowledge/codestyle')
@@ -64,12 +69,9 @@ async function runTests() {
   assert(a1.id === '00001', 'parses id')
   assert(a1.type === 'feature', 'parses type')
   assert(a1.label === 'auth', 'parses label')
-  assert(a1.phases['proposal.md'] === true, 'detects proposal phase')
-  assert(a1.phases['plan.md'] === true, 'detects plan phase')
-  assert(
-    a1.phases['validation_checklist.md'] === false,
-    'detects missing validation phase'
-  )
+  assert(a1.phases.brainstorm === true, 'detects brainstorm phase')
+  assert(a1.phases.breakdown === true, 'detects breakdown phase')
+  assert(a1.phases.review === false, 'detects missing review phase')
   assert(
     a1.skippedPhases.length === 0,
     'no skipped phases (validation not yet reached, not skipped)'
@@ -88,7 +90,7 @@ async function runTests() {
   const a2 = assignments.find((a) => a.name === '00002_bugfix_login')
   assert(a2 !== undefined, 'finds assignment 00002')
   assert(a2.type === 'bugfix', 'parses bugfix type')
-  assert(a2.skippedPhases.includes('plan.md'), 'detects skipped plan')
+  assert(a2.skippedPhases.includes('breakdown'), 'detects skipped breakdown')
   assert(a2.context === null, 'no context')
   assert(a2.tasks === null, 'no tasks')
   assert(a2.hasScaffold === false, 'no scaffold')
