@@ -96,16 +96,6 @@ You have drifted from the specdev workflow. Stop what you're doing and:
 
 Announce every subtask with "Specdev: <action>".
 `,
-  'specdev-brainstorm': `---
-name: specdev-brainstorm
-description: Start the specdev brainstorm phase for a new feature or change
----
-
-Read \`.specdev/skills/core/brainstorming/SKILL.md\` and follow it exactly.
-
-Start by reading \`.specdev/_main.md\` for workflow context, then begin
-the interactive brainstorm process with the user.
-`,
   'specdev-continue': `---
 name: specdev-continue
 description: Resume specdev work from where you left off
@@ -250,7 +240,7 @@ export async function initCommand(flags = {}) {
     printLines([
       '   1. Use /specdev-start to fill in your project context (Claude Code)',
       '      Or edit .specdev/project_notes/big_picture.md manually',
-      '   2. Use /specdev-brainstorm to start a new feature or change',
+      '   2. Use /specdev-assignment to start a new feature or change',
       '   3. Use /specdev-continue to resume where you left off',
     ])
     blankLine()
@@ -264,11 +254,10 @@ export async function initCommand(flags = {}) {
     printSection('Claude Code slash commands:')
     printLines([
       '   /specdev-start        Interactive project context setup',
-      '   /specdev-brainstorm   Start brainstorm for a new assignment',
-      '   /specdev-assignment   Create a new assignment',
+      '   /specdev-assignment   Create assignment and start brainstorm',
       '   /specdev-continue     Resume from current phase',
-      '   /specdev-rewind       Full workflow re-read',
       '   /specdev-review       Phase-aware manual review',
+      '   /specdev-rewind       Full workflow re-read',
     ])
   } catch (error) {
     console.error('❌ Failed to initialize SpecDev:', error.message)

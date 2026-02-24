@@ -52,7 +52,7 @@ assert(existsSync(skillsDir), '.claude/skills/ directory created')
 assert(existsSync(join(skillsDir, 'specdev-start', 'SKILL.md')), 'specdev-start/SKILL.md installed')
 assert(existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')), 'specdev-assignment/SKILL.md installed')
 assert(existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')), 'specdev-rewind/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), 'specdev-brainstorm/SKILL.md installed')
+assert(!existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), 'specdev-brainstorm removed (redundant with assignment)')
 assert(existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')), 'specdev-continue/SKILL.md installed')
 assert(existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')), 'specdev-review/SKILL.md installed')
 
@@ -66,9 +66,6 @@ assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix i
 
 const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
-
-const brainstormSkill = readFileSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md'), 'utf-8')
-assert(brainstormSkill.includes('skills/core/brainstorming/SKILL.md'), 'brainstorm skill references brainstorming SKILL.md')
 
 const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
 assert(continueSkill.includes('specdev continue'), 'continue skill references specdev continue command')
