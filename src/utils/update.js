@@ -2,6 +2,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import fse from 'fs-extra'
 import { join } from 'path'
 
+const OFFICIAL_TOOL_SKILLS = [
+  'fireperp',
+]
+
 /**
  * Selectively updates SpecDev system files while preserving project-specific files
  *
@@ -22,6 +26,7 @@ export async function updateSpecdevSystem(source, destination) {
       'project_scaffolding/_README.md',
       'skills/core',
       'skills/README.md',
+      ...OFFICIAL_TOOL_SKILLS.map((name) => `skills/tools/${name}`),
     ]
 
     for (const path of systemPaths) {

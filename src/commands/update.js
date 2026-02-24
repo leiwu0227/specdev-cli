@@ -31,6 +31,7 @@ export async function updateCommand(flags = {}) {
       '_guides/ (all task and workflow guides)',
       '_templates/ (scaffolding templates and examples)',
       'skills/core/ (all core workflow skills, fully overwritten)',
+      'skills/tools/ (official built-in tool skills only)',
       'skills/README.md',
       'project_scaffolding/_README.md',
     ], '   - ')
@@ -80,7 +81,7 @@ export async function updateCommand(flags = {}) {
       'project_scaffolding/ (except _README.md)',
     ], '   • ')
     blankLine()
-    console.log('💡 Your project-specific files remain untouched')
+    console.log('💡 Your project-specific files remain untouched (except official built-in tool skills)')
     console.log('💡 If this project has legacy assignments, run: specdev migrate')
   } catch (error) {
     console.error('❌ Failed to update SpecDev:', error.message)

@@ -54,6 +54,22 @@ const hookAfterUpdate = readFileSync(hookPath, 'utf-8')
 assert(hookAfterUpdate.includes('SessionStart hook for specdev'), 'hook script restored after update')
 assert(!hookAfterUpdate.includes('tampered'), 'tampered hook content replaced')
 
+// ---- Test update propagates official tool skills but preserves custom tools ----
+console.log('\nupdate propagates official tool skills:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+
+const officialFireperpDir = join(TEST_DIR, '.specdev', 'skills', 'tools', 'fireperp')
+const customToolDir = join(TEST_DIR, '.specdev', 'skills', 'tools', 'my-custom-tool')
+mkdirSync(customToolDir, { recursive: true })
+writeFileSync(join(customToolDir, 'SKILL.md'), '---\nname: my-custom-tool\n---\n')
+rmSync(officialFireperpDir, { recursive: true, force: true })
+
+result = runCmd(['update', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'update succeeds with missing official tool skill')
+assert(existsSync(join(officialFireperpDir, 'SKILL.md')), 'restores official fireperp tool skill')
+assert(existsSync(join(customToolDir, 'SKILL.md')), 'preserves custom tool skills')
+
 cleanup()
 
 console.log(`\n${passes} passed, ${failures} failed`)
