@@ -96,7 +96,7 @@ Only declare skills the task actually needs. The implementing phase will inject 
 3. Save to `breakdown/plan.md` in the assignment folder
 4. A subagent review (1-2 rounds) will check the plan for completeness and correctness
    - If the review finds issues: address them and re-run the review
-   - Once approved: proceed to implementing phase automatically
+   - Once approved: run `specdev implement` immediately — no user approval needed
 
 ## Rules
 
@@ -118,5 +118,5 @@ Only declare skills the task actually needs. The implementing phase will inject 
 ## Integration
 
 - **Before this skill:** brainstorming (produces the design this skill reads)
-- **After this skill:** implementing (executes the plan)
-- **Review:** Subagent review (1-2 rounds) checks the plan before implementation starts
+- **After this skill:** implementing (executes the plan — runs immediately, no approval gate)
+- **Review:** Inline subagent review (1-2 rounds) checks the plan. Do NOT use `specdev review` here — proceed directly to `specdev implement`

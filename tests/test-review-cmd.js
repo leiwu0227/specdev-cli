@@ -56,7 +56,49 @@ async function runTests() {
   ])
   if (!assert(implReview.status === 0, 'exits 0 for implementation review')) failures++
 
-  // Test 3: review without any assignment
+  // Test 3: review with previous round context
+  console.log('\nreview with previous round (update file):')
+  const reviewDir = join(assignment, 'review')
+  mkdirSync(reviewDir, { recursive: true })
+  writeFileSync(join(reviewDir, 'feedback-round-1.md'), '# Review Feedback\n\n**Round:** 1\n')
+  writeFileSync(join(reviewDir, 'update-round-1.md'), '# Update (Round 1)\n## Changes Made\n- Fixed things\n')
+
+  const roundTwo = runCmd([
+    './bin/specdev.js', 'review',
+    `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+  ])
+  if (!assert(roundTwo.status === 0, 'exits 0 for re-review')) failures++
+  if (!assert(roundTwo.stdout.includes('Changes since last review'), 'shows changes since last review')) failures++
+  if (!assert(roundTwo.stdout.includes('update-round-1.md'), 'references update file')) failures++
+  if (!assert(roundTwo.stdout.includes('Previous findings'), 'shows previous findings reference')) failures++
+  if (!assert(roundTwo.stdout.includes('feedback-round-1.md'), 'references previous feedback')) failures++
+  if (!assert(roundTwo.stdout.includes('**Round:** 2'), 'suggests round 2 in template')) failures++
+
+  // Test 4: review rejects breakdown phase
+  console.log('\nreview rejects breakdown phase:')
+  cleanup()
+  runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])
+  const bdAssignment = join(TEST_DIR, '.specdev/assignments/00002_feature_breakdown')
+  mkdirSync(join(bdAssignment, 'brainstorm'), { recursive: true })
+  mkdirSync(join(bdAssignment, 'breakdown'), { recursive: true })
+  writeFileSync(join(bdAssignment, 'brainstorm', 'design.md'), '# Design\n')
+  writeFileSync(join(bdAssignment, 'breakdown', 'plan.md'), '# Plan\n')
+
+  const breakdownReview = runCmd([
+    './bin/specdev.js', 'review',
+    `--target=${TEST_DIR}`, '--assignment=00002_feature_breakdown',
+  ])
+  if (!assert(breakdownReview.status === 1, 'exits non-zero for breakdown phase')) failures++
+  if (!assert(
+    breakdownReview.stderr.includes('not used after breakdown') || breakdownReview.stdout.includes('not used after breakdown'),
+    'tells user manual review is not used after breakdown'
+  )) failures++
+  if (!assert(
+    breakdownReview.stderr.includes('specdev implement') || breakdownReview.stdout.includes('specdev implement'),
+    'suggests running specdev implement instead'
+  )) failures++
+
+  // Test 5: review without any assignment
   console.log('\nreview without assignment:')
   cleanup()
   runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])

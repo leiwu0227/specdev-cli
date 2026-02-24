@@ -18,8 +18,10 @@ type: core
 1. **Brainstorm** → `skills/core/brainstorming/SKILL.md` — Interactive design session
 2. **Breakdown** → `skills/core/breakdown/SKILL.md` — Design to executable plan (automatic)
 3. **Implement** → `skills/core/implementing/SKILL.md` — Subagent per task with review (automatic)
-4. **Verify** → `skills/core/review-agent/SKILL.md` — Holistic review (separate session)
+4. **Verify** → `skills/core/review-agent/SKILL.md` — Optional holistic review (separate session, user-initiated)
 5. **Capture** → `skills/core/knowledge-capture/SKILL.md` — Write diff files (automatic)
+
+**Important:** Breakdown → Implement is fully automatic. After the inline subagent review approves the plan, run `specdev implement` immediately. Do NOT wait for `specdev review` between these phases.
 
 ## Quick Decision Tree
 

@@ -118,6 +118,19 @@ Run \`specdev review\` to see the current assignment's phase and review context.
 Follow the printed instructions to review the appropriate artifacts.
 Discuss findings with the user before concluding.
 `,
+  'specdev-check-review': `---
+name: specdev-check-review
+description: Read and address review feedback from a separate review session
+---
+
+Run \`specdev check-review\` to read review findings.
+
+Address the findings in the phase artifacts.
+Write a summary of changes to the update file path shown in the output.
+Then say "auto review" or run "specdev review" in a separate session.
+
+Announce every subtask with "Specdev: <action>".
+`,
 }
 
 // The unique adapters to create on every init
@@ -257,6 +270,7 @@ export async function initCommand(flags = {}) {
       '   /specdev-assignment   Create assignment and start brainstorm',
       '   /specdev-continue     Resume from current phase',
       '   /specdev-review       Phase-aware manual review',
+      '   /specdev-check-review Read and address review feedback',
       '   /specdev-rewind       Full workflow re-read',
     ])
   } catch (error) {

@@ -27,7 +27,11 @@ export async function reviewCommand(flags = {}) {
   if (hasImplementation) {
     phase = 'implementation'
   } else if (hasPlan) {
-    phase = 'breakdown'
+    // Breakdown review is handled by inline subagent, not manual review
+    console.error('Manual review is not used after breakdown')
+    console.log('   The breakdown plan is reviewed by an inline subagent.')
+    console.log('   Run specdev implement to proceed to implementation.')
+    process.exit(1)
   } else if (hasDesign || hasProposal) {
     phase = 'brainstorm'
   } else {
@@ -56,21 +60,6 @@ export async function reviewCommand(flags = {}) {
       '  3. Are edge cases and error handling addressed?',
       '  4. Is the scope appropriate (not too large)?',
     ])
-  } else if (phase === 'breakdown') {
-    printSection('Review scope: Plan completeness')
-    blankLine()
-    printSection('Artifacts to review:')
-    const artifacts = [`${name}/breakdown/plan.md`]
-    if (hasDesign) artifacts.push(`${name}/brainstorm/design.md (for reference)`)
-    printBullets(artifacts, '   - ')
-    blankLine()
-    printSection('Check:')
-    printLines([
-      '  1. Does the plan cover all design requirements?',
-      '  2. Are tasks properly ordered by dependency?',
-      '  3. Does each task have exact file paths, code, and commands?',
-      '  4. Are tasks small enough (2-5 minutes each)?',
-    ])
   } else if (phase === 'implementation') {
     printSection('Review scope: Spec compliance + code quality')
     blankLine()
@@ -93,6 +82,26 @@ export async function reviewCommand(flags = {}) {
   // Ensure review/ directory exists
   const reviewDir = join(assignmentPath, 'review')
   await fse.ensureDir(reviewDir)
+
+  // Detect previous rounds from archived files
+  const nextRound = await detectNextRound(reviewDir)
+
+  // Show previous round context if available
+  if (nextRound > 1) {
+    const prevRound = nextRound - 1
+    const updateFile = join(reviewDir, `update-round-${prevRound}.md`)
+    const prevFeedback = join(reviewDir, `feedback-round-${prevRound}.md`)
+
+    blankLine()
+    printSection(`Re-review (round ${nextRound}):`)
+    if (await fse.pathExists(updateFile)) {
+      console.log(`   Changes since last review: ${name}/review/update-round-${prevRound}.md`)
+    }
+    if (await fse.pathExists(prevFeedback)) {
+      console.log(`   Previous findings: ${name}/review/feedback-round-${prevRound}.md`)
+    }
+  }
+
   const feedbackPath = `${name}/review/review-feedback.md`
 
   blankLine()
@@ -106,12 +115,29 @@ export async function reviewCommand(flags = {}) {
     '  ',
     `  **Phase:** ${phase}`,
     '  **Verdict:** approved | needs-changes',
-    '  **Round:** 1',
+    `  **Round:** ${nextRound}`,
     '  ',
     '  ## Findings',
     '  - [list findings, or "None — approved"]',
     '  ```',
   ])
   blankLine()
-  console.log('After writing findings, return to the main session and run: specdev continue')
+  console.log('After writing findings, return to the main session and run: specdev check-review')
+}
+
+async function detectNextRound(reviewDir) {
+  try {
+    const files = await fse.readdir(reviewDir)
+    let maxRound = 0
+    for (const f of files) {
+      const match = f.match(/^feedback-round-(\d+)\.md$/)
+      if (match) {
+        const n = parseInt(match[1], 10)
+        if (n > maxRound) maxRound = n
+      }
+    }
+    return maxRound + 1
+  } catch {
+    return 1
+  }
 }

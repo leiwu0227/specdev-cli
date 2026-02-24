@@ -38,6 +38,8 @@ export async function breakdownCommand(flags = {}) {
   console.log('Read .specdev/skills/core/breakdown/SKILL.md and follow it.')
   console.log(`   Input: ${name}/brainstorm/design.md`)
   console.log(`   Output: ${name}/breakdown/plan.md`)
+  blankLine()
+  console.log('After plan is reviewed, run specdev implement to start implementation automatically.')
 }
 
 async function readBrainstormRevision(path) {

@@ -30,8 +30,9 @@ User runs `specdev review` in a separate Claude Code session. The command:
 
 | Prompt | Purpose | When to dispatch |
 |--------|---------|-----------------|
-| `prompts/breakdown-reviewer.md` | Review the breakdown plan holistically | After breakdown phase completes |
 | `prompts/implementation-reviewer.md` | Review the full implementation holistically | After implementation phase completes |
+
+**Note:** Breakdown plan review is handled by inline subagent review during the breakdown phase, NOT by `specdev review`. Do not wait for `specdev review` after breakdown — proceed directly to `specdev implement`.
 
 ## Review Protocol
 
@@ -42,15 +43,6 @@ Read `brainstorm/proposal.md` and `brainstorm/design.md`. Check:
 - Does the architecture make sense?
 - Are there gaps in the design (missing error handling, unclear data flow)?
 - Are the decisions well-reasoned?
-
-### Breakdown Review
-
-Use `prompts/breakdown-reviewer.md`. Check:
-- Does the plan cover everything in the design?
-- Are tasks ordered correctly (dependencies respected)?
-- Is each task small enough (2-5 minutes)?
-- Does every task have complete code, exact paths, exact commands?
-- Are there missing tasks or unnecessary tasks?
 
 ### Implementation Review
 
@@ -83,8 +75,18 @@ Use `prompts/implementation-reviewer.md`. Check:
 - Approving without reading the actual files — always read the artifacts
 - Skipping re-review after fixes — always verify fixes actually address findings
 
+## Multi-Round Review
+
+When `check-review` processes feedback with a `needs-changes` verdict:
+1. Main agent addresses findings in the phase artifacts
+2. Main agent writes `review/update-round-N.md` summarizing what changed
+3. On subsequent `specdev review` runs, the reviewer sees the update file to focus on what changed
+4. Round number increments automatically from archived `feedback-round-N.md` files
+5. Loop continues until verdict is `approved`
+
 ## Integration
 
-- **Works with:** Main agent (brainstorming, breakdown, implementing skills)
+- **Works with:** Main agent (brainstorming and implementing skills)
 - **Launched by:** User, via `specdev review` in a separate session
-- **Note:** This is optional — automatic subagent reviews handle per-task review during implementation
+- **Feedback loop:** Main agent uses `specdev check-review` to read and address findings
+- **When to use:** Optionally after brainstorm or implementation. Never between breakdown and implement — that transition is automatic

@@ -18,16 +18,19 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 1. **Brainstorm** — Interactive Q&A → validated design (`brainstorm/proposal.md` + `brainstorm/design.md`)
 2. **Breakdown** — Automatic → detailed executable plan (`breakdown/plan.md`)
 3. **Implement** — Automatic → subagent per task, TDD, two-stage subagent review per task
-4. **Verify** — Inline user approval after implementation; optional `specdev review` for manual review
+4. **Verify** — Optional `specdev review` for manual review after implementation
 5. **Capture** — Automatic → two diff files (project notes gaps + workflow observations)
 
-## Review Flow
+## Automatic Flow
 
-**Automatic subagent reviews** run after brainstorm (1 round), breakdown (1-2 rounds), and per-task during implementation (spec + code quality, up to 10 rounds each).
+After brainstorm design is approved by the user, the remaining phases flow automatically:
+- **Breakdown** runs inline subagent review (1-2 rounds) on the plan, then runs `specdev implement` immediately
+- **Implement** dispatches a subagent per task with spec + code quality review per task
+- No approval gates between breakdown and implement — do NOT wait for `specdev review`
 
-**Inline user approval** is requested in chat at key gates (after brainstorm design, after all tasks complete).
+## Manual Review (optional)
 
-**Manual review** (optional): User can run `specdev review` in a separate session for phase-aware holistic review.
+User can run `specdev review` in a separate session for holistic review of brainstorm or implementation artifacts. This is never required between breakdown and implement. Main agent uses `specdev check-review` to read and address findings.
 
 ## How Skills Work
 
