@@ -69,6 +69,9 @@ export async function continueCommand(flags = {}) {
   }
 
   emit(payload, json)
+  if (payload.status === 'blocked') {
+    process.exitCode = 1
+  }
 }
 
 function emit(payload, asJson) {

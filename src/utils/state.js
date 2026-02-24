@@ -55,6 +55,23 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     }
   }
 
+  const revisionGuard = await checkRevisionMismatch(assignmentPath)
+  if (revisionGuard.hasMismatch) {
+    blockers.push({
+      code: 'design_revision_mismatch',
+      detail:
+        `brainstorm revision is v${revisionGuard.brainstormRevision}, ` +
+        `but breakdown is based on v${revisionGuard.breakdownRevision}`,
+      recommended_fix: 'Run specdev breakdown to refresh the plan for the latest design revision',
+    })
+    return {
+      state: 'revision_requires_rebreakdown',
+      next_action: 'Run specdev breakdown before continuing implementation/review',
+      blockers,
+      progress,
+    }
+  }
+
   if (!hasProgressFile) {
     return {
       state: 'implementation_ready',
@@ -91,6 +108,48 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     blockers,
     progress,
   }
+}
+
+async function checkRevisionMismatch(assignmentPath) {
+  const brainstormRevision = await readRevisionNumber(
+    join(assignmentPath, 'brainstorm', 'revision.json'),
+    'revision'
+  )
+  if (brainstormRevision === null) {
+    return {
+      hasMismatch: false,
+      brainstormRevision: null,
+      breakdownRevision: null,
+    }
+  }
+
+  const breakdownRevision = await readRevisionNumber(
+    join(assignmentPath, 'breakdown', 'metadata.json'),
+    'based_on_brainstorm_revision'
+  )
+  const normalizedBreakdownRevision = breakdownRevision ?? 0
+
+  return {
+    hasMismatch: normalizedBreakdownRevision !== brainstormRevision,
+    brainstormRevision,
+    breakdownRevision: normalizedBreakdownRevision,
+  }
+}
+
+async function readRevisionNumber(path, key) {
+  if (!(await fse.pathExists(path))) {
+    return null
+  }
+  try {
+    const raw = await fse.readJson(path)
+    const n = Number(raw?.[key])
+    if (Number.isInteger(n) && n >= 0) {
+      return n
+    }
+  } catch {
+    return null
+  }
+  return null
 }
 
 async function findLegacyRootArtifacts(assignmentPath) {

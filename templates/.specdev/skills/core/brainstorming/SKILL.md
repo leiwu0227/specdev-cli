@@ -15,7 +15,7 @@ next: breakdown
 - **Input:** A vague idea, feature wish, bug report, or refactoring goal
 - **Process:** Context scan → Q&A (one question at a time) → explore approaches → present design sections → validate each section
 - **Output:** `brainstorm/proposal.md` + `brainstorm/design.md` in the assignment folder
-- **Next phase:** breakdown (automatic, triggered by user saying `auto next`)
+- **Next phase:** breakdown (automatic, triggered by user saying `auto review`)
 
 ## Scripts
 
@@ -75,7 +75,7 @@ Once all design sections are validated:
 **After stopping**, the user may:
 - Review the design themselves and provide feedback
 - Run `specdev review` in a separate session for an independent review
-- Say `auto next` to proceed — a subagent review (1 round) will check the design, then breakdown begins automatically
+- Say `auto review` to proceed — a subagent review (1 round) will check the design, then breakdown begins automatically
 
 ## Red Flags
 

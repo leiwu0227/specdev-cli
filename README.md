@@ -23,22 +23,41 @@ For other platforms, fill in `.specdev/project_notes/big_picture.md` manually, t
 
 ## Commands
 
+### CLI commands (run from terminal)
+
+These commands perform filesystem operations and are useful on their own without a coding agent.
+
 ```bash
-# Setup
 specdev init [--platform=claude]    # Initialize .specdev in current directory
 specdev update                      # Update core skills, preserve project files
+specdev migrate [--dry-run]         # Migrate legacy assignments to V4 layout
 specdev skills                      # List available skills
+specdev help                        # Show usage information
+```
 
-# Workflow (coding agent)
-specdev start                       # Check/fill project context
-specdev assignment [name]           # Create assignment, start brainstorm
-specdev breakdown                   # Validate brainstorm, start breakdown
-specdev implement                   # Validate plan, start implementation
-specdev review                      # Phase-aware manual review (separate session)
+### Agent-directed commands (run inside a coding agent)
 
-# Knowledge
-specdev ponder workflow             # Write workflow observations
-specdev ponder project              # Write project-specific learnings
+These commands validate state, set up directories, then print instructions that route the coding agent to the appropriate skill.
+
+```bash
+specdev assignment [name]           # Create assignment, route agent to brainstorming skill
+specdev breakdown                   # Validate brainstorm artifacts, route agent to breakdown skill
+specdev implement                   # Validate plan artifacts, route agent to implementing skill
+```
+
+### Either context (useful in both terminal and agent sessions)
+
+```bash
+specdev start                       # Check/fill project context (display or agent guidance)
+specdev continue [--json]           # Detect current state, blockers, and next action
+specdev review                      # Phase-aware review guidance (same or separate session)
+```
+
+### Interactive commands (require human input at a terminal)
+
+```bash
+specdev ponder workflow             # Review assignments, accept/reject workflow observations
+specdev ponder project              # Review assignments, accept/reject project learnings
 ```
 
 ## What gets created

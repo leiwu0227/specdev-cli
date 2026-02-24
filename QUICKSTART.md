@@ -1,116 +1,155 @@
-# 🚀 Quick Start: Upload to GitHub
+# Quick Start
 
-## The Fastest Way to Get Started
+Get up and running with SpecDev in under 5 minutes. By the end of this guide, you'll have SpecDev installed, your project configured, and your first feature moving through the workflow.
 
-### Option 1: Automated Setup (Recommended)
-
-```bash
-cd /mnt/h/oceanwave/lib/specdev-cli
-./setup-github.sh
-```
-
-This script will:
-1. Initialize git (if needed)
-2. Ask for your GitHub username
-3. Update README with your username
-4. Configure git remote
-5. Show you the next steps
-
-Then follow the on-screen instructions to create the GitHub repo and push.
-
----
-
-### Option 2: Manual Setup
+## Step 1: Install SpecDev
 
 ```bash
-cd /mnt/h/oceanwave/lib/specdev-cli
-
-# 1. Initialize git
-git init
-git add .
-git commit -m "Initial commit: SpecDev CLI v1.0.0"
-
-# 2. Create repo on GitHub
-# Go to: https://github.com/new
-# Name: specdev-cli
-# Visibility: Public
-# Don't initialize with README
-
-# 3. Push to GitHub (replace YOUR_USERNAME)
-git remote add origin https://github.com/YOUR_USERNAME/specdev-cli.git
-git branch -M main
-git push -u origin main
-
-# 4. Update README
-sed -i 's/YOUR_USERNAME/your-actual-username/g' README.md
-git add README.md
-git commit -m "Update installation instructions"
-git push
+npm install -g github:leiwu0227/specdev-cli
 ```
 
----
+## Step 2: Set up your project
 
-## 📦 How Others Will Install It
-
-After uploading, share these commands with others:
-
-### Install Globally:
-```bash
-npm install -g github:YOUR_USERNAME/specdev-cli
-specdev init
-```
-
-### Use Without Installing:
-```bash
-npx github:YOUR_USERNAME/specdev-cli init
-```
-
----
-
-## ✅ Test Your Upload
-
-After pushing to GitHub, test that it works:
+Navigate to your project and initialize SpecDev:
 
 ```bash
-# In a new directory
-mkdir ~/test-specdev
-cd ~/test-specdev
-
-# Install from your GitHub
-npm install -g github:YOUR_USERNAME/specdev-cli
-
-# Run it
-specdev init
-
-# Check it worked
-ls -la .specdev/
+cd your-project
+specdev init --platform=claude
 ```
 
-You should see:
+> **Other platforms?** Use `--platform=agents` for Codex/generic agents, or `--platform=cursor` for Cursor.
+
+This sets up everything you need:
+- `.specdev/` — the workflow folder with skills, templates, and assignment tracking
+- `.claude/skills/` — slash-command skills for your coding agent
+- `CLAUDE.md` — platform adapter so your agent knows how to use SpecDev
+
+## Step 3: Tell SpecDev about your project
+
+Open your coding agent (e.g. Claude Code) and run:
+
+```bash
+specdev start
 ```
-.specdev/
-├── router.md
-├── generic_guides/
-├── project_notes/
-├── templates/
-└── features/
-    └── 000_example_feature/
+
+The agent will ask you a few questions about your project — what it does, its tech stack, and key conventions. This context is stored in `.specdev/project_notes/big_picture.md` and is used by every subsequent command to give relevant guidance.
+
+## Step 4: Start your first feature
+
+Still inside your coding agent, create an assignment:
+
+```bash
+specdev assignment my-feature
 ```
 
----
+Replace `my-feature` with a short name for what you're building (e.g. `auth`, `search`, `dashboard`). This kicks off the 5-phase workflow described below.
 
-## 🎉 Share Your Work!
+## The 5-Phase Workflow
 
-Your CLI is now public! Share it:
-- GitHub URL: `https://github.com/YOUR_USERNAME/specdev-cli`
-- Installation: `npm install -g github:YOUR_USERNAME/specdev-cli`
-- Usage: `specdev init`
+Every assignment moves through these phases in order. Each command checks that the previous phase is complete before letting you proceed — no skipping ahead.
 
----
+### Phase 1: Brainstorm
 
-## 📚 Full Documentation
+```bash
+specdev assignment my-feature
+```
 
-For more details, see:
-- `GITHUB_SETUP.md` - Complete GitHub upload guide
-- `README.md` - Full CLI documentation
-- `SETUP.md` - Development and publishing guide
+Interactive Q&A with you to nail down scope and design. The agent asks one question at a time, and design sections are validated incrementally.
+
+**Produces:** `brainstorm/proposal.md` + `brainstorm/design.md`
+
+**Review after brainstorm:** Once the design is written, you have two options:
+- Say **`auto review`** — a 1-round subagent review checks the design automatically, then breakdown begins.
+- Run **`specdev review`** in a separate session — an independent, phase-aware review checks completeness, feasibility, edge cases, and scope. You can address feedback before moving on.
+
+**Need to revise?** If a later phase reveals a design problem, run `specdev revise` to archive downstream artifacts and re-enter brainstorming with your existing design loaded as context.
+
+### Phase 2: Breakdown
+
+```bash
+specdev breakdown
+```
+
+Automatically decomposes the design into small, executable TDD tasks. Each task is self-contained with exact file paths, code snippets, and test commands. An automatic 1-2 round subagent review validates the plan before it's finalized.
+
+**Produces:** `breakdown/plan.md`
+
+### Phase 3: Implement
+
+```bash
+specdev implement
+```
+
+Dispatches a fresh subagent per task. Each follows strict TDD (Red → Green → Refactor). Every task goes through **two automatic per-task reviews** before it's considered done:
+
+1. **Spec review** — does the task implementation match what was specified in the plan?
+2. **Code quality review** — is the code clean, well-tested, and following project conventions?
+
+After all tasks complete, the agent runs the full test suite, presents a summary of what was built, and asks for your approval.
+
+**Produces:** committed code + `implementation/progress.json`
+
+### Phase 4: Verify (holistic review)
+
+```bash
+specdev review
+```
+
+This is a **separate, top-down review** of the entire implementation — distinct from the per-task reviews that happened during Phase 3. Run it in the same session or open a separate one.
+
+The review agent checks:
+- **Design match** — does the full implementation match the original design?
+- **Integration** — do all components work together without conflicts?
+- **Test coverage** — are all behaviors tested? Any gaps?
+- **Scope** — was anything built that wasn't in the design? Anything missing?
+
+Up to 3 review rounds. After each round, findings are written to `review_report.md` and tagged as CRITICAL or MINOR. You mediate between the reviewer and the main agent to address issues.
+
+**Produces:** `review_report.md`
+
+### Phase 5: Capture
+
+Runs automatically after the assignment is complete. Distills learnings into workflow observations and documentation gaps for future reference.
+
+## Lost? Check your status
+
+At any point, run:
+
+```bash
+specdev continue
+```
+
+This tells you exactly where you are, what's blocking you, and what to do next. Works from the terminal or inside an agent session.
+
+## Command reference
+
+| Command | Run from | What it does |
+|---|---|---|
+| `specdev init` | Terminal | Set up `.specdev/`, install skills and platform adapter |
+| `specdev update` | Terminal | Refresh core skills, keep your project files |
+| `specdev skills` | Terminal | List available skills |
+| `specdev help` | Terminal | Show usage info |
+| `specdev start` | Either | Fill in or check project context |
+| `specdev continue` | Either | Show current state, blockers, and next action |
+| `specdev assignment <name>` | Coding agent | Create an assignment and start brainstorming |
+| `specdev breakdown` | Coding agent | Turn the design into a task plan |
+| `specdev implement` | Coding agent | Execute the plan (TDD, one subagent per task) |
+| `specdev revise` | Coding agent | Archive downstream artifacts, re-enter brainstorm |
+| `specdev review` | Either | Run phase-aware review |
+| `specdev ponder workflow` | Terminal | Review and accept/reject workflow observations |
+| `specdev ponder project` | Terminal | Review and accept/reject project learnings |
+| `specdev migrate` | Terminal | Convert legacy assignments to V4 layout |
+
+## Putting it all together
+
+```
+Terminal:  specdev init --platform=claude     # one-time setup
+Agent:     specdev start                      # describe your project
+Agent:     specdev assignment my-feature      # brainstorm → design.md
+                                              # review (auto or specdev review)
+Agent:     specdev breakdown                  # design.md → plan.md (auto-reviewed)
+Agent:     specdev implement                  # plan.md → committed code
+                                              # (per-task spec + code quality reviews)
+Agent:     specdev review                     # holistic review of full implementation
+Agent:     specdev revise                     # (if needed) archive artifacts, revise design
+```

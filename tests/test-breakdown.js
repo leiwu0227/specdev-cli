@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { spawnSync } from 'child_process'
 
@@ -51,6 +51,11 @@ async function runTests() {
 
   // Test 3: creates breakdown subdirectory
   if (!assert(existsSync(join(assignment, 'breakdown')), 'creates breakdown/ subdirectory')) failures++
+  if (!assert(existsSync(join(assignment, 'breakdown', 'metadata.json')), 'writes breakdown/metadata.json')) failures++
+  if (existsSync(join(assignment, 'breakdown', 'metadata.json'))) {
+    const metadata = JSON.parse(readFileSync(join(assignment, 'breakdown', 'metadata.json'), 'utf-8'))
+    if (!assert(metadata.based_on_brainstorm_revision === 0, 'metadata defaults to brainstorm revision 0')) failures++
+  }
 
   cleanup()
   console.log('')

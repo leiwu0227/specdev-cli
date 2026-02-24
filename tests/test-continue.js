@@ -164,6 +164,26 @@ async function runTests() {
   out = continueJson('00002_feature_legacy')
   if (!assert(out.payload && out.payload.blockers.some((b) => b.code === 'legacy_layout_detected'), 'reports legacy_layout_detected blocker')) failures++
 
+  // design revision mismatch blocker
+  console.log('\ndesign revision mismatch blocker:')
+  const a3 = createAssignment('00003_feature_revised')
+  mkdirSync(join(a3, 'brainstorm'), { recursive: true })
+  mkdirSync(join(a3, 'breakdown'), { recursive: true })
+  writeFileSync(join(a3, 'brainstorm', 'design.md'), '# Design\n')
+  writeFileSync(join(a3, 'breakdown', 'plan.md'), '# Plan\n')
+  writeFileSync(
+    join(a3, 'brainstorm', 'revision.json'),
+    JSON.stringify({ version: 1, revision: 2, timestamp: new Date().toISOString() }, null, 2) + '\n'
+  )
+  writeFileSync(
+    join(a3, 'breakdown', 'metadata.json'),
+    JSON.stringify({ version: 1, based_on_brainstorm_revision: 1, timestamp: new Date().toISOString() }, null, 2) + '\n'
+  )
+  out = continueJson('00003_feature_revised')
+  if (!assert(out.result.status === 1, 'exits non-zero when design and breakdown revisions mismatch')) failures++
+  if (!assert(out.payload && out.payload.state === 'revision_requires_rebreakdown', 'detects revision_requires_rebreakdown state')) failures++
+  if (!assert(out.payload && out.payload.blockers.some((b) => b.code === 'design_revision_mismatch'), 'reports design_revision_mismatch blocker')) failures++
+
   cleanup()
   console.log('')
   if (failures > 0) {
