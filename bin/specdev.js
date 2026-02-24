@@ -12,6 +12,7 @@ import { breakdownCommand } from '../src/commands/breakdown.js'
 import { implementCommand } from '../src/commands/implement.js'
 import { reviewCommand } from '../src/commands/review.js'
 import { migrateCommand } from '../src/commands/migrate.js'
+import { continueCommand } from '../src/commands/continue.js'
 
 const [,, command, ...args] = process.argv
 
@@ -63,6 +64,9 @@ switch(command) {
     break
   case 'migrate':
     await migrateCommand(flags)
+    break
+  case 'continue':
+    await continueCommand(flags)
     break
   case 'ponder': {
     const subcommand = positionalArgs[0]

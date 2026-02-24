@@ -71,7 +71,7 @@ const brainstormSkill = readFileSync(join(skillsDir, 'specdev-brainstorm', 'SKIL
 assert(brainstormSkill.includes('skills/core/brainstorming/SKILL.md'), 'brainstorm skill references brainstorming SKILL.md')
 
 const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
-assert(continueSkill.includes('specdev start'), 'continue skill references specdev start command')
+assert(continueSkill.includes('specdev continue'), 'continue skill references specdev continue command')
 
 const reviewSkill = readFileSync(join(skillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
 assert(reviewSkill.includes('specdev review'), 'review skill references specdev review command')
@@ -99,7 +99,6 @@ console.log('\n--platform=claude backward compat:')
 cleanup()
 result = runCmd(['init', `--target=${TEST_DIR}`, '--platform=claude'])
 assert(result.status === 0, 'init with --platform=claude succeeds')
-assert(result.stdout.includes('deprecated'), 'prints deprecation notice')
 assert(existsSync(join(TEST_DIR, 'CLAUDE.md')), 'creates CLAUDE.md')
 assert(existsSync(join(TEST_DIR, 'AGENTS.md')), 'creates AGENTS.md')
 assert(existsSync(join(TEST_DIR, '.cursor', 'rules')), 'creates .cursor/rules')

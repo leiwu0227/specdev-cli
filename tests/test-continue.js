@@ -1,0 +1,176 @@
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+
+const TEST_DIR = './test-continue-output'
+
+function cleanup() {
+  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true })
+}
+
+function runCmd(args) {
+  return spawnSync('node', ['./bin/specdev.js', ...args], { encoding: 'utf-8' })
+}
+
+function assert(condition, msg, detail = '') {
+  if (!condition) {
+    console.error(`  ❌ ${msg}`)
+    if (detail) console.error(`     ${detail}`)
+    return false
+  }
+  console.log(`  ✓ ${msg}`)
+  return true
+}
+
+function fillBigPicture() {
+  const path = join(TEST_DIR, '.specdev', 'project_notes', 'big_picture.md')
+  writeFileSync(
+    path,
+    [
+      '# Project Big Picture',
+      '',
+      '## Overview',
+      'A long enough project description to pass placeholder checks.',
+      '',
+      '## Users / Consumers',
+      'Internal users and external users.',
+      '',
+      '## Tech Stack',
+      'TypeScript, Node.js, tests, and shell scripts.',
+      '',
+      '## Architecture',
+      'CLI and templates with markdown artifacts.',
+      '',
+      '## Conventions & Constraints',
+      'No completion claims without evidence.',
+      '',
+    ].join('\n'),
+    'utf-8'
+  )
+}
+
+function createAssignment(name) {
+  const root = join(TEST_DIR, '.specdev', 'assignments', name)
+  mkdirSync(root, { recursive: true })
+  return root
+}
+
+function continueJson(assignment) {
+  const args = ['continue', `--target=${TEST_DIR}`, '--json']
+  if (assignment) {
+    args.push(`--assignment=${assignment}`)
+  }
+  const result = runCmd(args)
+  let payload = null
+  if (result.stdout.trim()) {
+    try {
+      payload = JSON.parse(result.stdout)
+    } catch {
+      payload = null
+    }
+  }
+  return { result, payload }
+}
+
+async function runTests() {
+  let failures = 0
+  cleanup()
+
+  // project_context_missing
+  runCmd(['init', `--target=${TEST_DIR}`])
+  console.log('project_context_missing:')
+  let out = continueJson()
+  if (!assert(out.result.status === 1, 'exits non-zero when big_picture is missing')) failures++
+  if (!assert(out.payload && out.payload.state === 'project_context_missing', 'reports project_context_missing state')) failures++
+
+  // no_assignment
+  console.log('\nno_assignment:')
+  fillBigPicture()
+  out = continueJson()
+  if (!assert(out.result.status === 1, 'exits non-zero when no assignment exists')) failures++
+  if (!assert(out.payload && out.payload.state === 'no_assignment', 'reports no_assignment state')) failures++
+
+  // brainstorm_in_progress
+  console.log('\nbrainstorm_in_progress:')
+  const a1 = createAssignment('00001_feature_brainstorm')
+  mkdirSync(join(a1, 'brainstorm'), { recursive: true })
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.result.status === 0, 'continue runs for brainstorm state')) failures++
+  if (!assert(out.payload && out.payload.state === 'brainstorm_in_progress', 'detects brainstorm_in_progress')) failures++
+
+  // breakdown_ready
+  console.log('\nbreakdown_ready:')
+  writeFileSync(join(a1, 'brainstorm', 'design.md'), '# Design\n')
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.state === 'breakdown_ready', 'detects breakdown_ready')) failures++
+
+  // implementation_ready
+  console.log('\nimplementation_ready:')
+  mkdirSync(join(a1, 'breakdown'), { recursive: true })
+  writeFileSync(join(a1, 'breakdown', 'plan.md'), '# Plan\n')
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.state === 'implementation_ready', 'detects implementation_ready')) failures++
+
+  // implementation_in_progress
+  console.log('\nimplementation_in_progress:')
+  mkdirSync(join(a1, 'implementation'), { recursive: true })
+  writeFileSync(
+    join(a1, 'implementation', 'progress.json'),
+    JSON.stringify(
+      {
+        tasks: [
+          { number: 1, status: 'completed' },
+          { number: 2, status: 'in_progress' },
+          { number: 3, status: 'pending' },
+        ],
+      },
+      null,
+      2
+    ) + '\n'
+  )
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.state === 'implementation_in_progress', 'detects implementation_in_progress')) failures++
+  if (!assert(out.payload && out.payload.progress && out.payload.progress.totalTasks === 3, 'parses total task count from progress.json')) failures++
+
+  // review_ready
+  console.log('\nreview_ready:')
+  writeFileSync(
+    join(a1, 'implementation', 'progress.json'),
+    JSON.stringify(
+      {
+        tasks: [
+          { number: 1, status: 'completed' },
+          { number: 2, status: 'completed' },
+        ],
+      },
+      null,
+      2
+    ) + '\n'
+  )
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.state === 'review_ready', 'detects review_ready')) failures++
+
+  // completed
+  console.log('\ncompleted:')
+  writeFileSync(join(a1, 'review_report.md'), '# Review Report\n')
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.state === 'completed', 'detects completed')) failures++
+
+  // legacy layout blocker
+  console.log('\nlegacy layout blocker:')
+  const a2 = createAssignment('00002_feature_legacy')
+  mkdirSync(join(a2, 'brainstorm'), { recursive: true })
+  writeFileSync(join(a2, 'proposal.md'), '# Legacy proposal\n')
+  out = continueJson('00002_feature_legacy')
+  if (!assert(out.payload && out.payload.blockers.some((b) => b.code === 'legacy_layout_detected'), 'reports legacy_layout_detected blocker')) failures++
+
+  cleanup()
+  console.log('')
+  if (failures > 0) {
+    console.error(`❌ ${failures} continue test(s) failed`)
+    process.exit(1)
+  }
+  console.log('✅ All continue tests passed')
+}
+
+runTests()

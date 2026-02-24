@@ -111,14 +111,10 @@ name: specdev-continue
 description: Resume specdev work from where you left off
 ---
 
-1. Run \`specdev start\` to check project context
-2. Check the latest assignment in \`.specdev/assignments/\`
-3. Determine current phase from artifacts:
-   - No brainstorm artifacts → run \`specdev assignment <name>\`
-   - Has design, no plan → run \`specdev breakdown\`
-   - Has plan, no implementation → run \`specdev implement\`
-   - Has implementation → check if all tasks complete
-4. Read the skill for your current phase and continue
+Run \`specdev continue\`.
+
+Use the detected state and next action from that output.
+If blockers are reported, resolve them first (for example \`specdev migrate\`).
 
 Announce every subtask with "Using specdev: <action>".
 `,
