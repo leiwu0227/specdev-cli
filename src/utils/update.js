@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { dirname } from 'path'
 import fse from 'fs-extra'
 import { join } from 'path'
 
@@ -156,4 +157,35 @@ export function updateHookScript(targetDir, hookSrcDir) {
   const content = readFileSync(hookSrc, 'utf-8')
   writeFileSync(hookDest, content, { mode: 0o755 })
   return 1
+}
+
+/**
+ * Creates missing platform adapter files (CLAUDE.md, AGENTS.md, .cursor/rules)
+ * Never overwrites existing files.
+ *
+ * @param {string} targetDir - Project root directory
+ * @param {Array<{path: string, heading: string}>} adapters - Adapter configs
+ * @param {function(string): string} contentFn - Function that generates adapter content from heading
+ * @returns {Array<string>} List of created adapter paths
+ */
+export function backfillAdapters(targetDir, adapters, contentFn) {
+  const created = []
+
+  for (const adapter of adapters) {
+    const adapterPath = join(targetDir, adapter.path)
+
+    if (existsSync(adapterPath)) {
+      continue
+    }
+
+    const adapterDir = dirname(adapterPath)
+    if (!existsSync(adapterDir)) {
+      mkdirSync(adapterDir, { recursive: true })
+    }
+
+    writeFileSync(adapterPath, contentFn(adapter.heading), 'utf-8')
+    created.push(adapter.path)
+  }
+
+  return created
 }

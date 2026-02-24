@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Platform adapter configurations
-function adapterContent(heading) {
+export function adapterContent(heading) {
   return `# ${heading}
 
 Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
@@ -18,7 +18,7 @@ If you stop announcing subtasks, the user will assume you've stopped following t
 `
 }
 
-const ADAPTERS = {
+export const ADAPTERS = {
   claude:  { path: 'CLAUDE.md',              heading: 'CLAUDE.md' },
   codex:   { path: 'AGENTS.md',              heading: 'AGENTS.md' },
   cursor:  { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
@@ -131,7 +131,7 @@ Discuss findings with the user before concluding.
 }
 
 // The unique adapters to create on every init
-const ALL_ADAPTERS = [
+export const ALL_ADAPTERS = [
   ADAPTERS.claude,
   ADAPTERS.codex,   // AGENTS.md — same for codex and generic
   ADAPTERS.cursor,

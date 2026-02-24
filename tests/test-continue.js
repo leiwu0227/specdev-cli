@@ -150,6 +150,13 @@ async function runTests() {
   out = continueJson('00001_feature_brainstorm')
   if (!assert(out.payload && out.payload.state === 'review_ready', 'detects review_ready')) failures++
 
+  // review_feedback surfaced
+  console.log('\nreview feedback surfaced:')
+  mkdirSync(join(a1, 'review'), { recursive: true })
+  writeFileSync(join(a1, 'review', 'review-feedback.md'), '# Review Feedback\n\n**Verdict:** needs-changes\n')
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.review_feedback === 'review/review-feedback.md', 'surfaces review_feedback path')) failures++
+
   // completed
   console.log('\ncompleted:')
   writeFileSync(join(a1, 'review_report.md'), '# Review Report\n')

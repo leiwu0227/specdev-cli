@@ -40,6 +40,8 @@ async function runTests() {
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
   if (!assert(brainstormReview.status === 0, 'exits 0', brainstormReview.stderr)) failures++
+  if (!assert(brainstormReview.stdout.includes('review-feedback.md'), 'tells reviewer where to write findings')) failures++
+  if (!assert(existsSync(join(assignment, 'review')), 'creates review/ directory')) failures++
 
   // Test 2: review after implementation phase
   console.log('\nreview after implementation:')

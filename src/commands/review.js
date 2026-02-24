@@ -90,6 +90,28 @@ export async function reviewCommand(flags = {}) {
     ])
   }
 
+  // Ensure review/ directory exists
+  const reviewDir = join(assignmentPath, 'review')
+  await fse.ensureDir(reviewDir)
+  const feedbackPath = `${name}/review/review-feedback.md`
+
   blankLine()
-  console.log('After review, return to the main session to approve or provide feedback.')
+  printSection('Write findings to:')
+  console.log(`   ${feedbackPath}`)
+  blankLine()
+  printSection('Feedback format:')
+  printLines([
+    '  ```markdown',
+    '  # Review Feedback',
+    '  ',
+    `  **Phase:** ${phase}`,
+    '  **Verdict:** approved | needs-changes',
+    '  **Round:** 1',
+    '  ',
+    '  ## Findings',
+    '  - [list findings, or "None — approved"]',
+    '  ```',
+  ])
+  blankLine()
+  console.log('After writing findings, return to the main session and run: specdev continue')
 }

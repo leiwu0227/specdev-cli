@@ -56,6 +56,11 @@ export async function continueCommand(flags = {}) {
 
   const assignmentSummary = await scanSingleAssignment(selected.path, selected.name)
   const detected = await detectAssignmentState(assignmentSummary, selected.path)
+
+  // Check for review feedback from a separate review session
+  const feedbackPath = join(selected.path, 'review', 'review-feedback.md')
+  const hasReviewFeedback = await fse.pathExists(feedbackPath)
+
   const payload = {
     version: 1,
     status: detected.blockers.length > 0 ? 'blocked' : 'ok',
@@ -66,6 +71,7 @@ export async function continueCommand(flags = {}) {
     next_action: detected.next_action,
     blockers: detected.blockers,
     progress: detected.progress,
+    review_feedback: hasReviewFeedback ? 'review/review-feedback.md' : null,
   }
 
   emit(payload, json)
@@ -87,6 +93,12 @@ function emit(payload, asJson) {
   } else {
     writeSync(1, `State: ${payload.state}\n`)
   }
+  if (payload.review_feedback) {
+    writeSync(1, '\n')
+    writeSync(1, 'Review Feedback:\n')
+    writeSync(1, `  Read ${payload.review_feedback} in the assignment folder and address findings.\n`)
+  }
+
   writeSync(1, '\n')
   writeSync(1, 'Next Action:\n')
   writeSync(1, `  ${payload.next_action}\n`)

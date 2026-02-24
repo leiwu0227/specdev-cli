@@ -70,6 +70,28 @@ assert(result.status === 0, 'update succeeds with missing official tool skill')
 assert(existsSync(join(officialFireperpDir, 'SKILL.md')), 'restores official fireperp tool skill')
 assert(existsSync(join(customToolDir, 'SKILL.md')), 'preserves custom tool skills')
 
+// ---- Test update backfills missing platform adapters ----
+console.log('\nupdate backfills missing adapters:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+
+const claudeMd = join(TEST_DIR, 'CLAUDE.md')
+const agentsMd = join(TEST_DIR, 'AGENTS.md')
+const cursorRules = join(TEST_DIR, '.cursor', 'rules')
+
+// Delete AGENTS.md and .cursor/rules, keep CLAUDE.md
+rmSync(agentsMd)
+rmSync(cursorRules)
+
+result = runCmd(['update', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'update succeeds with missing adapters')
+assert(existsSync(claudeMd), 'existing CLAUDE.md preserved')
+assert(existsSync(agentsMd), 'missing AGENTS.md backfilled')
+assert(existsSync(cursorRules), 'missing .cursor/rules backfilled')
+
+const backfilledAgents = readFileSync(agentsMd, 'utf-8')
+assert(backfilledAgents.includes('Specdev:'), 'backfilled AGENTS.md has correct content')
+
 cleanup()
 
 console.log(`\n${passes} passed, ${failures} failed`)

@@ -1,7 +1,7 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript } from '../utils/update.js'
-import { SKILL_FILES } from './init.js'
+import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript, backfillAdapters } from '../utils/update.js'
+import { SKILL_FILES, ALL_ADAPTERS, adapterContent } from './init.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
 
@@ -34,6 +34,7 @@ export async function updateCommand(flags = {}) {
       'skills/tools/ (official built-in tool skills only)',
       'skills/README.md',
       'project_scaffolding/_README.md',
+      'Platform adapters (CLAUDE.md, AGENTS.md, .cursor/rules) — only if missing',
     ], '   - ')
     blankLine()
     printSection('📌 Preserved (not updated):')
@@ -42,6 +43,7 @@ export async function updateCommand(flags = {}) {
       'assignments/ (your active work)',
       'skills/tools/ (your custom tool skills)',
       'project_scaffolding/ (except _README.md)',
+      'Existing platform adapters (never overwritten)',
     ], '   - ')
     return
   }
@@ -71,6 +73,14 @@ export async function updateCommand(flags = {}) {
     const hookUpdated = updateHookScript(targetDir, hookSrcDir)
     if (hookUpdated > 0) {
       console.log('   ✓ .claude/hooks/specdev-session-start.sh')
+    }
+
+    // Backfill missing platform adapters
+    const createdAdapters = backfillAdapters(targetDir, ALL_ADAPTERS, adapterContent)
+    if (createdAdapters.length > 0) {
+      for (const path of createdAdapters) {
+        console.log(`   + ${path} (created — was missing)`)
+      }
     }
     blankLine()
     printSection('📌 Preserved:')

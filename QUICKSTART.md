@@ -14,15 +14,13 @@ Navigate to your project and initialize SpecDev:
 
 ```bash
 cd your-project
-specdev init --platform=claude
+specdev init
 ```
-
-> **Other platforms?** Use `--platform=agents` for Codex/generic agents, or `--platform=cursor` for Cursor.
 
 This sets up everything you need:
 - `.specdev/` — the workflow folder with skills, templates, and assignment tracking
 - `.claude/skills/` — slash-command skills for your coding agent
-- `CLAUDE.md` — platform adapter so your agent knows how to use SpecDev
+- Platform adapters (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`) so your agent knows how to use SpecDev
 
 ## Step 3: Tell SpecDev about your project
 
@@ -143,7 +141,7 @@ This tells you exactly where you are, what's blocking you, and what to do next. 
 ## Putting it all together
 
 ```
-Terminal:  specdev init --platform=claude     # one-time setup
+Terminal:  specdev init                        # one-time setup
 Agent:     specdev start                      # describe your project
 Agent:     specdev assignment my-feature      # brainstorm → design.md
                                               # review (auto or specdev review)
