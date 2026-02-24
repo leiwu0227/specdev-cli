@@ -13,7 +13,7 @@ function adapterContent(heading) {
 
 Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
 
-IMPORTANT: Before starting any subtask, announce "Using specdev: <what you're doing>".
+IMPORTANT: Before starting any subtask, announce "Specdev: <what you're doing>".
 If you stop announcing subtasks, the user will assume you've stopped following the workflow.
 `
 }
@@ -81,7 +81,7 @@ Run \`specdev assignment <name>\` where <name> describes the feature.
 
 Then read \`.specdev/skills/core/brainstorming/SKILL.md\` and follow it exactly.
 
-Announce every subtask with "Using specdev: <action>".
+Announce every subtask with "Specdev: <action>".
 `,
   'specdev-rewind': `---
 name: specdev-rewind
@@ -94,7 +94,7 @@ You have drifted from the specdev workflow. Stop what you're doing and:
 2. Check the latest assignment in \`.specdev/assignments/\` and determine current phase
 3. Resume work following the workflow rules
 
-Announce every subtask with "Using specdev: <action>".
+Announce every subtask with "Specdev: <action>".
 `,
   'specdev-brainstorm': `---
 name: specdev-brainstorm
@@ -116,7 +116,7 @@ Run \`specdev continue\`.
 Use the detected state and next action from that output.
 If blockers are reported, resolve them first (for example \`specdev migrate\`).
 
-Announce every subtask with "Using specdev: <action>".
+Announce every subtask with "Specdev: <action>".
 `,
   'specdev-review': `---
 name: specdev-review

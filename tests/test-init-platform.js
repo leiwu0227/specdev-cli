@@ -62,7 +62,7 @@ assert(startSkill.includes('What does this project do'), 'start skill includes Q
 
 const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
 assert(assignmentSkill.includes('specdev assignment'), 'assignment skill references specdev assignment command')
-assert(assignmentSkill.includes('Using specdev:'), 'assignment skill includes prefix instruction')
+assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix instruction')
 
 const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
@@ -139,12 +139,12 @@ result = runCmd(['init', `--target=${TEST_DIR}`, '--force'])
 assert(result.status === 0, 're-init succeeds even with invalid settings')
 assert(readFileSync(invalidSettingsPath, 'utf-8') === '{ invalid json', 'keeps invalid settings file untouched')
 
-// ---- Test adapter contains "Using specdev:" instruction ----
+// ---- Test adapter contains "Specdev:" instruction ----
 console.log('\nadapter drift-detection instruction:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 const driftCheck = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
-assert(driftCheck.includes('Using specdev:'), 'adapter includes "Using specdev:" prefix instruction')
+assert(driftCheck.includes('Specdev:'), 'adapter includes "Specdev:" prefix instruction')
 
 // ---- Test adapters do NOT overwrite existing files ----
 console.log('\nno-overwrite:')

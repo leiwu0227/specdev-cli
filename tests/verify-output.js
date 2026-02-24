@@ -109,8 +109,8 @@ if (!mainMd.includes('Quick ref:')) {
   console.error('❌ _main.md missing quick-ref blockquote at top')
   process.exit(1)
 }
-if (!mainMd.includes('Using specdev:')) {
-  console.error('❌ _main.md missing "Using specdev:" in quick-ref')
+if (!mainMd.includes('Specdev:')) {
+  console.error('❌ _main.md missing "Specdev:" in quick-ref')
   process.exit(1)
 }
 if (!mainMd.includes('specdev review')) {

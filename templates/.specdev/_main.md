@@ -2,7 +2,7 @@
 
 > **Quick ref:** 5 phases (brainstorm → breakdown → implement → verify → capture).
 > TDD always. No completion claims without evidence. Announce subtasks with
-> "Using specdev: <action>". Check your current assignment phase if unsure what to do next.
+> "Specdev: <action>". Check your current assignment phase if unsure what to do next.
 
 You are working in a project that uses SpecDev — a spec-driven development framework with a 5-phase workflow.
 

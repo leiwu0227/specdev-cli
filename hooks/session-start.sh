@@ -16,7 +16,7 @@ fi
 ASSIGNMENTS_DIR="$SPECDEV_DIR/assignments"
 if [ ! -d "$ASSIGNMENTS_DIR" ]; then
   # No assignments yet — just inject basic awareness
-  CONTEXT="You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce every subtask with \"Using specdev: <action>\"."
+  CONTEXT="You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce every subtask with \"Specdev: <action>\"."
   ESCAPED=$(printf '%s' "$CONTEXT" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
   cat <<EOF
 {
@@ -33,7 +33,7 @@ fi
 LATEST=$(ls -1d "$ASSIGNMENTS_DIR"/*/ 2>/dev/null | sort | tail -1 || true)
 if [ -z "$LATEST" ]; then
   # No assignment subdirectories — same as no assignments
-  CONTEXT="You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce every subtask with \"Using specdev: <action>\"."
+  CONTEXT="You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce every subtask with \"Specdev: <action>\"."
   ESCAPED=$(printf '%s' "$CONTEXT" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
   cat <<EOF
 {
@@ -78,7 +78,7 @@ case "$PHASE" in
     ;;
 esac
 
-CONTEXT="${CONTEXT}\n\nAnnounce every subtask with \"Using specdev: <action>\"."
+CONTEXT="${CONTEXT}\n\nAnnounce every subtask with \"Specdev: <action>\"."
 
 # Escape for JSON
 escape_for_json() {
