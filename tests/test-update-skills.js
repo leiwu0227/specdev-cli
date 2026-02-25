@@ -92,6 +92,24 @@ assert(existsSync(cursorRules), 'missing .cursor/rules backfilled')
 const backfilledAgents = readFileSync(agentsMd, 'utf-8')
 assert(backfilledAgents.includes('Specdev:'), 'backfilled AGENTS.md has correct content')
 
+// ---- Test update migrates legacy slash-skill marker installs ----
+console.log('\nupdate migrates legacy slash skills:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+
+const claudeSkillsDir = join(TEST_DIR, '.claude', 'skills')
+rmSync(join(claudeSkillsDir, 'specdev-assignment'), { recursive: true, force: true })
+mkdirSync(join(claudeSkillsDir, 'specdev-brainstorm'), { recursive: true })
+writeFileSync(join(claudeSkillsDir, 'specdev-brainstorm', 'SKILL.md'), '# legacy brainstorm\n')
+
+result = runCmd(['update', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'update succeeds for legacy slash-skill layout')
+assert(existsSync(join(claudeSkillsDir, 'specdev-assignment', 'SKILL.md')), 'installs specdev-assignment for legacy layout')
+
+// ---- Test update removes deprecated slash skills ----
+console.log('\nupdate removes deprecated slash skills:')
+assert(!existsSync(join(claudeSkillsDir, 'specdev-brainstorm')), 'removes deprecated specdev-brainstorm skill')
+
 cleanup()
 
 console.log(`\n${passes} passed, ${failures} failed`)

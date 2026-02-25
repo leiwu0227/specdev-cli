@@ -1,10 +1,20 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { dirname } from 'path'
 import fse from 'fs-extra'
 import { join } from 'path'
 
 const OFFICIAL_TOOL_SKILLS = [
   'fireperp',
+]
+
+const CLAUDE_SKILL_MARKERS = [
+  join('specdev-assignment', 'SKILL.md'),
+  join('specdev-brainstorm', 'SKILL.md'),
+  join('specdev-start', 'SKILL.md'),
+]
+
+const DEPRECATED_CLAUDE_SKILLS = [
+  'specdev-brainstorm',
 ]
 
 /**
@@ -109,7 +119,7 @@ export async function isValidSpecdevInstallation(specdevPath) {
 
 /**
  * Updates skill files in .claude/skills/ if they exist
- * Auto-detects by checking for specdev-assignment/SKILL.md
+ * Auto-detects by checking for known managed slash-skill markers
  *
  * @param {string} targetDir - Project root directory
  * @param {Record<string, string>} skillFiles - Map of skill name to content
@@ -117,9 +127,11 @@ export async function isValidSpecdevInstallation(specdevPath) {
  */
 export function updateSkillFiles(targetDir, skillFiles) {
   const skillsDir = join(targetDir, '.claude', 'skills')
-  const markerFile = join(skillsDir, 'specdev-assignment', 'SKILL.md')
+  const hasManagedSkills = CLAUDE_SKILL_MARKERS.some((marker) =>
+    existsSync(join(skillsDir, marker))
+  )
 
-  if (!existsSync(markerFile)) {
+  if (!hasManagedSkills) {
     return 0
   }
 
@@ -129,6 +141,13 @@ export function updateSkillFiles(targetDir, skillFiles) {
       mkdirSync(skillDir, { recursive: true })
     }
     writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
+  }
+
+  for (const deprecatedSkillName of DEPRECATED_CLAUDE_SKILLS) {
+    const deprecatedSkillDir = join(skillsDir, deprecatedSkillName)
+    if (existsSync(deprecatedSkillDir)) {
+      rmSync(deprecatedSkillDir, { recursive: true, force: true })
+    }
   }
 
   return Object.keys(skillFiles).length
