@@ -65,14 +65,15 @@ Every task MUST follow this structure:
 
 ### Skill Declaration
 
-For each task, analyze what the task involves and declare needed skills:
+`specdev breakdown` prints available tool skills. Use exact names from that list.
 
+For each task, declare needed skills:
 - Task involves writing new code → `test-driven-development`
 - Task involves debugging → `systematic-debugging`
-- Task involves research → check `skills/tools/` for search tools
 - Task involves scaffolding → `scaffolding-lite` or `scaffolding-full`
+- Task needs a project tool → use the exact name from the tool skills list
 
-Only declare skills the task actually needs. The implementing phase will inject these into the subagent context.
+Only declare skills the task actually needs.
 
 ### Phase 4: Write Plan
 
@@ -96,7 +97,15 @@ Only declare skills the task actually needs. The implementing phase will inject 
 3. Save to `breakdown/plan.md` in the assignment folder
 4. A subagent review (1-2 rounds) will check the plan for completeness and correctness
    - If the review finds issues: address them and re-run the review
-   - Once approved: run `specdev implement` immediately — no user approval needed
+   - Once approved: proceed directly to implementation (see below)
+
+### Phase 5: Start Implementation
+
+Once the plan review passes, proceed immediately — no user approval needed:
+
+1. Ensure `implementation/` directory exists in the assignment folder
+2. Write `implementation/progress.json` with `{}` if it doesn't exist
+3. Read `.specdev/skills/core/implementing/SKILL.md` and follow it
 
 ## Rules
 
@@ -118,5 +127,5 @@ Only declare skills the task actually needs. The implementing phase will inject 
 ## Integration
 
 - **Before this skill:** brainstorming (produces the design this skill reads)
-- **After this skill:** implementing (executes the plan — runs immediately, no approval gate)
-- **Review:** Inline subagent review (1-2 rounds) checks the plan. Do NOT use `specdev review` here — proceed directly to `specdev implement`
+- **After this skill:** implementing (auto-chains — proceed directly after plan review passes)
+- **Review:** Inline subagent review (1-2 rounds) checks the plan. Do NOT use `specdev review` here — proceed directly to implementing

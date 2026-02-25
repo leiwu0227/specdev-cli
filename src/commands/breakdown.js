@@ -1,7 +1,9 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine } from '../utils/output.js'
+import { scanSkillsDir } from '../utils/skills.js'
 
 export async function breakdownCommand(flags = {}) {
   const assignmentPath = await resolveAssignmentPath(flags)
@@ -39,7 +41,28 @@ export async function breakdownCommand(flags = {}) {
   console.log(`   Input: ${name}/brainstorm/design.md`)
   console.log(`   Output: ${name}/breakdown/plan.md`)
   blankLine()
-  console.log('After plan is reviewed, run specdev implement to start implementation automatically.')
+  console.log('After plan is reviewed, implementation starts automatically.')
+  console.log('Read .specdev/skills/core/implementing/SKILL.md and follow it.')
+  console.log(`   Input: ${name}/breakdown/plan.md`)
+  console.log(`   Output: committed code per task`)
+  blankLine()
+  console.log('Per-task flow:')
+  console.log('  1. Dispatch implementer subagent (TDD: red → green → refactor)')
+  console.log('  2. Spec review subagent (loop until PASS, max 10 rounds)')
+  console.log('  3. Code quality review subagent (CRITICAL → fix, MINOR → note)')
+  console.log('  4. Commit and mark task complete')
+
+  // Print available tool skills so the breakdown agent knows what to declare
+  const targetDir = resolveTargetDir(flags)
+  const toolSkills = await scanSkillsDir(join(targetDir, '.specdev', 'skills', 'tools'), 'tool')
+  if (toolSkills.length > 0) {
+    blankLine()
+    console.log('Available tool skills:')
+    for (const skill of toolSkills) {
+      const desc = skill.description ? ` — ${skill.description}` : ''
+      console.log(`   ${skill.name}${desc}`)
+    }
+  }
 }
 
 async function readBrainstormRevision(path) {

@@ -68,7 +68,7 @@ case "$PHASE" in
     CONTEXT="${CONTEXT}Rules:\n- Interactive Q&A to validate the design\n- Produce proposal.md and design.md\n- Do not start coding until design is approved\n\nNext: Complete design, get user approval, then run specdev breakdown"
     ;;
   breakdown)
-    CONTEXT="${CONTEXT}Rules:\n- Break design into executable tasks in breakdown/plan.md\n- Each task: 2-5 min, TDD, exact file paths and code\n- Include acceptance criteria for every task\n\nNext: Complete plan.md, auto-review, then run specdev implement"
+    CONTEXT="${CONTEXT}Rules:\n- Break design into executable tasks in breakdown/plan.md\n- Each task: 2-5 min, TDD, exact file paths and code\n- Include acceptance criteria for every task\n\nNext: Complete plan.md, auto-review, then proceed directly to implementation"
     ;;
   implementation)
     CONTEXT="${CONTEXT}Rules:\n- TDD: write failing test -> make it pass -> refactor\n- No completion claims without running tests\n- One task at a time via subagents\n- Per-task review: spec compliance then code quality\n\nNext: Complete remaining tasks, get user approval"
