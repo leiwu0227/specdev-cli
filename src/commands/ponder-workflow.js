@@ -1,6 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
-import { scanAssignments } from '../utils/scan.js'
+import { scanAssignments, readProcessedCaptures, markCapturesProcessed } from '../utils/scan.js'
 import {
   resolveTargetDir,
   requireSpecdevDirectory,
@@ -45,17 +45,25 @@ export async function ponderWorkflowCommand(flags = {}) {
   // Generate rule-based suggestions
   const suggestions = generateWorkflowSuggestions(assignments)
 
-  if (suggestions.length === 0) {
+  // Generate capture-diff suggestions from unprocessed assignments
+  const processedCaptures = await readProcessedCaptures(knowledgePath, 'workflow')
+  const captureSuggestions = generateCaptureWorkflowSuggestions(assignments, processedCaptures)
+  const allSuggestions = [...suggestions, ...captureSuggestions]
+
+  // Track which capture assignments were surfaced for marking later
+  const surfacedCaptureNames = captureSuggestions.map((s) => s.assignmentName)
+
+  if (allSuggestions.length === 0) {
     blankLine()
     console.log('No workflow observations detected from scanning.')
   } else {
-    console.log(`Generated ${suggestions.length} suggestion(s) to review`)
+    console.log(`Generated ${allSuggestions.length} suggestion(s) to review`)
   }
 
   // Present each suggestion
   const accepted = []
 
-  for (const suggestion of suggestions) {
+  for (const suggestion of allSuggestions) {
     const result = await presentSuggestion(suggestion)
     if (result) {
       accepted.push(result)
@@ -101,9 +109,34 @@ export async function ponderWorkflowCommand(flags = {}) {
 
   await fse.writeFile(filepath, content, 'utf-8')
 
+  // Mark surfaced capture diffs as processed
+  await markCapturesProcessed(knowledgePath, 'workflow', surfacedCaptureNames)
+
   blankLine()
   console.log(`✅ Saved ${accepted.length} observation(s) to:`)
   console.log(`   ${filepath}`)
+}
+
+/**
+ * Generate suggestions from unprocessed capture diffs (workflow-diff.md)
+ */
+function generateCaptureWorkflowSuggestions(assignments, processedCaptures) {
+  const suggestions = []
+
+  for (const a of assignments) {
+    if (!a.capture || !a.capture.workflowDiff) continue
+    if (processedCaptures.has(a.name)) continue
+
+    suggestions.push({
+      title: `Workflow diff from ${a.name}`,
+      body:
+        `Assignment "${a.name}" produced workflow observations during knowledge capture:\n\n` +
+        `${a.capture.workflowDiff}`,
+      assignmentName: a.name,
+    })
+  }
+
+  return suggestions
 }
 
 /**

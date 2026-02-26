@@ -62,6 +62,9 @@ export async function scanSingleAssignment(assignmentPath, name) {
   // Read tasks if they exist
   const tasks = await scanTasks(join(assignmentPath, 'tasks'))
 
+  // Read capture diffs if they exist
+  const capture = await scanCapture(join(assignmentPath, 'capture'))
+
   // Read scaffold files
   const scaffoldDir = join(assignmentPath, 'scaffold')
   const hasScaffold = await fse.pathExists(scaffoldDir)
@@ -79,6 +82,7 @@ export async function scanSingleAssignment(assignmentPath, name) {
     skippedPhases,
     context,
     tasks,
+    capture,
     scaffoldCount,
     hasScaffold,
   }
@@ -180,6 +184,37 @@ async function scanTasks(tasksPath) {
 }
 
 /**
+ * Scan capture/ directory for knowledge-capture diff files
+ */
+async function scanCapture(capturePath) {
+  if (!(await fse.pathExists(capturePath))) {
+    return null
+  }
+
+  const result = {
+    projectNotesDiff: null,
+    workflowDiff: null,
+  }
+
+  const projectNotesPath = join(capturePath, 'project-notes-diff.md')
+  if (await fse.pathExists(projectNotesPath)) {
+    result.projectNotesDiff = await fse.readFile(projectNotesPath, 'utf-8')
+  }
+
+  const workflowPath = join(capturePath, 'workflow-diff.md')
+  if (await fse.pathExists(workflowPath)) {
+    result.workflowDiff = await fse.readFile(workflowPath, 'utf-8')
+  }
+
+  // Return null if neither file exists
+  if (!result.projectNotesDiff && !result.workflowDiff) {
+    return null
+  }
+
+  return result
+}
+
+/**
  * Finds the latest (highest-numbered) assignment directory
  *
  * @param {string} specdevPath - Path to .specdev directory
@@ -238,4 +273,53 @@ export async function readKnowledgeBranch(knowledgePath, branch) {
   }
 
   return results
+}
+
+const PROCESSED_CAPTURES_FILE = '.processed_captures.json'
+
+/**
+ * Reads the set of assignment names whose capture diffs have already been
+ * surfaced for the given type ('project' or 'workflow').
+ *
+ * @param {string} knowledgePath - Path to knowledge/ directory
+ * @param {string} type - 'project' or 'workflow'
+ * @returns {Promise<Set<string>>}
+ */
+export async function readProcessedCaptures(knowledgePath, type) {
+  const filePath = join(knowledgePath, PROCESSED_CAPTURES_FILE)
+
+  if (!(await fse.pathExists(filePath))) {
+    return new Set()
+  }
+
+  const data = await fse.readJSON(filePath)
+  return new Set(data[type] || [])
+}
+
+/**
+ * Marks assignment names as processed for the given type.
+ * Merges into existing tracking file — separate lists per type so running
+ * `ponder project` doesn't suppress unseen workflow diffs.
+ *
+ * @param {string} knowledgePath - Path to knowledge/ directory
+ * @param {string} type - 'project' or 'workflow'
+ * @param {string[]} assignmentNames - Names to mark as processed
+ */
+export async function markCapturesProcessed(knowledgePath, type, assignmentNames) {
+  if (assignmentNames.length === 0) return
+
+  const filePath = join(knowledgePath, PROCESSED_CAPTURES_FILE)
+
+  let data = {}
+  if (await fse.pathExists(filePath)) {
+    data = await fse.readJSON(filePath)
+  }
+
+  const existing = new Set(data[type] || [])
+  for (const name of assignmentNames) {
+    existing.add(name)
+  }
+  data[type] = [...existing]
+
+  await fse.writeJSON(filePath, data, { spaces: 2 })
 }

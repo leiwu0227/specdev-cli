@@ -1,6 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
-import { scanAssignments, readKnowledgeBranch } from '../utils/scan.js'
+import { scanAssignments, readKnowledgeBranch, readProcessedCaptures, markCapturesProcessed } from '../utils/scan.js'
 import {
   resolveTargetDir,
   requireSpecdevDirectory,
@@ -61,23 +61,31 @@ export async function ponderProjectCommand(flags = {}) {
     )
   }
 
-  // Generate suggestions
+  // Generate structural suggestions
   const suggestions = generateProjectSuggestions(
     assignments,
     existingKnowledge
   )
 
-  if (suggestions.length === 0) {
+  // Generate capture-diff suggestions from unprocessed assignments
+  const processedCaptures = await readProcessedCaptures(knowledgePath, 'project')
+  const captureSuggestions = generateCaptureDiffSuggestions(assignments, processedCaptures)
+  const allSuggestions = [...suggestions, ...captureSuggestions]
+
+  // Track which capture assignments were surfaced for marking later
+  const surfacedCaptureNames = captureSuggestions.map((s) => s.assignmentName)
+
+  if (allSuggestions.length === 0) {
     blankLine()
     console.log('No new project knowledge suggestions detected.')
   } else {
-    console.log(`Generated ${suggestions.length} suggestion(s) to review`)
+    console.log(`Generated ${allSuggestions.length} suggestion(s) to review`)
   }
 
   // Present each suggestion grouped by branch
   const accepted = {} // branch -> [items]
 
-  for (const suggestion of suggestions) {
+  for (const suggestion of allSuggestions) {
     const result = await presentSuggestion({
       title: `[${suggestion.branch}] ${suggestion.title}`,
       body: suggestion.body,
@@ -159,6 +167,9 @@ export async function ponderProjectCommand(flags = {}) {
     await fse.writeFile(filepath, content, 'utf-8')
     console.log(`   ✓ ${branch}/${filename} (${items.length} observation(s))`)
   }
+
+  // Mark surfaced capture diffs as processed
+  await markCapturesProcessed(knowledgePath, 'project', surfacedCaptureNames)
 
   // Update _index.md
   await updateKnowledgeIndex(knowledgePath)
@@ -259,6 +270,29 @@ function generateProjectSuggestions(assignments, existingKnowledge) {
         `${assignmentsWithResults.length} assignment(s) have completed task results.\n` +
         `Review these for recurring implementation patterns worth documenting:\n` +
         `- **Assignments:** ${assignmentsWithResults.map((a) => a.name).join(', ')}`,
+    })
+  }
+
+  return suggestions
+}
+
+/**
+ * Generate suggestions from unprocessed capture diffs (project-notes-diff.md)
+ */
+function generateCaptureDiffSuggestions(assignments, processedCaptures) {
+  const suggestions = []
+
+  for (const a of assignments) {
+    if (!a.capture || !a.capture.projectNotesDiff) continue
+    if (processedCaptures.has(a.name)) continue
+
+    suggestions.push({
+      branch: 'architecture',
+      title: `Capture diff from ${a.name}`,
+      body:
+        `Assignment "${a.name}" produced project-notes observations during knowledge capture:\n\n` +
+        `${a.capture.projectNotesDiff}`,
+      assignmentName: a.name,
     })
   }
 

@@ -1,6 +1,6 @@
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
 import { join } from 'path'
-import { scanAssignments, readKnowledgeBranch } from '../src/utils/scan.js'
+import { scanAssignments, readKnowledgeBranch, readProcessedCaptures, markCapturesProcessed } from '../src/utils/scan.js'
 
 const TEST_DIR = './test-scan-output'
 const SPECDEV = join(TEST_DIR, '.specdev')
@@ -26,6 +26,11 @@ function setup() {
   writeFileSync(join(a1, 'tasks/01_api/spec.md'), '# Spec')
   writeFileSync(join(a1, 'tasks/01_api/result.md'), '# Result\nDone.')
   writeFileSync(join(a1, 'scaffold/api.md'), '# Scaffold')
+
+  // Capture diffs for a1
+  mkdirSync(join(a1, 'capture'), { recursive: true })
+  writeFileSync(join(a1, 'capture/project-notes-diff.md'), '# Project Notes Diff\n\n## Gaps Found\n- Missing API auth docs')
+  writeFileSync(join(a1, 'capture/workflow-diff.md'), '# Workflow Diff\n\n## What Worked\n- TDD approach was effective')
 
   // Assignment with skipped phases (has implementation but no plan)
   const a2 = join(SPECDEV, 'assignments/00002_bugfix_login')
@@ -87,6 +92,10 @@ async function runTests() {
   assert(a1.hasScaffold === true, 'has scaffold')
   assert(a1.scaffoldCount === 1, 'scaffold has 1 file')
 
+  assert(a1.capture !== null, 'has capture')
+  assert(a1.capture.projectNotesDiff.includes('Missing API auth docs'), 'reads project-notes-diff content')
+  assert(a1.capture.workflowDiff.includes('TDD approach'), 'reads workflow-diff content')
+
   const a2 = assignments.find((a) => a.name === '00002_bugfix_login')
   assert(a2 !== undefined, 'finds assignment 00002')
   assert(a2.type === 'bugfix', 'parses bugfix type')
@@ -94,6 +103,7 @@ async function runTests() {
   assert(a2.context === null, 'no context')
   assert(a2.tasks === null, 'no tasks')
   assert(a2.hasScaffold === false, 'no scaffold')
+  assert(a2.capture === null, 'no capture')
 
   // Test readKnowledgeBranch
   console.log('\nreadKnowledgeBranch:')
@@ -110,6 +120,42 @@ async function runTests() {
     'nonexistent'
   )
   assert(empty.length === 0, 'returns empty for nonexistent branch')
+
+  // Test readProcessedCaptures / markCapturesProcessed
+  console.log('\nprocessed captures tracking:')
+  const knowledgePath = join(SPECDEV, 'knowledge')
+
+  const emptyProject = await readProcessedCaptures(knowledgePath, 'project')
+  assert(emptyProject.size === 0, 'empty set initially for project')
+
+  const emptyWorkflow = await readProcessedCaptures(knowledgePath, 'workflow')
+  assert(emptyWorkflow.size === 0, 'empty set initially for workflow')
+
+  await markCapturesProcessed(knowledgePath, 'project', ['00001_feature_auth'])
+  const afterProject = await readProcessedCaptures(knowledgePath, 'project')
+  assert(afterProject.has('00001_feature_auth'), 'tracks project after write')
+  assert(afterProject.size === 1, 'project set has 1 entry')
+
+  const stillEmptyWorkflow = await readProcessedCaptures(knowledgePath, 'workflow')
+  assert(stillEmptyWorkflow.size === 0, 'workflow still empty — types are independent')
+
+  await markCapturesProcessed(knowledgePath, 'workflow', ['00001_feature_auth', '00002_bugfix_login'])
+  const afterWorkflow = await readProcessedCaptures(knowledgePath, 'workflow')
+  assert(afterWorkflow.has('00001_feature_auth'), 'workflow tracks first')
+  assert(afterWorkflow.has('00002_bugfix_login'), 'workflow tracks second')
+  assert(afterWorkflow.size === 2, 'workflow set has 2 entries')
+
+  // Verify project wasn't affected by workflow write
+  const projectStill = await readProcessedCaptures(knowledgePath, 'project')
+  assert(projectStill.size === 1, 'project still has 1 entry after workflow write')
+
+  // Test idempotent writes
+  await markCapturesProcessed(knowledgePath, 'project', ['00001_feature_auth'])
+  const afterDupe = await readProcessedCaptures(knowledgePath, 'project')
+  assert(afterDupe.size === 1, 'idempotent — no duplicates after re-marking')
+
+  // Test empty array is a no-op
+  await markCapturesProcessed(knowledgePath, 'project', [])
 
   // Test empty assignments dir
   console.log('\nedge cases:')

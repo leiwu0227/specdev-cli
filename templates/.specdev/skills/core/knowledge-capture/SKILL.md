@@ -14,7 +14,7 @@ next: null
 
 - **Input:** A completed, verified assignment
 - **Process:** Compare learnings against project_notes → compare flow against specdev workflow → write two files
-- **Output:** Two files in the knowledge vault
+- **Output:** Two files in the assignment's `capture/` directory
 - **Next:** None — this is the final phase
 
 ## Process
@@ -25,7 +25,7 @@ Compare what you learned during this assignment against the existing project not
 
 1. Read `project_notes/big_picture.md` and `project_notes/feature_descriptions.md`
 2. What did you learn about the project that these files don't capture?
-3. Write findings to `knowledge/project-notes-diff.md`:
+3. Write findings to `capture/project-notes-diff.md`:
 
 ```markdown
 # Project Notes Diff — [Assignment Name]
@@ -48,7 +48,7 @@ Compare how the workflow actually went against the specdev process:
 
 1. Reflect on each phase: brainstorm, breakdown, implement, review
 2. What worked well? What was friction?
-3. Write findings to `knowledge/workflow-diff.md`:
+3. Write findings to `capture/workflow-diff.md`:
 
 ```markdown
 # Workflow Diff — [Assignment Name]
