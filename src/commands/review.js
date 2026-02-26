@@ -4,41 +4,37 @@ import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { blankLine, printBullets, printLines, printSection } from '../utils/output.js'
 
 /**
- * specdev review — Phase-aware manual review (separate session)
+ * specdev review <phase> — Phase-aware manual review (separate session)
  *
- * Detects current phase from assignment artifacts and prints
- * appropriate review context for the reviewer.
+ * Requires an explicit phase argument: brainstorm or implementation.
  */
-export async function reviewCommand(flags = {}) {
+export async function reviewCommand(positionalArgs = [], flags = {}) {
+  const VALID_PHASES = ['brainstorm', 'implementation']
+  const phase = positionalArgs[0]
+
+  if (!phase) {
+    console.error('Missing required phase argument')
+    console.log(`   Usage: specdev review <${VALID_PHASES.join(' | ')}>`)
+    process.exitCode = 1
+    return
+  }
+
+  if (phase === 'breakdown') {
+    console.error('Breakdown uses inline subagent review, not manual review')
+    console.log('   Run specdev implement to proceed to implementation.')
+    process.exitCode = 1
+    return
+  }
+
+  if (!VALID_PHASES.includes(phase)) {
+    console.error(`Unknown review phase: ${phase}`)
+    console.log(`   Valid phases: ${VALID_PHASES.join(', ')}`)
+    process.exitCode = 1
+    return
+  }
+
   const assignmentPath = await resolveAssignmentPath(flags)
   const name = assignmentName(assignmentPath)
-
-  // Detect phase from artifacts (latest phase wins)
-  const hasImplementationDir = await fse.pathExists(join(assignmentPath, 'implementation'))
-  const hasImplementationProgress = await fse.pathExists(
-    join(assignmentPath, 'implementation', 'progress.json')
-  )
-  const hasImplementation = hasImplementationDir && hasImplementationProgress
-  const hasPlan = await fse.pathExists(join(assignmentPath, 'breakdown', 'plan.md'))
-  const hasDesign = await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))
-  const hasProposal = await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))
-
-  let phase
-  if (hasImplementation) {
-    phase = 'implementation'
-  } else if (hasPlan) {
-    // Breakdown review is handled by inline subagent, not manual review
-    console.error('Manual review is not used after breakdown')
-    console.log('   The breakdown plan is reviewed by an inline subagent.')
-    console.log('   Run specdev implement to proceed to implementation.')
-    process.exit(1)
-  } else if (hasDesign || hasProposal) {
-    phase = 'brainstorm'
-  } else {
-    console.error('No reviewable artifacts found')
-    console.log('   Complete at least the brainstorm phase first')
-    process.exit(1)
-  }
 
   console.log(`Manual Review: ${name}`)
   console.log(`   Phase: ${phase}`)
@@ -49,8 +45,12 @@ export async function reviewCommand(flags = {}) {
     blankLine()
     printSection('Artifacts to review:')
     const artifacts = []
-    if (hasProposal) artifacts.push(`${name}/brainstorm/proposal.md`)
-    if (hasDesign) artifacts.push(`${name}/brainstorm/design.md`)
+    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))) {
+      artifacts.push(`${name}/brainstorm/proposal.md`)
+    }
+    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))) {
+      artifacts.push(`${name}/brainstorm/design.md`)
+    }
     printBullets(artifacts, '   - ')
     blankLine()
     printSection('Check:')
@@ -119,10 +119,15 @@ export async function reviewCommand(flags = {}) {
     '  ',
     '  ## Findings',
     '  - [list findings, or "None — approved"]',
+    '  ',
+    '  ## Addressed Findings',
+    '  - [items fixed in this round, or "None"]',
     '  ```',
   ])
   blankLine()
-  console.log('After writing findings, return to the main session and run: specdev check-review')
+  console.log(`Reviewing assignment: ${name}`)
+  console.log('After writing findings, return to the main session and run:')
+  console.log(`   specdev check-review --assignment=${name}`)
 }
 
 async function detectNextRound(reviewDir) {
@@ -132,7 +137,7 @@ async function detectNextRound(reviewDir) {
     for (const f of files) {
       const match = f.match(/^feedback-round-(\d+)\.md$/)
       if (match) {
-        const n = parseInt(match[1], 10)
+        const n = Number.parseInt(match[1], 10)
         if (n > maxRound) maxRound = n
       }
     }

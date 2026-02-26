@@ -52,6 +52,7 @@ export async function checkReviewCommand(flags = {}) {
       phase: parsed.phase,
       round: parsed.round,
       findings: parsed.findings,
+      addressed_findings: parsed.addressedFindings,
       next_action:
         parsed.verdict === 'approved'
           ? nextStepForPhase(parsed.phase)
@@ -69,6 +70,13 @@ export async function checkReviewCommand(flags = {}) {
 
   if (parsed.verdict === 'approved') {
     printSection('Review approved!')
+    if (parsed.addressedFindings.length > 0) {
+      blankLine()
+      printSection('Addressed findings:')
+      for (const finding of parsed.addressedFindings) {
+        console.log(`   - ${finding}`)
+      }
+    }
     blankLine()
     printSection('Next step:')
     console.log(`   ${nextStepForPhase(parsed.phase)}`)
@@ -110,22 +118,26 @@ function parseFeedback(content) {
 
   const phase = phaseMatch ? phaseMatch[1].trim() : 'unknown'
   const verdict = verdictMatch ? verdictMatch[1].trim().toLowerCase() : 'unknown'
-  const round = roundMatch ? parseInt(roundMatch[1], 10) : 1
+  const round = roundMatch ? Number.parseInt(roundMatch[1], 10) : 1
 
-  // Parse findings from ## Findings section
-  const findings = []
-  const findingsMatch = content.match(/## Findings\s*\n([\s\S]*?)(?=\n## |\n# |$)/)
-  if (findingsMatch) {
-    const lines = findingsMatch[1].split('\n')
-    for (const line of lines) {
-      const trimmed = line.replace(/^[-*]\s+/, '').trim()
-      if (trimmed && trimmed.toLowerCase() !== 'none — approved') {
-        findings.push(trimmed)
-      }
+  const findings = extractSection(content, 'Findings', 'none — approved')
+  const addressedFindings = extractSection(content, 'Addressed Findings', 'none')
+
+  return { phase, verdict, round, findings, addressedFindings }
+}
+
+function extractSection(content, heading, sentinel) {
+  const match = content.match(new RegExp(`## ${heading}\\s*\\n([\\s\\S]*?)(?=\\n## |\\n# |$)`, 'i'))
+  if (!match) return []
+  const items = []
+  for (const line of match[1].split('\n')) {
+    if (!/^\s*[-*]\s+/.test(line)) continue
+    const trimmed = line.replace(/^\s*[-*]\s+/, '').trim()
+    if (trimmed && trimmed.toLowerCase() !== sentinel) {
+      items.push(trimmed)
     }
   }
-
-  return { phase, verdict, round, findings }
+  return items
 }
 
 async function safeArchiveName(reviewDir, round) {

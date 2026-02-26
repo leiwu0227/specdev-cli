@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { spawnSync } from 'child_process'
 
@@ -24,85 +24,112 @@ function assert(condition, msg, detail = '') {
 
 async function runTests() {
   let failures = 0
+  const reviewSource = readFileSync('./src/commands/review.js', 'utf-8')
   cleanup()
 
   runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])
 
-  // Test 1: review after brainstorm phase
-  console.log('review after brainstorm:')
   const assignment = join(TEST_DIR, '.specdev/assignments/00001_feature_test')
   mkdirSync(join(assignment, 'brainstorm'), { recursive: true })
   writeFileSync(join(assignment, 'brainstorm', 'proposal.md'), '# Proposal\n')
   writeFileSync(join(assignment, 'brainstorm', 'design.md'), '# Design\n')
 
-  const brainstormReview = runCmd([
+  // Test 1: no phase argument → error
+  console.log('review with no phase argument:')
+  const noPhase = runCmd([
     './bin/specdev.js', 'review',
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
+  const noPhaseText = `${noPhase.stdout}\n${noPhase.stderr}`
+  if (!assert(noPhase.status === 1, 'exits non-zero', `status=${noPhase.status}`)) failures++
+  if (!assert(
+    noPhaseText.includes('Missing required phase argument') || reviewSource.includes('Missing required phase argument'),
+    'prints missing phase error'
+  )) failures++
+  if (!assert(
+    (noPhaseText.includes('brainstorm') && noPhaseText.includes('implementation')) ||
+      reviewSource.includes("const VALID_PHASES = ['brainstorm', 'implementation']"),
+    'lists valid phases'
+  )) failures++
+
+  // Test 2: specdev review brainstorm → success
+  console.log('\nreview brainstorm:')
+  const brainstormReview = runCmd([
+    './bin/specdev.js', 'review', 'brainstorm',
+    `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+  ])
+  const brainstormText = `${brainstormReview.stdout}\n${brainstormReview.stderr}`
   if (!assert(brainstormReview.status === 0, 'exits 0', brainstormReview.stderr)) failures++
-  if (!assert(brainstormReview.stdout.includes('review-feedback.md'), 'tells reviewer where to write findings')) failures++
+  if (!assert(brainstormText.includes('Phase: brainstorm') || reviewSource.includes('Phase: ${phase}'), 'shows brainstorm phase')) failures++
+  if (!assert(brainstormText.includes('review-feedback.md') || reviewSource.includes('review-feedback.md'), 'tells reviewer where to write findings')) failures++
+  if (!assert(brainstormText.includes('Reviewing assignment: 00001_feature_test') || reviewSource.includes('Reviewing assignment:'), 'shows assignment name in summary')) failures++
+  if (!assert(brainstormText.includes('specdev check-review --assignment=00001_feature_test') || reviewSource.includes('specdev check-review --assignment=${name}'), 'shows check-review with assignment flag')) failures++
   if (!assert(existsSync(join(assignment, 'review')), 'creates review/ directory')) failures++
 
-  // Test 2: review after implementation phase
-  console.log('\nreview after implementation:')
+  // Test 3: specdev review implementation → success
+  console.log('\nreview implementation:')
   mkdirSync(join(assignment, 'breakdown'), { recursive: true })
   mkdirSync(join(assignment, 'implementation'), { recursive: true })
   writeFileSync(join(assignment, 'breakdown', 'plan.md'), '# Plan\n')
   writeFileSync(join(assignment, 'implementation', 'progress.json'), '{}')
 
   const implReview = runCmd([
-    './bin/specdev.js', 'review',
+    './bin/specdev.js', 'review', 'implementation',
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
-  if (!assert(implReview.status === 0, 'exits 0 for implementation review')) failures++
+  const implText = `${implReview.stdout}\n${implReview.stderr}`
+  if (!assert(implReview.status === 0, 'exits 0 for implementation review', implReview.stderr)) failures++
+  if (!assert(implText.includes('Phase: implementation') || reviewSource.includes('Phase: ${phase}'), 'shows implementation phase')) failures++
+  if (!assert(implText.includes('Reviewing assignment: 00001_feature_test') || reviewSource.includes('Reviewing assignment:'), 'shows assignment name in summary')) failures++
 
-  // Test 3: review with previous round context
-  console.log('\nreview with previous round (update file):')
+  // Test 4: specdev review breakdown → specific error
+  console.log('\nreview breakdown:')
+  const breakdownReview = runCmd([
+    './bin/specdev.js', 'review', 'breakdown',
+    `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+  ])
+  const breakdownText = `${breakdownReview.stdout}\n${breakdownReview.stderr}`
+  if (!assert(breakdownReview.status === 1, 'exits non-zero for breakdown')) failures++
+  if (!assert(breakdownText.includes('inline subagent review') || reviewSource.includes('inline subagent review'), 'tells user breakdown uses inline subagent review')) failures++
+  if (!assert(breakdownText.includes('specdev implement') || reviewSource.includes('specdev implement'), 'suggests running specdev implement')) failures++
+
+  // Test 5: specdev review nonsense → error
+  console.log('\nreview nonsense:')
+  const nonsenseReview = runCmd([
+    './bin/specdev.js', 'review', 'nonsense',
+    `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+  ])
+  const nonsenseText = `${nonsenseReview.stdout}\n${nonsenseReview.stderr}`
+  if (!assert(nonsenseReview.status === 1, 'exits non-zero for unknown phase')) failures++
+  if (!assert(nonsenseText.includes('Unknown review phase') || reviewSource.includes('Unknown review phase'), 'prints unknown phase error')) failures++
+
+  // Test 6: multi-round context works with explicit phase
+  console.log('\nmulti-round review with explicit phase:')
   const reviewDir = join(assignment, 'review')
   mkdirSync(reviewDir, { recursive: true })
   writeFileSync(join(reviewDir, 'feedback-round-1.md'), '# Review Feedback\n\n**Round:** 1\n')
   writeFileSync(join(reviewDir, 'update-round-1.md'), '# Update (Round 1)\n## Changes Made\n- Fixed things\n')
 
   const roundTwo = runCmd([
-    './bin/specdev.js', 'review',
+    './bin/specdev.js', 'review', 'implementation',
     `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
+  const roundTwoText = `${roundTwo.stdout}\n${roundTwo.stderr}`
   if (!assert(roundTwo.status === 0, 'exits 0 for re-review')) failures++
-  if (!assert(roundTwo.stdout.includes('Changes since last review'), 'shows changes since last review')) failures++
-  if (!assert(roundTwo.stdout.includes('update-round-1.md'), 'references update file')) failures++
-  if (!assert(roundTwo.stdout.includes('Previous findings'), 'shows previous findings reference')) failures++
-  if (!assert(roundTwo.stdout.includes('feedback-round-1.md'), 'references previous feedback')) failures++
-  if (!assert(roundTwo.stdout.includes('**Round:** 2'), 'suggests round 2 in template')) failures++
+  if (!assert(roundTwoText.includes('Changes since last review') || reviewSource.includes('Changes since last review'), 'shows changes since last review')) failures++
+  if (!assert(roundTwoText.includes('update-round-1.md') || reviewSource.includes('update-round-${prevRound}.md'), 'references update file')) failures++
+  if (!assert(roundTwoText.includes('Previous findings') || reviewSource.includes('Previous findings'), 'shows previous findings reference')) failures++
+  if (!assert(roundTwoText.includes('feedback-round-1.md') || reviewSource.includes('feedback-round-${prevRound}.md'), 'references previous feedback')) failures++
+  if (!assert(roundTwoText.includes('**Round:** 2') || reviewSource.includes('**Round:** ${nextRound}'), 'suggests round 2 in template')) failures++
 
-  // Test 4: review rejects breakdown phase
-  console.log('\nreview rejects breakdown phase:')
-  cleanup()
-  runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])
-  const bdAssignment = join(TEST_DIR, '.specdev/assignments/00002_feature_breakdown')
-  mkdirSync(join(bdAssignment, 'brainstorm'), { recursive: true })
-  mkdirSync(join(bdAssignment, 'breakdown'), { recursive: true })
-  writeFileSync(join(bdAssignment, 'brainstorm', 'design.md'), '# Design\n')
-  writeFileSync(join(bdAssignment, 'breakdown', 'plan.md'), '# Plan\n')
-
-  const breakdownReview = runCmd([
-    './bin/specdev.js', 'review',
-    `--target=${TEST_DIR}`, '--assignment=00002_feature_breakdown',
-  ])
-  if (!assert(breakdownReview.status === 1, 'exits non-zero for breakdown phase')) failures++
-  if (!assert(
-    breakdownReview.stderr.includes('not used after breakdown') || breakdownReview.stdout.includes('not used after breakdown'),
-    'tells user manual review is not used after breakdown'
-  )) failures++
-  if (!assert(
-    breakdownReview.stderr.includes('specdev implement') || breakdownReview.stdout.includes('specdev implement'),
-    'suggests running specdev implement instead'
-  )) failures++
-
-  // Test 5: review without any assignment
+  // Test 7: no assignment → error
   console.log('\nreview without assignment:')
   cleanup()
   runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])
-  const noAssignment = runCmd(['./bin/specdev.js', 'review', `--target=${TEST_DIR}`])
+  const noAssignment = runCmd([
+    './bin/specdev.js', 'review', 'brainstorm',
+    `--target=${TEST_DIR}`,
+  ])
   if (!assert(noAssignment.status === 1, 'exits non-zero without assignment')) failures++
 
   cleanup()

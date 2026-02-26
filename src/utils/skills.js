@@ -2,10 +2,14 @@ import { join } from 'path'
 import fse from 'fs-extra'
 
 export function parseFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---/)
+  // Minimal frontmatter parser for simple "key: value" metadata used by SKILL.md.
+  // Ignores comments/blank lines and supports both LF/CRLF.
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   if (!match) return {}
   const result = {}
-  for (const line of match[1].split('\n')) {
+  for (const line of match[1].split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
     const [key, ...rest] = line.split(':')
     if (key && rest.length) result[key.trim()] = rest.join(':').trim()
   }

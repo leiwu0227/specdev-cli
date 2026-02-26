@@ -9,7 +9,7 @@ set -euo pipefail
 #   track-progress.sh <plan-file> summary                  — Show progress summary
 #
 # Output: Status message to stdout
-# State: Creates/updates <plan-file>.progress.json
+# State: Creates/updates <assignment>/implementation/progress.json
 # Exit: 0 on success, 1 on error
 
 PLAN_FILE="${1:-}"
@@ -28,7 +28,10 @@ if [ ! -f "$PLAN_FILE" ]; then
   exit 1
 fi
 
-PROGRESS_FILE="${PLAN_FILE}.progress.json"
+ASSIGNMENT_DIR="$(cd "$(dirname "$PLAN_FILE")/.." && pwd)"
+IMPLEMENTATION_DIR="${ASSIGNMENT_DIR}/implementation"
+PROGRESS_FILE="${IMPLEMENTATION_DIR}/progress.json"
+mkdir -p "$IMPLEMENTATION_DIR"
 
 # Initialize progress file if it doesn't exist
 if [ ! -f "$PROGRESS_FILE" ]; then

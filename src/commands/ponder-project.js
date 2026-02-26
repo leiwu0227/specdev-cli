@@ -72,9 +72,6 @@ export async function ponderProjectCommand(flags = {}) {
   const captureSuggestions = generateCaptureDiffSuggestions(assignments, processedCaptures)
   const allSuggestions = [...suggestions, ...captureSuggestions]
 
-  // Track which capture assignments were surfaced for marking later
-  const surfacedCaptureNames = captureSuggestions.map((s) => s.assignmentName)
-
   if (allSuggestions.length === 0) {
     blankLine()
     console.log('No new project knowledge suggestions detected.')
@@ -84,6 +81,7 @@ export async function ponderProjectCommand(flags = {}) {
 
   // Present each suggestion grouped by branch
   const accepted = {} // branch -> [items]
+  const acceptedCaptureNames = []
 
   for (const suggestion of allSuggestions) {
     const result = await presentSuggestion({
@@ -98,6 +96,9 @@ export async function ponderProjectCommand(flags = {}) {
         title: result.title.replace(`[${suggestion.branch}] `, ''),
         body: result.body,
       })
+      if (suggestion.assignmentName) {
+        acceptedCaptureNames.push(suggestion.assignmentName)
+      }
     }
   }
 
@@ -168,8 +169,8 @@ export async function ponderProjectCommand(flags = {}) {
     console.log(`   ✓ ${branch}/${filename} (${items.length} observation(s))`)
   }
 
-  // Mark surfaced capture diffs as processed
-  await markCapturesProcessed(knowledgePath, 'project', surfacedCaptureNames)
+  // Mark only accepted capture diffs as processed
+  await markCapturesProcessed(knowledgePath, 'project', acceptedCaptureNames)
 
   // Update _index.md
   await updateKnowledgeIndex(knowledgePath)

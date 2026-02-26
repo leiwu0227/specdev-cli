@@ -96,7 +96,7 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     return {
       state: 'review_ready',
       next_action:
-        'Implementation tasks appear complete. Run specdev review (optional manual review) and finalize with user approval',
+        'Implementation tasks appear complete. Run specdev review implementation (optional manual review) and finalize with user approval',
       blockers,
       progress,
     }
@@ -136,7 +136,7 @@ async function checkRevisionMismatch(assignmentPath) {
   }
 }
 
-async function readRevisionNumber(path, key) {
+export async function readRevisionNumber(path, key) {
   if (!(await fse.pathExists(path))) {
     return null
   }
@@ -191,13 +191,14 @@ async function readImplementationProgress(assignmentSummary, assignmentPath) {
 
   if (Array.isArray(raw.tasks)) {
     const totalTasks = raw.tasks.length
-    const completedTasks = raw.tasks.filter((task) => task.status === 'completed').length
-    const inProgressTasks = raw.tasks.filter(
-      (task) => task.status === 'in_progress'
-    ).length
-    const pendingTasks = raw.tasks.filter(
-      (task) => !task.status || task.status === 'pending'
-    ).length
+    let completedTasks = 0
+    let inProgressTasks = 0
+    let pendingTasks = 0
+    for (const task of raw.tasks) {
+      if (task.status === 'completed') completedTasks++
+      else if (task.status === 'in_progress') inProgressTasks++
+      else pendingTasks++
+    }
 
     return {
       source: 'progress_json',

@@ -19,12 +19,11 @@ next: null
 
 ## How to Launch
 
-User runs `specdev review` in a separate Claude Code session. The command:
+User runs `specdev review brainstorm` or `specdev review implementation` in a separate Claude Code session. The command:
 
 1. Detects the active assignment automatically
-2. Determines which phase to review based on assignment state
-3. Loads the review protocol for that phase
-4. Starts an interactive review session with the user
+2. Uses the specified phase to load the review protocol
+3. Starts an interactive review session with the user
 
 ## Prompts
 
@@ -32,7 +31,7 @@ User runs `specdev review` in a separate Claude Code session. The command:
 |--------|---------|-----------------|
 | `prompts/implementation-reviewer.md` | Review the full implementation holistically | After implementation phase completes |
 
-**Note:** Breakdown plan review is handled by inline subagent review during the breakdown phase, NOT by `specdev review`. Do not wait for `specdev review` after breakdown — proceed directly to `specdev implement`.
+**Note:** Breakdown plan review is handled by inline subagent review during the breakdown phase, NOT by `specdev review <phase>`. Do not wait for `specdev review` after breakdown — proceed directly to `specdev implement`.
 
 ## Review Protocol
 
@@ -67,6 +66,9 @@ Use `prompts/implementation-reviewer.md`. Check:
 
 ## Findings
 - [list, or "None — approved"]
+
+## Addressed Findings
+- [items fixed in this round, or "None"]
 ```
 
 ## Red Flags
@@ -80,13 +82,13 @@ Use `prompts/implementation-reviewer.md`. Check:
 When `check-review` processes feedback with a `needs-changes` verdict:
 1. Main agent addresses findings in the phase artifacts
 2. Main agent writes `review/update-round-N.md` summarizing what changed
-3. On subsequent `specdev review` runs, the reviewer sees the update file to focus on what changed
+3. On subsequent `specdev review <phase>` runs, the reviewer sees the update file to focus on what changed
 4. Round number increments automatically from archived `feedback-round-N.md` files
 5. Loop continues until verdict is `approved`
 
 ## Integration
 
 - **Works with:** Main agent (brainstorming and implementing skills)
-- **Launched by:** User, via `specdev review` in a separate session
+- **Launched by:** User, via `specdev review <phase>` in a separate session
 - **Feedback loop:** Main agent uses `specdev check-review` to read and address findings
-- **When to use:** Optionally after brainstorm or implementation. Never between breakdown and implement — that transition is automatic
+- **When to use:** Optionally after brainstorm (`specdev review brainstorm`) or implementation (`specdev review implementation`). Never between breakdown and implement — that transition is automatic

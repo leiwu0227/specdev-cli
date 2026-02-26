@@ -49,4 +49,4 @@ Continue normal V4 flow:
 - `specdev assignment <name>` (new work)
 - `specdev breakdown`
 - `specdev implement`
-- `specdev review` (optional manual review)
+- `specdev review <phase>` (optional manual review)

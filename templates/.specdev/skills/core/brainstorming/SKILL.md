@@ -74,7 +74,7 @@ Once all design sections are validated:
 
 **After stopping**, the user may:
 - Review the design themselves and provide feedback
-- Run `specdev review` in a separate session for an independent review
+- Run `specdev review brainstorm` in a separate session for an independent review
 - Say `auto review` to proceed — a subagent review (1 round) will check the design, then breakdown begins automatically
 
 ## Red Flags
@@ -89,4 +89,4 @@ Once all design sections are validated:
 
 - **Before this skill:** orientation (if unsure whether brainstorming is needed)
 - **After this skill:** breakdown (automatic, turns design into executable steps)
-- **Review:** Subagent review (1 round) runs automatically before breakdown; user may also run `specdev review` manually
+- **Review:** Subagent review (1 round) runs automatically before breakdown; user may also run `specdev review brainstorm` manually

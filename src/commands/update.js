@@ -20,7 +20,8 @@ export async function updateCommand(flags = {}) {
   if (!isValid) {
     console.error('❌ No valid .specdev installation found in this directory')
     console.log('   Run "specdev init" first to initialize SpecDev')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   if (dryRun) {
@@ -95,6 +96,6 @@ export async function updateCommand(flags = {}) {
     console.log('💡 If this project has legacy assignments, run: specdev migrate')
   } catch (error) {
     console.error('❌ Failed to update SpecDev:', error.message)
-    process.exit(1)
+    process.exitCode = 1
   }
 }

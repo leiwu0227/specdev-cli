@@ -58,7 +58,7 @@ Interactive Q&A with you to nail down scope and design. The agent asks one quest
 
 **Review after brainstorm:** Once the design is written, you have two options:
 - Say **`auto review`** — a 1-round subagent review checks the design automatically, then breakdown begins.
-- Run **`specdev review`** in a separate session — an independent, phase-aware review checks completeness, feasibility, edge cases, and scope. You can address feedback before moving on.
+- Run **`specdev review brainstorm`** in a separate session — an independent review checks completeness, feasibility, edge cases, and scope. You can address feedback before moving on.
 
 **Need to revise?** If a later phase reveals a design problem, run `specdev revise` to archive downstream artifacts and re-enter brainstorming with your existing design loaded as context.
 
@@ -90,7 +90,7 @@ After all tasks complete, the agent runs the full test suite, presents a summary
 ### Phase 4: Verify (holistic review)
 
 ```bash
-specdev review
+specdev review implementation
 ```
 
 This is a **separate, top-down review** of the entire implementation — distinct from the per-task reviews that happened during Phase 3. Run it in the same session or open a separate one.
@@ -133,7 +133,7 @@ This tells you exactly where you are, what's blocking you, and what to do next. 
 | `specdev breakdown` | Coding agent | Turn the design into a task plan |
 | `specdev implement` | Coding agent | Execute the plan (TDD, one subagent per task) |
 | `specdev revise` | Coding agent | Archive downstream artifacts, re-enter brainstorm |
-| `specdev review` | Either | Run phase-aware review |
+| `specdev review <phase>` | Either | Run manual review (`brainstorm` or `implementation`) |
 | `specdev ponder workflow` | Terminal | Review and accept/reject workflow observations |
 | `specdev ponder project` | Terminal | Review and accept/reject project learnings |
 | `specdev migrate` | Terminal | Convert legacy assignments to V4 layout |
@@ -144,10 +144,10 @@ This tells you exactly where you are, what's blocking you, and what to do next. 
 Terminal:  specdev init                        # one-time setup
 Agent:     specdev start                      # describe your project
 Agent:     specdev assignment my-feature      # brainstorm → design.md
-                                              # review (auto or specdev review)
+                                              # review (auto or specdev review brainstorm)
 Agent:     specdev breakdown                  # design.md → plan.md (auto-reviewed)
 Agent:     specdev implement                  # plan.md → committed code
                                               # (per-task spec + code quality reviews)
-Agent:     specdev review                     # holistic review of full implementation
+Agent:     specdev review implementation      # holistic review of full implementation
 Agent:     specdev revise                     # (if needed) archive artifacts, revise design
 ```

@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert'
-import { parseAssignmentId, formatStatus, timeSince, assignmentName } from '../src/utils/assignment.js'
+import { parseAssignmentId, assignmentName } from '../src/utils/assignment.js'
 
 const tests = []
 let passed = 0
@@ -32,38 +32,6 @@ tests.push({
     assert.equal(result.id, null)
     assert.equal(result.type, null)
     assert.equal(result.label, 'random-folder')
-  }
-})
-
-tests.push({
-  name: 'formatStatus returns icons for known statuses',
-  fn: () => {
-    assert(formatStatus('pending').includes('pending'))
-    assert(formatStatus('in_progress').includes('in_progress'))
-    assert(formatStatus('passed').includes('passed'))
-    assert(formatStatus('failed').includes('failed'))
-    assert(formatStatus('awaiting_approval').includes('awaiting_approval'))
-  }
-})
-
-tests.push({
-  name: 'formatStatus returns raw string for unknown status',
-  fn: () => {
-    assert.equal(formatStatus('unknown_thing'), 'unknown_thing')
-  }
-})
-
-tests.push({
-  name: 'timeSince returns human-readable duration',
-  fn: () => {
-    const now = new Date()
-    const thirtySecsAgo = new Date(now - 30000).toISOString()
-    const fiveMinsAgo = new Date(now - 300000).toISOString()
-    const twoHoursAgo = new Date(now - 7200000).toISOString()
-
-    assert(timeSince(thirtySecsAgo).endsWith('s ago'))
-    assert(timeSince(fiveMinsAgo).endsWith('m ago'))
-    assert(timeSince(twoHoursAgo).endsWith('h ago'))
   }
 })
 

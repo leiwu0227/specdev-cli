@@ -5,25 +5,23 @@ import {
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
 import { blankLine } from '../utils/output.js'
+import { readBigPictureStatus } from '../utils/project-context.js'
 
 export async function startCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
 
-  const bigPicturePath = join(specdevPath, 'project_notes', 'big_picture.md')
+  const status = await readBigPictureStatus(specdevPath)
 
-  if (await fse.pathExists(bigPicturePath)) {
-    const content = await fse.readFile(bigPicturePath, 'utf-8')
-    const isFilled = content.trim().length > 100 && !content.includes('TODO: filled by')
-
-    if (isFilled) {
+  if (status.exists) {
+    if (status.filled) {
       console.log('📋 Current project context:')
       blankLine()
-      console.log(content)
+      console.log(status.content)
     } else {
       console.log('📝 big_picture.md needs to be filled in')
-      console.log(`   Path: ${bigPicturePath}`)
+      console.log(`   Path: ${status.path}`)
     }
   } else {
     console.log('📝 big_picture.md not found')

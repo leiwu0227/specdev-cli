@@ -18,3 +18,12 @@ export async function requireSpecdevDirectory(specdevPath) {
   process.exit(1)
 }
 
+export async function ensureProgressJson(assignmentPath) {
+  const dir = join(assignmentPath, 'implementation')
+  const progressPath = join(dir, 'progress.json')
+  await fse.ensureDir(dir)
+  if (!(await fse.pathExists(progressPath))) {
+    await fse.writeFile(progressPath, '{}\n', 'utf-8')
+  }
+}
+

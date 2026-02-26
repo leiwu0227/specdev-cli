@@ -1,25 +1,19 @@
-import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, readdirSync } from 'fs'
+import { writeFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
-import { spawnSync } from 'child_process'
+import { cleanupDir, runSpecdev, assertTest } from './helpers.js'
 
 const TEST_DIR = './test-assignment-output'
 
 function cleanup() {
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true })
+  cleanupDir(TEST_DIR)
 }
 
 function runCmd(args) {
-  return spawnSync('node', args, { encoding: 'utf-8' })
+  return runSpecdev(args)
 }
 
 function assert(condition, msg, detail = '') {
-  if (!condition) {
-    console.error(`  ❌ ${msg}`)
-    if (detail) console.error(`     ${detail}`)
-    return false
-  }
-  console.log(`  ✓ ${msg}`)
-  return true
+  return assertTest(condition, msg, detail)
 }
 
 async function runTests() {
@@ -27,7 +21,7 @@ async function runTests() {
   cleanup()
 
   // Setup
-  const init = runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])
+  const init = runCmd(['init', `--target=${TEST_DIR}`])
   if (init.status !== 0) { console.error('setup failed'); process.exit(1) }
 
   // Fill in big_picture.md (prerequisite)
@@ -36,7 +30,7 @@ async function runTests() {
 
   // Test 1: creates assignment directory
   console.log('assignment creates directory:')
-  const result = runCmd(['./bin/specdev.js', 'assignment', 'auth-system', `--target=${TEST_DIR}`])
+  const result = runCmd(['assignment', 'auth-system', `--target=${TEST_DIR}`])
   if (!assert(result.status === 0, 'exits 0', result.stderr)) failures++
 
   const assignmentsDir = join(TEST_DIR, '.specdev/assignments')
@@ -53,7 +47,7 @@ async function runTests() {
 
   // Test 3: second assignment gets next ID
   console.log('\nassignment increments ID:')
-  const result2 = runCmd(['./bin/specdev.js', 'assignment', 'payment', `--target=${TEST_DIR}`])
+  const result2 = runCmd(['assignment', 'payment', `--target=${TEST_DIR}`])
   if (!assert(result2.status === 0, 'second assignment exits 0')) failures++
   const entries2 = readdirSync(assignmentsDir)
   const second = entries2.find(e => e.includes('payment'))
@@ -62,9 +56,21 @@ async function runTests() {
   // Test 4: fails without big_picture.md filled
   console.log('\nassignment without big_picture:')
   cleanup()
-  runCmd(['./bin/specdev.js', 'init', `--target=${TEST_DIR}`])
-  const noBigPicture = runCmd(['./bin/specdev.js', 'assignment', 'test', `--target=${TEST_DIR}`])
+  runCmd(['init', `--target=${TEST_DIR}`])
+  const noBigPicture = runCmd(['assignment', 'test', `--target=${TEST_DIR}`])
   if (!assert(noBigPicture.status === 1, 'exits non-zero without big_picture filled')) failures++
+
+  // Test 5: numeric label + existing assignment guides user to continue
+  console.log('\nassignment numeric label disambiguation:')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
+  runCmd(['assignment', 'auth-system', `--target=${TEST_DIR}`])
+  const beforeNumeric = readdirSync(join(TEST_DIR, '.specdev/assignments')).length
+  const numericLabel = runCmd(['assignment', '1', `--target=${TEST_DIR}`])
+  const afterNumeric = readdirSync(join(TEST_DIR, '.specdev/assignments')).length
+  if (!assert(numericLabel.status === 1, 'exits non-zero in non-interactive mode for numeric label')) failures++
+  if (!assert(afterNumeric === beforeNumeric, 'does not create a new assignment when numeric label matches existing ID')) failures++
 
   cleanup()
   console.log('')

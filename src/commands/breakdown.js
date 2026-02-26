@@ -1,7 +1,8 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
-import { resolveTargetDir } from '../utils/command-context.js'
+import { resolveTargetDir, ensureProgressJson } from '../utils/command-context.js'
+import { readRevisionNumber } from '../utils/state.js'
 import { blankLine } from '../utils/output.js'
 import { scanSkillsDir } from '../utils/skills.js'
 
@@ -15,16 +16,18 @@ export async function breakdownCommand(flags = {}) {
   if (!(await fse.pathExists(designPath))) {
     console.error('\u274C No brainstorm/design.md found')
     console.log('   Complete the brainstorm phase first with: specdev assignment')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Ensure breakdown directory exists
   const breakdownDir = join(assignmentPath, 'breakdown')
   await fse.ensureDir(breakdownDir)
 
-  const revision = await readBrainstormRevision(
-    join(assignmentPath, 'brainstorm', 'revision.json')
-  )
+  const revision = (await readRevisionNumber(
+    join(assignmentPath, 'brainstorm', 'revision.json'),
+    'revision'
+  )) ?? 0
   await fse.writeJson(
     join(breakdownDir, 'metadata.json'),
     {
@@ -34,6 +37,9 @@ export async function breakdownCommand(flags = {}) {
     },
     { spaces: 2 }
   )
+
+  // Auto-chain kickoff: pre-initialize implementation artifacts now.
+  await ensureProgressJson(assignmentPath)
 
   console.log(`\uD83D\uDCCB Breakdown: ${name}`)
   blankLine()
@@ -51,6 +57,9 @@ export async function breakdownCommand(flags = {}) {
   console.log('  2. Spec review subagent (loop until PASS, max 10 rounds)')
   console.log('  3. Code quality review subagent (CRITICAL → fix, MINOR → note)')
   console.log('  4. Commit and mark task complete')
+  blankLine()
+  console.log('Implementation artifacts initialized automatically:')
+  console.log(`   ${name}/implementation/progress.json`)
 
   // Print available tool skills so the breakdown agent knows what to declare
   const targetDir = resolveTargetDir(flags)
@@ -63,20 +72,4 @@ export async function breakdownCommand(flags = {}) {
       console.log(`   ${skill.name}${desc}`)
     }
   }
-}
-
-async function readBrainstormRevision(path) {
-  if (!(await fse.pathExists(path))) {
-    return 0
-  }
-  try {
-    const raw = await fse.readJson(path)
-    const n = Number(raw?.revision)
-    if (Number.isInteger(n) && n >= 0) {
-      return n
-    }
-  } catch {
-    // Fall back to baseline revision when metadata is unreadable.
-  }
-  return 0
 }

@@ -1,6 +1,7 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { readRevisionNumber } from '../utils/state.js'
 import { blankLine } from '../utils/output.js'
 
 export async function reviseCommand(flags = {}) {
@@ -13,11 +14,12 @@ export async function reviseCommand(flags = {}) {
   if (!(await fse.pathExists(designPath))) {
     console.error('\u274C No brainstorm/design.md found — nothing to revise')
     console.log('   Complete the brainstorm phase first with: specdev assignment')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   const revisionPath = join(assignmentPath, 'brainstorm', 'revision.json')
-  const current = await readCurrentRevision(revisionPath)
+  const current = (await readRevisionNumber(revisionPath, 'revision')) ?? 0
   const nextRevision = current + 1
   const timestamp = new Date().toISOString()
 
@@ -41,20 +43,4 @@ export async function reviseCommand(flags = {}) {
   console.log('Re-entering brainstorm phase.')
   console.log(`Read the existing design first: ${name}/brainstorm/design.md`)
   console.log('Then follow .specdev/skills/core/brainstorming/SKILL.md — revise, don\'t start from scratch.')
-}
-
-async function readCurrentRevision(revisionPath) {
-  if (!(await fse.pathExists(revisionPath))) {
-    return 0
-  }
-  try {
-    const raw = await fse.readJson(revisionPath)
-    const n = Number(raw?.revision)
-    if (Number.isInteger(n) && n > 0) {
-      return n
-    }
-  } catch {
-    // If the file is corrupt, reset to v1 on next write.
-  }
-  return 0
 }

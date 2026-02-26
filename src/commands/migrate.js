@@ -26,7 +26,8 @@ export async function migrateCommand(flags = {}) {
   const assignmentsRoot = join(specdevPath, 'assignments')
   if (!(await fse.pathExists(assignmentsRoot))) {
     console.error('❌ No assignments directory found')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   const allEntries = await fse.readdir(assignmentsRoot, { withFileTypes: true })
@@ -38,7 +39,8 @@ export async function migrateCommand(flags = {}) {
 
   if (assignmentFilter && assignments.length === 0) {
     console.error(`❌ Assignment not found: ${assignmentFilter}`)
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   if (assignments.length === 0) {

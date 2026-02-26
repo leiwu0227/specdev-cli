@@ -113,7 +113,7 @@ name: specdev-review
 description: Phase-aware manual review of the current assignment
 ---
 
-Run \`specdev review\` to see the current assignment's phase and review context.
+Run \`specdev review brainstorm\` or \`specdev review implementation\` to see the review context for the given phase.
 
 Follow the printed instructions to review the appropriate artifacts.
 Discuss findings with the user before concluding.
@@ -156,7 +156,8 @@ export async function initCommand(flags = {}) {
   if (existsSync(specdevPath) && !force) {
     console.error('❌ .specdev folder already exists in this directory')
     console.log('   Use --force to overwrite, or remove the existing folder first')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   if (dryRun) {
@@ -275,6 +276,6 @@ export async function initCommand(flags = {}) {
     ])
   } catch (error) {
     console.error('❌ Failed to initialize SpecDev:', error.message)
-    process.exit(1)
+    process.exitCode = 1
   }
 }

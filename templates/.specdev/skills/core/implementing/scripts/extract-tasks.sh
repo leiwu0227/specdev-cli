@@ -64,6 +64,14 @@ while IFS= read -r header_line; do
 
   # Extract skills
   SKILLS_LINE=$(echo "$TASK_SECTION" | grep '^\*\*Skills:\*\*' || true)
+  MODE_LINE=$(echo "$TASK_SECTION" | grep '^\*\*Mode:\*\*' || true)
+  MODE="full"
+  if [ -n "$MODE_LINE" ]; then
+    MODE_RAW=$(echo "$MODE_LINE" | sed 's/^\*\*Mode:\*\*\s*//' | tr '[:upper:]' '[:lower:]' | xargs)
+    if [ "$MODE_RAW" = "lightweight" ]; then
+      MODE="lightweight"
+    fi
+  fi
   SKILLS_JSON="["
   if [ -n "$SKILLS_LINE" ]; then
     SKILLS_RAW=$(echo "$SKILLS_LINE" | sed 's/^\*\*Skills:\*\*\s*//')
@@ -89,7 +97,8 @@ while IFS= read -r header_line; do
   fi
 
   TASK_NAME_ESC=$(echo "$TASK_NAME" | sed 's/"/\\"/g')
-  echo "  {\"number\":${TASK_NUM},\"name\":\"${TASK_NAME_ESC}\",\"files\":${FILES_JSON},\"skills\":${SKILLS_JSON}}"
+  MODE_ESC=$(echo "$MODE" | sed 's/"/\\"/g')
+  echo "  {\"number\":${TASK_NUM},\"name\":\"${TASK_NAME_ESC}\",\"mode\":\"${MODE_ESC}\",\"files\":${FILES_JSON},\"skills\":${SKILLS_JSON}}"
 
 done <<< "$(echo "$CONTENT" | grep '^### Task [0-9]')"
 

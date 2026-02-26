@@ -50,9 +50,6 @@ export async function ponderWorkflowCommand(flags = {}) {
   const captureSuggestions = generateCaptureWorkflowSuggestions(assignments, processedCaptures)
   const allSuggestions = [...suggestions, ...captureSuggestions]
 
-  // Track which capture assignments were surfaced for marking later
-  const surfacedCaptureNames = captureSuggestions.map((s) => s.assignmentName)
-
   if (allSuggestions.length === 0) {
     blankLine()
     console.log('No workflow observations detected from scanning.')
@@ -62,11 +59,15 @@ export async function ponderWorkflowCommand(flags = {}) {
 
   // Present each suggestion
   const accepted = []
+  const acceptedCaptureNames = []
 
   for (const suggestion of allSuggestions) {
     const result = await presentSuggestion(suggestion)
     if (result) {
       accepted.push(result)
+      if (suggestion.assignmentName) {
+        acceptedCaptureNames.push(suggestion.assignmentName)
+      }
     }
   }
 
@@ -109,8 +110,8 @@ export async function ponderWorkflowCommand(flags = {}) {
 
   await fse.writeFile(filepath, content, 'utf-8')
 
-  // Mark surfaced capture diffs as processed
-  await markCapturesProcessed(knowledgePath, 'workflow', surfacedCaptureNames)
+  // Mark only accepted capture diffs as processed
+  await markCapturesProcessed(knowledgePath, 'workflow', acceptedCaptureNames)
 
   blankLine()
   console.log(`✅ Saved ${accepted.length} observation(s) to:`)

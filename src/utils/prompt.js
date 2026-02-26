@@ -42,7 +42,7 @@ export async function askChoice(prompt, options) {
 
   while (true) {
     const answer = await ask(`Choice (1-${options.length}): `)
-    const num = parseInt(answer, 10)
+    const num = Number.parseInt(answer, 10)
     if (num >= 1 && num <= options.length) {
       return num - 1
     }

@@ -39,6 +39,7 @@ const planContent = `# Implementation Plan
 A mock plan for testing.
 
 ### Task 1: Foo
+**Mode:** lightweight
 - Create: \`path/to/file.js\`
 - Modify: \`path/to/existing.js\`
 
@@ -64,6 +65,8 @@ try {
 
 assert(tasks.length === 2, 'has 2 tasks')
 assert(tasks[0] && tasks[0].name.includes('Foo'), 'task 1 name contains "Foo"')
+assert(tasks[0] && tasks[0].mode === 'lightweight', 'task 1 mode parsed as lightweight')
+assert(tasks[1] && tasks[1].mode === 'full', 'task 2 mode defaults to full')
 
 // Test with missing file arg
 const extractBadResult = spawnSync('bash', [extractScript], { encoding: 'utf-8' })
@@ -83,7 +86,9 @@ const trackPlanContent = `# Plan
 - Create: \`src/api.js\`
 `
 
-const trackPlanFile = join(TEST_DIR, 'track-plan.md')
+const trackAssignmentDir = join(TEST_DIR, 'assignment-progress')
+mkdirSync(join(trackAssignmentDir, 'breakdown'), { recursive: true })
+const trackPlanFile = join(trackAssignmentDir, 'breakdown', 'plan.md')
 writeFileSync(trackPlanFile, trackPlanContent)
 
 // Mark task 1 as started
@@ -92,7 +97,7 @@ assert(startResult.status === 0, 'exits 0 when marking task started')
 assert(startResult.stdout.includes('started'), 'output contains "started"')
 
 // Verify progress file exists
-const progressFile = trackPlanFile + '.progress.json'
+const progressFile = join(trackAssignmentDir, 'implementation', 'progress.json')
 assert(existsSync(progressFile), '.progress.json exists')
 
 // Mark task 1 as completed
@@ -113,7 +118,13 @@ try {
 // Summary
 const summaryResult = spawnSync('bash', [trackScript, trackPlanFile, 'summary'], { encoding: 'utf-8' })
 assert(summaryResult.status === 0, 'summary exits 0')
-assert(summaryResult.stdout.includes('1/2 completed'), 'summary contains "1/2 completed"')
+try {
+  const summaryData = JSON.parse(readFileSync(progressFile, 'utf-8'))
+  const completedCount = summaryData.tasks.filter(t => t.status === 'completed').length
+  assert(completedCount === 1 && summaryData.total_tasks === 2, 'summary state reflects "1/2 completed"')
+} catch (e) {
+  assert(false, 'summary state reflects "1/2 completed" — parse error: ' + e.message)
+}
 
 // No args
 const trackBadResult = spawnSync('bash', [trackScript], { encoding: 'utf-8' })

@@ -52,6 +52,8 @@ async function runTests() {
   // Test 3: creates breakdown subdirectory
   if (!assert(existsSync(join(assignment, 'breakdown')), 'creates breakdown/ subdirectory')) failures++
   if (!assert(existsSync(join(assignment, 'breakdown', 'metadata.json')), 'writes breakdown/metadata.json')) failures++
+  if (!assert(existsSync(join(assignment, 'implementation')), 'creates implementation/ subdirectory')) failures++
+  if (!assert(existsSync(join(assignment, 'implementation', 'progress.json')), 'creates implementation/progress.json')) failures++
   if (existsSync(join(assignment, 'breakdown', 'metadata.json'))) {
     const metadata = JSON.parse(readFileSync(join(assignment, 'breakdown', 'metadata.json'), 'utf-8'))
     if (!assert(metadata.based_on_brainstorm_revision === 0, 'metadata defaults to brainstorm revision 0')) failures++
@@ -62,6 +64,7 @@ async function runTests() {
   if (!assert(withDesign.stdout.includes('implementation starts automatically'), 'prints auto-chain message', withDesign.stdout)) failures++
   if (!assert(withDesign.stdout.includes('implementing/SKILL.md'), 'references implementing SKILL.md', withDesign.stdout)) failures++
   if (!assert(withDesign.stdout.includes('Per-task flow:'), 'prints per-task flow', withDesign.stdout)) failures++
+  if (!assert(withDesign.stdout.includes('Implementation artifacts initialized automatically'), 'prints implementation initialization message', withDesign.stdout)) failures++
   if (!assert(!withDesign.stdout.includes('run specdev implement'), 'does not tell agent to run specdev implement', withDesign.stdout)) failures++
 
   // Test 5: prints tool skills when they exist

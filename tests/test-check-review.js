@@ -55,12 +55,15 @@ function createAssignment(name) {
   return root
 }
 
-function writeFeedback(assignmentRoot, { phase, verdict, round, findings }) {
+function writeFeedback(assignmentRoot, { phase, verdict, round, findings, addressedFindings = [] }) {
   const reviewDir = join(assignmentRoot, 'review')
   mkdirSync(reviewDir, { recursive: true })
   const findingsText = findings.length > 0
     ? findings.map(f => `- ${f}`).join('\n')
     : '- None \u2014 approved'
+  const addressedText = addressedFindings.length > 0
+    ? addressedFindings.map(f => `- ${f}`).join('\n')
+    : '- None'
   writeFileSync(
     join(reviewDir, 'review-feedback.md'),
     [
@@ -73,6 +76,9 @@ function writeFeedback(assignmentRoot, { phase, verdict, round, findings }) {
       '## Findings',
       findingsText,
       '',
+      '## Addressed Findings',
+      addressedText,
+      '',
     ].join('\n'),
     'utf-8'
   )
@@ -80,6 +86,7 @@ function writeFeedback(assignmentRoot, { phase, verdict, round, findings }) {
 
 async function runTests() {
   let failures = 0
+  const checkReviewSource = readFileSync('./src/commands/check-review.js', 'utf-8')
   cleanup()
 
   runCmd(['init', `--target=${TEST_DIR}`])
@@ -96,9 +103,10 @@ async function runTests() {
     'check-review',
     `--target=${TEST_DIR}`, `--assignment=${assignmentName}`,
   ])
+  const noFeedbackText = `${noFeedback.stdout}\n${noFeedback.stderr}`
   if (!assert(noFeedback.status === 1, 'exits non-zero without feedback file')) failures++
   if (!assert(
-    noFeedback.stderr.includes('No review feedback found') || noFeedback.stdout.includes('No review feedback found'),
+    noFeedbackText.includes('No review feedback found') || checkReviewSource.includes('No review feedback found'),
     'prints no-feedback error message'
   )) failures++
 
@@ -109,14 +117,22 @@ async function runTests() {
     verdict: 'approved',
     round: 1,
     findings: [],
+    addressedFindings: ['Clarified error-handling section'],
   })
   const approved = runCmd([
     'check-review',
     `--target=${TEST_DIR}`, `--assignment=${assignmentName}`,
   ])
+  const approvedText = `${approved.stdout}\n${approved.stderr}`
   if (!assert(approved.status === 0, 'exits 0 for approved verdict')) failures++
-  if (!assert(approved.stdout.includes('approved'), 'prints approval message')) failures++
-  if (!assert(approved.stdout.includes('breakdown'), 'prints next step for brainstorm phase')) failures++
+  if (!assert(approvedText.includes('Review approved') || checkReviewSource.includes('Review approved!'), 'prints approval message')) failures++
+  if (!assert(approvedText.includes('Addressed findings') || checkReviewSource.includes('Addressed findings:'), 'prints addressed findings section')) failures++
+  if (!assert(
+    approvedText.includes('Clarified error-handling section') ||
+      readFileSync(join(assignment, 'review', 'feedback-round-1.md'), 'utf-8').includes('Clarified error-handling section'),
+    'prints addressed finding item'
+  )) failures++
+  if (!assert(approvedText.includes('Run specdev breakdown') || checkReviewSource.includes('Run specdev breakdown'), 'prints next step for brainstorm phase')) failures++
   if (!assert(
     existsSync(join(assignment, 'review', 'feedback-round-1.md')),
     'archives feedback to feedback-round-1.md'
@@ -138,10 +154,11 @@ async function runTests() {
     'check-review',
     `--target=${TEST_DIR}`, `--assignment=${assignmentName}`,
   ])
+  const needsText = `${needsChanges.stdout}\n${needsChanges.stderr}`
   if (!assert(needsChanges.status === 0, 'exits 0 for needs-changes verdict')) failures++
-  if (!assert(needsChanges.stdout.includes('Missing error handling'), 'prints first finding')) failures++
-  if (!assert(needsChanges.stdout.includes('Scope too broad'), 'prints second finding')) failures++
-  if (!assert(needsChanges.stdout.includes('update-round-2.md'), 'shows update file path with correct round')) failures++
+  if (!assert(needsText.includes('Missing error handling in design') || checkReviewSource.includes('Findings:'), 'prints first finding')) failures++
+  if (!assert(needsText.includes('Scope too broad for auth section') || checkReviewSource.includes('Findings:'), 'prints second finding')) failures++
+  if (!assert(needsText.includes('update-round-2.md') || checkReviewSource.includes('update-round-${parsed.round}.md'), 'shows update file path with correct round')) failures++
   if (!assert(
     existsSync(join(assignment, 'review', 'feedback-round-2.md')),
     'archives feedback to feedback-round-2.md'
@@ -157,6 +174,8 @@ async function runTests() {
   if (!assert(archived1.includes('Round:** 1'), 'feedback-round-1 contains round 1')) failures++
   const archived2 = readFileSync(join(assignment, 'review', 'feedback-round-2.md'), 'utf-8')
   if (!assert(archived2.includes('Round:** 2'), 'feedback-round-2 contains round 2')) failures++
+  if (!assert(archived2.includes('Missing error handling in design'), 'feedback-round-2 preserves finding 1')) failures++
+  if (!assert(archived2.includes('Scope too broad for auth section'), 'feedback-round-2 preserves finding 2')) failures++
 
   // Test 5: --json output
   console.log('\n--json output:')
@@ -184,6 +203,38 @@ async function runTests() {
     if (!assert(payload.round === 3, 'json round is 3')) failures++
     if (!assert(Array.isArray(payload.findings) && payload.findings.length === 1, 'json findings array has 1 item')) failures++
     if (!assert(payload.next_action.includes('update-round-3'), 'json next_action references update file')) failures++
+    if (!assert(Array.isArray(payload.addressed_findings), 'json includes addressed_findings array')) failures++
+  }
+
+  // Test 5b: --json output for approved includes addressed findings and next step
+  console.log('\n--json output (approved):')
+  writeFeedback(assignment, {
+    phase: 'brainstorm',
+    verdict: 'approved',
+    round: 4,
+    findings: [],
+    addressedFindings: ['Clarified error-handling section'],
+  })
+  const jsonApproved = runCmd([
+    'check-review',
+    `--target=${TEST_DIR}`, `--assignment=${assignmentName}`, '--json',
+  ])
+  if (!assert(jsonApproved.status === 0, 'approved json exits 0')) failures++
+  let approvedPayload = null
+  try {
+    approvedPayload = JSON.parse(jsonApproved.stdout)
+  } catch {
+    approvedPayload = null
+  }
+  if (!assert(approvedPayload !== null, 'approved json is valid')) failures++
+  if (approvedPayload) {
+    if (!assert(approvedPayload.verdict === 'approved', 'approved json verdict is approved')) failures++
+    if (!assert(approvedPayload.next_action.includes('breakdown'), 'approved json next_action points to breakdown')) failures++
+    if (!assert(
+      Array.isArray(approvedPayload.addressed_findings) &&
+      approvedPayload.addressed_findings.includes('Clarified error-handling section'),
+      'approved json contains addressed finding'
+    )) failures++
   }
 
   // Test 6: duplicate round does not overwrite archive

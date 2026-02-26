@@ -47,28 +47,3 @@ export async function resolveAssignmentPath(flags) {
 export function assignmentName(assignmentPath) {
   return assignmentPath.split(/[/\\]/).pop()
 }
-
-/**
- * Format review status with icon
- */
-export function formatStatus(status) {
-  const icons = {
-    pending: '⏳ pending',
-    in_progress: '🔄 in_progress',
-    awaiting_approval: '👀 awaiting_approval',
-    passed: '✅ passed',
-    failed: '❌ failed',
-  }
-  return icons[status] || status
-}
-
-/**
- * Human-readable time since an ISO timestamp
- */
-export function timeSince(isoString) {
-  const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
-  if (seconds < 60) return `${seconds}s ago`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  return `${Math.floor(minutes / 60)}h ago`
-}

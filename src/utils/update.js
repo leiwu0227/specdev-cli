@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
-import { dirname } from 'path'
+import { dirname, join } from 'path'
 import fse from 'fs-extra'
-import { join } from 'path'
 
 const OFFICIAL_TOOL_SKILLS = [
   'fireperp',

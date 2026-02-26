@@ -10,7 +10,8 @@ export async function skillsCommand(flags = {}) {
   if (!(await fse.pathExists(skillsPath))) {
     console.error('No .specdev/skills directory found.')
     console.error('Run `specdev init` first.')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   const skills = []

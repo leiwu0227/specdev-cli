@@ -52,11 +52,11 @@ Response protocol uses `.specdev/skills/core/receiving-code-review.md`.
 
 ## Manual Review (optional)
 
-For holistic review beyond the automatic subagent reviews, the user can run `specdev review` in a separate session. This provides a phase-aware, interactive review.
+For holistic review beyond the automatic subagent reviews, the user can run `specdev review brainstorm` or `specdev review implementation` in a separate session. This provides a phase-aware, interactive review.
 
-The `specdev review` command:
+The `specdev review <phase>` command:
 
-1. Detects the current assignment phase automatically
+1. Uses the specified phase to load the review protocol
 2. Reads the relevant phase artifacts
 3. Performs a holistic review
 4. Discusses findings interactively with the user

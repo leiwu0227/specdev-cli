@@ -24,12 +24,16 @@ You are an independent code quality reviewer. The spec compliance review already
 ### Issues
 
 **CRITICAL** — Must fix:
+- Functional correctness, security, data loss/corruption, crash/runtime failure, or contract-breaking behavior only.
+- Never use CRITICAL for style, formatting, naming, or type-hint nits.
 - [Issue + file:line + why]
 
 **IMPORTANT** — Should fix:
+- Non-blocking but meaningful maintainability/readability/testability concerns with clear impact.
 - [Issue + file:line + suggestion]
 
 **MINOR** — Nice to fix:
+- Cosmetic consistency issues, optional polish, low-impact nits.
 - [Issue + suggestion]
 
 ### Verdict

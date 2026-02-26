@@ -40,6 +40,7 @@ Every task MUST follow this structure:
 
     ### Task N: [Component Name]
 
+    **Mode:** full
     **Skills:** [comma-separated list of skills this task needs, from core/ or tools/]
     **Files:**
     - Create: `exact/path/to/file.ext`
@@ -62,6 +63,10 @@ Every task MUST follow this structure:
 
     **Step 5: Commit**
     [Exact git commands with commit message]
+
+Mode rules:
+- `full` (default): full TDD + spec-review + code-review loop
+- `lightweight`: only for trivial scaffold/config tasks with no meaningful executable behavior
 
 ### Skill Declaration
 

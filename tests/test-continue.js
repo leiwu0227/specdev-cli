@@ -191,6 +191,33 @@ async function runTests() {
   if (!assert(out.payload && out.payload.state === 'revision_requires_rebreakdown', 'detects revision_requires_rebreakdown state')) failures++
   if (!assert(out.payload && out.payload.blockers.some((b) => b.code === 'design_revision_mismatch'), 'reports design_revision_mismatch blocker')) failures++
 
+  // ambiguous auto-selection requires clarification when assignments tie
+  console.log('\nassignment ambiguity requires clarification:')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  fillBigPicture()
+
+  const amb1 = createAssignment('00001_feature_alpha')
+  mkdirSync(join(amb1, 'brainstorm'), { recursive: true })
+  writeFileSync(join(amb1, 'brainstorm', 'design.md'), '# Design\n')
+  mkdirSync(join(amb1, 'breakdown'), { recursive: true })
+  writeFileSync(join(amb1, 'breakdown', 'plan.md'), '# Plan\n')
+  mkdirSync(join(amb1, 'implementation'), { recursive: true })
+  writeFileSync(join(amb1, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ number: 1, status: 'in_progress' }] }, null, 2))
+
+  const amb2 = createAssignment('00002_feature_beta')
+  mkdirSync(join(amb2, 'brainstorm'), { recursive: true })
+  writeFileSync(join(amb2, 'brainstorm', 'design.md'), '# Design\n')
+  mkdirSync(join(amb2, 'breakdown'), { recursive: true })
+  writeFileSync(join(amb2, 'breakdown', 'plan.md'), '# Plan\n')
+  mkdirSync(join(amb2, 'implementation'), { recursive: true })
+  writeFileSync(join(amb2, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ number: 1, status: 'in_progress' }] }, null, 2))
+
+  out = continueJson()
+  if (!assert(out.result.status === 1, 'exits non-zero when active assignment is ambiguous')) failures++
+  if (!assert(out.payload && out.payload.state === 'assignment_ambiguous', 'reports assignment_ambiguous state')) failures++
+  if (!assert(out.payload && Array.isArray(out.payload.candidates) && out.payload.candidates.length >= 2, 'includes candidate assignments for disambiguation')) failures++
+
   cleanup()
   console.log('')
   if (failures > 0) {

@@ -1,6 +1,7 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { ensureProgressJson } from '../utils/command-context.js'
 import { blankLine } from '../utils/output.js'
 
 export async function implementCommand(flags = {}) {
@@ -13,16 +14,12 @@ export async function implementCommand(flags = {}) {
   if (!(await fse.pathExists(planPath))) {
     console.error('❌ No breakdown/plan.md found')
     console.log('   Complete the breakdown phase first with: specdev breakdown')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Ensure implementation directory exists
-  const implementationDir = join(assignmentPath, 'implementation')
-  const progressPath = join(implementationDir, 'progress.json')
-  await fse.ensureDir(implementationDir)
-  if (!(await fse.pathExists(progressPath))) {
-    await fse.writeFile(progressPath, '{}\n', 'utf-8')
-  }
+  await ensureProgressJson(assignmentPath)
 
   console.log(`🔨 Implement: ${name}`)
   blankLine()
