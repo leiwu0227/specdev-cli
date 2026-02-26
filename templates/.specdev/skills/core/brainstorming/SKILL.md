@@ -13,7 +13,7 @@ next: breakdown
 ## Contract
 
 - **Input:** A vague idea, feature wish, bug report, or refactoring goal
-- **Process:** Context scan → Q&A (one question at a time) → explore approaches → present design sections → validate each section
+- **Process:** Context scan → Q&A (1-3 tightly related questions per message) → explore approaches → present design sections → validate each section
 - **Output:** `brainstorm/proposal.md` + `brainstorm/design.md` in the assignment folder
 - **Next phase:** breakdown (automatic, triggered by user saying `auto review`)
 
@@ -29,12 +29,12 @@ next: breakdown
 
 1. Run `scripts/get-project-context.sh <project-root>` to get current state
 2. Read the output — repo structure, recent work, existing knowledge
-3. Ask the user ONE question at a time to understand their goal
+3. Ask the user 1-3 tightly related questions per message to understand their goal
 4. Prefer multiple-choice questions when possible
 5. Continue until you understand: purpose, constraints, success criteria
 
 **Rules:**
-- Only ONE question per message
+- Ask 1-3 related questions per message (avoid unrelated batching)
 - Multiple choice preferred over open-ended
 - Acknowledge each answer before asking the next question
 - Do not proceed until you understand what you are building
@@ -79,11 +79,10 @@ Once all design sections are validated:
 
 ## Red Flags
 
-- Asking multiple questions at once — one per message, always
 - Skipping get-project-context.sh — need context before asking questions
 - Committing to an approach before exploring alternatives — always show 2-3 options
 - Presenting the entire design at once — 200-300 word sections, validate each
-- Jumping to implementation details — stay at the design level during brainstorm
+- Jumping to implementation details too early — stay at design level during brainstorm
 
 ## Integration
 

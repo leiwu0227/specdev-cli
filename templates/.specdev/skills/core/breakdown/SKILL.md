@@ -36,36 +36,32 @@ Break the design into ordered tasks. Each task should be:
 
 ### Phase 3: Detail Each Task
 
-Every task MUST follow this structure:
+Every task MUST follow this structure (compact form shown):
 
-    ### Task N: [Component Name]
-
+    ### Task N: [Name]
     **Mode:** full
-    **Skills:** [comma-separated list of skills this task needs, from core/ or tools/]
-    **Files:**
-    - Create: `exact/path/to/file.ext`
-    - Modify: `exact/path/to/existing.ext`
-    - Test: `tests/exact/path/to/test.ext`
+    **Skills:** [skill-a, skill-b]
+    **Files:** Create/Modify/Test with exact paths
 
     **Step 1: Write the failing test**
-    [Complete test code in a fenced code block]
+    [full test code block]
 
     **Step 2: Run test to verify it fails**
     Run: `exact command`
-    Expected: FAIL with "specific error message"
+    Expected: FAIL with "specific error"
 
     **Step 3: Write minimal implementation**
-    [Complete implementation code in a fenced code block]
+    [full implementation code block]
 
     **Step 4: Run test to verify it passes**
     Run: `exact command`
     Expected: PASS
 
     **Step 5: Commit**
-    [Exact git commands with commit message]
+    [exact git commands + commit message]
 
 Mode rules:
-- `full` (default): full TDD + spec-review + code-review loop
+- `full` (default): full TDD + unified review loop (spec compliance + code quality)
 - `lightweight`: only for trivial scaffold/config tasks with no meaningful executable behavior
 
 ### Skill Declaration
@@ -126,8 +122,6 @@ Once the plan review passes, proceed immediately — no user approval needed:
 - Vague task steps ("add error handling") — show the actual code
 - Tasks longer than 5 minutes — break them down further
 - Missing test steps — every task must have RED and GREEN
-- Missing file paths — every file must have an exact path
-- Tasks that don't commit — every task is an atomic commit
 
 ## Integration
 

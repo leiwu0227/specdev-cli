@@ -11,13 +11,21 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 1. Read `project_notes/big_picture.md` for project context
 2. Check `assignments/` for active work
 3. If assignments use legacy root files, run `specdev migrate`
-4. Read `skills/core/orientation/SKILL.md` for the decision tree
+4. Use the quick router below to choose the phase
+
+### Quick Router
+
+- Starting from an idea or rough request -> **Brainstorm**
+- Have approved design, need executable tasks -> **Breakdown**
+- Have plan, need to build -> **Implement**
+- Need holistic review in a separate session -> **Verify**
+- Implementation done and approved, capture learnings -> **Capture**
 
 ## The 5 Phases
 
 1. **Brainstorm** — Interactive Q&A → validated design (`brainstorm/proposal.md` + `brainstorm/design.md`)
 2. **Breakdown** — Automatic → detailed executable plan (`breakdown/plan.md`)
-3. **Implement** — Automatic → subagent per task, TDD, two-stage subagent review per task
+3. **Implement** — Automatic → subagent per task, TDD, single review subagent per task (spec + quality)
 4. **Verify** — Optional `specdev review implementation` for manual review after implementation
 5. **Capture** — Automatic → two diff files (project notes gaps + workflow observations)
 
@@ -25,7 +33,7 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 
 After brainstorm design is approved by the user, the remaining phases flow automatically:
 - **Breakdown** runs inline subagent review (1-2 rounds) on the plan, then runs `specdev implement` immediately
-- **Implement** dispatches a subagent per task with spec + code quality review per task
+- **Implement** dispatches a subagent per task, then one reviewer covering spec compliance and code quality
 - No approval gates between breakdown and implement — do NOT wait for `specdev review`
 
 ## Manual Review (optional)
@@ -69,4 +77,4 @@ assignments/<id>/
 - No performative agreement in reviews — verify technically before accepting
 - Every phase produces an artifact
 - Scripts handle state and validation — don't do these manually
-- Per-task reviews use subagents (spec then quality). Holistic reviews happen inline or via `specdev review <phase>`.
+- Per-task reviews use subagents. Holistic reviews happen inline or via `specdev review <phase>`.

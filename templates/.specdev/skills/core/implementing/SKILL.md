@@ -1,6 +1,6 @@
 ---
 name: implementing
-description: Execute a plan task-by-task with fresh subagents and two-stage review per task
+description: Execute a plan task-by-task with fresh subagents and one review per task
 type: core
 phase: implement
 input: breakdown/plan.md
@@ -13,7 +13,7 @@ next: knowledge-capture
 ## Contract
 
 - **Input:** `breakdown/plan.md` from the assignment folder
-- **Process:** Extract tasks -> dispatch subagent per task -> spec review -> quality review -> commit
+- **Process:** Extract tasks -> dispatch subagent per task -> unified review (spec + quality) -> commit
 - **Output:** Implemented code, committed per-task, with progress tracked
 - **Next phase:** knowledge-capture
 
@@ -30,8 +30,7 @@ next: knowledge-capture
 | Prompt | Purpose | When to dispatch |
 |--------|---------|-----------------|
 | `prompts/implementer.md` | Fresh subagent to implement one task | Per task |
-| `prompts/spec-reviewer.md` | Verify implementation matches task spec | After implementer completes |
-| `prompts/code-reviewer.md` | Check code quality after spec passes | After spec review passes |
+| `prompts/code-reviewer.md` | Verify spec compliance first, then code quality | After implementer completes |
 
 ## Process
 
@@ -54,17 +53,17 @@ For each task in order:
    - If the task has a `Skills:` field, read each listed SKILL.md and inject content into the `{TASK_SKILLS}` placeholder
    - Look for skills in `skills/core/` first, then `skills/tools/`
    - Subagent implements, tests, commits, self-reviews
-4. **Spec review** — dispatch `prompts/spec-reviewer.md`
-   - If FAIL: implementer fixes -> re-review (loop until PASS)
-5. **Code quality review** — dispatch `prompts/code-reviewer.md`
-   - If CRITICAL findings: implementer fixes -> re-review (loop until READY)
-6. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> <N> completed`
+4. **Unified review** — dispatch `prompts/code-reviewer.md`
+   - Reviewer checks spec compliance first; FAIL blocks merge
+   - Reviewer then checks quality; CRITICAL findings block merge
+   - If FAIL/NOT READY: implementer fixes -> re-review (loop until PASS + READY)
+5. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> <N> completed`
 
 When task mode is `lightweight`:
 
 - Still dispatch implementer with full task text
 - Require concrete file checks and command evidence
-- Skip spec-reviewer/code-reviewer subagent loop unless the task touched executable logic
+- Skip reviewer loop unless the task touched executable logic
 - Explicitly document why lightweight mode was acceptable in the task summary
 
 ### Phase 3: Final Review
@@ -80,9 +79,7 @@ When task mode is `lightweight`:
 
 - Summarizing task text — always send FULL task text to subagent
 - Reusing a subagent across tasks — fresh context per task
-- Skipping spec review — check spec BEFORE quality
 - Accepting first pass without fixing findings — loop until clean
-- Starting quality review before spec passes — wrong order
 - Ignoring Skills: field — if a task declares skills, load and inject them
 - Injecting skills not listed — only inject what the task declares
 
