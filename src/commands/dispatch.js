@@ -4,6 +4,7 @@ import { helpCommand } from './help.js'
 import { ponderWorkflowCommand } from './ponder-workflow.js'
 import { ponderProjectCommand } from './ponder-project.js'
 import { distillWorkflowCommand } from './distill-workflow.js'
+import { distillProjectCommand } from './distill-project.js'
 import { skillsCommand } from './skills.js'
 import { startCommand } from './start.js'
 import { assignmentCommand } from './assignment.js'
@@ -50,8 +51,7 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     if (subcommand === 'workflow') {
       await distillWorkflowCommand(flags)
     } else if (subcommand === 'project') {
-      console.error('distill project not yet implemented')
-      process.exitCode = 1
+      await distillProjectCommand(flags)
     } else if (subcommand === 'mark-processed') {
       console.error('distill mark-processed not yet implemented')
       process.exitCode = 1
