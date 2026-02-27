@@ -1,5 +1,4 @@
 import { join } from 'path'
-import fse from 'fs-extra'
 import {
   scanAssignments,
   readProcessedCaptures,
