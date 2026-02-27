@@ -54,6 +54,8 @@ assert(typeof json.scanned === 'number', 'has scanned count')
 assert(typeof json.unprocessed === 'number', 'has unprocessed count')
 assert(Array.isArray(json.suggestions), 'has suggestions array')
 assert(json.knowledge_path !== undefined, 'has knowledge_path')
+assert(Array.isArray(json.existing_knowledge), 'has existing_knowledge array')
+assert(json.existing_knowledge.length === 0, 'existing_knowledge is empty when no feedback files exist')
 
 // Test 3: Capture diff appears in suggestions
 const captureSuggestion = json.suggestions.find(s => s.source === 'capture-diff')
