@@ -2,18 +2,50 @@ import { join } from 'path'
 import fse from 'fs-extra'
 
 export function parseFrontmatter(content) {
-  // Minimal frontmatter parser for simple "key: value" metadata used by SKILL.md.
-  // Ignores comments/blank lines and supports both LF/CRLF.
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   if (!match) return {}
   const result = {}
+  let currentParent = null
+
   for (const line of match[1].split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const [key, ...rest] = line.split(':')
-    if (key && rest.length) result[key.trim()] = rest.join(':').trim()
+    if (!line.trim() || line.trim().startsWith('#')) continue
+
+    const indented = line.match(/^  (\w[\w-]*):\s*(.*)$/)
+    if (indented && currentParent) {
+      const [, key, rawVal] = indented
+      result[currentParent][key] = parseYamlValue(rawVal)
+      continue
+    }
+
+    const topLevel = line.match(/^(\w[\w-]*):\s*(.*)$/)
+    if (topLevel) {
+      const [, key, rawVal] = topLevel
+      if (rawVal === '' || rawVal === undefined) {
+        result[key] = {}
+        currentParent = key
+      } else {
+        result[key] = parseYamlValue(rawVal)
+        currentParent = null
+      }
+    }
   }
   return result
+}
+
+function parseYamlValue(raw) {
+  const trimmed = raw.trim()
+  if (trimmed.startsWith('[')) {
+    try {
+      return JSON.parse(trimmed)
+    } catch {
+      return trimmed
+    }
+  }
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1)
+  }
+  return trimmed
 }
 
 export async function scanSkillsDir(dir, category) {
