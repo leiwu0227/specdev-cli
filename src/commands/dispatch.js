@@ -6,31 +6,27 @@ import { ponderProjectCommand } from './ponder-project.js'
 import { skillsCommand } from './skills.js'
 import { startCommand } from './start.js'
 import { assignmentCommand } from './assignment.js'
-import { breakdownCommand } from './breakdown.js'
-import { implementCommand } from './implement.js'
+import { checkpointCommand } from './checkpoint.js'
+import { approveCommand } from './approve.js'
 import { reviewCommand } from './review.js'
 import { migrateCommand } from './migrate.js'
 import { continueCommand } from './continue.js'
 import { reviseCommand } from './revise.js'
 import { checkReviewCommand } from './check-review.js'
-import { progressCommand } from './progress.js'
-import { applyCaptureCommand } from './apply-capture.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
   update: ({ flags }) => updateCommand(flags),
-  skills: ({ flags }) => skillsCommand(flags),
+  skills: ({ positionalArgs, flags }) => skillsCommand(positionalArgs, flags),
   start: ({ flags }) => startCommand(flags),
   assignment: ({ positionalArgs, flags }) => assignmentCommand(positionalArgs, flags),
-  breakdown: ({ flags }) => breakdownCommand(flags),
-  implement: ({ flags }) => implementCommand(flags),
+  checkpoint: ({ positionalArgs, flags }) => checkpointCommand(positionalArgs, flags),
+  approve: ({ positionalArgs, flags }) => approveCommand(positionalArgs, flags),
   review: ({ positionalArgs, flags }) => reviewCommand(positionalArgs, flags),
   migrate: ({ flags }) => migrateCommand(flags),
   continue: ({ flags }) => continueCommand(flags),
   revise: ({ flags }) => reviseCommand(flags),
   'check-review': ({ flags }) => checkReviewCommand(flags),
-  progress: ({ positionalArgs, flags }) => progressCommand(positionalArgs, flags),
-  'apply-capture': ({ flags }) => applyCaptureCommand(flags),
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
