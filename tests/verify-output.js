@@ -4,22 +4,11 @@ import { join } from 'path'
 const requiredFiles = [
   // System files
   '.specdev/_main.md',
-  '.specdev/_router.md',
-  '.specdev/_guides/README.md',
+  '.specdev/_index.md',
+  '.specdev/_guides/workflow.md',
   '.specdev/_guides/assignment_guide.md',
   '.specdev/_guides/codestyle_guide.md',
   '.specdev/_guides/migration_guide.md',
-  '.specdev/_guides/task/planning_guide.md',
-  '.specdev/_guides/task/scaffolding_guide.md',
-  '.specdev/_guides/task/implementing_guide.md',
-  '.specdev/_guides/task/validation_guide.md',
-  '.specdev/_guides/task/documentation_guide.md',
-  '.specdev/_guides/task/research_guide.md',
-  '.specdev/_guides/task/presentation_guide.md',
-  '.specdev/_guides/workflow/feature_workflow.md',
-  '.specdev/_guides/workflow/refactor_workflow.md',
-  '.specdev/_guides/workflow/bugfix_workflow.md',
-  '.specdev/_guides/workflow/familiarization_workflow.md',
   // Templates
   '.specdev/_templates/gate_checklist.md',
   '.specdev/_templates/scaffolding_template.md',
@@ -47,22 +36,22 @@ const requiredFiles = [
   // Skills library
   '.specdev/skills/README.md',
   '.specdev/skills/tools/README.md',
-  '.specdev/skills/core/scaffolding-lite.md',
-  '.specdev/skills/core/scaffolding-full.md',
   '.specdev/skills/core/receiving-code-review.md',
   '.specdev/skills/core/verification-before-completion.md',
   // Brainstorming skill (directory-based)
   '.specdev/skills/core/brainstorming/SKILL.md',
   '.specdev/skills/core/brainstorming/scripts/get-project-context.sh',
+  // Investigation skill (directory-based)
+  '.specdev/skills/core/investigation/SKILL.md',
+  // Diagnosis skill (directory-based)
+  '.specdev/skills/core/diagnosis/SKILL.md',
   // Breakdown skill (directory-based)
   '.specdev/skills/core/breakdown/SKILL.md',
   // Implementing skill (directory-based)
   '.specdev/skills/core/implementing/SKILL.md',
   '.specdev/skills/core/implementing/scripts/extract-tasks.sh',
   '.specdev/skills/core/implementing/scripts/track-progress.sh',
-  '.specdev/skills/core/implementing/scripts/poll-for-feedback.sh',
   '.specdev/skills/core/implementing/prompts/implementer.md',
-  '.specdev/skills/core/implementing/prompts/spec-reviewer.md',
   '.specdev/skills/core/implementing/prompts/code-reviewer.md',
   // Review-agent skill (directory-based)
   '.specdev/skills/core/review-agent/SKILL.md',
@@ -79,9 +68,6 @@ const requiredFiles = [
   // Parallel-worktrees skill (directory-based)
   '.specdev/skills/core/parallel-worktrees/SKILL.md',
   '.specdev/skills/core/parallel-worktrees/scripts/setup-worktree.sh',
-  // Orientation skill (directory-based)
-  '.specdev/skills/core/orientation/SKILL.md',
-  '.specdev/skills/core/orientation/scripts/list-skills.sh',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',
@@ -105,16 +91,12 @@ console.log(`   Verified ${requiredFiles.length} files`)
 
 // Content checks
 const mainMd = readFileSync(join(testDir, '.specdev', '_main.md'), 'utf-8')
-if (!mainMd.includes('Quick ref:')) {
-  console.error('❌ _main.md missing quick-ref blockquote at top')
+if (!mainMd.includes('SpecDev')) {
+  console.error('❌ _main.md missing SpecDev reference')
   process.exit(1)
 }
 if (!mainMd.includes('Specdev:')) {
-  console.error('❌ _main.md missing "Specdev:" in quick-ref')
+  console.error('❌ _main.md missing "Specdev:" announcement rule')
   process.exit(1)
 }
-if (!mainMd.includes('specdev review')) {
-  console.error('❌ _main.md missing "specdev review" in content')
-  process.exit(1)
-}
-console.log('✅ _main.md quick-ref blockquote present')
+console.log('✅ _main.md content checks passed')
