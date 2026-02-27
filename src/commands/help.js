@@ -24,8 +24,9 @@ export function helpCommand() {
     '  revise              Record design revision, re-enter brainstorm',
     '  review <phase>      Manual review (brainstorm | implementation)',
     '  check-review        Read and address review feedback',
-    '  ponder workflow     Interactive: review & write workflow feedback',
-    '  ponder project      Interactive: review & write local project knowledge',
+    '  distill project     Aggregate project knowledge from assignments (JSON)',
+    '  distill workflow    Aggregate workflow observations from assignments (JSON)',
+    '  distill mark-processed <type> <names>  Mark assignments as distilled',
     '  help                Show this help message',
     '  --version, -v       Show version number',
   ])
@@ -53,9 +54,9 @@ export function helpCommand() {
     '  specdev review brainstorm          # Review design in separate session',
     '  specdev check-review              # Read feedback, address findings',
     '',
-    '  # Knowledge capture',
-    '  specdev ponder workflow',
-    '  specdev ponder project',
+    '  # Knowledge distillation',
+    '  specdev distill workflow',
+    '  specdev distill project',
   ])
   blankLine()
   printSection('For more information, visit: https://github.com/leiwu0227/specdev-cli')

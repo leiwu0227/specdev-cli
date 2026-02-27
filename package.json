@@ -14,7 +14,7 @@
     "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:assignment-schema && npm run test:assignment-utils && npm run test:skills && npm run test:tdd && npm run test:implementing && npm run test:review-agent && npm run test:parallel-worktrees && npm run test:init-platform && npm run test:start && npm run test:assignment && npm run test:continue && npm run test:revise && npm run test:fireperp-skill && npm run test:migrate && npm run test:review-cmd && npm run test:check-review && npm run test:update-skills && npm run test:frontmatter && npm run test:active-tools && npm run test:agents && npm run test:wrappers && npm run test:skills-subcommands && npm run test:skills-install && npm run test:skills-remove && npm run test:skills-sync && npm run test:skills-status && npm run test:update-sync && npm run test:checkpoint-tools && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:verify && npm run test:scan && npm run test:assignment-schema && npm run test:assignment-utils && npm run test:skills && npm run test:tdd && npm run test:implementing && npm run test:review-agent && npm run test:parallel-worktrees && npm run test:init-platform && npm run test:start && npm run test:assignment && npm run test:continue && npm run test:revise && npm run test:fireperp-skill && npm run test:migrate && npm run test:review-cmd && npm run test:check-review && npm run test:update-skills && npm run test:frontmatter && npm run test:active-tools && npm run test:agents && npm run test:wrappers && npm run test:skills-subcommands && npm run test:skills-install && npm run test:skills-remove && npm run test:skills-sync && npm run test:skills-status && npm run test:update-sync && npm run test:checkpoint-tools && npm run test:distill-workflow && npm run test:distill-project && npm run test:distill-mark && npm run test:cleanup",
     "test:fireperp-skill": "node ./tests/test-fireperp-skill.js",
     "test:assignment-utils": "node ./tests/test-assignment-utils.js",
     "test:skills": "node ./tests/test-skills.js",
@@ -30,6 +30,9 @@
     "test:start": "node ./tests/test-start.js",
     "test:assignment": "node ./tests/test-assignment.js",
     "test:continue": "node ./tests/test-continue.js",
+    "test:distill-workflow": "node ./tests/test-distill-workflow.js",
+    "test:distill-project": "node ./tests/test-distill-project.js",
+    "test:distill-mark": "node ./tests/test-distill-mark.js",
     "test:revise": "node ./tests/test-revise.js",
     "test:migrate": "node ./tests/test-migrate.js",
     "test:review-cmd": "node ./tests/test-review-cmd.js",
@@ -46,7 +49,7 @@
     "test:skills-status": "node ./tests/test-skills-status.js",
     "test:update-sync": "node ./tests/test-update-sync.js",
     "test:checkpoint-tools": "node ./tests/test-checkpoint-tools.js",
-    "test:cleanup": "rm -rf ./test-output ./test-manual ./test-scan-output ./test-work-output ./test-check-output ./tests/test-skills-output ./tests/test-skills-output-debug ./tests/test-skills-output-debug2 ./tests/test-tdd-output ./tests/test-implementing-output ./tests/test-review-agent-output ./tests/test-parallel-worktrees-output ./tests/test-parallel-worktrees-output-worktrees ./tests/test-init-platform-output ./tests/test-update-skills-output ./tests/test-assignment-schema-output ./test-start-output ./test-assignment-output ./test-continue-output ./test-revise-output ./test-migrate-output ./test-review-cmd-output ./test-check-review-output ./test-fireperp-skill-output ./tests/test-active-tools-output ./tests/test-agents-output ./tests/test-wrappers-output ./tests/test-skills-subcmd-output ./tests/test-skills-install-output ./tests/test-skills-remove-output ./tests/test-skills-sync-output ./tests/test-skills-status-output ./tests/test-update-sync-output ./tests/test-checkpoint-tools-output",
+    "test:cleanup": "rm -rf ./test-output ./test-manual ./test-scan-output ./test-work-output ./test-check-output ./tests/test-skills-output ./tests/test-skills-output-debug ./tests/test-skills-output-debug2 ./tests/test-tdd-output ./tests/test-implementing-output ./tests/test-review-agent-output ./tests/test-parallel-worktrees-output ./tests/test-parallel-worktrees-output-worktrees ./tests/test-init-platform-output ./tests/test-update-skills-output ./tests/test-assignment-schema-output ./test-start-output ./test-assignment-output ./test-continue-output ./test-revise-output ./test-migrate-output ./test-review-cmd-output ./test-check-review-output ./test-fireperp-skill-output ./tests/test-active-tools-output ./tests/test-agents-output ./tests/test-wrappers-output ./tests/test-skills-subcmd-output ./tests/test-skills-install-output ./tests/test-skills-remove-output ./tests/test-skills-sync-output ./tests/test-skills-status-output ./tests/test-update-sync-output ./tests/test-checkpoint-tools-output ./tests/test-distill-workflow-output ./tests/test-distill-project-output ./tests/test-distill-mark-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
     "release": "npm version patch && npm publish",

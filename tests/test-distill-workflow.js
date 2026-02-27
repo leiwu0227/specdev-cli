@@ -67,6 +67,12 @@ result = runCmd(['distill', 'workflow', `--target=${TEST_DIR}`])
 json = JSON.parse(result.stdout.trim())
 assert(json.unprocessed >= 1, 'unprocessed stays until mark-processed is called')
 
+// Verify ponder is removed
+console.log('\nponder removed:')
+result = runCmd(['ponder', 'workflow', `--target=${TEST_DIR}`])
+assert(result.status !== 0, 'ponder command no longer exists')
+assert(result.stderr.includes('Unknown command'), 'ponder shows unknown command error')
+
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)
