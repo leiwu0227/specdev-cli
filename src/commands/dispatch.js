@@ -3,6 +3,7 @@ import { updateCommand } from './update.js'
 import { helpCommand } from './help.js'
 import { ponderWorkflowCommand } from './ponder-workflow.js'
 import { ponderProjectCommand } from './ponder-project.js'
+import { distillWorkflowCommand } from './distill-workflow.js'
 import { skillsCommand } from './skills.js'
 import { startCommand } from './start.js'
 import { assignmentCommand } from './assignment.js'
@@ -39,6 +40,24 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     } else {
       console.error(`Unknown ponder subcommand: ${subcommand || '(none)'}`)
       console.log('Usage: specdev ponder <workflow|project>')
+      process.exitCode = 1
+    }
+    return
+  }
+
+  if (command === 'distill') {
+    const subcommand = positionalArgs[0]
+    if (subcommand === 'workflow') {
+      await distillWorkflowCommand(flags)
+    } else if (subcommand === 'project') {
+      console.error('distill project not yet implemented')
+      process.exitCode = 1
+    } else if (subcommand === 'mark-processed') {
+      console.error('distill mark-processed not yet implemented')
+      process.exitCode = 1
+    } else {
+      console.error(`Unknown distill subcommand: ${subcommand || '(none)'}`)
+      console.log('Usage: specdev distill <project|workflow|mark-processed>')
       process.exitCode = 1
     }
     return
