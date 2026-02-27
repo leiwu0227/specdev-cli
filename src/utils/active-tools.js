@@ -6,11 +6,15 @@ const DEFAULT = { tools: {}, agents: [] }
 
 export async function readActiveTools(specdevPath) {
   const filePath = join(specdevPath, ACTIVE_TOOLS_PATH)
-  if (!(await fse.pathExists(filePath))) return { ...DEFAULT, tools: {} }
+  if (!(await fse.pathExists(filePath))) return { tools: {}, agents: [] }
   try {
-    return await fse.readJson(filePath)
+    const raw = await fse.readJson(filePath)
+    return {
+      tools: (raw && typeof raw.tools === 'object' && !Array.isArray(raw.tools)) ? raw.tools : {},
+      agents: Array.isArray(raw?.agents) ? raw.agents : [],
+    }
   } catch {
-    return { ...DEFAULT, tools: {} }
+    return { tools: {}, agents: [] }
   }
 }
 

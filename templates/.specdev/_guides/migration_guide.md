@@ -43,10 +43,11 @@ The migration also ensures:
 
 ## After migration
 
-Continue normal V4 flow:
+Continue the normal workflow:
 
-- `specdev start`
-- `specdev assignment <name>` (new work)
-- `specdev breakdown`
-- `specdev implement`
-- `specdev review <phase>` (optional manual review)
+- `specdev start` (fill in project context)
+- `specdev assignment "<description>"` (reserve ID for new work)
+- `specdev continue` (resume where you left off)
+- `specdev checkpoint <phase>` (validate artifacts before approval)
+- `specdev approve <phase>` (gate approval to proceed)
+- `specdev review <phase>` (optional manual review in separate session)

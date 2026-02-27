@@ -243,13 +243,15 @@ function statePriority(state) {
       return 100
     case 'implementation_in_progress':
       return 95
-    case 'implementation_ready':
-      return 90
-    case 'breakdown_ready':
-      return 80
+    case 'implementation_checkpoint_ready':
+      return 92
+    case 'breakdown_in_progress':
+      return 85
+    case 'brainstorm_checkpoint_ready':
+      return 75
     case 'brainstorm_in_progress':
       return 70
-    case 'review_ready':
+    case 'summary_in_progress':
       return 60
     case 'completed':
       return 10

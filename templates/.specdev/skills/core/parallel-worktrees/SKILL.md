@@ -21,7 +21,7 @@ type: core
 
 ## Process
 
-### Phase 1: Analyze Parallelizability
+### Step 1: Analyze Parallelizability
 
 Before creating worktrees, verify the tasks can run in parallel:
 
@@ -35,7 +35,7 @@ Before creating worktrees, verify the tasks can run in parallel:
 - No shared state dependencies (task B doesn't need task A's output)
 - No shared external resources (same database table, same API endpoint)
 
-### Phase 2: Setup Worktrees
+### Step 2: Setup Worktrees
 
 For each parallelizable task:
 
@@ -44,7 +44,7 @@ For each parallelizable task:
 3. Each worktree gets its own branch: `worktree/<task-name>`
 4. Verify the worktree was created successfully (check the JSON output)
 
-### Phase 3: Dispatch Work
+### Step 3: Dispatch Work
 
 For each worktree:
 
@@ -52,7 +52,7 @@ For each worktree:
 2. The subagent works in isolation — its changes don't affect other worktrees
 3. Each subagent follows the same TDD cycle: test → implement → commit
 
-### Phase 4: Merge
+### Step 4: Merge
 
 After all worktrees complete:
 
@@ -61,7 +61,7 @@ After all worktrees complete:
 3. If merge conflicts occur — resolve them manually (this means the tasks weren't truly independent)
 4. After merging, remove each worktree: `git worktree remove <path>`
 
-### Phase 5: Integration Test
+### Step 5: Integration Test
 
 After merging all branches:
 

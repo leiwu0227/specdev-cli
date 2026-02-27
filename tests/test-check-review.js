@@ -132,7 +132,7 @@ async function runTests() {
       readFileSync(join(assignment, 'review', 'feedback-round-1.md'), 'utf-8').includes('Clarified error-handling section'),
     'prints addressed finding item'
   )) failures++
-  if (!assert(approvedText.includes('Run specdev breakdown') || checkReviewSource.includes('Run specdev breakdown'), 'prints next step for brainstorm phase')) failures++
+  if (!assert(approvedText.includes('specdev approve brainstorm') || checkReviewSource.includes('specdev approve brainstorm'), 'prints next step for brainstorm phase')) failures++
   if (!assert(
     existsSync(join(assignment, 'review', 'feedback-round-1.md')),
     'archives feedback to feedback-round-1.md'
@@ -167,6 +167,14 @@ async function runTests() {
     !existsSync(join(assignment, 'review', 'review-feedback.md')),
     'deletes original review-feedback.md'
   )) failures++
+  if (!assert(
+    existsSync(join(assignment, 'review', 'update-round-2.md')),
+    'creates stub update-round-2.md'
+  )) failures++
+  const stubContent = readFileSync(join(assignment, 'review', 'update-round-2.md'), 'utf-8')
+  if (!assert(stubContent.includes('# Update (Round 2)'), 'stub has correct round heading')) failures++
+  if (!assert(stubContent.includes('## Changes Made'), 'stub has Changes Made section')) failures++
+  if (!assert(stubContent.includes('## Files Modified'), 'stub has Files Modified section')) failures++
 
   // Test 4: round detection from feedback file
   console.log('\nround detection:')
@@ -203,7 +211,12 @@ async function runTests() {
     if (!assert(payload.round === 3, 'json round is 3')) failures++
     if (!assert(Array.isArray(payload.findings) && payload.findings.length === 1, 'json findings array has 1 item')) failures++
     if (!assert(payload.next_action.includes('update-round-3'), 'json next_action references update file')) failures++
+    if (!assert(payload.update_file === 'review/update-round-3.md', 'json includes update_file path')) failures++
     if (!assert(Array.isArray(payload.addressed_findings), 'json includes addressed_findings array')) failures++
+    if (!assert(
+      existsSync(join(assignment, 'review', 'update-round-3.md')),
+      'json mode creates stub update-round-3.md'
+    )) failures++
   }
 
   // Test 5b: --json output for approved includes addressed findings and next step
@@ -229,7 +242,7 @@ async function runTests() {
   if (!assert(approvedPayload !== null, 'approved json is valid')) failures++
   if (approvedPayload) {
     if (!assert(approvedPayload.verdict === 'approved', 'approved json verdict is approved')) failures++
-    if (!assert(approvedPayload.next_action.includes('breakdown'), 'approved json next_action points to breakdown')) failures++
+    if (!assert(approvedPayload.next_action.includes('approve brainstorm'), 'approved json next_action points to approve brainstorm')) failures++
     if (!assert(
       Array.isArray(approvedPayload.addressed_findings) &&
       approvedPayload.addressed_findings.includes('Clarified error-handling section'),

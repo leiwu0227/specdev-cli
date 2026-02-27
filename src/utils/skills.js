@@ -7,13 +7,47 @@ export function parseFrontmatter(content) {
   const result = {}
   let currentParent = null
 
+  let currentKey = null  // tracks the last key at any level for list appending
+
   for (const line of match[1].split(/\r?\n/)) {
     if (!line.trim() || line.trim().startsWith('#')) continue
+
+    // YAML list item under a nested key: "    - value"
+    const nestedListItem = line.match(/^    -\s+(.+)$/)
+    if (nestedListItem && currentParent && currentKey) {
+      const val = parseYamlValue(nestedListItem[1])
+      const target = result[currentParent][currentKey]
+      if (Array.isArray(target)) {
+        target.push(val)
+      } else {
+        result[currentParent][currentKey] = [val]
+      }
+      continue
+    }
+
+    // YAML list item under a top-level key: "  - value"
+    const topListItem = line.match(/^  -\s+(.+)$/)
+    if (topListItem && !currentParent && currentKey) {
+      const val = parseYamlValue(topListItem[1])
+      const target = result[currentKey]
+      if (Array.isArray(target)) {
+        target.push(val)
+      } else {
+        result[currentKey] = [val]
+      }
+      continue
+    }
 
     const indented = line.match(/^  (\w[\w-]*):\s*(.*)$/)
     if (indented && currentParent) {
       const [, key, rawVal] = indented
-      result[currentParent][key] = parseYamlValue(rawVal)
+      if (rawVal === '' || rawVal === undefined) {
+        result[currentParent][key] = []
+        currentKey = key
+      } else {
+        result[currentParent][key] = parseYamlValue(rawVal)
+        currentKey = key
+      }
       continue
     }
 
@@ -23,9 +57,11 @@ export function parseFrontmatter(content) {
       if (rawVal === '' || rawVal === undefined) {
         result[key] = {}
         currentParent = key
+        currentKey = null
       } else {
         result[key] = parseYamlValue(rawVal)
         currentParent = null
+        currentKey = key
       }
     }
   }

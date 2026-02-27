@@ -77,9 +77,14 @@ name: specdev-assignment
 description: Create a new assignment and start the brainstorm phase
 ---
 
-Run \`specdev assignment <name>\` where <name> describes the feature.
+Run \`specdev assignment "<user's description>"\` to reserve an assignment ID.
 
-Then read \`.specdev/skills/core/brainstorming/SKILL.md\` and follow it exactly.
+Read the output to get the reserved ID, then:
+1. Pick a type (feature | bugfix | refactor | familiarization) and a short hyphenated slug based on the description
+2. Create the assignment folder: \`.specdev/assignments/<ID>_<type>_<slug>/\`
+3. Create brainstorm/ and context/ subdirectories inside it
+4. Read \`.specdev/_guides/workflow.md\` to determine which brainstorm skill to use
+5. Follow the chosen skill exactly
 
 Announce every subtask with "Specdev: <action>".
 `,
@@ -268,7 +273,7 @@ export async function initCommand(flags = {}) {
     printSection('Claude Code slash commands:')
     printLines([
       '   /specdev-start        Interactive project context setup',
-      '   /specdev-assignment   Create assignment and start brainstorm',
+      '   /specdev-assignment   Reserve ID and start brainstorm',
       '   /specdev-continue     Resume from current phase',
       '   /specdev-review       Phase-aware manual review',
       '   /specdev-check-review Read and address review feedback',

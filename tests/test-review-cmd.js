@@ -91,7 +91,7 @@ async function runTests() {
   const breakdownText = `${breakdownReview.stdout}\n${breakdownReview.stderr}`
   if (!assert(breakdownReview.status === 1, 'exits non-zero for breakdown')) failures++
   if (!assert(breakdownText.includes('inline subagent review') || reviewSource.includes('inline subagent review'), 'tells user breakdown uses inline subagent review')) failures++
-  if (!assert(breakdownText.includes('specdev implement') || reviewSource.includes('specdev implement'), 'suggests running specdev implement')) failures++
+  if (!assert(breakdownText.includes('specdev approve brainstorm') || reviewSource.includes('specdev approve brainstorm'), 'suggests running specdev approve brainstorm')) failures++
 
   // Test 5: specdev review nonsense → error
   console.log('\nreview nonsense:')

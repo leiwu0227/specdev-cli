@@ -61,15 +61,25 @@ export async function ponderProjectCommand(flags = {}) {
     )
   }
 
+  const processedAssignments = await readProcessedCaptures(knowledgePath, 'project')
+  const uncapturedAssignments = assignments.filter((a) => !processedAssignments.has(a.name))
+
+  if (uncapturedAssignments.length === 0) {
+    blankLine()
+    console.log('No new assignments to distill. All discovered assignments were already captured.')
+    return
+  }
+
+  console.log(`Processing ${uncapturedAssignments.length} uncaptured assignment(s)`)
+
   // Generate structural suggestions
   const suggestions = generateProjectSuggestions(
-    assignments,
+    uncapturedAssignments,
     existingKnowledge
   )
 
-  // Generate capture-diff suggestions from unprocessed assignments
-  const processedCaptures = await readProcessedCaptures(knowledgePath, 'project')
-  const captureSuggestions = generateCaptureDiffSuggestions(assignments, processedCaptures)
+  // Generate capture-diff suggestions from uncaptured assignments
+  const captureSuggestions = generateCaptureDiffSuggestions(uncapturedAssignments)
   const allSuggestions = [...suggestions, ...captureSuggestions]
 
   if (allSuggestions.length === 0) {
@@ -81,7 +91,6 @@ export async function ponderProjectCommand(flags = {}) {
 
   // Present each suggestion grouped by branch
   const accepted = {} // branch -> [items]
-  const acceptedCaptureNames = []
 
   for (const suggestion of allSuggestions) {
     const result = await presentSuggestion({
@@ -96,9 +105,6 @@ export async function ponderProjectCommand(flags = {}) {
         title: result.title.replace(`[${suggestion.branch}] `, ''),
         body: result.body,
       })
-      if (suggestion.assignmentName) {
-        acceptedCaptureNames.push(suggestion.assignmentName)
-      }
     }
   }
 
@@ -137,6 +143,14 @@ export async function ponderProjectCommand(flags = {}) {
     0
   )
 
+  // Mark uncaptured assignments as processed so ponder doesn't repeat work.
+  // This is done even if nothing was accepted, because the assignments were reviewed.
+  await markCapturesProcessed(
+    knowledgePath,
+    'project',
+    uncapturedAssignments.map((a) => a.name)
+  )
+
   if (totalAccepted === 0) {
     blankLine()
     console.log('No observations to save. Done!')
@@ -168,9 +182,6 @@ export async function ponderProjectCommand(flags = {}) {
     await fse.writeFile(filepath, content, 'utf-8')
     console.log(`   ✓ ${branch}/${filename} (${items.length} observation(s))`)
   }
-
-  // Mark only accepted capture diffs as processed
-  await markCapturesProcessed(knowledgePath, 'project', acceptedCaptureNames)
 
   // Update _index.md
   await updateKnowledgeIndex(knowledgePath)
@@ -280,12 +291,11 @@ function generateProjectSuggestions(assignments, existingKnowledge) {
 /**
  * Generate suggestions from unprocessed capture diffs (project-notes-diff.md)
  */
-function generateCaptureDiffSuggestions(assignments, processedCaptures) {
+function generateCaptureDiffSuggestions(assignments) {
   const suggestions = []
 
   for (const a of assignments) {
     if (!a.capture || !a.capture.projectNotesDiff) continue
-    if (processedCaptures.has(a.name)) continue
 
     suggestions.push({
       branch: 'architecture',

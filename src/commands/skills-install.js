@@ -3,7 +3,7 @@ import fse from 'fs-extra'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { scanSkillsDir, parseFrontmatter } from '../utils/skills.js'
 import { readActiveTools, writeActiveTools } from '../utils/active-tools.js'
-import { detectCodingAgents } from '../utils/agents.js'
+import { detectCodingAgents, AGENT_CONFIGS } from '../utils/agents.js'
 import { generateWrapperContent, writeWrappers } from '../utils/wrappers.js'
 import { blankLine } from '../utils/output.js'
 
@@ -54,6 +54,14 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
 
   if (flags.agents) {
     selectedAgents = flags.agents.split(',').map(s => s.trim())
+    const validAgents = Object.keys(AGENT_CONFIGS)
+    const unknownAgents = selectedAgents.filter(a => !validAgents.includes(a))
+    if (unknownAgents.length > 0) {
+      console.error(`Unknown agents: ${unknownAgents.join(', ')}`)
+      console.error(`Valid agents: ${validAgents.join(', ')}`)
+      process.exitCode = 1
+      return
+    }
   } else {
     selectedAgents = detectCodingAgents(targetDir)
     if (selectedAgents.length === 0) {

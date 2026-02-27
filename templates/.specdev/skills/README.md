@@ -2,26 +2,29 @@
 
 Skills are split into two categories:
 
-## Core Skills (`core/`)
+- **Core skills** (`core/`) — define the workflow phases and supporting practices. Managed by SpecDev and updated by `specdev update`. You should not edit these.
+- **Tool skills** (`tools/`) — project-specific capabilities (APIs, search tools, custom scripts). User-owned and never touched by `specdev update`. Declared in plan tasks via the `Skills:` field.
 
-Managed by SpecDev. Updated by `specdev update`. These define the workflow.
+## Core Skills (`core/`)
 
 ### Folder-based skills
 
-**Main agent (phases 1-3, 5):**
+**Main workflow phases:**
+
 - `core/brainstorming/` — Interactive idea-to-design session
+- `core/investigation/` — Research and document existing code
+- `core/diagnosis/` — Bug reproduction and root cause analysis
 - `core/breakdown/` — Turn design into bite-sized executable steps
-- `core/implementing/` — Execute plan with subagent dispatch and two-stage review
+- `core/implementing/` — Execute plan with subagent dispatch and unified review
 - `core/knowledge-capture/` — Write diff files after assignment completion
 
-**Review agent (phase 4):**
+**Review (separate session):**
 - `core/review-agent/` — Holistic reviewer with file-based signals
 
 **Supporting:**
 - `core/test-driven-development/` — RED-GREEN-REFACTOR with verify-tests.sh
 - `core/systematic-debugging/` — Root-cause-first debugging
 - `core/parallel-worktrees/` — Git worktree isolation for parallel tasks
-- `core/orientation/` — Router and decision tree
 
 ### Flat reference skills
 

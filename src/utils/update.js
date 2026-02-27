@@ -27,10 +27,24 @@ export async function updateSpecdevSystem(source, destination) {
   const updatedPaths = []
 
   try {
+    // Clean up renamed/deleted files from previous versions
+    const removePaths = [
+      '_router.md',
+      '_guides/task',
+      '_guides/workflow',
+      'skills/core/orientation',
+    ]
+    for (const path of removePaths) {
+      const destPath = join(destination, path)
+      if (await fse.pathExists(destPath)) {
+        await fse.remove(destPath)
+      }
+    }
+
     // System files and directories to update
     const systemPaths = [
       '_main.md',
-      '_router.md',
+      '_index.md',
       '_guides',
       '_templates',
       'project_scaffolding/_README.md',

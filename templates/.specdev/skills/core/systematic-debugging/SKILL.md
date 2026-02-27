@@ -23,7 +23,7 @@ This skill has no scripts of its own. It references:
 
 ## Process
 
-### Phase 1: Reproduce
+### Step 1: Reproduce
 
 Make the bug happen reliably.
 
@@ -33,7 +33,7 @@ Make the bug happen reliably.
 4. Confirm the test fails consistently (run it 2-3 times)
 5. Record: what fails, exact error, which file/line
 
-### Phase 2: Gather Evidence
+### Step 2: Gather Evidence
 
 Understand the context before guessing.
 
@@ -43,7 +43,7 @@ Understand the context before guessing.
 4. Check inputs and outputs at each step of the code path
 5. Note any assumptions the code makes
 
-### Phase 3: Hypothesize
+### Step 3: Hypothesize
 
 Form your top 3 hypotheses, ranked by likelihood.
 
@@ -57,22 +57,22 @@ Form your top 3 hypotheses, ranked by likelihood.
 - Most likely first
 - Each must be testable
 
-### Phase 4: Experiment
+### Step 4: Experiment
 
 Test ONE hypothesis at a time.
 
 1. Start with hypothesis #1 (most likely)
-2. Run the experiment you described in Phase 3
+2. Run the experiment you described in Step 3
 3. Record the result: confirmed or ruled out
 4. If ruled out, move to hypothesis #2
-5. If all 3 ruled out, go back to Phase 2 with new evidence
+5. If all 3 ruled out, go back to Step 2 with new evidence
 
 **Rules:**
 - One hypothesis at a time — do not test multiple simultaneously
 - Record every experiment and result
 - If you're on hypothesis #3 and it's ruled out, re-gather evidence
 
-### Phase 5: Confirm
+### Step 5: Confirm
 
 Verify you found the actual root cause.
 
@@ -81,7 +81,7 @@ Verify you found the actual root cause.
 3. If it's a symptom, go deeper — what caused THIS to happen?
 4. Write down the root cause in one sentence
 
-### Phase 6: Fix + Regression Test
+### Step 6: Fix + Regression Test
 
 Fix the root cause and prevent regression.
 

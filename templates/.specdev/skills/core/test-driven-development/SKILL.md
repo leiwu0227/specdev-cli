@@ -21,13 +21,13 @@ type: core
 
 ## Process
 
-### Phase 1: RED — Write the Failing Test
+### Step 1: RED — Write the Failing Test
 
 1. Write a test that describes the desired behavior
 2. The test MUST be specific: one behavior, one assertion
 3. Do NOT write any production code yet
 
-### Phase 2: Verify RED
+### Step 2: Verify RED
 
 1. Run `scripts/verify-tests.sh <project-root> [test-command]`
 2. Confirm the output shows `"passed": false`
@@ -36,21 +36,21 @@ type: core
    - Or the test doesn't actually test what you think it does
 4. Read the failure message — it should describe the missing behavior
 
-### Phase 3: GREEN — Write Minimal Code
+### Step 3: GREEN — Write Minimal Code
 
 1. Write the MINIMUM code to make the test pass
 2. Do not add anything extra — no optimization, no edge cases, no cleanup
 3. If the plan specifies exact code, use it
 4. The goal is: test passes, nothing more
 
-### Phase 4: Verify GREEN
+### Step 4: Verify GREEN
 
 1. Run `scripts/verify-tests.sh <project-root> [test-command]`
 2. Confirm the output shows `"passed": true`
 3. If tests still fail — fix the implementation, do not modify the test
 4. ALL tests must pass, not just the new one
 
-### Phase 5: REFACTOR
+### Step 5: REFACTOR
 
 1. Clean up the code you just wrote (if needed)
 2. Remove duplication, improve naming, simplify logic
@@ -58,7 +58,7 @@ type: core
 4. Confirm all tests still pass — refactoring must not change behavior
 5. If tests fail after refactoring, you changed behavior — undo and try again
 
-### Phase 6: Commit
+### Step 6: Commit
 
 1. Commit the test + implementation together
 2. The commit message should describe the behavior, not the implementation

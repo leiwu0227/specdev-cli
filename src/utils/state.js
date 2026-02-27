@@ -9,15 +9,39 @@ const LEGACY_ROOT_ARTIFACTS = [
   'validation_checklist.md',
 ]
 
+export async function readGateStatus(assignmentPath) {
+  const statusPath = join(assignmentPath, 'status.json')
+  if (!(await fse.pathExists(statusPath))) {
+    return { brainstorm_approved: false, implementation_approved: false }
+  }
+  try {
+    const raw = await fse.readJson(statusPath)
+    return {
+      brainstorm_approved: Boolean(raw.brainstorm_approved),
+      implementation_approved: Boolean(raw.implementation_approved),
+    }
+  } catch {
+    return { brainstorm_approved: false, implementation_approved: false }
+  }
+}
+
 export async function detectAssignmentState(assignmentSummary, assignmentPath) {
   const blockers = []
+  const hasProposal = await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))
   const hasDesign = await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))
   const hasPlan = await fse.pathExists(join(assignmentPath, 'breakdown', 'plan.md'))
   const hasReviewReport = await fse.pathExists(join(assignmentPath, 'review_report.md'))
   const hasProgressFile = await fse.pathExists(
     join(assignmentPath, 'implementation', 'progress.json')
   )
+  const hasCaptureProject = await fse.pathExists(
+    join(assignmentPath, 'capture', 'project-notes-diff.md')
+  )
+  const hasCaptureWorkflow = await fse.pathExists(
+    join(assignmentPath, 'capture', 'workflow-diff.md')
+  )
 
+  const gates = await readGateStatus(assignmentPath)
   const progress = await readImplementationProgress(assignmentSummary, assignmentPath)
 
   if (assignmentSummary.skippedPhases && assignmentSummary.skippedPhases.length > 0) {
@@ -37,19 +61,30 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     })
   }
 
-  if (!hasDesign) {
+  // Brainstorm phase
+  if (!hasProposal || !hasDesign) {
     return {
       state: 'brainstorm_in_progress',
-      next_action: 'Continue brainstorm and produce brainstorm/design.md',
+      next_action: 'Continue brainstorm and produce brainstorm/proposal.md + brainstorm/design.md',
       blockers,
       progress,
     }
   }
 
+  if (!gates.brainstorm_approved) {
+    return {
+      state: 'brainstorm_checkpoint_ready',
+      next_action: 'Run specdev checkpoint brainstorm, then request user approval with specdev approve brainstorm',
+      blockers,
+      progress,
+    }
+  }
+
+  // Breakdown phase
   if (!hasPlan) {
     return {
-      state: 'breakdown_ready',
-      next_action: 'Run specdev breakdown to generate breakdown/plan.md',
+      state: 'breakdown_in_progress',
+      next_action: 'Invoke breakdown skill to generate breakdown/plan.md',
       blockers,
       progress,
     }
@@ -62,21 +97,49 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
       detail:
         `brainstorm revision is v${revisionGuard.brainstormRevision}, ` +
         `but breakdown is based on v${revisionGuard.breakdownRevision}`,
-      recommended_fix: 'Run specdev breakdown to refresh the plan for the latest design revision',
+      recommended_fix: 'Re-run breakdown to refresh the plan for the latest design revision',
     })
     return {
       state: 'revision_requires_rebreakdown',
-      next_action: 'Run specdev breakdown before continuing implementation/review',
+      next_action: 'Re-run breakdown before continuing implementation',
       blockers,
       progress,
     }
   }
 
+  // Implementation phase
   if (!hasProgressFile) {
     return {
-      state: 'implementation_ready',
-      next_action:
-        'Run specdev implement immediately — no approval needed, proceed automatically',
+      state: 'implementation_in_progress',
+      next_action: 'Invoke implementing skill to execute the plan',
+      blockers,
+      progress,
+    }
+  }
+
+  if (progress.totalTasks > 0 && progress.completedTasks >= progress.totalTasks) {
+    if (!gates.implementation_approved) {
+      return {
+        state: 'implementation_checkpoint_ready',
+        next_action: 'Run specdev checkpoint implementation, then request user approval with specdev approve implementation',
+        blockers,
+        progress,
+      }
+    }
+  } else {
+    return {
+      state: 'implementation_in_progress',
+      next_action: 'Continue implementing remaining tasks and keep progress evidence updated',
+      blockers,
+      progress,
+    }
+  }
+
+  // Summary phase
+  if (!hasCaptureProject || !hasCaptureWorkflow) {
+    return {
+      state: 'summary_in_progress',
+      next_action: 'Invoke knowledge-capture skill to write capture diffs and finalize',
       blockers,
       progress,
     }
@@ -92,19 +155,10 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     }
   }
 
-  if (progress.totalTasks > 0 && progress.completedTasks >= progress.totalTasks) {
-    return {
-      state: 'review_ready',
-      next_action:
-        'Implementation tasks appear complete. Run specdev review implementation (optional manual review) and finalize with user approval',
-      blockers,
-      progress,
-    }
-  }
-
   return {
-    state: 'implementation_in_progress',
-    next_action: 'Continue implementing remaining tasks and keep progress evidence updated',
+    state: 'completed',
+    next_action:
+      'Assignment appears complete. Start a new assignment or capture additional learnings',
     blockers,
     progress,
   }

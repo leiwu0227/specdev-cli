@@ -106,6 +106,11 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
   }
 
   if (missing.length > 0) {
+    if (flags.json) {
+      console.log(JSON.stringify({ status: 'fail', issues: missing, warnings: [] }, null, 2))
+      process.exitCode = 1
+      return
+    }
     console.error(`❌ Implementation checkpoint failed for ${name}`)
     for (const item of missing) {
       console.log(`   Issue: ${item}`)

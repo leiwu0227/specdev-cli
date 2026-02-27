@@ -21,7 +21,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
 
   if (phase === 'breakdown') {
     console.error('Breakdown uses inline subagent review, not manual review')
-    console.log('   Run specdev implement to proceed to implementation.')
+    console.log('   Breakdown is handled automatically after specdev approve brainstorm.')
     process.exitCode = 1
     return
   }

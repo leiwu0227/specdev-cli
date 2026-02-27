@@ -28,6 +28,15 @@ export async function assignmentCommand(args = [], flags = {}) {
     return
   }
 
+  // Join all positional args as description
+  const description = args.join(' ').trim()
+  if (!description) {
+    console.error('❌ No description provided')
+    console.log('   Usage: specdev assignment "Add user auth with JWT"')
+    process.exitCode = 1
+    return
+  }
+
   // Determine next assignment ID
   const assignmentsDir = join(specdevPath, 'assignments')
   await fse.ensureDir(assignmentsDir)
@@ -35,9 +44,8 @@ export async function assignmentCommand(args = [], flags = {}) {
   const existing = await fse.readdir(assignmentsDir)
 
   // Numeric-only labels are often an existing assignment ID (e.g. "00005")
-  const label = args[0] || 'unnamed'
-  if (/^\d+$/.test(label)) {
-    const parsedId = Number.parseInt(label, 10)
+  if (/^\d+$/.test(description)) {
+    const parsedId = Number.parseInt(description, 10)
     const matching = existing
       .filter((name) => {
         const id = Number.parseInt(name.match(/^(\d+)_/)?.[1] || '', 10)
@@ -49,10 +57,10 @@ export async function assignmentCommand(args = [], flags = {}) {
       const existingAssignment = matching[matching.length - 1]
       if (process.stdin.isTTY && process.stdout.isTTY) {
         const choice = await askChoice(
-          `You entered a numeric label ("${label}"), and assignment ${existingAssignment} already exists. What do you want to do?`,
+          `You entered a numeric label ("${description}"), and assignment ${existingAssignment} already exists. What do you want to do?`,
           [
             `Continue existing assignment (${existingAssignment})`,
-            `Create a new assignment named "${label}"`,
+            `Create a new assignment named "${description}"`,
             'Cancel',
           ]
         )
@@ -66,7 +74,7 @@ export async function assignmentCommand(args = [], flags = {}) {
           return
         }
       } else {
-        console.error(`❌ Numeric label "${label}" matches existing assignment: ${existingAssignment}`)
+        console.error(`❌ Numeric label "${description}" matches existing assignment: ${existingAssignment}`)
         console.log(`   To continue existing work, run: specdev continue --assignment=${existingAssignment}`)
         console.log('   To create a new assignment, use a descriptive name (e.g. "auth-refactor").')
         process.exitCode = 1
@@ -81,17 +89,29 @@ export async function assignmentCommand(args = [], flags = {}) {
   const nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1
   const paddedId = String(nextId).padStart(5, '0')
 
-  // Build assignment name
-  const dirName = `${paddedId}_feature_${label}`
-  const assignmentPath = join(assignmentsDir, dirName)
+  const json = Boolean(flags.json)
 
-  await fse.ensureDir(join(assignmentPath, 'brainstorm'))
-  await fse.ensureDir(join(assignmentPath, 'context'))
+  if (json) {
+    console.log(JSON.stringify({
+      version: 1,
+      status: 'ok',
+      id: paddedId,
+      description,
+      assignments_dir: assignmentsDir,
+    }))
+    return
+  }
 
-  console.log(`✅ Assignment created: ${dirName}`)
-  console.log(`   Path: ${assignmentPath}`)
+  console.log(`Assignment ID: ${paddedId}`)
+  console.log(`Description: ${description}`)
   blankLine()
-  console.log('Start brainstorming:')
-  console.log('   Read .specdev/skills/core/brainstorming/SKILL.md and follow it.')
-  console.log(`   Write outputs to: ${dirName}/brainstorm/`)
+  console.log('Create the assignment folder:')
+  console.log(`   ${assignmentsDir}/${paddedId}_<type>_<slug>/`)
+  blankLine()
+  console.log('Where <type> is: feature | bugfix | refactor | familiarization')
+  console.log('And <slug> is a short hyphenated name derived from the description.')
+  blankLine()
+  console.log('Then create brainstorm/ and context/ subdirectories inside it.')
+  console.log('Read .specdev/skills/core/brainstorming/SKILL.md and follow it.')
+  console.log('Use the description above as the starting point for brainstorming.')
 }

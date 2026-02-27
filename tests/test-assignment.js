@@ -28,49 +28,70 @@ async function runTests() {
   const bigPicturePath = join(TEST_DIR, '.specdev/project_notes/big_picture.md')
   writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
 
-  // Test 1: creates assignment directory
-  console.log('assignment creates directory:')
-  const result = runCmd(['assignment', 'auth-system', `--target=${TEST_DIR}`])
+  // Test 1: outputs reserved ID without creating folder
+  console.log('assignment reserves ID without creating folder:')
+  const result = runCmd(['assignment', 'Add', 'auth', 'system', `--target=${TEST_DIR}`])
   if (!assert(result.status === 0, 'exits 0', result.stderr)) failures++
+  if (!assert(result.stdout.includes('00001'), 'outputs ID 00001')) failures++
+  if (!assert(result.stdout.includes('Add auth system'), 'outputs description')) failures++
 
   const assignmentsDir = join(TEST_DIR, '.specdev/assignments')
-  const entries = existsSync(assignmentsDir) ? readdirSync(assignmentsDir) : []
-  const created = entries.find(e => e.includes('auth-system'))
-  if (!assert(created, 'creates assignment directory with name')) failures++
-  if (!assert(created && created.match(/^\d{5}_/), 'directory has sequential ID prefix')) failures++
+  const entries = existsSync(assignmentsDir) ? readdirSync(assignmentsDir).filter(e => !e.startsWith('.')) : []
+  if (!assert(entries.length === 0, 'does NOT create assignment folder', `found: ${entries.join(', ')}`)) failures++
 
-  // Test 2: creates brainstorm subdirectory
-  if (created) {
-    const brainstormDir = join(assignmentsDir, created, 'brainstorm')
-    if (!assert(existsSync(brainstormDir), 'creates brainstorm/ subdirectory')) failures++
-  }
-
-  // Test 3: second assignment gets next ID
+  // Test 2: second call gets next ID
   console.log('\nassignment increments ID:')
-  const result2 = runCmd(['assignment', 'payment', `--target=${TEST_DIR}`])
+  // Manually create a folder to simulate the agent having created the first assignment
+  const fse = await import('fs-extra')
+  await fse.default.ensureDir(join(assignmentsDir, '00001_feature_auth-system'))
+  const result2 = runCmd(['assignment', 'Add payment flow', `--target=${TEST_DIR}`])
   if (!assert(result2.status === 0, 'second assignment exits 0')) failures++
-  const entries2 = readdirSync(assignmentsDir)
-  const second = entries2.find(e => e.includes('payment'))
-  if (!assert(second && second.startsWith('00002'), 'second assignment gets ID 00002')) failures++
+  if (!assert(result2.stdout.includes('00002'), 'second assignment gets ID 00002')) failures++
 
-  // Test 4: fails without big_picture.md filled
+  // Test 3: fails without big_picture.md filled
   console.log('\nassignment without big_picture:')
   cleanup()
   runCmd(['init', `--target=${TEST_DIR}`])
-  const noBigPicture = runCmd(['assignment', 'test', `--target=${TEST_DIR}`])
+  const noBigPicture = runCmd(['assignment', 'test feature', `--target=${TEST_DIR}`])
   if (!assert(noBigPicture.status === 1, 'exits non-zero without big_picture filled')) failures++
 
-  // Test 5: numeric label + existing assignment guides user to continue
+  // Test 4: numeric label + existing assignment guides user to continue
   console.log('\nassignment numeric label disambiguation:')
   cleanup()
   runCmd(['init', `--target=${TEST_DIR}`])
   writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
-  runCmd(['assignment', 'auth-system', `--target=${TEST_DIR}`])
-  const beforeNumeric = readdirSync(join(TEST_DIR, '.specdev/assignments')).length
+  // Create a folder as if agent had created it from a previous assignment
+  await fse.default.ensureDir(join(TEST_DIR, '.specdev/assignments/00001_feature_auth-system'))
   const numericLabel = runCmd(['assignment', '1', `--target=${TEST_DIR}`])
-  const afterNumeric = readdirSync(join(TEST_DIR, '.specdev/assignments')).length
   if (!assert(numericLabel.status === 1, 'exits non-zero in non-interactive mode for numeric label')) failures++
-  if (!assert(afterNumeric === beforeNumeric, 'does not create a new assignment when numeric label matches existing ID')) failures++
+
+  // Test 5: no description exits non-zero
+  console.log('\nassignment without description:')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
+  const noDesc = runCmd(['assignment', `--target=${TEST_DIR}`])
+  if (!assert(noDesc.status === 1, 'exits non-zero without description')) failures++
+  if (!assert(noDesc.stderr.includes('No description'), 'prints usage hint')) failures++
+
+  // Test 6: --json flag outputs valid JSON
+  console.log('\nassignment --json output:')
+  const jsonResult = runCmd(['assignment', 'Add dark mode', `--target=${TEST_DIR}`, '--json'])
+  if (!assert(jsonResult.status === 0, 'exits 0 with --json')) failures++
+  let parsed
+  try {
+    parsed = JSON.parse(jsonResult.stdout)
+  } catch {
+    parsed = null
+  }
+  if (!assert(parsed !== null, 'outputs valid JSON', jsonResult.stdout)) failures++
+  if (parsed) {
+    if (!assert(parsed.id === '00001', 'JSON has correct id')) failures++
+    if (!assert(parsed.description === 'Add dark mode', 'JSON has correct description')) failures++
+    if (!assert(parsed.status === 'ok', 'JSON has status ok')) failures++
+    if (!assert(parsed.version === 1, 'JSON has version 1')) failures++
+    if (!assert(typeof parsed.assignments_dir === 'string', 'JSON has assignments_dir')) failures++
+  }
 
   cleanup()
   console.log('')

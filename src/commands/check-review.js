@@ -56,7 +56,23 @@ export async function checkReviewCommand(flags = {}) {
       next_action:
         parsed.verdict === 'approved'
           ? nextStepForPhase(parsed.phase)
-          : `Address findings, then write review/update-round-${parsed.round}.md`,
+          : `Address findings, then fill in review/update-round-${parsed.round}.md`,
+    }
+    if (parsed.verdict !== 'approved') {
+      // Create stub update file for structured consumers too
+      const updateFilePath = join(reviewDir, `update-round-${parsed.round}.md`)
+      const stub = [
+        `# Update (Round ${parsed.round})`,
+        '',
+        '## Changes Made',
+        '- [ ] TODO: describe what was changed and why',
+        '',
+        '## Files Modified',
+        '- [ ] TODO: list modified files',
+        '',
+      ].join('\n')
+      await fse.writeFile(updateFilePath, stub, 'utf-8')
+      payload.update_file = `review/update-round-${parsed.round}.md`
     }
     writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
     return
@@ -90,24 +106,28 @@ export async function checkReviewCommand(flags = {}) {
     blankLine()
     console.log(`Archived feedback to: ${name}/review/${archiveName}`)
     blankLine()
+
+    // Create stub update file so the agent has a concrete file to fill in
+    const updateFileName = `update-round-${parsed.round}.md`
+    const updateFilePath = join(reviewDir, updateFileName)
+    const stub = [
+      `# Update (Round ${parsed.round})`,
+      '',
+      '## Changes Made',
+      '- [ ] TODO: describe what was changed and why',
+      '',
+      '## Files Modified',
+      '- [ ] TODO: list modified files',
+      '',
+    ].join('\n')
+    await fse.writeFile(updateFilePath, stub, 'utf-8')
+
     printSection('Action required:')
-    console.log('   Address findings in the phase artifacts, then write a summary of changes:')
+    console.log('   1. Address each finding in the phase artifacts')
+    console.log(`   2. Fill in: ${name}/review/${updateFileName}`)
+    console.log('   3. Say "auto review" or run specdev review in a separate session')
     blankLine()
-    const updatePath = `${name}/review/update-round-${parsed.round}.md`
-    console.log(`   File: ${updatePath}`)
-    blankLine()
-    printSection('Update file format:')
-    printLines([
-      '  ```markdown',
-      `  # Update (Round ${parsed.round})`,
-      '  ## Changes Made',
-      '  - [what was changed and why]',
-      '  ## Files Modified',
-      '  - [list of modified files]',
-      '  ```',
-    ])
-    blankLine()
-    console.log('Then say "auto review" or run specdev review in a separate session.')
+    console.log(`   Stub created — update file is waiting at: ${name}/review/${updateFileName}`)
   }
 }
 
@@ -158,11 +178,9 @@ async function safeArchiveName(reviewDir, round) {
 function nextStepForPhase(phase) {
   switch (phase) {
     case 'brainstorm':
-      return 'Run specdev breakdown to create an implementation plan'
-    case 'breakdown':
-      return 'Run specdev implement to begin implementation'
+      return 'Run specdev approve brainstorm to proceed to breakdown and implementation'
     case 'implementation':
-      return 'Capture knowledge and close out the assignment'
+      return 'Run specdev approve implementation to proceed to summary'
     default:
       return 'Continue with the next workflow step'
   }

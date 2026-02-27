@@ -42,12 +42,22 @@ export async function ponderWorkflowCommand(flags = {}) {
 
   console.log(`Found ${assignments.length} assignment(s)`)
 
-  // Generate rule-based suggestions
-  const suggestions = generateWorkflowSuggestions(assignments)
+  const processedAssignments = await readProcessedCaptures(knowledgePath, 'workflow')
+  const uncapturedAssignments = assignments.filter((a) => !processedAssignments.has(a.name))
 
-  // Generate capture-diff suggestions from unprocessed assignments
-  const processedCaptures = await readProcessedCaptures(knowledgePath, 'workflow')
-  const captureSuggestions = generateCaptureWorkflowSuggestions(assignments, processedCaptures)
+  if (uncapturedAssignments.length === 0) {
+    blankLine()
+    console.log('No new assignments to distill. All discovered assignments were already captured.')
+    return
+  }
+
+  console.log(`Processing ${uncapturedAssignments.length} uncaptured assignment(s)`)
+
+  // Generate rule-based suggestions
+  const suggestions = generateWorkflowSuggestions(uncapturedAssignments)
+
+  // Generate capture-diff suggestions from uncaptured assignments
+  const captureSuggestions = generateCaptureWorkflowSuggestions(uncapturedAssignments)
   const allSuggestions = [...suggestions, ...captureSuggestions]
 
   if (allSuggestions.length === 0) {
@@ -59,15 +69,11 @@ export async function ponderWorkflowCommand(flags = {}) {
 
   // Present each suggestion
   const accepted = []
-  const acceptedCaptureNames = []
 
   for (const suggestion of allSuggestions) {
     const result = await presentSuggestion(suggestion)
     if (result) {
       accepted.push(result)
-      if (suggestion.assignmentName) {
-        acceptedCaptureNames.push(suggestion.assignmentName)
-      }
     }
   }
 
@@ -81,6 +87,14 @@ export async function ponderWorkflowCommand(flags = {}) {
       addingCustom = false
     }
   }
+
+  // Mark uncaptured assignments as processed so ponder doesn't repeat work.
+  // This is done even if nothing was accepted, because the assignments were reviewed.
+  await markCapturesProcessed(
+    knowledgePath,
+    'workflow',
+    uncapturedAssignments.map((a) => a.name)
+  )
 
   if (accepted.length === 0) {
     blankLine()
@@ -110,9 +124,6 @@ export async function ponderWorkflowCommand(flags = {}) {
 
   await fse.writeFile(filepath, content, 'utf-8')
 
-  // Mark only accepted capture diffs as processed
-  await markCapturesProcessed(knowledgePath, 'workflow', acceptedCaptureNames)
-
   blankLine()
   console.log(`✅ Saved ${accepted.length} observation(s) to:`)
   console.log(`   ${filepath}`)
@@ -121,12 +132,11 @@ export async function ponderWorkflowCommand(flags = {}) {
 /**
  * Generate suggestions from unprocessed capture diffs (workflow-diff.md)
  */
-function generateCaptureWorkflowSuggestions(assignments, processedCaptures) {
+function generateCaptureWorkflowSuggestions(assignments) {
   const suggestions = []
 
   for (const a of assignments) {
     if (!a.capture || !a.capture.workflowDiff) continue
-    if (processedCaptures.has(a.name)) continue
 
     suggestions.push({
       title: `Workflow diff from ${a.name}`,

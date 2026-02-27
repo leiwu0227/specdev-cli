@@ -55,6 +55,10 @@ function createAssignment(name) {
   return root
 }
 
+function writeGateStatus(assignmentRoot, gates) {
+  writeFileSync(join(assignmentRoot, 'status.json'), JSON.stringify(gates, null, 2) + '\n', 'utf-8')
+}
+
 function continueJson(assignment) {
   const args = ['continue', `--target=${TEST_DIR}`, '--json']
   if (assignment) {
@@ -98,21 +102,23 @@ async function runTests() {
   if (!assert(out.result.status === 0, 'continue runs for brainstorm state')) failures++
   if (!assert(out.payload && out.payload.state === 'brainstorm_in_progress', 'detects brainstorm_in_progress')) failures++
 
-  // breakdown_ready
-  console.log('\nbreakdown_ready:')
+  // brainstorm_checkpoint_ready (both proposal + design exist, gate not yet approved)
+  console.log('\nbrainstorm_checkpoint_ready:')
+  writeFileSync(join(a1, 'brainstorm', 'proposal.md'), '# Proposal\n')
   writeFileSync(join(a1, 'brainstorm', 'design.md'), '# Design\n')
   out = continueJson('00001_feature_brainstorm')
-  if (!assert(out.payload && out.payload.state === 'breakdown_ready', 'detects breakdown_ready')) failures++
+  if (!assert(out.payload && out.payload.state === 'brainstorm_checkpoint_ready', 'detects brainstorm_checkpoint_ready')) failures++
 
-  // implementation_ready
-  console.log('\nimplementation_ready:')
+  // breakdown_in_progress (brainstorm approved, no plan yet)
+  console.log('\nbreakdown_in_progress:')
+  writeGateStatus(a1, { brainstorm_approved: true })
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.state === 'breakdown_in_progress', 'detects breakdown_in_progress')) failures++
+
+  // implementation_in_progress (plan exists, tasks not all done)
+  console.log('\nimplementation_in_progress:')
   mkdirSync(join(a1, 'breakdown'), { recursive: true })
   writeFileSync(join(a1, 'breakdown', 'plan.md'), '# Plan\n')
-  out = continueJson('00001_feature_brainstorm')
-  if (!assert(out.payload && out.payload.state === 'implementation_ready', 'detects implementation_ready')) failures++
-
-  // implementation_in_progress
-  console.log('\nimplementation_in_progress:')
   mkdirSync(join(a1, 'implementation'), { recursive: true })
   writeFileSync(
     join(a1, 'implementation', 'progress.json'),
@@ -132,8 +138,16 @@ async function runTests() {
   if (!assert(out.payload && out.payload.state === 'implementation_in_progress', 'detects implementation_in_progress')) failures++
   if (!assert(out.payload && out.payload.progress && out.payload.progress.totalTasks === 3, 'parses total task count from progress.json')) failures++
 
-  // review_ready
-  console.log('\nreview_ready:')
+  // review feedback surfaced
+  console.log('\nreview feedback surfaced:')
+  mkdirSync(join(a1, 'review'), { recursive: true })
+  writeFileSync(join(a1, 'review', 'review-feedback.md'), '# Review Feedback\n\n**Verdict:** needs-changes\n')
+  out = continueJson('00001_feature_brainstorm')
+  if (!assert(out.payload && out.payload.review_feedback === 'review/review-feedback.md', 'surfaces review_feedback path')) failures++
+
+  // implementation_checkpoint_ready (all tasks complete, gate not approved)
+  console.log('\nimplementation_checkpoint_ready:')
+  rmSync(join(a1, 'review', 'review-feedback.md'))
   writeFileSync(
     join(a1, 'implementation', 'progress.json'),
     JSON.stringify(
@@ -148,18 +162,19 @@ async function runTests() {
     ) + '\n'
   )
   out = continueJson('00001_feature_brainstorm')
-  if (!assert(out.payload && out.payload.state === 'review_ready', 'detects review_ready')) failures++
+  if (!assert(out.payload && out.payload.state === 'implementation_checkpoint_ready', 'detects implementation_checkpoint_ready')) failures++
 
-  // review_feedback surfaced
-  console.log('\nreview feedback surfaced:')
-  mkdirSync(join(a1, 'review'), { recursive: true })
-  writeFileSync(join(a1, 'review', 'review-feedback.md'), '# Review Feedback\n\n**Verdict:** needs-changes\n')
+  // summary_in_progress (implementation approved, no capture diffs)
+  console.log('\nsummary_in_progress:')
+  writeGateStatus(a1, { brainstorm_approved: true, implementation_approved: true })
   out = continueJson('00001_feature_brainstorm')
-  if (!assert(out.payload && out.payload.review_feedback === 'review/review-feedback.md', 'surfaces review_feedback path')) failures++
+  if (!assert(out.payload && out.payload.state === 'summary_in_progress', 'detects summary_in_progress')) failures++
 
-  // completed
+  // completed (capture diffs exist)
   console.log('\ncompleted:')
-  writeFileSync(join(a1, 'review_report.md'), '# Review Report\n')
+  mkdirSync(join(a1, 'capture'), { recursive: true })
+  writeFileSync(join(a1, 'capture', 'project-notes-diff.md'), '# Project Notes Diff\n')
+  writeFileSync(join(a1, 'capture', 'workflow-diff.md'), '# Workflow Diff\n')
   out = continueJson('00001_feature_brainstorm')
   if (!assert(out.payload && out.payload.state === 'completed', 'detects completed')) failures++
 
@@ -176,8 +191,10 @@ async function runTests() {
   const a3 = createAssignment('00003_feature_revised')
   mkdirSync(join(a3, 'brainstorm'), { recursive: true })
   mkdirSync(join(a3, 'breakdown'), { recursive: true })
+  writeFileSync(join(a3, 'brainstorm', 'proposal.md'), '# Proposal\n')
   writeFileSync(join(a3, 'brainstorm', 'design.md'), '# Design\n')
   writeFileSync(join(a3, 'breakdown', 'plan.md'), '# Plan\n')
+  writeGateStatus(a3, { brainstorm_approved: true })
   writeFileSync(
     join(a3, 'brainstorm', 'revision.json'),
     JSON.stringify({ version: 1, revision: 2, timestamp: new Date().toISOString() }, null, 2) + '\n'
@@ -199,7 +216,9 @@ async function runTests() {
 
   const amb1 = createAssignment('00001_feature_alpha')
   mkdirSync(join(amb1, 'brainstorm'), { recursive: true })
+  writeFileSync(join(amb1, 'brainstorm', 'proposal.md'), '# Proposal\n')
   writeFileSync(join(amb1, 'brainstorm', 'design.md'), '# Design\n')
+  writeGateStatus(amb1, { brainstorm_approved: true })
   mkdirSync(join(amb1, 'breakdown'), { recursive: true })
   writeFileSync(join(amb1, 'breakdown', 'plan.md'), '# Plan\n')
   mkdirSync(join(amb1, 'implementation'), { recursive: true })
@@ -207,7 +226,9 @@ async function runTests() {
 
   const amb2 = createAssignment('00002_feature_beta')
   mkdirSync(join(amb2, 'brainstorm'), { recursive: true })
+  writeFileSync(join(amb2, 'brainstorm', 'proposal.md'), '# Proposal\n')
   writeFileSync(join(amb2, 'brainstorm', 'design.md'), '# Design\n')
+  writeGateStatus(amb2, { brainstorm_approved: true })
   mkdirSync(join(amb2, 'breakdown'), { recursive: true })
   writeFileSync(join(amb2, 'breakdown', 'plan.md'), '# Plan\n')
   mkdirSync(join(amb2, 'implementation'), { recursive: true })

@@ -60,15 +60,34 @@ else
   PHASE="new (no artifacts yet)"
 fi
 
+# Discover tool skills
+TOOLS_DIR="$SPECDEV_DIR/skills/tools"
+TOOL_SKILLS=""
+if [ -d "$TOOLS_DIR" ]; then
+  for skill_dir in "$TOOLS_DIR"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_md="$skill_dir/SKILL.md"
+    [ -f "$skill_md" ] || continue
+    skill_name=$(basename "$skill_dir")
+    # Extract description from frontmatter
+    skill_desc=$(sed -n '/^---$/,/^---$/{ /^description:/{ s/^description:[[:space:]]*//; p; } }' "$skill_md")
+    if [ -n "$skill_desc" ]; then
+      TOOL_SKILLS="${TOOL_SKILLS}${TOOL_SKILLS:+, }${skill_name} (${skill_desc})"
+    else
+      TOOL_SKILLS="${TOOL_SKILLS}${TOOL_SKILLS:+, }${skill_name}"
+    fi
+  done
+fi
+
 # Build context message
 CONTEXT="SpecDev active. Assignment: $ASSIGNMENT_NAME | Phase: $PHASE\n\n"
 
 case "$PHASE" in
   brainstorm)
-    CONTEXT="${CONTEXT}Rules:\n- Interactive Q&A to validate the design\n- Produce proposal.md and design.md\n- Do not start coding until design is approved\n\nNext: Complete design, get user approval, then run specdev breakdown"
+    CONTEXT="${CONTEXT}Rules:\n- Interactive Q&A to validate the design\n- Produce proposal.md and design.md\n- Do not start coding until design is approved\n\nNext: Complete design, run specdev checkpoint brainstorm, get user approval via specdev approve brainstorm"
     ;;
   breakdown)
-    CONTEXT="${CONTEXT}Rules:\n- Break design into executable tasks in breakdown/plan.md\n- Each task: 2-5 min, TDD, exact file paths and code\n- Include acceptance criteria for every task\n\nNext: Complete plan.md, auto-review, then proceed directly to implementation"
+    CONTEXT="${CONTEXT}Rules:\n- Break design into executable tasks in breakdown/plan.md\n- Each task: 2-5 min, TDD, exact file paths and code\n- Include acceptance criteria for every task\n\nNext: Complete plan.md, inline review, then implementation starts automatically"
     ;;
   implementation)
     CONTEXT="${CONTEXT}Rules:\n- TDD: write failing test -> make it pass -> refactor\n- No completion claims without running tests\n- One task at a time via subagents\n- Per-task review: spec compliance then code quality\n\nNext: Complete remaining tasks, get user approval"
@@ -77,6 +96,10 @@ case "$PHASE" in
     CONTEXT="${CONTEXT}Run specdev assignment <name> to start a new assignment."
     ;;
 esac
+
+if [ -n "$TOOL_SKILLS" ]; then
+  CONTEXT="${CONTEXT}\n\nTool skills available: ${TOOL_SKILLS}. Declare in plan tasks via Skills: field."
+fi
 
 CONTEXT="${CONTEXT}\n\nAnnounce every subtask with \"Specdev: <action>\"."
 

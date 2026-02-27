@@ -14,43 +14,16 @@
 
 ## Before starting
 
-Read always-apply skills from `skills/README.md`: `core/verification-before-completion.md` and `core/receiving-code-review.md`. These apply to every assignment throughout.
+Read always-apply skills: `skills/core/verification-before-completion.md` and `skills/core/receiving-code-review.md`. These apply to every assignment throughout.
 
-## Standard flow
+## Workflow
 
-1. Proposal
-   - User creates `brainstorm/proposal.md`.
-2. Plan
-   - Agent writes `breakdown/plan.md` using `task/planning_guide.md`.
-   - Run complexity/risk gate to decide required skills.
-3. Architecture prep (conditional)
-   - If gate result is `none`, skip scaffolding.
-   - If `lite`, invoke `skills/core/scaffolding-lite.md` and require Gate 1 approval (contracts).
-   - If `full`, invoke `skills/core/scaffolding-full.md` and require Gate 1 approval (full architecture).
-4. Implementation
-   - Follow `task/implementing_guide.md`.
-   - TDD per task, with binary success criteria.
-5. Validation
-   - Follow `task/validation_guide.md`.
-   - Stage 1 spec compliance review, then Stage 2 quality review.
-   - Apply verification-before-completion evidence.
-6. Finalize
-   - Follow `task/documentation_guide.md`.
-   - Update assignment status as DONE.
-7. Knowledge capture
-   - Distill learnings into `knowledge/` branches (codestyle, architecture, domain, workflow).
-   - If the assignment revealed workflow improvements, note them in `knowledge/_workflow_feedback/`.
-   - Keep entries concise and actionable — reference material, not a journal.
+All assignments follow the same 4 phases. See `_guides/workflow.md` for the full guide.
 
-## Skill logging
-
-For each invoked skill, add one row in `skills_invoked.md` including:
-
-- date
-- skill name
-- trigger condition
-- produced artifact path
-- status
+1. **Brainstorm** — interactive Q&A → validated design
+2. **Breakdown** — design → executable task plan
+3. **Implement** — subagent per task, TDD, review per task
+4. **Summary** — capture learnings, update docs
 
 ## Assignment folder structure
 
