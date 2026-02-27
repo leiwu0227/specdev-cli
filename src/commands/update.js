@@ -28,8 +28,8 @@ export async function updateCommand(flags = {}) {
     printSection('🔍 Dry run mode - would update:')
     printBullets([
       '_main.md',
-      '_router.md',
-      '_guides/ (all task and workflow guides)',
+      '_index.md',
+      '_guides/ (workflow guide and reference guides)',
       '_templates/ (scaffolding templates and examples)',
       'skills/core/ (all core workflow skills, fully overwritten)',
       'skills/tools/ (official built-in tool skills only)',
@@ -83,6 +83,11 @@ export async function updateCommand(flags = {}) {
         console.log(`   + ${path} (created — was missing)`)
       }
     }
+
+    // Sync tool skill wrappers
+    const { skillsSyncCommand } = await import('./skills-sync.js')
+    await skillsSyncCommand(flags)
+
     blankLine()
     printSection('📌 Preserved:')
     printBullets([
