@@ -21,9 +21,8 @@ next: knowledge-capture
 
 | Script | Purpose | When to run |
 |--------|---------|-------------|
-| `.specdev/skills/core/implementing/scripts/extract-tasks.sh` | Parse plan into structured JSON task list | At the start |
-| `.specdev/skills/core/implementing/scripts/track-progress.sh` | Mark tasks started/completed, get summary | After each task |
-| `.specdev/skills/core/implementing/scripts/poll-for-feedback.sh` | Block until review feedback arrives | After dispatching subagent review |
+| `scripts/extract-tasks.sh` | Parse plan into structured JSON task list | At the start |
+| `scripts/track-progress.sh` | Mark tasks started/completed, get summary | After each task |
 
 ## Prompts
 
@@ -37,7 +36,7 @@ next: knowledge-capture
 ### Phase 1: Setup
 
 1. Read `breakdown/plan.md`
-2. Run `.specdev/skills/core/implementing/scripts/extract-tasks.sh <plan-file>` to get the structured task list
+2. Run `scripts/extract-tasks.sh <plan-file>` to get the structured task list
 3. Review — how many tasks, their names, file paths
 
 ### Phase 2: Per-Task Execution
@@ -45,31 +44,22 @@ next: knowledge-capture
 For each task in order:
 
 1. Run `scripts/track-progress.sh <plan-file> <N> started`
-2. Read task execution mode:
-   - Default: `**Mode:** full` (or omitted) -> use full TDD + review loop
-   - Lightweight: `**Mode:** lightweight` -> for trivial scaffold/config-only tasks with no meaningful executable behavior
-3. **Dispatch implementer** — use `prompts/implementer.md` with FULL task text
+2. **Dispatch implementer** — use `prompts/implementer.md` with FULL task text
    - Fresh subagent, no prior context
    - If the task has a `Skills:` field, read each listed SKILL.md and inject content into the `{TASK_SKILLS}` placeholder
    - Look for skills in `skills/core/` first, then `skills/tools/`
    - Subagent implements, tests, commits, self-reviews
-4. **Unified review** — dispatch `prompts/code-reviewer.md`
+3. **Unified review** — dispatch `prompts/code-reviewer.md`
    - Reviewer checks spec compliance first; FAIL blocks merge
    - Reviewer then checks quality; CRITICAL findings block merge
-   - If FAIL/NOT READY: implementer fixes -> re-review (loop until PASS + READY)
-5. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> <N> completed`
-
-When task mode is `lightweight`:
-
-- Still dispatch implementer with full task text
-- Require concrete file checks and command evidence
-- Skip reviewer loop unless the task touched executable logic
-- Explicitly document why lightweight mode was acceptable in the task summary
+   - If FAIL/NOT READY: implementer fixes → re-review (loop until PASS + READY)
+   - For `lightweight` mode tasks: skip reviewer unless the task touched executable logic
+4. Run `scripts/track-progress.sh <plan-file> <N> completed`
 
 ### Phase 3: Final Review
 
 1. Run full test suite one final time
-2. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> summary`
+2. Run `scripts/track-progress.sh <plan-file> summary`
 3. Present a summary to the user inline: what was built, tests passing, any notable decisions
 4. Ask the user for approval to proceed to knowledge capture
    - If user approves: proceed to knowledge capture

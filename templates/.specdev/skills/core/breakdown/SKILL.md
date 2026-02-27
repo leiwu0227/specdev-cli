@@ -19,22 +19,16 @@ next: implementing
 
 ## Process
 
-### Phase 1: Read Design
+### Phase 1: Read Design and Decompose
 
-1. Read `brainstorm/design.md` from the assignment folder
-2. Identify all components, features, and behaviors described
-3. Understand the architecture and how pieces connect
-4. Note the testing approach and success criteria
-
-### Phase 2: Decompose
-
-Break the design into ordered tasks. Each task should be:
+1. Read `brainstorm/design.md` — understand the architecture, components, and success criteria
+2. Break the design into ordered tasks. Each task should be:
 
 - **2-5 minutes of work** — one logical unit
 - **Independent enough to commit** — each task produces working code
 - **Ordered by dependency** — later tasks build on earlier ones
 
-### Phase 3: Detail Each Task
+### Phase 2: Detail Each Task
 
 Every task MUST follow this structure (compact form shown):
 
@@ -64,19 +58,15 @@ Mode rules:
 - `full` (default): full TDD + unified review loop (spec compliance + code quality)
 - `lightweight`: only for trivial scaffold/config tasks with no meaningful executable behavior
 
-### Skill Declaration
+**Skill declaration:** Run `specdev skills` to list available skills. Declare only what each task needs:
 
-`specdev breakdown` prints available tool skills. Use exact names from that list.
+| Task involves | Declare skill |
+|---------------|--------------|
+| Writing new code | `test-driven-development` |
+| Debugging | `systematic-debugging` |
+| Project-specific tool | exact name from `specdev skills` |
 
-For each task, declare needed skills:
-- Task involves writing new code → `test-driven-development`
-- Task involves debugging → `systematic-debugging`
-- Task involves scaffolding → `scaffolding-lite` or `scaffolding-full`
-- Task needs a project tool → use the exact name from the tool skills list
-
-Only declare skills the task actually needs.
-
-### Phase 4: Write Plan
+### Phase 3: Write Plan
 
 1. Write the plan with header:
 
@@ -100,13 +90,12 @@ Only declare skills the task actually needs.
    - If the review finds issues: address them and re-run the review
    - Once approved: proceed directly to implementation (see below)
 
-### Phase 5: Start Implementation
+### Phase 4: Start Implementation
 
 Once the plan review passes, proceed immediately — no user approval needed:
 
-1. Ensure `implementation/` directory exists in the assignment folder
-2. Write `implementation/progress.json` with `{}` if it doesn't exist
-3. Read `.specdev/skills/core/implementing/SKILL.md` and follow it
+1. Ensure `implementation/` directory and `implementation/progress.json` (`{}`) exist
+2. Read `.specdev/skills/core/implementing/SKILL.md` and follow it
 
 ## Rules
 

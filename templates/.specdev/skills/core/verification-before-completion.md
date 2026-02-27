@@ -2,26 +2,12 @@
 
 **Always-apply.** Read at assignment start, follow throughout.
 
-## Overview
+**Core principle:** Evidence before claims, always. Spirit over letter — rephrasing the claim doesn't bypass the rule.
 
-Claiming work is complete without verification is dishonesty, not efficiency.
-
-**Core principle:** Evidence before claims, always.
-
-**Violating the letter of this rule is violating the spirit of this rule.**
-
-## The Iron Law
+## The Gate
 
 ```
-NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
-```
-
-If you haven't run the verification command in this message, you cannot claim it passes.
-
-## The Gate Function
-
-```
-BEFORE claiming any status or expressing satisfaction:
+BEFORE claiming any status:
 
 1. IDENTIFY: What command proves this claim?
 2. RUN: Execute the FULL command (fresh, complete)
@@ -30,8 +16,6 @@ BEFORE claiming any status or expressing satisfaction:
    - If NO: State actual status with evidence
    - If YES: State claim WITH evidence
 5. ONLY THEN: Make the claim
-
-Skip any step = lying, not verifying
 ```
 
 ## Common Failures
@@ -39,35 +23,16 @@ Skip any step = lying, not verifying
 | Claim | Requires | Not Sufficient |
 |-------|----------|----------------|
 | Tests pass | Test command output: 0 failures | Previous run, "should pass" |
-| Linter clean | Linter output: 0 errors | Partial check, extrapolation |
 | Build succeeds | Build command: exit 0 | Linter passing, logs look good |
 | Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
-| Regression test works | Red-green cycle verified | Test passes once |
-| Requirements met | Line-by-line checklist | Tests passing |
 
-## Red Flags - STOP
+## Red Flags — STOP
 
-- Using "should", "probably", "seems to"
-- Expressing satisfaction before verification ("Great!", "Perfect!", "Done!")
-- About to commit/push/PR without verification
-- Relying on partial verification
-- Thinking "just this once"
-- ANY wording implying success without having run verification
+- Using "should", "probably", "seems to" — these are not evidence
+- Expressing satisfaction before verification ("Great!", "Done!")
+- Relying on a previous run or partial check — run it fresh, run it complete
 
-## Rationalization Prevention
-
-| Excuse | Reality |
-|--------|---------|
-| "Should work now" | RUN the verification |
-| "I'm confident" | Confidence is not evidence |
-| "Just this once" | No exceptions |
-| "Linter passed" | Linter is not compiler |
-| "Agent said success" | Verify independently |
-| "I'm tired" | Exhaustion is not an excuse |
-| "Partial check is enough" | Partial proves nothing |
-| "Different words so rule doesn't apply" | Spirit over letter |
-
-## Required Evidence Format
+## Evidence Format
 
 | Command | Exit Code | Key Output | Notes |
 |---------|-----------|------------|-------|
@@ -76,8 +41,3 @@ Skip any step = lying, not verifying
 ## Deliverable
 
 Add a `Verification Evidence` section in `review/validation_checklist.md` with the table above.
-
-## Acceptance
-
-- Completion claims are backed by reproducible command outputs
-- No claim without fresh evidence in the same message

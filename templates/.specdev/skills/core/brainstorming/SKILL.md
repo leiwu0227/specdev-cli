@@ -15,7 +15,7 @@ next: breakdown
 - **Input:** A vague idea, feature wish, bug report, or refactoring goal
 - **Process:** Context scan → Q&A (1-3 tightly related questions per message) → explore approaches → present design sections → validate each section
 - **Output:** `brainstorm/proposal.md` + `brainstorm/design.md` in the assignment folder
-- **Next phase:** breakdown (automatic, triggered by user saying `auto review`)
+- **Next phase:** breakdown (after user runs `specdev approve brainstorm`)
 
 ## Scripts
 
@@ -30,14 +30,10 @@ next: breakdown
 1. Run `scripts/get-project-context.sh <project-root>` to get current state
 2. Read the output — repo structure, recent work, existing knowledge
 3. Ask the user 1-3 tightly related questions per message to understand their goal
-4. Prefer multiple-choice questions when possible
-5. Continue until you understand: purpose, constraints, success criteria
-
-**Rules:**
-- Ask 1-3 related questions per message (avoid unrelated batching)
-- Multiple choice preferred over open-ended
-- Acknowledge each answer before asking the next question
-- Do not proceed until you understand what you are building
+   - Prefer multiple-choice over open-ended
+   - Acknowledge each answer before asking the next question
+4. Continue until you understand: purpose, constraints, success criteria
+5. Do not proceed until you understand what you are building
 
 ### Phase 2: Explore Approaches
 
@@ -75,7 +71,7 @@ Once all design sections are validated:
 **After stopping**, the user may:
 - Review the design themselves and provide feedback
 - Run `specdev review brainstorm` in a separate session for an independent review
-- Say `auto review` to proceed — a subagent review (1 round) will check the design, then breakdown begins automatically
+- Run `specdev approve brainstorm` to proceed — a subagent review (1 round) checks the design, then breakdown begins automatically
 
 ## Red Flags
 
@@ -86,6 +82,5 @@ Once all design sections are validated:
 
 ## Integration
 
-- **Before this skill:** orientation (if unsure whether brainstorming is needed)
-- **After this skill:** breakdown (automatic, turns design into executable steps)
-- **Review:** Subagent review (1 round) runs automatically before breakdown; user may also run `specdev review brainstorm` manually
+- **After this skill:** breakdown (auto-chains after `specdev approve brainstorm`)
+- **Review:** User may run `specdev review brainstorm` before approving
