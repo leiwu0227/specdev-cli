@@ -5,6 +5,7 @@ import { ponderWorkflowCommand } from './ponder-workflow.js'
 import { ponderProjectCommand } from './ponder-project.js'
 import { distillWorkflowCommand } from './distill-workflow.js'
 import { distillProjectCommand } from './distill-project.js'
+import { distillMarkCommand } from './distill-mark.js'
 import { skillsCommand } from './skills.js'
 import { startCommand } from './start.js'
 import { assignmentCommand } from './assignment.js'
@@ -53,8 +54,8 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     } else if (subcommand === 'project') {
       await distillProjectCommand(flags)
     } else if (subcommand === 'mark-processed') {
-      console.error('distill mark-processed not yet implemented')
-      process.exitCode = 1
+      const markArgs = positionalArgs.slice(1)
+      await distillMarkCommand(markArgs, flags)
     } else {
       console.error(`Unknown distill subcommand: ${subcommand || '(none)'}`)
       console.log('Usage: specdev distill <project|workflow|mark-processed>')
