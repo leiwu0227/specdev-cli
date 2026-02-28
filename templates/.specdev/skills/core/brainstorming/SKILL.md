@@ -66,12 +66,13 @@ Once all design sections are validated:
    - Success criteria
    - Testing approach
 4. Announce: "Brainstorm complete. Design written to assignment folder."
-5. Stop and wait for user
+5. Tell the user: "Run `specdev approve brainstorm` when you're ready to proceed."
+6. Stop and wait — do NOT proceed to breakdown until the user has approved
 
 **After stopping**, the user may:
 - Review the design themselves and provide feedback
 - Run `specdev review brainstorm` in a separate session for an independent review
-- Run `specdev approve brainstorm` to proceed — a subagent review (1 round) checks the design, then breakdown begins automatically
+- Run `specdev approve brainstorm` to proceed to breakdown
 
 ## Red Flags
 
@@ -82,5 +83,5 @@ Once all design sections are validated:
 
 ## Integration
 
-- **After this skill:** breakdown (auto-chains after `specdev approve brainstorm`)
+- **After this skill:** breakdown (starts after user runs `specdev approve brainstorm`)
 - **Review:** User may run `specdev review brainstorm` before approving
