@@ -17,6 +17,52 @@ export function parseAssignmentId(name) {
 }
 
 /**
+ * Resolve an assignment selector to a concrete assignment path.
+ * Supports:
+ * - full assignment directory name (e.g. 00001_feature_auth)
+ * - numeric assignment id (e.g. 1, 00001)
+ * - absolute assignment path
+ */
+export async function resolveAssignmentSelector(specdevPath, selector) {
+  if (typeof selector !== 'string') return null
+  const wanted = selector.trim()
+  if (!wanted) return null
+
+  const assignmentsDir = join(specdevPath, 'assignments')
+
+  // Preserve existing behavior for full names and absolute paths.
+  const explicitPath = join(assignmentsDir, wanted)
+  if (await fse.pathExists(explicitPath)) {
+    return { path: explicitPath, name: assignmentName(explicitPath) }
+  }
+
+  // Numeric shorthand: match by parsed assignment id.
+  if (/^\d+$/.test(wanted)) {
+    if (!(await fse.pathExists(assignmentsDir))) return null
+    const entries = await fse.readdir(assignmentsDir, { withFileTypes: true })
+    const wantedId = Number(wanted)
+    const matches = entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .filter((name) => {
+        const parsed = parseAssignmentId(name)
+        return parsed.id !== null && Number(parsed.id) === wantedId
+      })
+
+    if (matches.length === 1) {
+      const name = matches[0]
+      return { path: join(assignmentsDir, name), name }
+    }
+
+    if (matches.length > 1) {
+      return { ambiguous: true, matches, wanted }
+    }
+  }
+
+  return null
+}
+
+/**
  * Resolve assignment path from flags (--assignment or latest)
  */
 export async function resolveAssignmentPath(flags) {
@@ -25,12 +71,18 @@ export async function resolveAssignmentPath(flags) {
   await requireSpecdevDirectory(specdevPath)
 
   if (flags.assignment) {
-    const assignmentPath = join(specdevPath, 'assignments', flags.assignment)
-    if (!(await fse.pathExists(assignmentPath))) {
+    const resolved = await resolveAssignmentSelector(specdevPath, flags.assignment)
+    if (!resolved) {
       console.error(`❌ Assignment not found: ${flags.assignment}`)
       process.exit(1)
     }
-    return assignmentPath
+    if (resolved.ambiguous) {
+      console.error(`❌ Assignment id is ambiguous: ${resolved.wanted}`)
+      console.error(`   Matches: ${resolved.matches.join(', ')}`)
+      console.error('   Use --assignment=<full-assignment-name>')
+      process.exit(1)
+    }
+    return resolved.path
   }
 
   const latest = await findLatestAssignment(specdevPath)

@@ -1,5 +1,12 @@
 import { strict as assert } from 'assert'
-import { parseAssignmentId, assignmentName } from '../src/utils/assignment.js'
+import { mkdtempSync, mkdirSync, rmSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
+import {
+  parseAssignmentId,
+  assignmentName,
+  resolveAssignmentSelector,
+} from '../src/utils/assignment.js'
 
 const tests = []
 let passed = 0
@@ -40,6 +47,67 @@ tests.push({
   fn: () => {
     assert.equal(assignmentName('/foo/bar/00001_feature_auth'), '00001_feature_auth')
     assert.equal(assignmentName('C:\\foo\\bar\\00001_feature_auth'), '00001_feature_auth')
+  }
+})
+
+tests.push({
+  name: 'resolveAssignmentSelector resolves explicit assignment name',
+  fn: async () => {
+    const root = mkdtempSync(join(tmpdir(), 'specdev-assignment-utils-'))
+    try {
+      const specdevPath = join(root, '.specdev')
+      const assignments = join(specdevPath, 'assignments')
+      mkdirSync(join(assignments, '00001_feature_auth'), { recursive: true })
+
+      const result = await resolveAssignmentSelector(specdevPath, '00001_feature_auth')
+      assert.ok(result)
+      assert.equal(result.name, '00001_feature_auth')
+      assert.equal(result.path, join(assignments, '00001_feature_auth'))
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  }
+})
+
+tests.push({
+  name: 'resolveAssignmentSelector resolves numeric shorthand',
+  fn: async () => {
+    const root = mkdtempSync(join(tmpdir(), 'specdev-assignment-utils-'))
+    try {
+      const specdevPath = join(root, '.specdev')
+      const assignments = join(specdevPath, 'assignments')
+      mkdirSync(join(assignments, '00001_feature_auth'), { recursive: true })
+
+      const result = await resolveAssignmentSelector(specdevPath, '1')
+      assert.ok(result)
+      assert.equal(result.name, '00001_feature_auth')
+      assert.equal(result.path, join(assignments, '00001_feature_auth'))
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  }
+})
+
+tests.push({
+  name: 'resolveAssignmentSelector reports ambiguous numeric shorthand',
+  fn: async () => {
+    const root = mkdtempSync(join(tmpdir(), 'specdev-assignment-utils-'))
+    try {
+      const specdevPath = join(root, '.specdev')
+      const assignments = join(specdevPath, 'assignments')
+      mkdirSync(join(assignments, '001_feature_auth'), { recursive: true })
+      mkdirSync(join(assignments, '0001_bugfix_login'), { recursive: true })
+
+      const result = await resolveAssignmentSelector(specdevPath, '1')
+      assert.ok(result)
+      assert.equal(result.ambiguous, true)
+      assert.deepEqual(
+        new Set(result.matches),
+        new Set(['001_feature_auth', '0001_bugfix_login'])
+      )
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   }
 })
 

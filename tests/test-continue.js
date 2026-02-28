@@ -178,6 +178,20 @@ async function runTests() {
   out = continueJson('00001_feature_brainstorm')
   if (!assert(out.payload && out.payload.state === 'completed', 'detects completed')) failures++
 
+  // numeric assignment shorthand
+  console.log('\nnumeric assignment shorthand:')
+  out = continueJson('1')
+  if (!assert(out.result.status === 0, 'accepts numeric --assignment selector')) failures++
+  if (!assert(out.payload && out.payload.assignment === '00001_feature_brainstorm', 'resolves numeric selector to assignment name')) failures++
+
+  // ambiguous numeric assignment shorthand
+  console.log('\nambiguous numeric assignment shorthand:')
+  const a1Alt = createAssignment('001_feature_brainstorm-alt')
+  mkdirSync(join(a1Alt, 'brainstorm'), { recursive: true })
+  out = continueJson('1')
+  if (!assert(out.result.status === 1, 'fails when numeric selector is ambiguous')) failures++
+  if (!assert(out.payload && out.payload.state === 'assignment_ambiguous', 'reports assignment_ambiguous for numeric selector')) failures++
+
   // legacy layout blocker
   console.log('\nlegacy layout blocker:')
   const a2 = createAssignment('00002_feature_legacy')

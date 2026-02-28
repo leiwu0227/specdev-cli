@@ -10,6 +10,7 @@ import { detectAssignmentState } from '../utils/state.js'
 import { askChoice } from '../utils/prompt.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
+import { resolveAssignmentSelector } from '../utils/assignment.js'
 
 const ASSIGNMENT_AMBIGUITY_WINDOW_MS = 15 * 60 * 1000
 
@@ -138,8 +139,8 @@ async function resolveAssignment(specdevPath, flags) {
   }
 
   if (typeof flags.assignment === 'string') {
-    const explicit = join(assignmentsDir, flags.assignment)
-    if (!(await fse.pathExists(explicit))) {
+    const resolved = await resolveAssignmentSelector(specdevPath, flags.assignment)
+    if (!resolved) {
       return {
         selected: null,
         payload: {
@@ -157,8 +158,26 @@ async function resolveAssignment(specdevPath, flags) {
         },
       }
     }
+    if (resolved.ambiguous) {
+      return {
+        selected: null,
+        payload: {
+          version: 1,
+          status: 'blocked',
+          state: 'assignment_ambiguous',
+          blockers: [
+            {
+              code: 'assignment_ambiguous',
+              detail: `Assignment id is ambiguous: ${resolved.wanted} (${resolved.matches.join(', ')})`,
+              recommended_fix: 'Use --assignment with a full assignment name',
+            },
+          ],
+          next_action: 'Choose one of the matching assignments and retry',
+        },
+      }
+    }
     return {
-      selected: { name: flags.assignment, path: explicit },
+      selected: { name: resolved.name, path: resolved.path },
       selectedBy: 'flag',
     }
   }
