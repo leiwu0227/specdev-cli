@@ -1,6 +1,6 @@
 ---
 name: implementing
-description: Execute a plan task-by-task with fresh subagents and one review per task
+description: Execute a plan task-by-task with fresh subagents, mode-based review, and batch reporting
 type: core
 phase: implement
 input: breakdown/plan.md
@@ -13,7 +13,7 @@ next: knowledge-capture
 ## Contract
 
 - **Input:** `breakdown/plan.md` from the assignment folder
-- **Process:** Extract tasks -> dispatch subagent per task -> unified review (spec + quality) -> commit
+- **Process:** Extract tasks -> execute in batches of 3 -> dispatch subagent per task -> mode-based review -> commit -> batch test + report
 - **Output:** Implemented code, committed per-task, with progress tracked
 - **Next phase:** knowledge-capture
 
@@ -29,7 +29,7 @@ next: knowledge-capture
 | Prompt | Purpose | When to dispatch |
 |--------|---------|-----------------|
 | `prompts/implementer.md` | Fresh subagent to implement one task | Per task |
-| `prompts/code-reviewer.md` | Verify spec compliance first, then code quality | After implementer completes |
+| `prompts/code-reviewer.md` | Verify spec compliance first, then code quality | After implementer completes (`full` mode only) |
 
 ## Process
 
@@ -39,9 +39,11 @@ next: knowledge-capture
 2. Run `scripts/extract-tasks.sh <plan-file>` to get the structured task list
 3. Review — how many tasks, their names, file paths
 
-### Phase 2: Per-Task Execution
+### Phase 2: Batch Execution
 
-For each task in order:
+Execute tasks in batches of 3. For each batch:
+
+#### Per task (within the batch):
 
 1. Run `scripts/track-progress.sh <plan-file> <N> started`
 2. **Dispatch implementer** — use `prompts/implementer.md` with FULL task text
@@ -49,12 +51,20 @@ For each task in order:
    - If the task has a `Skills:` field, read each listed SKILL.md and inject content into the `{TASK_SKILLS}` placeholder
    - Look for skills in `skills/core/` first, then `skills/tools/`
    - Subagent implements, tests, commits, self-reviews
-3. **Unified review** — dispatch `prompts/code-reviewer.md`
-   - Reviewer checks spec compliance first; FAIL blocks merge
-   - Reviewer then checks quality; CRITICAL findings block merge
-   - If FAIL/NOT READY: implementer fixes → re-review (loop until PASS + READY)
-   - For `lightweight` mode tasks: skip reviewer unless the task touched executable logic
+3. **Mode-based review:**
+   - `full`: dispatch `prompts/code-reviewer.md` — FAIL/NOT READY blocks; implementer fixes → re-review loop
+   - `standard`: self-review only (implementer already did this) — no reviewer subagent
+   - `lightweight`: skip review unless the task touched executable logic
 4. Run `scripts/track-progress.sh <plan-file> <N> completed`
+
+#### After each batch:
+
+1. Run the full test suite
+2. If tests fail: stop, debug, and fix before continuing to the next batch
+3. Report batch summary: tasks completed, tests passing, any notable decisions
+4. Continue to next batch (no user gate — informational only)
+
+The last batch may have fewer than 3 tasks.
 
 ### Phase 3: Final Review
 
