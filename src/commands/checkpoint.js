@@ -24,6 +24,11 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   }
 
   let assignmentPath
+  // Accept assignment as positional arg (e.g. specdev checkpoint brainstorm 1)
+  if (!flags.assignment && positionalArgs[1]) {
+    flags.assignment = positionalArgs[1]
+  }
+
   if (flags.assignment && isAbsolute(flags.assignment)) {
     assignmentPath = flags.assignment
   } else {

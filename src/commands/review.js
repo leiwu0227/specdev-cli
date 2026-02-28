@@ -33,6 +33,11 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
     return
   }
 
+  // Accept assignment as positional arg (e.g. specdev review brainstorm 1)
+  if (!flags.assignment && positionalArgs[1]) {
+    flags.assignment = positionalArgs[1]
+  }
+
   const assignmentPath = await resolveAssignmentPath(flags)
   const name = assignmentName(assignmentPath)
 
