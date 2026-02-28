@@ -15,8 +15,13 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   if (!phase) {
     console.error('Missing required phase argument')
     console.log(`   Usage: specdev review <${VALID_PHASES.join(' | ')}>`)
+    console.log(`   Usage: specdev review done`)
     process.exitCode = 1
     return
+  }
+
+  if (phase === 'done') {
+    return reviewDoneCommand(positionalArgs, flags)
   }
 
   if (phase === 'breakdown') {
@@ -131,11 +136,55 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   ])
   blankLine()
   console.log(`Reviewing assignment: ${name}`)
+  blankLine()
+  console.log('After writing findings, run:')
+  console.log(`   specdev review done`)
   console.log('')
   console.log('IMPORTANT: Do NOT run check-review in this session.')
-  console.log('Your job is to review and write findings to the file above.')
-  console.log('The MAIN coding agent (in a separate session) will run:')
+  console.log('check-review is for the MAIN coding agent in a separate session.')
+}
+
+async function reviewDoneCommand(positionalArgs, flags) {
+  // Accept assignment as positional arg (e.g. specdev review done 1)
+  if (!flags.assignment && positionalArgs[1]) {
+    flags.assignment = positionalArgs[1]
+  }
+
+  const assignmentPath = await resolveAssignmentPath(flags)
+  const name = assignmentName(assignmentPath)
+  const reviewDir = join(assignmentPath, 'review')
+  const feedbackPath = join(reviewDir, 'review-feedback.md')
+
+  if (!(await fse.pathExists(feedbackPath))) {
+    console.error('❌ review-feedback.md not found')
+    console.log(`   Expected: ${name}/review/review-feedback.md`)
+    console.log('   Write your findings to this file before running review done.')
+    process.exitCode = 1
+    return
+  }
+
+  const content = await fse.readFile(feedbackPath, 'utf-8')
+  const missing = []
+  if (!content.match(/\*\*Phase:\*\*/i)) missing.push('**Phase:** field')
+  if (!content.match(/\*\*Verdict:\*\*/i)) missing.push('**Verdict:** field')
+  if (!content.match(/## Findings/i)) missing.push('## Findings section')
+
+  if (missing.length > 0) {
+    console.error('❌ review-feedback.md is incomplete')
+    for (const item of missing) {
+      console.log(`   Missing: ${item}`)
+    }
+    console.log('   Fix the file and run specdev review done again.')
+    process.exitCode = 1
+    return
+  }
+
+  console.log(`✅ Review feedback validated for ${name}`)
+  blankLine()
+  console.log('Feedback file is ready. The MAIN coding agent should run:')
   console.log(`   specdev check-review --assignment=${name}`)
+  blankLine()
+  console.log('You can now end this review session.')
 }
 
 async function detectNextRound(reviewDir) {
