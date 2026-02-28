@@ -13,13 +13,32 @@ next: implementing
 ## Contract
 
 - **Input:** `brainstorm/design.md` from the assignment folder
-- **Process:** Read design → decompose into tasks → detail each task with TDD steps, exact code, exact commands
+- **Process:** Review design (subagent, up to 2 rounds) → decompose into tasks → detail each task with TDD steps, exact code, exact commands
 - **Output:** `breakdown/plan.md` in the assignment folder
 - **Next phase:** implementing (automatic)
 
 ## Process
 
-### Phase 1: Read Design and Decompose
+### Phase 1: Design Review
+
+Before decomposing, verify the design is complete enough to plan against. Dispatch a subagent to review `brainstorm/design.md`:
+
+**Review criteria:**
+- Are the goal, architecture, and success criteria clear and specific?
+- Are there obvious gaps (missing error handling, unclear data flow, unaddressed edge cases)?
+- Is the scope well-bounded (no vague "and more" items)?
+- Are decisions documented with reasoning?
+
+**Does NOT check:** code-level details or whether the design is the "best" approach (user already approved the direction).
+
+**If issues found:**
+1. Fix `brainstorm/design.md` directly — add missing sections, clarify vague language, tighten scope
+2. Re-review (max 2 rounds total)
+3. If still failing after 2 rounds: surface findings to user and pause
+
+This is a lightweight sanity check — the design was already validated section-by-section with the user during brainstorm.
+
+### Phase 2: Read Design and Decompose
 
 1. Read `brainstorm/design.md` — understand the architecture, components, and success criteria
 2. Break the design into ordered tasks. Each task should be:
@@ -28,7 +47,7 @@ next: implementing
 - **Independent enough to commit** — each task produces working code
 - **Ordered by dependency** — later tasks build on earlier ones
 
-### Phase 2: Detail Each Task
+### Phase 3: Detail Each Task
 
 Every task MUST follow this structure (compact form shown):
 
@@ -66,7 +85,7 @@ Mode rules:
 | Debugging | `systematic-debugging` |
 | Project-specific tool | exact name from `specdev skills` |
 
-### Phase 3: Write Plan
+### Phase 4: Write Plan
 
 1. Write the plan with header:
 
@@ -90,7 +109,7 @@ Mode rules:
    - If the review finds issues: address them and re-run the review
    - Once approved: proceed directly to implementation (see below)
 
-### Phase 4: Start Implementation
+### Phase 5: Start Implementation
 
 Once the plan review passes, proceed immediately — no user approval needed:
 
@@ -116,4 +135,4 @@ Once the plan review passes, proceed immediately — no user approval needed:
 
 - **Before this skill:** brainstorming (produces the design this skill reads)
 - **After this skill:** implementing (auto-chains — proceed directly after plan review passes)
-- **Review:** Inline subagent review (1-2 rounds) checks the plan. Do NOT use `specdev review` here — proceed directly to implementing
+- **Review:** Design review (subagent, up to 2 rounds) runs first, then plan review (subagent, 1-2 rounds). Do NOT use `specdev review` here — proceed directly to implementing
