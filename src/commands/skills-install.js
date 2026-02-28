@@ -30,7 +30,6 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
   let selectedSkills, selectedAgents
 
   if (flags.skills) {
-    // Non-interactive mode
     selectedSkills = flags.skills.split(',').map(s => s.trim())
     const unknowns = selectedSkills.filter(s => !available.some(a => a.name === s))
     if (unknowns.length > 0) {
@@ -40,16 +39,8 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
       return
     }
   } else {
-    // Interactive mode: show available skills
-    console.log('\nAvailable tool skills:')
-    available.forEach((s, i) => {
-      const desc = s.description ? ` — ${s.description}` : ''
-      console.log(`  [${i + 1}] ${s.name}${desc}`)
-    })
-    blankLine()
-    console.log('Use --skills=name1,name2 to select skills non-interactively')
-    console.log('Example: specdev skills install --skills=fireperp')
-    return
+    // Install all available tool skills
+    selectedSkills = available.map(s => s.name)
   }
 
   if (flags.agents) {
@@ -81,11 +72,16 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
     const skillContent = await fse.readFile(skillMdPath, 'utf-8')
     const frontmatter = parseFrontmatter(skillContent)
 
-    // Generate wrapper
+    // Extract body (everything after frontmatter)
+    const bodyMatch = skillContent.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/)
+    const body = bodyMatch ? bodyMatch[1].trim() : ''
+
+    // Generate wrapper with full skill content
     const wrapperContent = generateWrapperContent({
       name: frontmatter.name || skillName,
       description: frontmatter.description || '',
       summary: '',
+      body,
     })
 
     // Write wrappers to each agent

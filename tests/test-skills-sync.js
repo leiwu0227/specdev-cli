@@ -2,6 +2,7 @@ import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createMockToolSkill } from './helpers.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
@@ -24,29 +25,30 @@ function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: tru
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 mkdirSync(join(TEST_DIR, '.claude', 'skills'), { recursive: true })
+createMockToolSkill(TEST_DIR, 'mock-tool')
 
-// Install fireperp
-runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=fireperp', '--agents=claude-code'])
+// Install mock-tool
+runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=mock-tool', '--agents=claude-code'])
 
 // Delete the wrapper manually to simulate drift
-rmSync(join(TEST_DIR, '.claude', 'skills', 'fireperp.md'))
+rmSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool'), { recursive: true })
 
 // Sync should regenerate missing wrapper
 console.log('\nskills sync — regenerate missing wrapper:')
 let result = runCmd(['skills', 'sync', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'sync succeeds')
-assert(existsSync(join(TEST_DIR, '.claude', 'skills', 'fireperp.md')), 'wrapper regenerated')
+assert(existsSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool', 'SKILL.md')), 'wrapper regenerated')
 
 // Delete the tool skill directory to simulate stale entry
-rmSync(join(TEST_DIR, '.specdev', 'skills', 'tools', 'fireperp'), { recursive: true })
+rmSync(join(TEST_DIR, '.specdev', 'skills', 'tools', 'mock-tool'), { recursive: true })
 
 // Sync should remove stale entry
 console.log('\nskills sync — remove stale entry:')
 result = runCmd(['skills', 'sync', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'sync succeeds on stale')
-assert(!existsSync(join(TEST_DIR, '.claude', 'skills', 'fireperp.md')), 'stale wrapper removed')
+assert(!existsSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool', 'SKILL.md')), 'stale wrapper removed')
 const activeTools = JSON.parse(readFileSync(join(TEST_DIR, '.specdev', 'skills', 'active-tools.json'), 'utf-8'))
-assert(activeTools.tools.fireperp === undefined, 'stale entry removed from active-tools.json')
+assert(activeTools.tools['mock-tool'] === undefined, 'stale entry removed from active-tools.json')
 
 // Add a new tool skill that isn't installed — sync should warn
 console.log('\nskills sync — warn about available:')

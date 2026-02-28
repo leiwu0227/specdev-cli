@@ -2,6 +2,7 @@ import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createMockToolSkill } from './helpers.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
@@ -24,20 +25,21 @@ function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: tru
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 mkdirSync(join(TEST_DIR, '.claude', 'skills'), { recursive: true })
+createMockToolSkill(TEST_DIR, 'mock-tool')
 
-// Install fireperp
-runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=fireperp', '--agents=claude-code'])
+// Install mock-tool
+runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=mock-tool', '--agents=claude-code'])
 
 // Create a passing implementation checkpoint scenario
 const assignmentDir = join(TEST_DIR, '.specdev', 'assignments', '001_feature_test')
 mkdirSync(join(assignmentDir, 'implementation'), { recursive: true })
 mkdirSync(join(assignmentDir, 'breakdown'), { recursive: true })
 
-// Plan that declares fireperp skill in one task but not the other
+// Plan that declares mock-tool skill in one task but not the other
 writeFileSync(join(assignmentDir, 'breakdown', 'plan.md'), `# Test Plan
 
 ### Task 1: Research API
-**Skills:** [fireperp, test-driven-development]
+**Skills:** [mock-tool, test-driven-development]
 
 Do research.
 
@@ -74,13 +76,13 @@ try {
 writeFileSync(join(assignmentDir, 'breakdown', 'plan.md'), `# Test Plan
 
 ### Task 1: Research API
-**Skills:** [fireperp, test-driven-development]
+**Skills:** [mock-tool, test-driven-development]
 
 Do research.
 
 ### Task 2: Implement
 **Skills:** [test-driven-development]
-**Skipped:** fireperp — this task is pure refactoring, no research needed
+**Skipped:** mock-tool — this task is pure refactoring, no research needed
 
 Build it.
 `)

@@ -39,10 +39,13 @@ export async function skillsSyncCommand(flags = {}) {
       if (await fse.pathExists(skillMdPath)) {
         const content = await fse.readFile(skillMdPath, 'utf-8')
         const fm = parseFrontmatter(content)
+        const bodyMatch = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/)
+        const body = bodyMatch ? bodyMatch[1].trim() : ''
         const wrapperContent = generateWrapperContent({
           name: fm.name || name,
           description: fm.description || '',
           summary: '',
+          body,
         })
         const agents = activeTools.agents || []
         const newPaths = writeWrappers(targetDir, name, wrapperContent, agents)

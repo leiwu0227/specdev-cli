@@ -3,6 +3,8 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import fse from 'fs-extra'
 import { blankLine, printLines, printSection } from '../utils/output.js'
+import { skillsInstallCommand } from './skills-install.js'
+import { scanSkillsDir } from '../utils/skills.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -250,6 +252,18 @@ export async function initCommand(flags = {}) {
           writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n')
           console.log('✅ Registered SessionStart hook in .claude/settings.json')
         }
+      }
+    }
+
+    // Auto-install tool skills if any are available
+    const toolsDir = join(specdevPath, 'skills', 'tools')
+    if (await fse.pathExists(toolsDir)) {
+      const available = await scanSkillsDir(toolsDir, 'tool')
+      if (available.length > 0) {
+        const skillNames = available.map(s => s.name).join(',')
+        blankLine()
+        console.log('Installing tool skills...')
+        await skillsInstallCommand([], { target: targetDir, skills: skillNames })
       }
     }
 

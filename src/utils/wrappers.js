@@ -2,8 +2,21 @@ import { existsSync, mkdirSync, writeFileSync, rmSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { AGENT_CONFIGS } from './agents.js'
 
-export function generateWrapperContent({ name, description, summary }) {
+export function generateWrapperContent({ name, description, summary, body }) {
   const fullDesc = summary ? `${description}. ${summary}` : description
+
+  // If full body is provided, embed the skill content directly
+  if (body) {
+    return `---
+name: ${name}
+description: ${fullDesc}
+---
+
+${body}
+`
+  }
+
+  // Fallback: pointer to source (for backward compatibility)
   return `---
 name: ${name}
 description: ${fullDesc}

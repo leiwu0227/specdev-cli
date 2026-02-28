@@ -5,7 +5,7 @@ export const AGENT_CONFIGS = {
   'claude-code': {
     detect: (dir) => existsSync(join(dir, '.claude')),
     wrapperDir: join('.claude', 'skills'),
-    wrapperFile: (name) => `${name}.md`,
+    wrapperFile: (name) => join(name, 'SKILL.md'),
   },
   'codex': {
     detect: (dir) => existsSync(join(dir, '.codex')),
@@ -15,7 +15,7 @@ export const AGENT_CONFIGS = {
   'opencode': {
     detect: (dir) => existsSync(join(dir, '.opencode')),
     wrapperDir: join('.claude', 'skills'),
-    wrapperFile: (name) => `${name}.md`,
+    wrapperFile: (name) => join(name, 'SKILL.md'),
   },
 }
 

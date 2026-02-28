@@ -2,6 +2,7 @@ import { existsSync, rmSync, mkdirSync, readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createMockToolSkill } from './helpers.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
@@ -24,20 +25,21 @@ function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: tru
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 mkdirSync(join(TEST_DIR, '.claude', 'skills'), { recursive: true })
+createMockToolSkill(TEST_DIR, 'mock-tool')
 
 // First install a skill
-runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=fireperp', '--agents=claude-code'])
-assert(existsSync(join(TEST_DIR, '.claude', 'skills', 'fireperp.md')), 'precondition: wrapper exists after install')
+runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=mock-tool', '--agents=claude-code'])
+assert(existsSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool', 'SKILL.md')), 'precondition: wrapper exists after install')
 
 // Remove it
 console.log('\nskills remove:')
-let result = runCmd(['skills', 'remove', 'fireperp', `--target=${TEST_DIR}`])
+let result = runCmd(['skills', 'remove', 'mock-tool', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'remove succeeds')
-assert(!existsSync(join(TEST_DIR, '.claude', 'skills', 'fireperp.md')), 'wrapper deleted')
+assert(!existsSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool', 'SKILL.md')), 'wrapper deleted')
 
 // active-tools.json updated
 const activeTools = JSON.parse(readFileSync(join(TEST_DIR, '.specdev', 'skills', 'active-tools.json'), 'utf-8'))
-assert(activeTools.tools.fireperp === undefined, 'removed from active-tools.json')
+assert(activeTools.tools['mock-tool'] === undefined, 'removed from active-tools.json')
 
 // Remove unknown skill gives error
 console.log('\nskills remove (unknown):')

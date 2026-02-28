@@ -2,9 +2,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import fse from 'fs-extra'
 
-const OFFICIAL_TOOL_SKILLS = [
-  'fireperp',
-]
+const OFFICIAL_TOOL_SKILLS = []
 
 const CLAUDE_SKILL_MARKERS = [
   join('specdev-assignment', 'SKILL.md'),

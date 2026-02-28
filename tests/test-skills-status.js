@@ -2,6 +2,7 @@ import { existsSync, rmSync, mkdirSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createMockToolSkill } from './helpers.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
@@ -25,16 +26,14 @@ cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 mkdirSync(join(TEST_DIR, '.claude', 'skills'), { recursive: true })
 
-// Before install — fireperp should show [available]
-console.log('\nskills listing — before install:')
-let result = runCmd(['skills', `--target=${TEST_DIR}`])
-assert(result.stdout.includes('fireperp'), 'shows fireperp')
-assert(result.stdout.includes('[available]'), 'shows [available] status')
+// Add a mock tool skill and install it
+createMockToolSkill(TEST_DIR, 'mock-tool')
+runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=mock-tool', '--agents=claude-code'])
 
-// After install — fireperp should show [active]
-runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=fireperp', '--agents=claude-code'])
+// After install — tool skills should show [active]
 console.log('\nskills listing — after install:')
-result = runCmd(['skills', `--target=${TEST_DIR}`])
+let result = runCmd(['skills', `--target=${TEST_DIR}`])
+assert(result.stdout.includes('mock-tool'), 'shows mock-tool')
 assert(result.stdout.includes('[active]'), 'shows [active] status')
 
 // Core skills should NOT show status tags
