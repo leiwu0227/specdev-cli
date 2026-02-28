@@ -42,7 +42,7 @@ Must pass before requesting review.
 
 ## Phase 3: Implement
 
-**Goal:** Execute tasks, one subagent per task, TDD, review per task.
+**Goal:** Execute tasks in batches of 3, one subagent per task, TDD, mode-based review.
 
 **Skill:** `skills/core/implementing/SKILL.md`
 
