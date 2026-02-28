@@ -34,7 +34,7 @@ Must pass before requesting review.
 
 **Skill:** `skills/core/breakdown/SKILL.md`
 
-**Auto-review:** Subagent reviews the plan (1-2 rounds). Address findings.
+**Internal reviews:** Design review (up to 2 rounds) then plan review (1-2 rounds). Both run automatically inside breakdown.
 
 **Output:** `breakdown/plan.md`
 
