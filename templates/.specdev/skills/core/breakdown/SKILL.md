@@ -52,7 +52,7 @@ This is a lightweight sanity check — the design was already validated section-
 Every task MUST follow this structure (compact form shown):
 
     ### Task N: [Name]
-    **Mode:** full
+    **Mode:** standard
     **Skills:** [skill-a, skill-b]
     **Files:** Create/Modify/Test with exact paths
 
@@ -74,8 +74,18 @@ Every task MUST follow this structure (compact form shown):
     [exact git commands + commit message]
 
 Mode rules:
-- `full` (default): full TDD + unified review loop (spec compliance + code quality)
-- `lightweight`: only for trivial scaffold/config tasks with no meaningful executable behavior
+- `standard` (default): TDD + implementer self-review only — no reviewer subagent dispatched
+- `full`: TDD + reviewer subagent (unified spec + quality review) — use when task is complex or risky
+- `lightweight`: no TDD, no review — only for trivial scaffold/config with no executable behavior
+
+Assign `full` when ANY of these apply:
+- Task touches 3+ files
+- Task introduces new architecture (new module, new pattern, new abstraction)
+- Task is security-sensitive (auth, input validation, crypto)
+- Task is integration-heavy (wiring multiple components together)
+- Task is the last task in the plan (catches accumulated drift)
+
+All other tasks default to `standard`. Use `lightweight` only for trivial scaffold/config.
 
 **Skill declaration:** Run `specdev skills` to list available skills. Declare only what each task needs:
 
