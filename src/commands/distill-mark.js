@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { markCapturesProcessed } from '../utils/scan.js'
+import { markCapturesProcessed, scanAssignments } from '../utils/scan.js'
 import {
   resolveTargetDir,
   requireSpecdevDirectory,
@@ -38,6 +38,15 @@ export async function distillMarkCommand(positionalArgs = [], flags = {}) {
 
   const knowledgePath = join(specdevPath, 'knowledge')
   const assignments = assignmentList.split(',').map(s => s.trim()).filter(Boolean)
+  const knownAssignments = new Set((await scanAssignments(specdevPath)).map((a) => a.name))
+  const unknownAssignments = assignments.filter((name) => !knownAssignments.has(name))
+
+  if (unknownAssignments.length > 0) {
+    console.error(`Unknown assignment(s): ${unknownAssignments.join(', ')}`)
+    console.log('Use names from .specdev/assignments/<name> directories.')
+    process.exitCode = 1
+    return
+  }
 
   await markCapturesProcessed(knowledgePath, type, assignments)
 

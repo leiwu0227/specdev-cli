@@ -6,7 +6,7 @@ export function cleanupDir(path) {
 }
 
 export function runSpecdev(args, options = {}) {
-  return spawnSync('node', ['./bin/specdev.js', ...args], {
+  return spawnSync(process.execPath, ['./bin/specdev.js', ...args], {
     encoding: 'utf-8',
     ...options,
   })

@@ -1,25 +1,22 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { cleanupDir, runSpecdev, assertTest } from './helpers.js'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const CLI = join(__dirname, '..', 'bin', 'specdev.js')
-const TEST_DIR = join(__dirname, 'test-distill-project-output')
+const TEST_DIR = './tests/test-distill-project-output'
 
 let failures = 0
 let passes = 0
 
 function assert(condition, msg) {
-  if (!condition) { console.error(`  FAIL ${msg}`); failures++ }
-  else { console.log(`  PASS ${msg}`); passes++ }
+  if (assertTest(condition, msg)) passes++
+  else failures++
 }
 
 function runCmd(args) {
-  return spawnSync('node', [CLI, ...args], { encoding: 'utf-8' })
+  return runSpecdev(args)
 }
 
-function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true }) }
+function cleanup() { cleanupDir(TEST_DIR) }
 
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
@@ -74,6 +71,19 @@ if (json) {
   for (const b of branches) {
     assert(Array.isArray(json.existing_knowledge[b]), `existing_knowledge has ${b} branch`)
   }
+
+  // Test 5: --assignment scopes output
+  const scoped = runCmd(['distill', 'project', `--target=${TEST_DIR}`, '--assignment=00001_feature_test-proj'])
+  let scopedJson = null
+  try {
+    scopedJson = JSON.parse(scoped.stdout.trim())
+  } catch {
+    scopedJson = null
+  }
+  assert(scopedJson !== null, 'scoped output is valid JSON')
+  if (scopedJson) {
+    assert(scopedJson.scanned === 1, 'scoped output scans one assignment')
+  }
 } else {
   // If JSON parsing failed, count remaining assertions as failures
   const remaining = ['status is ok', 'has scanned count', 'has unprocessed count',
@@ -81,7 +91,8 @@ if (json) {
     'capture diff surfaces as suggestion', 'capture suggestion has branch field',
     'suggestion body includes diff content',
     'existing_knowledge has codestyle branch', 'existing_knowledge has architecture branch',
-    'existing_knowledge has domain branch', 'existing_knowledge has workflow branch']
+    'existing_knowledge has domain branch', 'existing_knowledge has workflow branch',
+    'scoped output is valid JSON', 'scoped output scans one assignment']
   for (const msg of remaining) {
     assert(false, msg + ' (skipped — no JSON)')
   }

@@ -292,8 +292,14 @@ export async function readProcessedCaptures(knowledgePath, type) {
     return new Set()
   }
 
-  const data = await fse.readJSON(filePath)
-  return new Set(data[type] || [])
+  try {
+    const data = await fse.readJSON(filePath)
+    return new Set(data[type] || [])
+  } catch {
+    // Corrupt tracking file should not crash distill/ponder flows.
+    // Treat as empty and let subsequent writes repair the file.
+    return new Set()
+  }
 }
 
 /**
@@ -312,7 +318,11 @@ export async function markCapturesProcessed(knowledgePath, type, assignmentNames
 
   let data = {}
   if (await fse.pathExists(filePath)) {
-    data = await fse.readJSON(filePath)
+    try {
+      data = await fse.readJSON(filePath)
+    } catch {
+      data = {}
+    }
   }
 
   const existing = new Set(data[type] || [])

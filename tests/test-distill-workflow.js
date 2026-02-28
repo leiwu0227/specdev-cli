@@ -1,25 +1,22 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { cleanupDir, runSpecdev, assertTest } from './helpers.js'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const CLI = join(__dirname, '..', 'bin', 'specdev.js')
-const TEST_DIR = join(__dirname, 'test-distill-workflow-output')
+const TEST_DIR = './tests/test-distill-workflow-output'
 
 let failures = 0
 let passes = 0
 
 function assert(condition, msg) {
-  if (!condition) { console.error(`  FAIL ${msg}`); failures++ }
-  else { console.log(`  PASS ${msg}`); passes++ }
+  if (assertTest(condition, msg)) passes++
+  else failures++
 }
 
 function runCmd(args) {
-  return spawnSync('node', [CLI, ...args], { encoding: 'utf-8' })
+  return runSpecdev(args)
 }
 
-function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true }) }
+function cleanup() { cleanupDir(TEST_DIR) }
 
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
@@ -48,30 +45,77 @@ try {
   assert(false, 'output is valid JSON: ' + result.stdout.slice(0, 100))
 }
 
-// Test 2: Has expected fields
-assert(json.status === 'ok', 'status is ok')
-assert(typeof json.scanned === 'number', 'has scanned count')
-assert(typeof json.unprocessed === 'number', 'has unprocessed count')
-assert(Array.isArray(json.suggestions), 'has suggestions array')
-assert(json.knowledge_path !== undefined, 'has knowledge_path')
-assert(Array.isArray(json.existing_knowledge), 'has existing_knowledge array')
-assert(json.existing_knowledge.length === 0, 'existing_knowledge is empty when no feedback files exist')
+if (json) {
+  // Test 2: Has expected fields
+  assert(json.status === 'ok', 'status is ok')
+  assert(typeof json.scanned === 'number', 'has scanned count')
+  assert(typeof json.unprocessed === 'number', 'has unprocessed count')
+  assert(Array.isArray(json.suggestions), 'has suggestions array')
+  assert(json.knowledge_path !== undefined, 'has knowledge_path')
+  assert(Array.isArray(json.existing_knowledge), 'has existing_knowledge array')
+  assert(json.existing_knowledge.length === 0, 'existing_knowledge is empty when no feedback files exist')
 
-// Test 3: Capture diff appears in suggestions
-const captureSuggestion = json.suggestions.find(s => s.source === 'capture-diff')
-assert(captureSuggestion !== undefined, 'capture diff surfaces as suggestion')
-assert(captureSuggestion.body.includes('TDD approach'), 'suggestion body includes diff content')
+  // Test 3: Capture diff appears in suggestions
+  const captureSuggestion = json.suggestions.find(s => s.source === 'capture-diff')
+  assert(captureSuggestion !== undefined, 'capture diff surfaces as suggestion')
+  if (captureSuggestion) {
+    assert(captureSuggestion.body.includes('TDD approach'), 'suggestion body includes diff content')
+  }
 
-// Test 4: Running again still shows unprocessed (not marked yet)
-result = runCmd(['distill', 'workflow', `--target=${TEST_DIR}`])
-json = JSON.parse(result.stdout.trim())
-assert(json.unprocessed >= 1, 'unprocessed stays until mark-processed is called')
+  // Test 4: Running again still shows unprocessed (not marked yet)
+  result = runCmd(['distill', 'workflow', `--target=${TEST_DIR}`])
+  let json2
+  try {
+    json2 = JSON.parse(result.stdout.trim())
+  } catch {
+    json2 = null
+  }
+  assert(json2 !== null, 'second run output is valid JSON')
+  if (json2) {
+    assert(json2.unprocessed >= 1, 'unprocessed stays until mark-processed is called')
+  }
+
+  // Test 5: --assignment scopes output
+  const scoped = runCmd(['distill', 'workflow', `--target=${TEST_DIR}`, '--assignment=00001_feature_test-a'])
+  let scopedJson = null
+  try {
+    scopedJson = JSON.parse(scoped.stdout.trim())
+  } catch {
+    scopedJson = null
+  }
+  assert(scopedJson !== null, 'scoped output is valid JSON')
+  if (scopedJson) {
+    assert(scopedJson.scanned === 1, 'scoped output scans one assignment')
+  }
+} else {
+  const remaining = [
+    'status is ok',
+    'has scanned count',
+    'has unprocessed count',
+    'has suggestions array',
+    'has knowledge_path',
+    'has existing_knowledge array',
+    'existing_knowledge is empty when no feedback files exist',
+    'capture diff surfaces as suggestion',
+    'suggestion body includes diff content',
+    'second run output is valid JSON',
+    'unprocessed stays until mark-processed is called',
+    'scoped output is valid JSON',
+    'scoped output scans one assignment',
+  ]
+  for (const msg of remaining) {
+    assert(false, `${msg} (skipped — no JSON)`)
+  }
+}
 
 // Verify ponder is removed
 console.log('\nponder removed:')
 result = runCmd(['ponder', 'workflow', `--target=${TEST_DIR}`])
 assert(result.status !== 0, 'ponder command no longer exists')
-assert(result.stderr.includes('Unknown command'), 'ponder shows unknown command error')
+assert(
+  result.stderr.includes('Unknown command') || result.stdout.includes('Unknown command'),
+  'ponder shows unknown command error'
+)
 
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)

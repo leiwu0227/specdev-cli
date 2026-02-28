@@ -1,25 +1,22 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { cleanupDir, runSpecdev, assertTest } from './helpers.js'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const CLI = join(__dirname, '..', 'bin', 'specdev.js')
-const TEST_DIR = join(__dirname, 'test-distill-mark-output')
+const TEST_DIR = './tests/test-distill-mark-output'
 
 let failures = 0
 let passes = 0
 
 function assert(condition, msg) {
-  if (!condition) { console.error(`  FAIL ${msg}`); failures++ }
-  else { console.log(`  PASS ${msg}`); passes++ }
+  if (assertTest(condition, msg)) passes++
+  else failures++
 }
 
 function runCmd(args) {
-  return spawnSync('node', [CLI, ...args], { encoding: 'utf-8' })
+  return runSpecdev(args)
 }
 
-function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true }) }
+function cleanup() { cleanupDir(TEST_DIR) }
 
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
@@ -66,6 +63,9 @@ assert(result.status !== 0, 'fails without type argument')
 
 result = runCmd(['distill', 'mark-processed', 'invalid', 'foo', `--target=${TEST_DIR}`])
 assert(result.status !== 0, 'fails with invalid type')
+
+result = runCmd(['distill', 'mark-processed', 'project', 'does-not-exist', `--target=${TEST_DIR}`])
+assert(result.status !== 0, 'fails with unknown assignment name')
 
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)

@@ -18,8 +18,26 @@ export async function distillWorkflowCommand(flags = {}) {
   const feedbackDir = join(knowledgePath, '_workflow_feedback')
 
   const assignments = await scanAssignments(specdevPath)
+  let scoped = assignments
+  if (typeof flags.assignment === 'string' && flags.assignment.trim()) {
+    const wanted = flags.assignment.trim()
+    scoped = assignments.filter((a) => a.name === wanted)
+    if (scoped.length === 0) {
+      console.log(JSON.stringify({
+        status: 'error',
+        error: `Assignment not found: ${wanted}`,
+        scanned: assignments.length,
+        unprocessed: 0,
+        existing_knowledge: [],
+        suggestions: [],
+        knowledge_path: '.specdev/knowledge/_workflow_feedback/',
+      }, null, 2))
+      process.exitCode = 1
+      return
+    }
+  }
   const processed = await readProcessedCaptures(knowledgePath, 'workflow')
-  const unprocessed = assignments.filter(a => !processed.has(a.name))
+  const unprocessed = scoped.filter(a => !processed.has(a.name))
 
   const suggestions = [
     ...generateWorkflowSuggestions(unprocessed),
@@ -35,7 +53,7 @@ export async function distillWorkflowCommand(flags = {}) {
 
   const output = {
     status: 'ok',
-    scanned: assignments.length,
+    scanned: scoped.length,
     unprocessed: unprocessed.length,
     existing_knowledge: existingFiles,
     suggestions,

@@ -19,8 +19,36 @@ export async function distillProjectCommand(flags = {}) {
   const knowledgePath = join(specdevPath, 'knowledge')
 
   const assignments = await scanAssignments(specdevPath)
+  let scoped = assignments
+  if (typeof flags.assignment === 'string' && flags.assignment.trim()) {
+    const wanted = flags.assignment.trim()
+    scoped = assignments.filter((a) => a.name === wanted)
+    if (scoped.length === 0) {
+      console.log(JSON.stringify({
+        status: 'error',
+        error: `Assignment not found: ${wanted}`,
+        scanned: assignments.length,
+        unprocessed: 0,
+        existing_knowledge: {
+          codestyle: [],
+          architecture: [],
+          domain: [],
+          workflow: [],
+        },
+        suggestions: [],
+        knowledge_paths: {
+          codestyle: '.specdev/knowledge/codestyle/',
+          architecture: '.specdev/knowledge/architecture/',
+          domain: '.specdev/knowledge/domain/',
+          workflow: '.specdev/knowledge/workflow/',
+        },
+      }, null, 2))
+      process.exitCode = 1
+      return
+    }
+  }
   const processed = await readProcessedCaptures(knowledgePath, 'project')
-  const unprocessed = assignments.filter(a => !processed.has(a.name))
+  const unprocessed = scoped.filter(a => !processed.has(a.name))
 
   // Read existing knowledge
   const existingKnowledge = {}
@@ -41,7 +69,7 @@ export async function distillProjectCommand(flags = {}) {
 
   const output = {
     status: 'ok',
-    scanned: assignments.length,
+    scanned: scoped.length,
     unprocessed: unprocessed.length,
     existing_knowledge: existingKnowledge,
     suggestions,
