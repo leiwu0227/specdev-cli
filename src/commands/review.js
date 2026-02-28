@@ -131,7 +131,10 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   ])
   blankLine()
   console.log(`Reviewing assignment: ${name}`)
-  console.log('After writing findings, return to the main session and run:')
+  console.log('')
+  console.log('IMPORTANT: Do NOT run check-review in this session.')
+  console.log('Your job is to review and write findings to the file above.')
+  console.log('The MAIN coding agent (in a separate session) will run:')
   console.log(`   specdev check-review --assignment=${name}`)
 }
 
