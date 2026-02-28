@@ -21,7 +21,7 @@ Every assignment follows the same 4 phases in order:
 
 1. **Brainstorm** — understand the problem, explore approaches, produce a design or research output
 2. **Breakdown** — decompose into executable tasks with TDD steps
-3. **Implement** — execute tasks with subagent dispatch, review per task
+3. **Implement** — execute tasks in batches, subagent per task, mode-based review
 4. **Summary** — capture learnings, update project docs, finalize
 
 Read `_guides/workflow.md` for the full phase-by-phase guide with skill references and gates.
