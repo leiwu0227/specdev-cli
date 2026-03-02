@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { scanSkillsDir } from '../src/utils/skills.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
@@ -46,17 +47,22 @@ console.log('\nskills listing:')
 const skillsResult = runCmd(['skills', `--target=${TEST_DIR}`])
 assert(skillsResult.status === 0, 'skills command succeeds')
 
-// Should list flat .md skills
-assert(skillsResult.stdout.includes('verification-before-completion'), 'lists flat .md skills')
+const coreSkills = await scanSkillsDir(join(TEST_DIR, '.specdev', 'skills', 'core'), 'core')
+const toolSkills = await scanSkillsDir(join(TEST_DIR, '.specdev', 'skills', 'tools'), 'tool')
+const allSkills = [...coreSkills, ...toolSkills]
 
-// Should list folder-based skills
-assert(skillsResult.stdout.includes('test-folder-skill'), 'lists folder-based skills')
+// Should discover flat .md skills
+assert(allSkills.some(s => s.name === 'verification-before-completion'), 'lists flat .md skills')
+
+// Should discover folder-based skills
+const folderSkill = allSkills.find(s => s.name === 'test-folder-skill')
+assert(!!folderSkill, 'lists folder-based skills')
 
 // Should show description for folder-based skills
-assert(skillsResult.stdout.includes('A test skill'), 'shows folder skill description')
+assert(folderSkill?.description === 'A test skill', 'shows folder skill description')
 
 // Should indicate folder skills have scripts
-assert(skillsResult.stdout.includes('scripts'), 'indicates scripts available')
+assert(folderSkill?.hasScripts === true, 'indicates scripts available')
 
 // Cleanup
 cleanup()

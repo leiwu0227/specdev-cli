@@ -1,0 +1,8 @@
+{
+  "name": "codex",
+  "command": "codex -q --prompt 'Review the uncommitted changes in this repo. If acceptable, reply PASS. If issues found, describe them.'",
+  "scope": "diff",
+  "max_rounds": 3,
+  "pass_pattern": "LGTM|no issues|approved|pass|PASS",
+  "fail_pattern": "needs changes|issues found|fail|reject"
+}

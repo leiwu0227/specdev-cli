@@ -12,6 +12,13 @@ PROJECT_ROOT="${1:-}"
 TASK_NAME="${2:-}"
 BASE_BRANCH="${3:-}"
 
+json_escape() {
+  printf '%s' "$1" \
+    | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' \
+    | tr -d '\000-\010\013\014\016-\037' \
+    | tr '\n' ' '
+}
+
 if [ -z "$PROJECT_ROOT" ] || [ ! -d "$PROJECT_ROOT" ]; then
   echo "Error: project root directory required" >&2
   echo "Usage: setup-worktree.sh <project-root> <task-name> [base-branch]" >&2
@@ -52,11 +59,4 @@ mkdir -p "$(dirname "$WORKTREE_PATH")"
 git -C "$PROJECT_ROOT" worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH" "$BASE_BRANCH" >/dev/null 2>&1
 
 # Output JSON
-node -e "
-  console.log(JSON.stringify({
-    worktree_path: process.argv[1],
-    branch: process.argv[2],
-    base_branch: process.argv[3],
-    task_name: process.argv[4]
-  }, null, 2));
-" "$WORKTREE_PATH" "$BRANCH_NAME" "$BASE_BRANCH" "$TASK_NAME"
+echo "{\"worktree_path\":\"$(json_escape "$WORKTREE_PATH")\",\"branch\":\"$(json_escape "$BRANCH_NAME")\",\"base_branch\":\"$(json_escape "$BASE_BRANCH")\",\"task_name\":\"$(json_escape "$TASK_NAME")\"}"

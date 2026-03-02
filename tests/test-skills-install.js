@@ -38,7 +38,7 @@ assert(result.status === 0, 'install succeeds')
 assert(existsSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool', 'SKILL.md')), 'wrapper created for claude-code')
 const wrapper = readFileSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool', 'SKILL.md'), 'utf-8')
 assert(wrapper.includes('name: mock-tool'), 'wrapper has name')
-assert(wrapper.includes('Mock Tool') || wrapper.includes('mock-tool'), 'wrapper embeds skill content')
+assert(wrapper.includes('.specdev/skills/tools/mock-tool/SKILL.md'), 'wrapper points to source skill')
 
 // active-tools.json updated
 const activeToolsPath = join(TEST_DIR, '.specdev', 'skills', 'active-tools.json')

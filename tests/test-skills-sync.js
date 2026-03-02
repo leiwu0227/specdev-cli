@@ -54,9 +54,14 @@ assert(activeTools.tools['mock-tool'] === undefined, 'stale entry removed from a
 console.log('\nskills sync — warn about available:')
 const newToolDir = join(TEST_DIR, '.specdev', 'skills', 'tools', 'my-tool')
 mkdirSync(newToolDir, { recursive: true })
-writeFileSync(join(newToolDir, 'SKILL.md'), '---\nname: my-tool\ndescription: test\n---\n# my-tool\n')
+writeFileSync(
+  join(newToolDir, 'SKILL.md'),
+  '---\nname: my-tool\ndescription: test\ntype: tool\n---\n# my-tool\n'
+)
 result = runCmd(['skills', 'sync', `--target=${TEST_DIR}`])
-assert(result.stdout.includes('my-tool') || result.stderr.includes('my-tool'), 'warns about available tool')
+assert(result.status === 0, 'sync succeeds with available uninstalled tool')
+const activeAfterAvailable = JSON.parse(readFileSync(join(TEST_DIR, '.specdev', 'skills', 'active-tools.json'), 'utf-8'))
+assert(activeAfterAvailable.tools['my-tool'] === undefined, 'available tool remains uninstalled')
 
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)

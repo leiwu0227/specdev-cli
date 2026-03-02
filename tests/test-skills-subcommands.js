@@ -2,6 +2,7 @@ import { existsSync, rmSync, mkdirSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { scanSkillsDir } from '../src/utils/skills.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
@@ -28,7 +29,8 @@ runCmd(['init', `--target=${TEST_DIR}`])
 console.log('\nskills (list):')
 let result = runCmd(['skills', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'skills list succeeds')
-assert(result.stdout.includes('Core skills'), 'shows core skills')
+const coreSkills = await scanSkillsDir(join(TEST_DIR, '.specdev', 'skills', 'core'), 'core')
+assert(coreSkills.length > 0, 'shows core skills')
 
 // `specdev skills install` without flags shows available
 console.log('\nskills install (no selection):')

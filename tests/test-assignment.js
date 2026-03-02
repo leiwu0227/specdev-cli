@@ -1,6 +1,7 @@
 import { writeFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { cleanupDir, runSpecdev, assertTest } from './helpers.js'
+import { assignmentCommand } from '../src/commands/assignment.js'
 
 const TEST_DIR = './test-assignment-output'
 
@@ -10,6 +11,29 @@ function cleanup() {
 
 function runCmd(args) {
   return runSpecdev(args)
+}
+
+async function runAssignmentDirect(args, flags = {}) {
+  const stdout = []
+  const stderr = []
+  const origLog = console.log
+  const origErr = console.error
+  const prevExitCode = process.exitCode
+  process.exitCode = undefined
+  console.log = (...parts) => stdout.push(parts.join(' '))
+  console.error = (...parts) => stderr.push(parts.join(' '))
+  try {
+    await assignmentCommand(args, flags)
+    return {
+      status: process.exitCode ?? 0,
+      stdout: stdout.join('\n'),
+      stderr: stderr.join('\n'),
+    }
+  } finally {
+    console.log = origLog
+    console.error = origErr
+    process.exitCode = prevExitCode
+  }
 }
 
 function assert(condition, msg, detail = '') {
@@ -30,7 +54,7 @@ async function runTests() {
 
   // Test 1: outputs reserved ID without creating folder
   console.log('assignment reserves ID without creating folder:')
-  const result = runCmd(['assignment', 'Add', 'auth', 'system', `--target=${TEST_DIR}`])
+  const result = await runAssignmentDirect(['Add', 'auth', 'system'], { target: TEST_DIR })
   if (!assert(result.status === 0, 'exits 0', result.stderr)) failures++
   if (!assert(result.stdout.includes('00001'), 'outputs ID 00001')) failures++
   if (!assert(result.stdout.includes('Add auth system'), 'outputs description')) failures++
@@ -44,7 +68,7 @@ async function runTests() {
   // Manually create a folder to simulate the agent having created the first assignment
   const fse = await import('fs-extra')
   await fse.default.ensureDir(join(assignmentsDir, '00001_feature_auth-system'))
-  const result2 = runCmd(['assignment', 'Add payment flow', `--target=${TEST_DIR}`])
+  const result2 = await runAssignmentDirect(['Add payment flow'], { target: TEST_DIR })
   if (!assert(result2.status === 0, 'second assignment exits 0')) failures++
   if (!assert(result2.stdout.includes('00002'), 'second assignment gets ID 00002')) failures++
 
@@ -52,7 +76,7 @@ async function runTests() {
   console.log('\nassignment without big_picture:')
   cleanup()
   runCmd(['init', `--target=${TEST_DIR}`])
-  const noBigPicture = runCmd(['assignment', 'test feature', `--target=${TEST_DIR}`])
+  const noBigPicture = await runAssignmentDirect(['test feature'], { target: TEST_DIR })
   if (!assert(noBigPicture.status === 1, 'exits non-zero without big_picture filled')) failures++
 
   // Test 4: numeric label + existing assignment guides user to continue
@@ -62,7 +86,7 @@ async function runTests() {
   writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
   // Create a folder as if agent had created it from a previous assignment
   await fse.default.ensureDir(join(TEST_DIR, '.specdev/assignments/00001_feature_auth-system'))
-  const numericLabel = runCmd(['assignment', '1', `--target=${TEST_DIR}`])
+  const numericLabel = await runAssignmentDirect(['1'], { target: TEST_DIR })
   if (!assert(numericLabel.status === 1, 'exits non-zero in non-interactive mode for numeric label')) failures++
 
   // Test 5: no description exits non-zero
@@ -70,13 +94,13 @@ async function runTests() {
   cleanup()
   runCmd(['init', `--target=${TEST_DIR}`])
   writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
-  const noDesc = runCmd(['assignment', `--target=${TEST_DIR}`])
+  const noDesc = await runAssignmentDirect([], { target: TEST_DIR })
   if (!assert(noDesc.status === 1, 'exits non-zero without description')) failures++
   if (!assert(noDesc.stderr.includes('No description'), 'prints usage hint')) failures++
 
   // Test 6: --json flag outputs valid JSON
   console.log('\nassignment --json output:')
-  const jsonResult = runCmd(['assignment', 'Add dark mode', `--target=${TEST_DIR}`, '--json'])
+  const jsonResult = await runAssignmentDirect(['Add dark mode'], { target: TEST_DIR, json: true })
   if (!assert(jsonResult.status === 0, 'exits 0 with --json')) failures++
   let parsed
   try {

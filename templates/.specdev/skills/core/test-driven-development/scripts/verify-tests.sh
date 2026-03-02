@@ -11,6 +11,25 @@ set -euo pipefail
 PROJECT_ROOT="${1:-}"
 TEST_CMD="${2:-}"
 
+json_escape() {
+  printf '%s' "$1" \
+    | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' \
+    | tr -d '\000-\010\013\014\016-\037' \
+    | tr '\n' ' '
+}
+
+emit_json() {
+  local passed="$1"
+  local exit_code="$2"
+  local command="$3"
+  local summary="$4"
+  local esc_command
+  local esc_summary
+  esc_command="$(json_escape "$command")"
+  esc_summary="$(json_escape "$summary")"
+  echo "{\"passed\":${passed},\"exit_code\":${exit_code},\"command\":\"${esc_command}\",\"output_summary\":\"${esc_summary}\"}"
+}
+
 if [ -z "$PROJECT_ROOT" ] || [ ! -d "$PROJECT_ROOT" ]; then
   echo "Error: project root directory required" >&2
   echo "Usage: verify-tests.sh <project-root> [test-command]" >&2
@@ -22,12 +41,8 @@ PROJECT_ROOT=$(cd "$PROJECT_ROOT" && pwd)
 # Auto-detect test command if not provided
 if [ -z "$TEST_CMD" ]; then
   if [ -f "$PROJECT_ROOT/package.json" ]; then
-    # Check if there's a test script defined
-    HAS_TEST=$(node -e "
-      const pkg = JSON.parse(require('fs').readFileSync('$PROJECT_ROOT/package.json', 'utf-8'));
-      console.log(pkg.scripts && pkg.scripts.test ? 'yes' : 'no');
-    " 2>/dev/null || echo "no")
-    if [ "$HAS_TEST" = "yes" ]; then
+    # Heuristic: if package.json contains a "test" script key, use npm test.
+    if grep -q '"test"[[:space:]]*:' "$PROJECT_ROOT/package.json" 2>/dev/null; then
       TEST_CMD="npm test"
     fi
   elif [ -f "$PROJECT_ROOT/Cargo.toml" ]; then
@@ -41,15 +56,9 @@ if [ -z "$TEST_CMD" ]; then
   fi
 
   if [ -z "$TEST_CMD" ]; then
-    # No test command found — report as JSON
-    node -e "
-      console.log(JSON.stringify({
-        passed: false,
-        exit_code: -1,
-        command: '(none detected)',
-        output_summary: 'No test command found. Checked: package.json (npm test), Cargo.toml (cargo test), pyproject.toml (pytest), Makefile (make test)'
-      }, null, 2));
-    "
+    # No test command found — report as JSON.
+    emit_json "false" "-1" "(none detected)" \
+      "No test command found. Checked: package.json (npm test), Cargo.toml (cargo test), pyproject.toml (pytest), Makefile (make test)"
     exit 0
   fi
 fi
@@ -71,15 +80,4 @@ else
 fi
 
 # Output structured JSON
-node -e "
-  const passed = process.argv[1] === 'true';
-  const exitCode = parseInt(process.argv[2], 10);
-  const command = process.argv[3];
-  const output = process.argv[4];
-  console.log(JSON.stringify({
-    passed: passed,
-    exit_code: exitCode,
-    command: command,
-    output_summary: output.substring(0, 2000)
-  }, null, 2));
-" "$PASSED" "$EXIT_CODE" "$TEST_CMD" "$OUTPUT"
+emit_json "$PASSED" "$EXIT_CODE" "$TEST_CMD" "${OUTPUT:0:2000}"

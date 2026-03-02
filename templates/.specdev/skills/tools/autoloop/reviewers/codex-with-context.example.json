@@ -1,0 +1,8 @@
+{
+  "name": "codex-with-context",
+  "command": "codex -q --prompt \"$AUTOLOOP_PROMPT\"",
+  "scope": "diff",
+  "max_rounds": 3,
+  "pass_pattern": "LGTM|no issues|approved|pass|PASS",
+  "fail_pattern": "needs changes|issues found|fail|reject"
+}

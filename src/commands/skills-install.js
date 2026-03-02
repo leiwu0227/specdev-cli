@@ -72,16 +72,12 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
     const skillContent = await fse.readFile(skillMdPath, 'utf-8')
     const frontmatter = parseFrontmatter(skillContent)
 
-    // Extract body (everything after frontmatter)
-    const bodyMatch = skillContent.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/)
-    const body = bodyMatch ? bodyMatch[1].trim() : ''
-
-    // Generate wrapper with full skill content
+    // Generate wrapper that points to source skill content.
+    // This preserves access to sibling skill assets (scripts/, assets/, etc.).
     const wrapperContent = generateWrapperContent({
       name: frontmatter.name || skillName,
       description: frontmatter.description || '',
       summary: '',
-      body,
     })
 
     // Write wrappers to each agent

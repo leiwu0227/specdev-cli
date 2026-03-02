@@ -90,8 +90,9 @@ Build it.
 console.log('\ncheckpoint with waiver:')
 result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, `--assignment=${assignmentDir}`, '--json'])
 const waiverJson = JSON.parse(result.stdout.trim())
-const skippedWarning = waiverJson.warnings.find(w => w.code === 'TOOL_SKILL_SKIPPED')
-assert(skippedWarning !== undefined || waiverJson.warnings.length === 0, 'handles skipped skills')
+const mockToolWarnings = waiverJson.warnings.filter(w => w.skill === 'mock-tool')
+const skippedWarning = mockToolWarnings.find(w => w.code === 'TOOL_SKILL_SKIPPED')
+assert(skippedWarning !== undefined || mockToolWarnings.length === 0, 'handles skipped skills')
 
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)
