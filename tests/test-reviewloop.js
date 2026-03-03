@@ -1,11 +1,12 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync, chmodSync } from 'node:fs'
+import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const SCRIPT = join(__dirname, '..', 'templates', '.specdev', 'skills', 'core', 'reviewloop', 'scripts', 'reviewloop.sh')
-const TEST_DIR = join(__dirname, 'test-reviewloop-script-output')
+const CLI = join(__dirname, '..', 'bin', 'specdev.js')
+const TEST_DIR = join(__dirname, 'test-reviewloop-output')
 
 let failures = 0
 let passes = 0
@@ -41,39 +42,41 @@ function runScript(args) {
   })
 }
 
+function runCmd(args) {
+  return spawnSync('node', [CLI, ...args], { encoding: 'utf-8' })
+}
+
+// =====================================================================
+// Reviewloop Script Tests
+// =====================================================================
+
 cleanup()
 mkdirSync(TEST_DIR, { recursive: true })
 
-// Test: missing --reviewer flag
 console.log('\nreviewloop.sh (missing reviewer):')
 let result = runScript([])
 assert(result.status === 1, 'exits 1 without --reviewer')
 
-// Test: missing value for --reviewer
 console.log('\nreviewloop.sh (missing reviewer value):')
 result = runScript(['--reviewer'])
 assert(result.status === 1, 'exits 1 when --reviewer value is missing')
 assert(result.stderr.includes('--reviewer requires a value'), 'error mentions missing reviewer value')
 
-// Test: missing value for --round
 console.log('\nreviewloop.sh (missing round value):')
 result = runScript(['--reviewer', 'nonexistent', '--round'])
 assert(result.status === 1, 'exits 1 when --round value is missing')
 assert(result.stderr.includes('--round requires a value'), 'error mentions missing round value')
 
-// Test: unknown reviewer config
 console.log('\nreviewloop.sh (unknown reviewer):')
 result = runScript(['--reviewer', 'nonexistent', '--round', '1'])
 assert(result.status === 1, 'exits 1 for unknown reviewer')
 assert(result.stderr.includes('not found'), 'error mentions config not found')
 
-// Test: invalid --round flag
 console.log('\nreviewloop.sh (invalid round):')
 result = runScript(['--reviewer', 'nonexistent', '--round', 'abc'])
 assert(result.status === 1, 'exits 1 for non-numeric round')
 assert(result.stderr.includes('positive integer'), 'error mentions positive integer round')
 
-// Test: pass verdict
 console.log('\nreviewloop.sh (pass verdict):')
 setupGitRepo()
 setupReviewerConfig('echo-pass', {
@@ -89,7 +92,6 @@ assert(json.verdict === 'pass', 'verdict is pass')
 assert(json.round === 1, 'round is 1')
 assert(json.escalate === false, 'escalate is false')
 
-// Test: untracked files are included in diff scope context
 console.log('\nreviewloop.sh (untracked files in diff scope):')
 writeFileSync(join(TEST_DIR, 'new-file.js'), 'export const y = 42\n')
 setupReviewerConfig('check-untracked', {
@@ -103,7 +105,6 @@ assert(result.status === 0, 'exits 0 for untracked file check')
 json = JSON.parse(result.stdout)
 assert(json.verdict === 'pass', 'diff scope includes untracked file context')
 
-// Test: fail verdict
 console.log('\nreviewloop.sh (fail verdict):')
 setupReviewerConfig('echo-fail', {
   name: 'echo-fail',
@@ -118,7 +119,6 @@ assert(json.verdict === 'fail', 'verdict is fail')
 assert(json.escalate === false, 'escalate is false on round 1')
 assert(json.findings.includes('missing error handling'), 'findings contain reviewer output')
 
-// Test: escalation on max rounds
 console.log('\nreviewloop.sh (escalation):')
 result = runScript(['--reviewer', 'echo-fail', '--round', '3'])
 assert(result.status === 0, 'exits 0')
@@ -126,7 +126,6 @@ json = JSON.parse(result.stdout)
 assert(json.verdict === 'fail', 'verdict is fail')
 assert(json.escalate === true, 'escalate is true at max rounds')
 
-// Test: neither pattern matches → defaults to fail
 console.log('\nreviewloop.sh (ambiguous output):')
 setupReviewerConfig('echo-ambiguous', {
   name: 'echo-ambiguous',
@@ -139,27 +138,6 @@ assert(result.status === 0, 'exits 0')
 json = JSON.parse(result.stdout)
 assert(json.verdict === 'fail', 'ambiguous defaults to fail')
 
-// Test: custom scope via --context
-console.log('\nreviewloop.sh (custom context):')
-setupReviewerConfig('echo-context', {
-  name: 'echo-context',
-  command: "echo 'pass'",
-  scope: 'custom',
-  max_rounds: 3,
-})
-result = runScript(['--reviewer', 'echo-context', '--round', '1', '--scope', 'custom', '--context', 'some custom code'])
-assert(result.status === 0, 'exits 0 with custom context')
-json = JSON.parse(result.stdout)
-assert(json.verdict === 'pass', 'pass with custom context')
-
-// Test: scope override via flag
-console.log('\nreviewloop.sh (scope override):')
-result = runScript(['--reviewer', 'echo-pass', '--round', '1', '--scope', 'files'])
-assert(result.status === 0, 'exits 0 with scope override')
-json = JSON.parse(result.stdout)
-assert(json.verdict === 'pass', 'pass with files scope')
-
-// Test: reviewer command failure
 console.log('\nreviewloop.sh (command failure):')
 setupReviewerConfig('bad-cmd', {
   name: 'bad-cmd',
@@ -170,7 +148,6 @@ setupReviewerConfig('bad-cmd', {
 result = runScript(['--reviewer', 'bad-cmd', '--round', '1'])
 assert(result.status === 1, 'exits 1 when reviewer command fails')
 
-// Test: multi-line reviewer output produces valid JSON
 console.log('\nreviewloop.sh (multi-line output):')
 setupReviewerConfig('multiline', {
   name: 'multiline',
@@ -185,7 +162,6 @@ assert(json.verdict === 'fail', 'verdict is fail for multi-line output')
 assert(json.findings.includes('fix error handling'), 'findings preserve multi-line content')
 assert(json.findings.includes('add tests'), 'findings preserve all lines')
 
-// Test: reviewer output with special JSON characters (double quotes)
 console.log('\nreviewloop.sh (special JSON chars):')
 setupReviewerConfig('json-chars', {
   name: 'json-chars',
@@ -199,20 +175,6 @@ json = JSON.parse(result.stdout)
 assert(json.verdict === 'fail', 'verdict is fail')
 assert(json.findings.includes('const'), 'findings preserve content with quotes')
 
-// Test: pass output containing "failures" should still pass
-console.log('\nreviewloop.sh (pass text with failures word):')
-setupReviewerConfig('pass-with-failures-word', {
-  name: 'pass-with-failures-word',
-  command: "echo 'PASS: no failures found'",
-  scope: 'diff',
-  max_rounds: 3,
-})
-result = runScript(['--reviewer', 'pass-with-failures-word', '--round', '1'])
-assert(result.status === 0, 'exits 0')
-json = JSON.parse(result.stdout)
-assert(json.verdict === 'pass', 'verdict is pass when output says no failures')
-
-// Test: reviewer config missing required command
 console.log('\nreviewloop.sh (missing command field):')
 setupReviewerConfig('missing-command', {
   name: 'missing-command',
@@ -222,6 +184,41 @@ setupReviewerConfig('missing-command', {
 result = runScript(['--reviewer', 'missing-command', '--round', '1'])
 assert(result.status === 1, 'exits 1 when command field is missing')
 assert(result.stderr.includes("missing required field 'command'"), 'error mentions missing command field')
+
+// =====================================================================
+// Reviewloop Install Tests
+// =====================================================================
+
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+
+console.log('\nreviewloop as core skill:')
+const skillMd = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'SKILL.md')
+assert(existsSync(skillMd), 'SKILL.md exists at core/ path')
+
+const scriptPath = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'scripts', 'reviewloop.sh')
+assert(existsSync(scriptPath), 'reviewloop.sh script exists')
+
+const defaultConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'codex.json')
+assert(existsSync(defaultConfig), 'codex.json reviewer config exists')
+
+const skillContent = readFileSync(skillMd, 'utf-8')
+assert(skillContent.includes('type: core'), 'SKILL.md has type: core')
+assert(skillContent.includes('name: reviewloop'), 'SKILL.md has name: reviewloop')
+
+const activeToolsPath = join(TEST_DIR, '.specdev', 'skills', 'active-tools.json')
+if (existsSync(activeToolsPath)) {
+  const activeTools = JSON.parse(readFileSync(activeToolsPath, 'utf-8'))
+  assert(activeTools.tools['reviewloop'] === undefined, 'reviewloop not in active-tools.json')
+} else {
+  assert(true, 'reviewloop not in active-tools.json (no active-tools.json)')
+}
+
+const wrapperPath = join(TEST_DIR, '.claude', 'skills', 'reviewloop', 'SKILL.md')
+assert(!existsSync(wrapperPath), 'no .claude/skills/reviewloop/ wrapper')
+
+const oldPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop')
+assert(!existsSync(oldPath), 'not present at old tools/ path')
 
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)

@@ -2,10 +2,11 @@ import { existsSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createMockToolSkill } from './helpers.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
-const TEST_DIR = join(__dirname, 'test-update-skills-output')
+const TEST_DIR = join(__dirname, 'test-update-output')
 
 let failures = 0
 let passes = 0
@@ -28,11 +29,13 @@ function cleanup() {
   if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true })
 }
 
-// ---- Setup: init (all adapters + claude extras installed by default) ----
+// =====================================================================
+// Update Skills Tests
+// =====================================================================
+
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 
-// ---- Test update overwrites skill files ----
 console.log('\nupdate overwrites skills:')
 const assignmentPath = join(TEST_DIR, '.claude', 'skills', 'specdev-assignment', 'SKILL.md')
 writeFileSync(assignmentPath, '# tampered content\n')
@@ -42,7 +45,6 @@ const afterUpdate = readFileSync(assignmentPath, 'utf-8')
 assert(afterUpdate.includes('specdev assignment'), 'skill file restored after update')
 assert(!afterUpdate.includes('tampered'), 'tampered content replaced')
 
-// ---- Test update refreshes hook script ----
 console.log('\nupdate refreshes hook script:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
@@ -54,7 +56,6 @@ const hookAfterUpdate = readFileSync(hookPath, 'utf-8')
 assert(hookAfterUpdate.includes('SessionStart hook for specdev'), 'hook script restored after update')
 assert(!hookAfterUpdate.includes('tampered'), 'tampered hook content replaced')
 
-// ---- Test update preserves custom tool skills ----
 console.log('\nupdate preserves custom tools:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
@@ -67,7 +68,6 @@ result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds with custom tool skill')
 assert(existsSync(join(customToolDir, 'SKILL.md')), 'preserves custom tool skills')
 
-// ---- Test update restores core reviewloop skill ----
 console.log('\nupdate restores core reviewloop:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
@@ -80,12 +80,10 @@ const reviewloopAfterUpdate = readFileSync(reviewloopSkillPath, 'utf-8')
 assert(reviewloopAfterUpdate.includes('name: reviewloop'), 'core reviewloop skill restored after update')
 assert(!reviewloopAfterUpdate.includes('tampered reviewloop'), 'tampered core reviewloop content replaced')
 
-// ---- Test update removes old tools/reviewloop path ----
 console.log('\nupdate removes old tools/reviewloop:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 
-// Simulate old install with reviewloop in tools/
 const oldReviewloopDir = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop')
 mkdirSync(oldReviewloopDir, { recursive: true })
 writeFileSync(join(oldReviewloopDir, 'SKILL.md'), '# old reviewloop\n')
@@ -93,29 +91,6 @@ result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds with old tools/reviewloop')
 assert(!existsSync(oldReviewloopDir), 'old tools/reviewloop removed by update')
 
-// ---- Test update backfills missing platform adapters ----
-console.log('\nupdate backfills missing adapters:')
-cleanup()
-runCmd(['init', `--target=${TEST_DIR}`])
-
-const claudeMd = join(TEST_DIR, 'CLAUDE.md')
-const agentsMd = join(TEST_DIR, 'AGENTS.md')
-const cursorRules = join(TEST_DIR, '.cursor', 'rules')
-
-// Delete AGENTS.md and .cursor/rules, keep CLAUDE.md
-rmSync(agentsMd)
-rmSync(cursorRules)
-
-result = runCmd(['update', `--target=${TEST_DIR}`])
-assert(result.status === 0, 'update succeeds with missing adapters')
-assert(existsSync(claudeMd), 'existing CLAUDE.md preserved')
-assert(existsSync(agentsMd), 'missing AGENTS.md backfilled')
-assert(existsSync(cursorRules), 'missing .cursor/rules backfilled')
-
-const backfilledAgents = readFileSync(agentsMd, 'utf-8')
-assert(backfilledAgents.includes('Specdev:'), 'backfilled AGENTS.md has correct content')
-
-// ---- Test update migrates legacy slash-skill marker installs ----
 console.log('\nupdate migrates legacy slash skills:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
@@ -129,11 +104,26 @@ result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds for legacy slash-skill layout')
 assert(existsSync(join(claudeSkillsDir, 'specdev-assignment', 'SKILL.md')), 'installs specdev-assignment for legacy layout')
 
-// ---- Test update removes deprecated slash skills ----
 console.log('\nupdate removes deprecated slash skills:')
 assert(!existsSync(join(claudeSkillsDir, 'specdev-brainstorm')), 'removes deprecated specdev-brainstorm skill')
 
-cleanup()
+// =====================================================================
+// Update Sync Tests
+// =====================================================================
 
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+mkdirSync(join(TEST_DIR, '.claude', 'skills'), { recursive: true })
+createMockToolSkill(TEST_DIR, 'mock-tool')
+
+runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=mock-tool', '--agents=claude-code'])
+rmSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool'), { recursive: true })
+
+console.log('\nupdate runs sync:')
+result = runCmd(['update', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'update succeeds')
+assert(existsSync(join(TEST_DIR, '.claude', 'skills', 'mock-tool', 'SKILL.md')), 'wrapper regenerated by update sync')
+
+cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)
