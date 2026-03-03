@@ -14,6 +14,7 @@ import { migrateCommand } from './migrate.js'
 import { continueCommand } from './continue.js'
 import { reviseCommand } from './revise.js'
 import { checkReviewCommand } from './check-review.js'
+import { reviewloopCommand } from './reviewloop.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -28,6 +29,7 @@ const commandHandlers = {
   continue: ({ flags }) => continueCommand(flags),
   revise: ({ flags }) => reviseCommand(flags),
   'check-review': ({ flags }) => checkReviewCommand(flags),
+  reviewloop: ({ positionalArgs, flags }) => reviewloopCommand(positionalArgs, flags),
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
