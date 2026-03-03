@@ -67,18 +67,31 @@ result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds with custom tool skill')
 assert(existsSync(join(customToolDir, 'SKILL.md')), 'preserves custom tool skills')
 
-// ---- Test update refreshes official tool skills ----
-console.log('\nupdate refreshes official tool skills:')
+// ---- Test update restores core reviewloop skill ----
+console.log('\nupdate restores core reviewloop:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 
-const reviewloopSkillPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop', 'SKILL.md')
+const reviewloopSkillPath = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'SKILL.md')
 writeFileSync(reviewloopSkillPath, '# tampered reviewloop skill\n')
 result = runCmd(['update', `--target=${TEST_DIR}`])
-assert(result.status === 0, 'update succeeds with tampered official tool skill')
+assert(result.status === 0, 'update succeeds with tampered core reviewloop')
 const reviewloopAfterUpdate = readFileSync(reviewloopSkillPath, 'utf-8')
-assert(reviewloopAfterUpdate.includes('name: reviewloop'), 'official reviewloop skill restored after update')
-assert(!reviewloopAfterUpdate.includes('tampered reviewloop'), 'tampered official tool content replaced')
+assert(reviewloopAfterUpdate.includes('name: reviewloop'), 'core reviewloop skill restored after update')
+assert(!reviewloopAfterUpdate.includes('tampered reviewloop'), 'tampered core reviewloop content replaced')
+
+// ---- Test update removes old tools/reviewloop path ----
+console.log('\nupdate removes old tools/reviewloop:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+
+// Simulate old install with reviewloop in tools/
+const oldReviewloopDir = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop')
+mkdirSync(oldReviewloopDir, { recursive: true })
+writeFileSync(join(oldReviewloopDir, 'SKILL.md'), '# old reviewloop\n')
+result = runCmd(['update', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'update succeeds with old tools/reviewloop')
+assert(!existsSync(oldReviewloopDir), 'old tools/reviewloop removed by update')
 
 // ---- Test update backfills missing platform adapters ----
 console.log('\nupdate backfills missing adapters:')

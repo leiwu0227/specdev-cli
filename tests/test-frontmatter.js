@@ -10,15 +10,15 @@ function assert(condition, msg) {
 
 // Existing flat key: value still works
 console.log('\nparseFrontmatter — flat values:')
-const flat = parseFrontmatter('---\nname: fireperp\ndescription: Web search\ntype: tool\n---\n# Body')
-assert(flat.name === 'fireperp', 'parses name')
-assert(flat.description === 'Web search', 'parses description')
+const flat = parseFrontmatter('---\nname: mock-tool\ndescription: A mock tool\ntype: tool\n---\n# Body')
+assert(flat.name === 'mock-tool', 'parses name')
+assert(flat.description === 'A mock tool', 'parses description')
 assert(flat.type === 'tool', 'parses type')
 
 // Inline arrays
 console.log('\nparseFrontmatter — inline arrays:')
 const withArrays = parseFrontmatter(`---
-name: fireperp
+name: mock-tool
 triggers:
   keywords: ["web search", "research", "look up"]
   paths: []
@@ -30,7 +30,7 @@ validation:
 ---
 # Body`)
 
-assert(withArrays.name === 'fireperp', 'still parses flat name')
+assert(withArrays.name === 'mock-tool', 'still parses flat name')
 assert(typeof withArrays.triggers === 'object', 'triggers is an object')
 assert(Array.isArray(withArrays.triggers.keywords), 'triggers.keywords is array')
 assert(withArrays.triggers.keywords.length === 3, 'triggers.keywords has 3 items')

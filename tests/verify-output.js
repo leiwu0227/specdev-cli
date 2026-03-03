@@ -68,6 +68,11 @@ const requiredFiles = [
   // Parallel-worktrees skill (directory-based)
   '.specdev/skills/core/parallel-worktrees/SKILL.md',
   '.specdev/skills/core/parallel-worktrees/scripts/setup-worktree.sh',
+  // Reviewloop skill (directory-based, core)
+  '.specdev/skills/core/reviewloop/SKILL.md',
+  '.specdev/skills/core/reviewloop/scripts/reviewloop.sh',
+  '.specdev/skills/core/reviewloop/reviewers/codex.json',
+  '.specdev/skills/core/reviewloop/reviewers/codex-with-context.json',
   // Knowledge vault
   '.specdev/knowledge/_index.md',
   '.specdev/knowledge/_workflow_feedback/.gitkeep',

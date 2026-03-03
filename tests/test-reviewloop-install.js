@@ -26,55 +26,38 @@ cleanup()
 // Init project
 runCmd(['init', `--target=${TEST_DIR}`])
 
-// Create .claude dir (simulate agent)
-mkdirSync(join(TEST_DIR, '.claude', 'skills'), { recursive: true })
+// Verify reviewloop exists as core skill
+console.log('\nreviewloop as core skill:')
+const skillMd = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'SKILL.md')
+assert(existsSync(skillMd), 'SKILL.md exists at core/ path')
 
-// Verify reviewloop skill exists in templates after init
-console.log('\nreviewloop skill discovery:')
-const skillMd = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop', 'SKILL.md')
-assert(existsSync(skillMd), 'SKILL.md exists after init')
+const scriptPath = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'scripts', 'reviewloop.sh')
+assert(existsSync(scriptPath), 'reviewloop.sh script exists')
 
-const scriptPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop', 'scripts', 'reviewloop.sh')
-assert(existsSync(scriptPath), 'reviewloop.sh script exists after init')
+const defaultConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'codex.json')
+assert(existsSync(defaultConfig), 'codex.json reviewer config exists')
 
-const defaultConfig = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop', 'reviewers', 'codex.json')
-assert(existsSync(defaultConfig), 'codex.json exists after init')
-
-// Install the skill
-console.log('\nreviewloop skill install:')
-let result = runCmd(['skills', 'install', `--target=${TEST_DIR}`, '--skills=reviewloop', '--agents=claude-code'])
-assert(result.status === 0, 'install succeeds')
-
-// Wrapper created
-const wrapperPath = join(TEST_DIR, '.claude', 'skills', 'reviewloop', 'SKILL.md')
-assert(existsSync(wrapperPath), 'wrapper created for claude-code')
-
-const wrapper = readFileSync(wrapperPath, 'utf-8')
-assert(wrapper.includes('name: reviewloop'), 'wrapper has name')
-assert(wrapper.includes('.specdev/skills/tools/reviewloop/SKILL.md'), 'wrapper points to source')
-
-// active-tools.json updated
-const activeToolsPath = join(TEST_DIR, '.specdev', 'skills', 'active-tools.json')
-assert(existsSync(activeToolsPath), 'active-tools.json created')
-const activeTools = JSON.parse(readFileSync(activeToolsPath, 'utf-8'))
-assert(activeTools.tools['reviewloop'] !== undefined, 'reviewloop in active tools')
-assert(activeTools.tools['reviewloop'].wrappers.length > 0, 'wrappers tracked')
-
-// Verify skill frontmatter is parseable
+// Verify frontmatter says core
 const skillContent = readFileSync(skillMd, 'utf-8')
-assert(skillContent.includes('name: reviewloop'), 'SKILL.md has name in frontmatter')
-assert(skillContent.includes('type: tool'), 'SKILL.md has type: tool')
-assert(skillContent.includes('triggers:'), 'SKILL.md has triggers')
+assert(skillContent.includes('type: core'), 'SKILL.md has type: core')
+assert(skillContent.includes('name: reviewloop'), 'SKILL.md has name: reviewloop')
 
-// Skills list shows reviewloop
-console.log('\nskills list:')
-result = runCmd(['skills', `--target=${TEST_DIR}`])
-assert(result.status === 0, 'skills list command succeeds')
+// No reviewloop in active-tools.json
+const activeToolsPath = join(TEST_DIR, '.specdev', 'skills', 'active-tools.json')
+if (existsSync(activeToolsPath)) {
+  const activeTools = JSON.parse(readFileSync(activeToolsPath, 'utf-8'))
+  assert(activeTools.tools['reviewloop'] === undefined, 'reviewloop not in active-tools.json')
+} else {
+  assert(true, 'reviewloop not in active-tools.json (no active-tools.json)')
+}
 
-// Sync works with reviewloop installed
-console.log('\nskills sync:')
-result = runCmd(['skills', 'sync', `--target=${TEST_DIR}`])
-assert(result.status === 0, 'sync succeeds with reviewloop installed')
+// No wrapper in .claude/skills/
+const wrapperPath = join(TEST_DIR, '.claude', 'skills', 'reviewloop', 'SKILL.md')
+assert(!existsSync(wrapperPath), 'no .claude/skills/reviewloop/ wrapper')
+
+// Not in tools/ path
+const oldPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop')
+assert(!existsSync(oldPath), 'not present at old tools/ path')
 
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)
