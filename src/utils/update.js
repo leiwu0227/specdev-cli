@@ -41,6 +41,18 @@ export async function updateSpecdevSystem(source, destination) {
       }
     }
 
+    // Remove reviewloop from active-tools.json (promoted to core)
+    const activeToolsPath = join(destination, 'skills', 'active-tools.json')
+    if (await fse.pathExists(activeToolsPath)) {
+      try {
+        const activeTools = JSON.parse(await fse.readFile(activeToolsPath, 'utf-8'))
+        if (activeTools.tools && activeTools.tools.reviewloop) {
+          delete activeTools.tools.reviewloop
+          await fse.writeFile(activeToolsPath, JSON.stringify(activeTools, null, 2) + '\n')
+        }
+      } catch { /* ignore parse errors */ }
+    }
+
     // System files and directories to update
     const systemPaths = [
       '_main.md',
@@ -161,6 +173,12 @@ export function updateSkillFiles(targetDir, skillFiles) {
     if (existsSync(deprecatedSkillDir)) {
       rmSync(deprecatedSkillDir, { recursive: true, force: true })
     }
+  }
+
+  // Remove stale reviewloop wrapper (promoted to core skill)
+  const reviewloopWrapper = join(skillsDir, 'reviewloop')
+  if (existsSync(reviewloopWrapper)) {
+    rmSync(reviewloopWrapper, { recursive: true, force: true })
   }
 
   return Object.keys(skillFiles).length

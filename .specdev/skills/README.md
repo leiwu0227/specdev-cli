@@ -21,6 +21,9 @@ Skills are split into two categories:
 **Review (separate session):**
 - `core/review-agent/` — Holistic reviewer with file-based signals
 
+**Automated review:**
+- `core/reviewloop/` — External CLI review loop (fix-resubmit until pass)
+
 **Supporting:**
 - `core/test-driven-development/` — RED-GREEN-REFACTOR with verify-tests.sh
 - `core/systematic-debugging/` — Root-cause-first debugging
