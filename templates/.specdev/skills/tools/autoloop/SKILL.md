@@ -46,7 +46,7 @@ The script assembles the code context (diff, file contents) and passes it to the
 }
 ```
 
-Copy an example config, remove the `.example` suffix, and adjust for your reviewer.
+Default configs for Codex are included. Copy and customize them for other reviewers.
 
 **Environment variables** available to your command:
 - `$AUTOLOOP_PROMPT` — the full review prompt with code context baked in
@@ -59,7 +59,7 @@ Copy an example config, remove the `.example` suffix, and adjust for your review
 - `scope` — what context to assemble: `diff` (default), `files`, `custom`
 - `max_rounds` — max fix-resubmit cycles before escalating (default: 3)
 - `pass_pattern` — regex to detect pass (default: `LGTM|no issues|approved|pass|PASS`)
-- `fail_pattern` — regex to detect fail, checked first (default: `needs changes|issues found|fail|reject`)
+- `fail_pattern` — regex to detect fail, checked first (default: `needs changes|issues found|\bfailed\b|\bfail\b|reject`)
 
 ## Protocol
 
@@ -69,7 +69,7 @@ When your work is ready for review, ask:
 
 > "Work is ready for external review. Which reviewer would you like to use?"
 
-List available reviewers by checking `reviewers/*.json` (exclude `.example.json` files). If none exist, tell the user to copy an example config and customize it.
+List available reviewers by checking `reviewers/*.json`. Default Codex configs are included out of the box.
 
 ### Step 2: Ask scope
 
@@ -85,7 +85,7 @@ Options:
 Execute the script:
 
 ```bash
-bash scripts/autoloop.sh --reviewer <name> --round 1 --scope <scope>
+bash .specdev/skills/tools/autoloop/scripts/autoloop.sh --reviewer <name> --round 1 --scope <scope>
 ```
 
 The script returns JSON:

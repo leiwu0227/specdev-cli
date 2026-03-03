@@ -37,8 +37,8 @@ assert(existsSync(skillMd), 'SKILL.md exists after init')
 const scriptPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'autoloop', 'scripts', 'autoloop.sh')
 assert(existsSync(scriptPath), 'autoloop.sh script exists after init')
 
-const exampleConfig = join(TEST_DIR, '.specdev', 'skills', 'tools', 'autoloop', 'reviewers', 'codex.example.json')
-assert(existsSync(exampleConfig), 'codex.example.json exists after init')
+const defaultConfig = join(TEST_DIR, '.specdev', 'skills', 'tools', 'autoloop', 'reviewers', 'codex.json')
+assert(existsSync(defaultConfig), 'codex.json exists after init')
 
 // Install the skill
 console.log('\nautoloop skill install:')
