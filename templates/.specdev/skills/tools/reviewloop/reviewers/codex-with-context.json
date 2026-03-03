@@ -4,5 +4,5 @@
   "scope": "diff",
   "max_rounds": 3,
   "pass_pattern": "LGTM|no issues|approved|pass|PASS",
-  "fail_pattern": "needs changes|issues found|fail|reject"
+  "fail_pattern": "needs changes|issues found|\\bfail\\b|\\breject\\b"
 }

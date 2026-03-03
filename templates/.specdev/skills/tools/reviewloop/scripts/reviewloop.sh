@@ -112,10 +112,10 @@ EFFECTIVE_SCOPE="${SCOPE:-${CONFIG_SCOPE:-diff}}"
 REVIEW_CONTEXT=""
 case "$EFFECTIVE_SCOPE" in
   diff)
-    REVIEW_CONTEXT="$(git diff 2>/dev/null || true)"
+    REVIEW_CONTEXT="$(git diff HEAD 2>/dev/null || true)"
     ;;
   files)
-    CHANGED_FILES="$(git diff --name-only 2>/dev/null || true)"
+    CHANGED_FILES="$(git diff HEAD --name-only 2>/dev/null || true)"
     if [[ -n "$CHANGED_FILES" ]]; then
       while IFS= read -r f; do
         if [[ -f "$f" ]]; then
@@ -130,7 +130,7 @@ $(cat "$f")
     REVIEW_CONTEXT="$CONTEXT"
     ;;
   *)
-    REVIEW_CONTEXT="$(git diff 2>/dev/null || true)"
+    REVIEW_CONTEXT="$(git diff HEAD 2>/dev/null || true)"
     ;;
 esac
 
@@ -158,7 +158,7 @@ export REVIEWLOOP_CONTEXT_FILE="$TMPFILE"
 CMD="$COMMAND"
 CMD="${CMD//\{prompt\}/\$REVIEWLOOP_PROMPT}"
 CMD="${CMD//\{stdin\}/\$REVIEWLOOP_CONTEXT}"
-export REVIEWLOOP_FILES="$(git diff --name-only 2>/dev/null || true)"
+export REVIEWLOOP_FILES="$(git diff HEAD --name-only 2>/dev/null || true)"
 CMD="${CMD//\{files\}/\$REVIEWLOOP_FILES}"
 
 # --- Execute reviewer command ---
