@@ -29,7 +29,7 @@ User runs `specdev review brainstorm` or `specdev review implementation` in a se
 
 | Prompt | Purpose | When to dispatch |
 |--------|---------|-----------------|
-| `prompts/implementation-reviewer.md` | Review the full implementation holistically | After implementation phase completes |
+| `.specdev/skills/core/review-agent/prompts/implementation-reviewer.md` | Review the full implementation holistically | After implementation phase completes |
 
 **Note:** Breakdown plan review is handled by inline subagent review during the breakdown phase, NOT by `specdev review <phase>`. Do not wait for `specdev review` after breakdown — proceed directly to `specdev implement`.
 
@@ -45,7 +45,7 @@ Read `brainstorm/proposal.md` and `brainstorm/design.md`. Check:
 
 ### Implementation Review
 
-Use `prompts/implementation-reviewer.md`. Check:
+Use `.specdev/skills/core/review-agent/prompts/implementation-reviewer.md`. Check:
 - Does the full implementation match the design?
 - Do all tests pass?
 - Are there integration issues between tasks?

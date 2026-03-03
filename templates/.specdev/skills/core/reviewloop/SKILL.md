@@ -18,45 +18,21 @@ Invoke an external CLI reviewer (Codex, OpenCode, Aider, etc.) in an automated f
 
 ## Setup
 
-Reviewer configs live in `reviewers/` next to this file. Each is a JSON file. Two patterns:
-
-**Pattern 1: Let the CLI explore (recommended)**
-
-The reviewer CLI runs in the project directory and explores the repo itself. Simpler, and the CLI can read files, run tests, and understand full context:
+Reviewer configs live in `reviewers/` next to this file. Each is a JSON file. The reviewer CLI runs in the project directory and explores the repo itself — it can read files, run tests, and understand full context:
 
 ```json
 {
   "name": "codex",
-  "command": "codex -q --prompt 'Review the uncommitted changes in this repo. If acceptable, reply PASS. If issues found, describe them.'",
+  "command": "codex exec review --uncommitted 'If acceptable, reply PASS. If issues found, describe them.'",
   "scope": "diff",
   "max_rounds": 3
 }
 ```
 
-**Pattern 2: Pipe context into the CLI**
-
-The script assembles the code context (diff, file contents) and passes it to the CLI via an env var. Use this when the CLI doesn't have repo access or you want to control exactly what it sees:
-
-```json
-{
-  "name": "codex-with-context",
-  "command": "codex -q --prompt \"$REVIEWLOOP_PROMPT\"",
-  "scope": "diff",
-  "max_rounds": 3
-}
-```
-
-Default configs for Codex are included. Copy and customize them for other reviewers.
-
-**Environment variables** available to your command:
-- `$REVIEWLOOP_PROMPT` — the full review prompt with code context baked in
-- `$REVIEWLOOP_CONTEXT` — just the code context (diff, file contents, or custom text)
-- `$REVIEWLOOP_CONTEXT_FILE` — path to a temp file containing the context
-- `$REVIEWLOOP_FILES` — list of changed file paths
+A default Codex config is included. Copy and customize it for other reviewers.
 
 **Config fields:**
-- `command` (required) — shell command to run
-- `scope` — what context to assemble: `diff` (default), `files`, `custom`
+- `command` (required) — shell command to run (the reviewer CLI explores the repo itself)
 - `max_rounds` — max fix-resubmit cycles before escalating (default: 3)
 - `pass_pattern` — regex to detect pass (default: `LGTM|no issues|approved|pass|PASS`)
 - `fail_pattern` — regex to detect fail, checked first (default: `needs changes|issues found|\bfailed\b|\bfail\b|reject`)
@@ -65,27 +41,14 @@ Default configs for Codex are included. Copy and customize them for other review
 
 ### Step 1: Prompt the user
 
-When your work is ready for review, ask:
+When your work is ready for review, ask which reviewer to use. List available reviewers by checking `reviewers/*.json`.
 
-> "Work is ready for external review. Which reviewer would you like to use?"
-
-List available reviewers by checking `reviewers/*.json`. Default Codex configs are included out of the box.
-
-### Step 2: Ask scope
-
-> "What should I send for review?"
-
-Options:
-- **diff** (default) — git diff of current changes
-- **files** — full content of changed files
-- **custom** — you select specific files or code to send
-
-### Step 3: Run the loop
+### Step 2: Run the loop
 
 Execute the script:
 
 ```bash
-bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh --reviewer <name> --round 1 --scope <scope>
+bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh --reviewer <name> --round 1
 ```
 
 The script returns JSON:
@@ -100,7 +63,7 @@ The script returns JSON:
 }
 ```
 
-### Step 4: Handle the result
+### Step 3: Handle the result
 
 - **verdict = pass** — Report success to user. Continue with workflow.
 - **verdict = fail, escalate = false** — Read `findings`. Fix the issues. Re-run with `--round N+1`.

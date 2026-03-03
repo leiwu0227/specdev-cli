@@ -5,6 +5,7 @@ import fse from 'fs-extra'
 import { blankLine, printLines, printSection } from '../utils/output.js'
 import { skillsInstallCommand } from './skills-install.js'
 import { scanSkillsDir } from '../utils/skills.js'
+import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -293,6 +294,16 @@ export async function initCommand(flags = {}) {
       '   /specdev-check-review Read and address review feedback',
       '   /specdev-rewind       Full workflow re-read',
     ])
+
+    // Check reviewer CLIs
+    blankLine()
+    printSection('Reviewer CLIs:')
+    const reviewerResults = await checkReviewerCLIs(specdevPath)
+    if (reviewerResults.length > 0) {
+      printReviewerCheck(reviewerResults)
+    } else {
+      console.log('   (no reviewer configs found)')
+    }
   } catch (error) {
     console.error('❌ Failed to initialize SpecDev:', error.message)
     process.exitCode = 1

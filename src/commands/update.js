@@ -4,6 +4,7 @@ import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, upda
 import { SKILL_FILES, ALL_ADAPTERS, adapterContent } from './init.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
+import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -96,6 +97,16 @@ export async function updateCommand(flags = {}) {
       'skills/tools/ (your custom tool skills)',
       'project_scaffolding/ (except _README.md)',
     ], '   • ')
+    // Check reviewer CLIs
+    blankLine()
+    printSection('Reviewer CLIs:')
+    const reviewerResults = await checkReviewerCLIs(specdevPath)
+    if (reviewerResults.length > 0) {
+      printReviewerCheck(reviewerResults)
+    } else {
+      console.log('   (no reviewer configs found)')
+    }
+
     blankLine()
     console.log('💡 Your project-specific files remain untouched (except official built-in tool skills)')
     console.log('💡 If this project has legacy assignments, run: specdev migrate')

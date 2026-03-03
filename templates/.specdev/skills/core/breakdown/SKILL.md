@@ -117,10 +117,14 @@ All other tasks default to `standard`. Use `lightweight` only for trivial scaffo
 3. Save to `breakdown/plan.md` in the assignment folder
 4. A subagent review (1-2 rounds) will check the plan for completeness and correctness
    - If the review finds issues: address them and re-run the review
-5. Once the plan review passes, start implementation immediately — no user approval needed:
-   - Ensure `implementation/` directory and `implementation/progress.json` (`{}`) exist
-   - Read `.specdev/skills/core/implementing/SKILL.md` and follow it
-   - Do NOT stop, report, or wait for user input between plan completion and implementation start
+
+### Phase 5: Start Implementation (MANDATORY — do not stop here)
+
+Breakdown has NO user gate. Once the plan review passes, you MUST continue immediately:
+
+Run `specdev implement` and follow its output exactly.
+
+Do NOT stop, report, or wait for user input between plan completion and implementation start.
 
 ## Rules
 

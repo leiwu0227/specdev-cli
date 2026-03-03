@@ -82,7 +82,7 @@ setupGitRepo()
 setupReviewerConfig('echo-pass', {
   name: 'echo-pass',
   command: "echo 'LGTM, code looks good'",
-  scope: 'diff',
+
   max_rounds: 3,
 })
 result = runScript(['--reviewer', 'echo-pass', '--round', '1'])
@@ -92,24 +92,11 @@ assert(json.verdict === 'pass', 'verdict is pass')
 assert(json.round === 1, 'round is 1')
 assert(json.escalate === false, 'escalate is false')
 
-console.log('\nreviewloop.sh (untracked files in diff scope):')
-writeFileSync(join(TEST_DIR, 'new-file.js'), 'export const y = 42\n')
-setupReviewerConfig('check-untracked', {
-  name: 'check-untracked',
-  command: "if [[ \"$REVIEWLOOP_CONTEXT\" == *new-file.js* ]]; then echo 'PASS'; else echo 'needs changes: missing untracked file'; fi",
-  scope: 'diff',
-  max_rounds: 3,
-})
-result = runScript(['--reviewer', 'check-untracked', '--round', '1'])
-assert(result.status === 0, 'exits 0 for untracked file check')
-json = JSON.parse(result.stdout)
-assert(json.verdict === 'pass', 'diff scope includes untracked file context')
-
 console.log('\nreviewloop.sh (fail verdict):')
 setupReviewerConfig('echo-fail', {
   name: 'echo-fail',
   command: "echo 'needs changes: missing error handling'",
-  scope: 'diff',
+
   max_rounds: 3,
 })
 result = runScript(['--reviewer', 'echo-fail', '--round', '1'])
@@ -130,7 +117,7 @@ console.log('\nreviewloop.sh (ambiguous output):')
 setupReviewerConfig('echo-ambiguous', {
   name: 'echo-ambiguous',
   command: "echo 'I have some thoughts about this code'",
-  scope: 'diff',
+
   max_rounds: 3,
 })
 result = runScript(['--reviewer', 'echo-ambiguous', '--round', '1'])
@@ -142,7 +129,7 @@ console.log('\nreviewloop.sh (command failure):')
 setupReviewerConfig('bad-cmd', {
   name: 'bad-cmd',
   command: 'nonexistent-binary-xyz',
-  scope: 'diff',
+
   max_rounds: 3,
 })
 result = runScript(['--reviewer', 'bad-cmd', '--round', '1'])
@@ -152,7 +139,7 @@ console.log('\nreviewloop.sh (multi-line output):')
 setupReviewerConfig('multiline', {
   name: 'multiline',
   command: "printf 'line1\\nneeds changes:\\n- fix error handling\\n- add tests'",
-  scope: 'diff',
+
   max_rounds: 3,
 })
 result = runScript(['--reviewer', 'multiline', '--round', '1'])
@@ -166,7 +153,7 @@ console.log('\nreviewloop.sh (special JSON chars):')
 setupReviewerConfig('json-chars', {
   name: 'json-chars',
   command: "echo \"needs changes: use \\\"const\\\" instead of \\\"var\\\"\"",
-  scope: 'diff',
+
   max_rounds: 3,
 })
 result = runScript(['--reviewer', 'json-chars', '--round', '1'])
@@ -178,7 +165,7 @@ assert(json.findings.includes('const'), 'findings preserve content with quotes')
 console.log('\nreviewloop.sh (missing command field):')
 setupReviewerConfig('missing-command', {
   name: 'missing-command',
-  scope: 'diff',
+
   max_rounds: 3,
 })
 result = runScript(['--reviewer', 'missing-command', '--round', '1'])

@@ -17,7 +17,7 @@ type: core
 
 | Script | Purpose | When to run |
 |--------|---------|-------------|
-| `scripts/setup-worktree.sh` | Create a git worktree + branch for a task | Before dispatching work to a worktree |
+| `.specdev/skills/core/parallel-worktrees/scripts/setup-worktree.sh` | Create a git worktree + branch for a task | Before dispatching work to a worktree |
 
 ## Process
 
@@ -39,7 +39,7 @@ Before creating worktrees, verify the tasks can run in parallel:
 
 For each parallelizable task:
 
-1. Run `scripts/setup-worktree.sh <project-root> <task-name> [base-branch]`
+1. Run `.specdev/skills/core/parallel-worktrees/scripts/setup-worktree.sh <project-root> <task-name> [base-branch]`
 2. The script creates a worktree at `../<project>-worktrees/worktree/<task-name>`
 3. Each worktree gets its own branch: `worktree/<task-name>`
 4. Verify the worktree was created successfully (check the JSON output)

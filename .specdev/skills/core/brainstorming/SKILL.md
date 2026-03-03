@@ -21,13 +21,13 @@ next: breakdown
 
 | Script | Purpose | When to run |
 |--------|---------|-------------|
-| `scripts/get-project-context.sh` | Scan repo structure, recent commits, knowledge files | At the start, before asking questions |
+| `.specdev/skills/core/brainstorming/scripts/get-project-context.sh` | Scan repo structure, recent commits, knowledge files | At the start, before asking questions |
 
 ## Process
 
 ### Phase 1: Understand
 
-1. Run `scripts/get-project-context.sh <project-root>` to get current state
+1. Run `.specdev/skills/core/brainstorming/scripts/get-project-context.sh <project-root>` to get current state
 2. Read the output — repo structure, recent work, existing knowledge
 3. Ask the user 1-3 tightly related questions per message to understand their goal
    - Prefer multiple-choice over open-ended
@@ -89,14 +89,11 @@ Once all design sections are validated:
    - Success criteria
    - Testing approach
 4. Announce: "Brainstorm complete. Design written to assignment folder."
-5. Tell the user: "Run `specdev approve brainstorm` when you're ready to proceed."
+5. Tell the user their options:
+   - `specdev reviewloop brainstorm` — automated external review (e.g., Codex)
+   - `specdev review brainstorm` — manual review in a separate session
+   - `specdev approve brainstorm` — skip review and proceed to breakdown
 6. Stop and wait — do NOT proceed to breakdown until the user has approved
-
-**After stopping**, the user may:
-- Review the design themselves and provide feedback
-- Run `specdev review brainstorm` in a separate session for an independent review
-- Request an automated external review via the **reviewloop** tool skill
-- Run `specdev approve brainstorm` to proceed to breakdown
 
 ## Red Flags
 

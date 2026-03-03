@@ -70,9 +70,9 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
 
     console.log(`✅ Brainstorm approved for ${name}`)
     blankLine()
-    console.log('Proceed to breakdown and implementation:')
+    console.log('Proceed to breakdown:')
     console.log('   1. Read .specdev/skills/core/breakdown/SKILL.md and follow it')
-    console.log('   2. After plan review passes, implementation starts automatically')
+    console.log('   2. After plan review passes, run `specdev implement` to start implementation')
   } else if (phase === 'implementation') {
     // Verify checkpoint-level quality before approving
     const progressPath = join(assignmentPath, 'implementation', 'progress.json')

@@ -17,7 +17,7 @@ type: core
 
 | Script | Purpose | When to run |
 |--------|---------|-------------|
-| `scripts/verify-tests.sh` | Run the project's test suite and return structured results | After writing a test (RED), after writing code (GREEN), after refactoring |
+| `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh` | Run the project's test suite and return structured results | After writing a test (RED), after writing code (GREEN), after refactoring |
 
 ## Process
 
@@ -29,7 +29,7 @@ type: core
 
 ### Step 2: Verify RED
 
-1. Run `scripts/verify-tests.sh <project-root> [test-command]`
+1. Run `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh <project-root> [test-command]`
 2. Confirm the output shows `"passed": false`
 3. If the test passes immediately — STOP. Your test is wrong:
    - Either the behavior already exists (check the codebase)
@@ -45,7 +45,7 @@ type: core
 
 ### Step 4: Verify GREEN
 
-1. Run `scripts/verify-tests.sh <project-root> [test-command]`
+1. Run `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh <project-root> [test-command]`
 2. Confirm the output shows `"passed": true`
 3. If tests still fail — fix the implementation, do not modify the test
 4. ALL tests must pass, not just the new one
@@ -54,7 +54,7 @@ type: core
 
 1. Clean up the code you just wrote (if needed)
 2. Remove duplication, improve naming, simplify logic
-3. Run `scripts/verify-tests.sh <project-root>` again
+3. Run `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh <project-root>` again
 4. Confirm all tests still pass — refactoring must not change behavior
 5. If tests fail after refactoring, you changed behavior — undo and try again
 

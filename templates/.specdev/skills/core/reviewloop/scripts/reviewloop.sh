@@ -5,7 +5,7 @@
 # and enforces round limits with escalation.
 #
 # Usage:
-#   reviewloop.sh --reviewer <name> --round <N> [--scope diff|files|custom] [--context <text>]
+#   reviewloop.sh --reviewer <name> --round <N>
 #
 # Environment:
 #   REVIEWLOOP_REVIEWERS_DIR  Path to directory containing reviewer JSON configs.
@@ -14,17 +14,14 @@
 # Output (stdout): JSON object with verdict, round, max_rounds, escalate, findings
 # Exit 0 on successful execution (even if verdict=fail), exit 1 on errors.
 #
-# Security note: reviewer commands are executed via eval. Placeholder tokens
-# ({prompt}, {stdin}, {files}) are replaced with env var references rather
-# than literal content to avoid injection. Only run trusted reviewer configs.
+# Security note: reviewer commands are executed via eval. Only run trusted
+# reviewer configs.
 
 set -euo pipefail
 
 # --- Defaults ---
 REVIEWER=""
 ROUND=""
-SCOPE=""
-CONTEXT=""
 
 # --- Helpers ---
 require_arg_value() {
@@ -34,33 +31,6 @@ require_arg_value() {
     echo "Error: ${flag} requires a value" >&2
     exit 1
   fi
-}
-
-collect_changed_files() {
-  {
-    git diff HEAD --name-only 2>/dev/null || true
-    git ls-files --others --exclude-standard 2>/dev/null || true
-  } | awk 'NF && !seen[$0]++'
-}
-
-append_files_to_context() {
-  local files="$1"
-  local out="$2"
-  if [[ -z "$files" ]]; then
-    printf '%s' "$out"
-    return
-  fi
-
-  while IFS= read -r f; do
-    [[ -z "$f" ]] && continue
-    if [[ -f "$f" ]]; then
-      out="${out}--- ${f} ---
-$(cat "$f")
-"
-    fi
-  done <<< "$files"
-
-  printf '%s' "$out"
 }
 
 # --- Parse arguments ---
@@ -74,16 +44,6 @@ while [[ $# -gt 0 ]]; do
     --round)
       require_arg_value "--round" "${2-}"
       ROUND="$2"
-      shift 2
-      ;;
-    --scope)
-      require_arg_value "--scope" "${2-}"
-      SCOPE="$2"
-      shift 2
-      ;;
-    --context)
-      require_arg_value "--context" "${2-}"
-      CONTEXT="$2"
       shift 2
       ;;
     *) echo "Unknown argument: $1" >&2; exit 1 ;;
@@ -124,7 +84,6 @@ const path = process.argv[1]
 try {
   const cfg = JSON.parse(fs.readFileSync(path, "utf8"))
   console.log(cfg.command ?? "")
-  console.log(cfg.scope ?? "")
   console.log(cfg.max_rounds ?? "")
   console.log(cfg.pass_pattern ?? "")
   console.log(cfg.fail_pattern ?? "")
@@ -137,10 +96,9 @@ try {
 fi
 
 COMMAND="${__REVIEWLOOP_CFG[0]:-}"
-CONFIG_SCOPE="${__REVIEWLOOP_CFG[1]:-}"
-MAX_ROUNDS="${__REVIEWLOOP_CFG[2]:-}"
-PASS_PATTERN="${__REVIEWLOOP_CFG[3]:-}"
-FAIL_PATTERN="${__REVIEWLOOP_CFG[4]:-}"
+MAX_ROUNDS="${__REVIEWLOOP_CFG[1]:-}"
+PASS_PATTERN="${__REVIEWLOOP_CFG[2]:-}"
+FAIL_PATTERN="${__REVIEWLOOP_CFG[3]:-}"
 unset __REVIEWLOOP_CFG
 
 if [[ -z "${COMMAND//[[:space:]]/}" ]]; then
@@ -158,59 +116,8 @@ if ! [[ "$MAX_ROUNDS" =~ ^[0-9]+$ ]] || [[ "$MAX_ROUNDS" -lt 1 ]]; then
   exit 1
 fi
 
-# Scope: flag overrides config
-EFFECTIVE_SCOPE="${SCOPE:-${CONFIG_SCOPE:-diff}}"
-
-# --- Assemble context ---
-REVIEW_CONTEXT=""
-case "$EFFECTIVE_SCOPE" in
-  diff)
-    REVIEW_CONTEXT="$(git diff HEAD 2>/dev/null || true)"
-    UNTRACKED_FILES="$(git ls-files --others --exclude-standard 2>/dev/null || true)"
-    if [[ -n "$UNTRACKED_FILES" ]]; then
-      REVIEW_CONTEXT="$(append_files_to_context "$UNTRACKED_FILES" "$REVIEW_CONTEXT")"
-    fi
-    ;;
-  files)
-    CHANGED_FILES="$(collect_changed_files)"
-    REVIEW_CONTEXT="$(append_files_to_context "$CHANGED_FILES" "$REVIEW_CONTEXT")"
-    ;;
-  custom)
-    REVIEW_CONTEXT="$CONTEXT"
-    ;;
-  *)
-    REVIEW_CONTEXT="$(git diff HEAD 2>/dev/null || true)"
-    ;;
-esac
-
-# --- Build review prompt ---
-REVIEW_PROMPT="Review the following code changes (round ${ROUND} of ${MAX_ROUNDS}):
-
-${REVIEW_CONTEXT}"
-
-# --- Export env vars for commands that want them ---
-export REVIEWLOOP_PROMPT="$REVIEW_PROMPT"
-export REVIEWLOOP_CONTEXT="$REVIEW_CONTEXT"
-export REVIEWLOOP_ROUND="$ROUND"
-export REVIEWLOOP_MAX_ROUNDS="$MAX_ROUNDS"
-
-# --- Write context to temp file for commands that need file input ---
-TMPFILE="$(mktemp)"
-trap 'rm -f "$TMPFILE"' EXIT
-echo "$REVIEW_PROMPT" > "$TMPFILE"
-export REVIEWLOOP_CONTEXT_FILE="$TMPFILE"
-
-# --- Substitute placeholders in command ---
-# Replace tokens with env var references so eval expands them at runtime.
-# This avoids multi-line/special-char issues since only the variable name
-# is injected into the command string, not the content itself.
-CMD="$COMMAND"
-CMD="${CMD//\{prompt\}/\$REVIEWLOOP_PROMPT}"
-CMD="${CMD//\{stdin\}/\$REVIEWLOOP_CONTEXT}"
-export REVIEWLOOP_FILES="$(collect_changed_files)"
-CMD="${CMD//\{files\}/\$REVIEWLOOP_FILES}"
-
 # --- Execute reviewer command ---
+CMD="$COMMAND"
 set +e
 OUTPUT="$(eval "$CMD" 2>&1)"
 CMD_EXIT=$?

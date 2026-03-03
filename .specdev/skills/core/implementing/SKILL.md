@@ -21,22 +21,22 @@ next: knowledge-capture
 
 | Script | Purpose | When to run |
 |--------|---------|-------------|
-| `scripts/extract-tasks.sh` | Parse plan into structured JSON task list | At the start |
-| `scripts/track-progress.sh` | Mark tasks started/completed, get summary | After each task |
+| `.specdev/skills/core/implementing/scripts/extract-tasks.sh` | Parse plan into structured JSON task list | At the start |
+| `.specdev/skills/core/implementing/scripts/track-progress.sh` | Mark tasks started/completed, get summary | After each task |
 
 ## Prompts
 
 | Prompt | Purpose | When to dispatch |
 |--------|---------|-----------------|
-| `prompts/implementer.md` | Fresh subagent to implement one task | Per task |
-| `prompts/code-reviewer.md` | Verify spec compliance first, then code quality | After implementer completes (`full` mode only) |
+| `.specdev/skills/core/implementing/prompts/implementer.md` | Fresh subagent to implement one task | Per task |
+| `.specdev/skills/core/implementing/prompts/code-reviewer.md` | Verify spec compliance first, then code quality | After implementer completes (`full` mode only) |
 
 ## Process
 
 ### Phase 1: Setup
 
 1. Read `breakdown/plan.md`
-2. Run `scripts/extract-tasks.sh <plan-file>` to get the structured task list
+2. Run `.specdev/skills/core/implementing/scripts/extract-tasks.sh <plan-file>` to get the structured task list
 3. Review — how many tasks, their names, file paths
 
 ### Phase 2: Batch Execution
@@ -45,17 +45,17 @@ Execute tasks in batches of 3. For each batch:
 
 #### Per task (within the batch):
 
-1. Run `scripts/track-progress.sh <plan-file> <N> started`
-2. **Dispatch implementer** — use `prompts/implementer.md` with FULL task text
+1. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> <N> started`
+2. **Dispatch implementer** — use `.specdev/skills/core/implementing/prompts/implementer.md` with FULL task text
    - Fresh subagent, no prior context
    - If the task has a `Skills:` field, read each listed SKILL.md and inject content into the `{TASK_SKILLS}` placeholder
    - Look for skills in `skills/core/` first, then `skills/tools/`
    - Subagent implements, tests, commits, self-reviews
 3. **Mode-based review:**
-   - `full`: dispatch `prompts/code-reviewer.md` — FAIL/NOT READY blocks; implementer fixes → re-review loop
+   - `full`: dispatch `.specdev/skills/core/implementing/prompts/code-reviewer.md` — FAIL/NOT READY blocks; implementer fixes → re-review loop
    - `standard`: self-review only (implementer already did this) — no reviewer subagent
    - `lightweight`: skip review unless the task touched executable logic
-4. Run `scripts/track-progress.sh <plan-file> <N> completed`
+4. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> <N> completed`
 
 #### After each batch:
 
@@ -69,11 +69,13 @@ The last batch may have fewer than 3 tasks.
 ### Phase 3: Final Review
 
 1. Run full test suite one final time
-2. Run `scripts/track-progress.sh <plan-file> summary`
+2. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> summary`
 3. Present a summary to the user inline: what was built, tests passing, any notable decisions
-4. Ask the user for approval to proceed to knowledge capture
-   - If user approves: proceed to knowledge capture
-   - If user requests changes: address feedback and re-present
+4. Tell the user their options:
+   - `specdev reviewloop implementation` — automated external review (e.g., Codex)
+   - `specdev review implementation` — manual review in a separate session
+   - `specdev approve implementation` — skip review and proceed to knowledge capture
+5. Stop and wait — do NOT proceed until the user has approved
 
 ## Red Flags
 

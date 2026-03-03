@@ -83,19 +83,21 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   }
 
   blankLine()
-  printSection('To run automated review, execute:')
+  printSection('Next step — ask the user which reviewer to use (from the list above)')
+
+  blankLine()
+  printSection('Then run:')
   printLines([
-    '   bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh \\',
-    '     --reviewer <name> --round 1 --scope diff',
+    `   bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh \\`,
+    `     --reviewer <name> --round 1`,
   ])
 
   blankLine()
-  printSection('The agent should:')
+  printSection('After each round:')
   printLines([
-    '  1. Pick a reviewer and scope',
-    '  2. Run the script',
-    '  3. Fix issues from findings',
-    '  4. Re-run until pass or max rounds',
+    '  - verdict=pass → report success, continue workflow',
+    '  - verdict=fail, escalate=false → fix findings, re-run with --round N+1',
+    '  - verdict=fail, escalate=true → STOP, show findings to user, ask how to proceed',
   ])
   blankLine()
 }
