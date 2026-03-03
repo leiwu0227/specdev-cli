@@ -1,5 +1,5 @@
 ---
-name: autoloop
+name: reviewloop
 description: Automated external review loop — invoke external CLI reviewer, fix issues, resubmit until pass
 type: tool
 phase: implement
@@ -12,7 +12,7 @@ triggers:
   - when user requests external review
 ---
 
-# Autoloop — Automated External Review
+# Reviewloop — Automated External Review
 
 Invoke an external CLI reviewer (Codex, OpenCode, Aider, etc.) in an automated fix-resubmit loop. The script handles mechanics (invoke CLI, parse pass/fail, enforce round limits). You handle judgment (what to fix, how to fix it).
 
@@ -40,7 +40,7 @@ The script assembles the code context (diff, file contents) and passes it to the
 ```json
 {
   "name": "codex-with-context",
-  "command": "codex -q --prompt \"$AUTOLOOP_PROMPT\"",
+  "command": "codex -q --prompt \"$REVIEWLOOP_PROMPT\"",
   "scope": "diff",
   "max_rounds": 3
 }
@@ -49,10 +49,10 @@ The script assembles the code context (diff, file contents) and passes it to the
 Default configs for Codex are included. Copy and customize them for other reviewers.
 
 **Environment variables** available to your command:
-- `$AUTOLOOP_PROMPT` — the full review prompt with code context baked in
-- `$AUTOLOOP_CONTEXT` — just the code context (diff, file contents, or custom text)
-- `$AUTOLOOP_CONTEXT_FILE` — path to a temp file containing the context
-- `$AUTOLOOP_FILES` — list of changed file paths
+- `$REVIEWLOOP_PROMPT` — the full review prompt with code context baked in
+- `$REVIEWLOOP_CONTEXT` — just the code context (diff, file contents, or custom text)
+- `$REVIEWLOOP_CONTEXT_FILE` — path to a temp file containing the context
+- `$REVIEWLOOP_FILES` — list of changed file paths
 
 **Config fields:**
 - `command` (required) — shell command to run
@@ -85,7 +85,7 @@ Options:
 Execute the script:
 
 ```bash
-bash .specdev/skills/tools/autoloop/scripts/autoloop.sh --reviewer <name> --round 1 --scope <scope>
+bash .specdev/skills/tools/reviewloop/scripts/reviewloop.sh --reviewer <name> --round 1 --scope <scope>
 ```
 
 The script returns JSON:

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# autoloop.sh — deterministic review loop engine
+# reviewloop.sh — deterministic review loop engine
 #
 # Invokes an external CLI reviewer, parses pass/fail from its output,
 # and enforces round limits with escalation.
 #
 # Usage:
-#   autoloop.sh --reviewer <name> --round <N> [--scope diff|files|custom] [--context <text>]
+#   reviewloop.sh --reviewer <name> --round <N> [--scope diff|files|custom] [--context <text>]
 #
 # Environment:
-#   AUTOLOOP_REVIEWERS_DIR  Path to directory containing reviewer JSON configs.
+#   REVIEWLOOP_REVIEWERS_DIR  Path to directory containing reviewer JSON configs.
 #                           Falls back to ../reviewers relative to this script.
 #
 # Output (stdout): JSON object with verdict, round, max_rounds, escalate, findings
@@ -55,7 +55,7 @@ fi
 
 # --- Locate reviewer config ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REVIEWERS_DIR="${AUTOLOOP_REVIEWERS_DIR:-"${SCRIPT_DIR}/../reviewers"}"
+REVIEWERS_DIR="${REVIEWLOOP_REVIEWERS_DIR:-"${SCRIPT_DIR}/../reviewers"}"
 CONFIG_FILE="${REVIEWERS_DIR}/${REVIEWER}.json"
 
 if [[ ! -f "$CONFIG_FILE" ]]; then
@@ -65,7 +65,7 @@ fi
 
 # --- Parse JSON config ---
 # Use Node for robust JSON parsing (handles escaping/quotes correctly).
-if ! mapfile -t __AUTOLOOP_CFG < <(node -e '
+if ! mapfile -t __REVIEWLOOP_CFG < <(node -e '
 const fs = require("node:fs")
 const path = process.argv[1]
 try {
@@ -83,12 +83,12 @@ try {
   exit 1
 fi
 
-COMMAND="${__AUTOLOOP_CFG[0]:-}"
-CONFIG_SCOPE="${__AUTOLOOP_CFG[1]:-}"
-MAX_ROUNDS="${__AUTOLOOP_CFG[2]:-}"
-PASS_PATTERN="${__AUTOLOOP_CFG[3]:-}"
-FAIL_PATTERN="${__AUTOLOOP_CFG[4]:-}"
-unset __AUTOLOOP_CFG
+COMMAND="${__REVIEWLOOP_CFG[0]:-}"
+CONFIG_SCOPE="${__REVIEWLOOP_CFG[1]:-}"
+MAX_ROUNDS="${__REVIEWLOOP_CFG[2]:-}"
+PASS_PATTERN="${__REVIEWLOOP_CFG[3]:-}"
+FAIL_PATTERN="${__REVIEWLOOP_CFG[4]:-}"
+unset __REVIEWLOOP_CFG
 
 if [[ -z "${COMMAND//[[:space:]]/}" ]]; then
   echo "Error: reviewer config '${REVIEWER}' is missing required field 'command'" >&2
@@ -140,26 +140,26 @@ REVIEW_PROMPT="Review the following code changes (round ${ROUND} of ${MAX_ROUNDS
 ${REVIEW_CONTEXT}"
 
 # --- Export env vars for commands that want them ---
-export AUTOLOOP_PROMPT="$REVIEW_PROMPT"
-export AUTOLOOP_CONTEXT="$REVIEW_CONTEXT"
-export AUTOLOOP_ROUND="$ROUND"
-export AUTOLOOP_MAX_ROUNDS="$MAX_ROUNDS"
+export REVIEWLOOP_PROMPT="$REVIEW_PROMPT"
+export REVIEWLOOP_CONTEXT="$REVIEW_CONTEXT"
+export REVIEWLOOP_ROUND="$ROUND"
+export REVIEWLOOP_MAX_ROUNDS="$MAX_ROUNDS"
 
 # --- Write context to temp file for commands that need file input ---
 TMPFILE="$(mktemp)"
 trap 'rm -f "$TMPFILE"' EXIT
 echo "$REVIEW_PROMPT" > "$TMPFILE"
-export AUTOLOOP_CONTEXT_FILE="$TMPFILE"
+export REVIEWLOOP_CONTEXT_FILE="$TMPFILE"
 
 # --- Substitute placeholders in command ---
 # Replace tokens with env var references so eval expands them at runtime.
 # This avoids multi-line/special-char issues since only the variable name
 # is injected into the command string, not the content itself.
 CMD="$COMMAND"
-CMD="${CMD//\{prompt\}/\$AUTOLOOP_PROMPT}"
-CMD="${CMD//\{stdin\}/\$AUTOLOOP_CONTEXT}"
-export AUTOLOOP_FILES="$(git diff --name-only 2>/dev/null || true)"
-CMD="${CMD//\{files\}/\$AUTOLOOP_FILES}"
+CMD="${CMD//\{prompt\}/\$REVIEWLOOP_PROMPT}"
+CMD="${CMD//\{stdin\}/\$REVIEWLOOP_CONTEXT}"
+export REVIEWLOOP_FILES="$(git diff --name-only 2>/dev/null || true)"
+CMD="${CMD//\{files\}/\$REVIEWLOOP_FILES}"
 
 # --- Execute reviewer command ---
 set +e
