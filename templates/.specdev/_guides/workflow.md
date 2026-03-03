@@ -22,9 +22,12 @@ Create `brainstorm/` and `context/` subdirectories inside it.
 **Checkpoint:** Run `specdev checkpoint brainstorm`.
 Must pass before requesting review.
 
-**Review:** User may run `specdev review brainstorm` in a separate session (optional).
+**Review (optional):**
+- `specdev review brainstorm` — manual review in a separate session
+- `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex)
 
 **Gate:** User runs `specdev approve brainstorm`. Do not proceed without approval.
+Breakdown runs automatically after approval — no separate command needed.
 
 ---
 
@@ -49,7 +52,9 @@ Must pass before requesting review.
 **Checkpoint:** Run `specdev checkpoint implementation`.
 Must pass before requesting review.
 
-**Review:** User may run `specdev review implementation` in a separate session (optional).
+**Review (optional):**
+- `specdev review implementation` — manual review in a separate session
+- `specdev reviewloop implementation` — automated review via external CLI (e.g., Codex)
 
 **Gate:** User runs `specdev approve implementation`. Do not proceed without approval.
 
