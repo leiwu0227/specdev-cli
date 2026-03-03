@@ -5,7 +5,7 @@ Create `utils/validator.py` with a `validate_email()` function.
 
 ## Inputs
 - Scaffold: `scaffold/utils_validator.md`
-- Plan: `plan.md` (Architecture and Validation Approach sections)
+- Plan: `breakdown/plan.md` (Architecture and Validation Approach sections)
 
 ## Acceptance Criteria
 - Function accepts a string, returns `(bool, str)` tuple

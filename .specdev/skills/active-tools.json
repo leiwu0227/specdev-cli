@@ -1,0 +1,16 @@
+{
+  "tools": {
+    "reviewloop": {
+      "installed": "2026-03-03",
+      "validation": "none",
+      "lastValidated": null,
+      "wrappers": [
+        ".claude/skills/reviewloop/SKILL.md"
+      ],
+      "triggers": {}
+    }
+  },
+  "agents": [
+    "claude-code"
+  ]
+}

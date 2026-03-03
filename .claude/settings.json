@@ -1,5 +1,18 @@
 {
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/specdev-session-start.sh"
+          }
+        ]
+      }
+    ]
   }
 }

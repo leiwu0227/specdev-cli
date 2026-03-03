@@ -1,49 +1,34 @@
-# SpecDev workflow overview
+# SpecDev Workflow
 
-**Version:** 0.0.2 (assignment-first restructure)
+You are working in a project that uses SpecDev — a spec-driven development framework. You MUST follow this workflow for all work.
 
-SpecDev keeps work aligned through assignment folders under `.specdev/`. Use this page as a quick map before diving into the guides.
+## How SpecDev Works
 
-## 🚀 Getting Started (For Coding Agents)
+All work is organized into **assignments**. An assignment is a self-contained unit of work — a feature, bugfix, refactor, or investigation — tracked in its own folder under `assignments/`. Each assignment progresses through the same 4 phases in order, producing specific artifacts at each step. The CLI enforces gates between phases so work cannot advance until artifacts are validated and the user approves.
 
-**First time here?** Follow these steps:
+## First Steps
 
-1. **Understand the project**
-   - Read `project_notes/big_picture.md` to understand the project goals and context
-   - ⚠️ If `big_picture.md` is empty, ask the user to fill it out before proceeding
+1. Read `project_notes/big_picture.md` — understand the project
+2. Check `assignments/` for active work
+   - Active assignment exists → determine your current phase and resume
+   - No assignment → run `specdev assignment "<description>"` to reserve an ID
 
-2. **Check current status**
-   - Review `project_notes/assignment_progress.md` to see active assignments
-   - Check `project_notes/feature_descriptions.md` to understand what's already built
+**Reference:** `_index.md` is the detailed lookup for all guides, skills, commands, and project context. Consult it when you need to find a specific resource.
 
-3. **Learn the workflow**
-   - Read `_router.md` to understand which guide applies to your task
-   - Follow the appropriate workflow guide in `_guides/workflow/`
+## The Workflow
 
-4. **Start working**
-   - Follow the assignment guide in `_guides/assignment_guide.md`
-   - Use templates from `_templates/` as starting points
+Every assignment follows the same 4 phases in order:
 
-## Core pieces
-- `.specdev/_router.md` – starting point that points you to the right guide.
-- `.specdev/_guides/` – reference library for codestyle and assignment guidance.
-  - `_guides/task/` – repeatable steps (planning, scaffolding, implementing, validation, research, presentation)
-  - `_guides/workflow/` – domain-specific sequencing (feature, refactor, familiarization, bugfix)
-  - See `_guides/README.md` for the complete index
-- `.specdev/assignments/` – active work, one `#####_type_name` folder per assignment tracked in `project_notes/assignment_progress.md`.
-- `.specdev/_templates/` – scaffolding template, gate checklist, and worked examples you can copy when kicking off a similar assignment.
-- `.specdev/project_scaffolding/` – lightweight mirror of important source files, updated at Gate 5.
-- `.specdev/project_notes/` – shared context including big_picture.md (goals), assignment_progress.md (status), and feature_descriptions.md (what's built).
+1. **Brainstorm** — understand the problem, explore approaches, produce a design or research output
+2. **Breakdown** — decompose into executable tasks with TDD steps
+3. **Implement** — execute tasks in batches, subagent per task, mode-based review
+4. **Summary** — capture learnings, update project docs, finalize
 
-## Assignment flow (very short version)
-1. Confirm scope in `proposal.md` (see `assignment_guide.md`).
-2. Plan and gather facts in `plan.md`.
-3. Scaffold each future source file, get Gate 1 approval.
-4. Implement tasks with Gate 2 checks, then clear Gates 3–5 (tests, integration, docs/scaffolding).
+Read `_guides/workflow.md` for the full phase-by-phase guide with skill references and gates.
 
-## First steps for new contributors
-- Read `.specdev/_router.md` and the workflow guide for your assignment type.
-- Skim `project_notes/big_picture.md` and `assignment_progress.md` to understand current priorities.
-- Reuse templates or examples instead of rewriting boilerplate.
+## Rules
 
-Treat this directory as the source of truth: when the process evolves, update the relevant guide rather than duplicating details here.
+- Follow the phases in order. Do not skip phases.
+- No completion claims without evidence.
+- Announce subtasks with "Specdev: <action>".
+- Read `_guides/codestyle_guide.md` before writing any code.
