@@ -4,8 +4,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const SCRIPT = join(__dirname, '..', 'templates', '.specdev', 'skills', 'tools', 'autoloop', 'scripts', 'autoloop.sh')
-const TEST_DIR = join(__dirname, 'test-autoloop-script-output')
+const SCRIPT = join(__dirname, '..', 'templates', '.specdev', 'skills', 'tools', 'reviewloop', 'scripts', 'reviewloop.sh')
+const TEST_DIR = join(__dirname, 'test-reviewloop-script-output')
 
 let failures = 0
 let passes = 0
@@ -37,7 +37,7 @@ function runScript(args) {
   return spawnSync('bash', [SCRIPT, ...args], {
     encoding: 'utf-8',
     cwd: TEST_DIR,
-    env: { ...process.env, AUTOLOOP_REVIEWERS_DIR: join(TEST_DIR, 'reviewers') },
+    env: { ...process.env, REVIEWLOOP_REVIEWERS_DIR: join(TEST_DIR, 'reviewers') },
   })
 }
 
@@ -45,24 +45,24 @@ cleanup()
 mkdirSync(TEST_DIR, { recursive: true })
 
 // Test: missing --reviewer flag
-console.log('\nautoloop.sh (missing reviewer):')
+console.log('\nreviewloop.sh (missing reviewer):')
 let result = runScript([])
 assert(result.status === 1, 'exits 1 without --reviewer')
 
 // Test: unknown reviewer config
-console.log('\nautoloop.sh (unknown reviewer):')
+console.log('\nreviewloop.sh (unknown reviewer):')
 result = runScript(['--reviewer', 'nonexistent', '--round', '1'])
 assert(result.status === 1, 'exits 1 for unknown reviewer')
 assert(result.stderr.includes('not found'), 'error mentions config not found')
 
 // Test: invalid --round flag
-console.log('\nautoloop.sh (invalid round):')
+console.log('\nreviewloop.sh (invalid round):')
 result = runScript(['--reviewer', 'nonexistent', '--round', 'abc'])
 assert(result.status === 1, 'exits 1 for non-numeric round')
 assert(result.stderr.includes('positive integer'), 'error mentions positive integer round')
 
 // Test: pass verdict
-console.log('\nautoloop.sh (pass verdict):')
+console.log('\nreviewloop.sh (pass verdict):')
 setupGitRepo()
 setupReviewerConfig('echo-pass', {
   name: 'echo-pass',
@@ -78,7 +78,7 @@ assert(json.round === 1, 'round is 1')
 assert(json.escalate === false, 'escalate is false')
 
 // Test: fail verdict
-console.log('\nautoloop.sh (fail verdict):')
+console.log('\nreviewloop.sh (fail verdict):')
 setupReviewerConfig('echo-fail', {
   name: 'echo-fail',
   command: "echo 'needs changes: missing error handling'",
@@ -93,7 +93,7 @@ assert(json.escalate === false, 'escalate is false on round 1')
 assert(json.findings.includes('missing error handling'), 'findings contain reviewer output')
 
 // Test: escalation on max rounds
-console.log('\nautoloop.sh (escalation):')
+console.log('\nreviewloop.sh (escalation):')
 result = runScript(['--reviewer', 'echo-fail', '--round', '3'])
 assert(result.status === 0, 'exits 0')
 json = JSON.parse(result.stdout)
@@ -101,7 +101,7 @@ assert(json.verdict === 'fail', 'verdict is fail')
 assert(json.escalate === true, 'escalate is true at max rounds')
 
 // Test: neither pattern matches → defaults to fail
-console.log('\nautoloop.sh (ambiguous output):')
+console.log('\nreviewloop.sh (ambiguous output):')
 setupReviewerConfig('echo-ambiguous', {
   name: 'echo-ambiguous',
   command: "echo 'I have some thoughts about this code'",
@@ -114,7 +114,7 @@ json = JSON.parse(result.stdout)
 assert(json.verdict === 'fail', 'ambiguous defaults to fail')
 
 // Test: custom scope via --context
-console.log('\nautoloop.sh (custom context):')
+console.log('\nreviewloop.sh (custom context):')
 setupReviewerConfig('echo-context', {
   name: 'echo-context',
   command: "echo 'pass'",
@@ -127,14 +127,14 @@ json = JSON.parse(result.stdout)
 assert(json.verdict === 'pass', 'pass with custom context')
 
 // Test: scope override via flag
-console.log('\nautoloop.sh (scope override):')
+console.log('\nreviewloop.sh (scope override):')
 result = runScript(['--reviewer', 'echo-pass', '--round', '1', '--scope', 'files'])
 assert(result.status === 0, 'exits 0 with scope override')
 json = JSON.parse(result.stdout)
 assert(json.verdict === 'pass', 'pass with files scope')
 
 // Test: reviewer command failure
-console.log('\nautoloop.sh (command failure):')
+console.log('\nreviewloop.sh (command failure):')
 setupReviewerConfig('bad-cmd', {
   name: 'bad-cmd',
   command: 'nonexistent-binary-xyz',
@@ -145,7 +145,7 @@ result = runScript(['--reviewer', 'bad-cmd', '--round', '1'])
 assert(result.status === 1, 'exits 1 when reviewer command fails')
 
 // Test: multi-line reviewer output produces valid JSON
-console.log('\nautoloop.sh (multi-line output):')
+console.log('\nreviewloop.sh (multi-line output):')
 setupReviewerConfig('multiline', {
   name: 'multiline',
   command: "printf 'line1\\nneeds changes:\\n- fix error handling\\n- add tests'",
@@ -160,7 +160,7 @@ assert(json.findings.includes('fix error handling'), 'findings preserve multi-li
 assert(json.findings.includes('add tests'), 'findings preserve all lines')
 
 // Test: reviewer output with special JSON characters (double quotes)
-console.log('\nautoloop.sh (special JSON chars):')
+console.log('\nreviewloop.sh (special JSON chars):')
 setupReviewerConfig('json-chars', {
   name: 'json-chars',
   command: "echo \"needs changes: use \\\"const\\\" instead of \\\"var\\\"\"",
@@ -174,7 +174,7 @@ assert(json.verdict === 'fail', 'verdict is fail')
 assert(json.findings.includes('const'), 'findings preserve content with quotes')
 
 // Test: pass output containing "failures" should still pass
-console.log('\nautoloop.sh (pass text with failures word):')
+console.log('\nreviewloop.sh (pass text with failures word):')
 setupReviewerConfig('pass-with-failures-word', {
   name: 'pass-with-failures-word',
   command: "echo 'PASS: no failures found'",
@@ -187,7 +187,7 @@ json = JSON.parse(result.stdout)
 assert(json.verdict === 'pass', 'verdict is pass when output says no failures')
 
 // Test: reviewer config missing required command
-console.log('\nautoloop.sh (missing command field):')
+console.log('\nreviewloop.sh (missing command field):')
 setupReviewerConfig('missing-command', {
   name: 'missing-command',
   scope: 'diff',

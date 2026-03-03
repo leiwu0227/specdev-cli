@@ -72,13 +72,13 @@ console.log('\nupdate refreshes official tool skills:')
 cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 
-const autoloopSkillPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'autoloop', 'SKILL.md')
-writeFileSync(autoloopSkillPath, '# tampered autoloop skill\n')
+const reviewloopSkillPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'reviewloop', 'SKILL.md')
+writeFileSync(reviewloopSkillPath, '# tampered reviewloop skill\n')
 result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds with tampered official tool skill')
-const autoloopAfterUpdate = readFileSync(autoloopSkillPath, 'utf-8')
-assert(autoloopAfterUpdate.includes('name: autoloop'), 'official autoloop skill restored after update')
-assert(!autoloopAfterUpdate.includes('tampered autoloop'), 'tampered official tool content replaced')
+const reviewloopAfterUpdate = readFileSync(reviewloopSkillPath, 'utf-8')
+assert(reviewloopAfterUpdate.includes('name: reviewloop'), 'official reviewloop skill restored after update')
+assert(!reviewloopAfterUpdate.includes('tampered reviewloop'), 'tampered official tool content replaced')
 
 // ---- Test update backfills missing platform adapters ----
 console.log('\nupdate backfills missing adapters:')
