@@ -1,7 +1,7 @@
 ---
 name: reviewloop
 description: Automated external review loop — invoke external CLI reviewer, fix issues, resubmit until pass
-type: tool
+type: core
 phase: implement
 input: Completed work (code changes, design docs, etc.)
 output: Review verdict (pass/fail) with findings
@@ -85,7 +85,7 @@ Options:
 Execute the script:
 
 ```bash
-bash .specdev/skills/tools/reviewloop/scripts/reviewloop.sh --reviewer <name> --round 1 --scope <scope>
+bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh --reviewer <name> --round 1 --scope <scope>
 ```
 
 The script returns JSON:

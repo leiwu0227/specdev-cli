@@ -60,7 +60,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
   // Scan for available reviewers
   const targetDir = resolveTargetDir(flags)
-  const reviewersDir = join(targetDir, '.specdev', 'skills', 'tools', 'reviewloop', 'reviewers')
+  const reviewersDir = join(targetDir, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers')
   const reviewers = []
   if (await fse.pathExists(reviewersDir)) {
     const files = await fse.readdir(reviewersDir)
@@ -77,7 +77,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     }
   } else {
     console.error('❌ No reviewer configs found')
-    console.log('   Add reviewer JSON configs to .specdev/skills/tools/reviewloop/reviewers/')
+    console.log('   Add reviewer JSON configs to .specdev/skills/core/reviewloop/reviewers/')
     process.exitCode = 1
     return
   }
@@ -85,7 +85,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   blankLine()
   printSection('To run automated review, execute:')
   printLines([
-    '   bash .specdev/skills/tools/reviewloop/scripts/reviewloop.sh \\',
+    '   bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh \\',
     '     --reviewer <name> --round 1 --scope diff',
   ])
 
