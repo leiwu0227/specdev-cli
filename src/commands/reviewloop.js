@@ -1,6 +1,7 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printLines, printSection } from '../utils/output.js'
 
 /**
@@ -58,8 +59,8 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   }
 
   // Scan for available reviewers
-  const specdevDir = join(assignmentPath, '..', '..', '.specdev')
-  const reviewersDir = join(specdevDir, 'skills', 'tools', 'reviewloop', 'reviewers')
+  const targetDir = resolveTargetDir(flags)
+  const reviewersDir = join(targetDir, '.specdev', 'skills', 'tools', 'reviewloop', 'reviewers')
   const reviewers = []
   if (await fse.pathExists(reviewersDir)) {
     const files = await fse.readdir(reviewersDir)
