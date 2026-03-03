@@ -49,6 +49,18 @@ console.log('\nreviewloop.sh (missing reviewer):')
 let result = runScript([])
 assert(result.status === 1, 'exits 1 without --reviewer')
 
+// Test: missing value for --reviewer
+console.log('\nreviewloop.sh (missing reviewer value):')
+result = runScript(['--reviewer'])
+assert(result.status === 1, 'exits 1 when --reviewer value is missing')
+assert(result.stderr.includes('--reviewer requires a value'), 'error mentions missing reviewer value')
+
+// Test: missing value for --round
+console.log('\nreviewloop.sh (missing round value):')
+result = runScript(['--reviewer', 'nonexistent', '--round'])
+assert(result.status === 1, 'exits 1 when --round value is missing')
+assert(result.stderr.includes('--round requires a value'), 'error mentions missing round value')
+
 // Test: unknown reviewer config
 console.log('\nreviewloop.sh (unknown reviewer):')
 result = runScript(['--reviewer', 'nonexistent', '--round', '1'])
@@ -76,6 +88,20 @@ let json = JSON.parse(result.stdout)
 assert(json.verdict === 'pass', 'verdict is pass')
 assert(json.round === 1, 'round is 1')
 assert(json.escalate === false, 'escalate is false')
+
+// Test: untracked files are included in diff scope context
+console.log('\nreviewloop.sh (untracked files in diff scope):')
+writeFileSync(join(TEST_DIR, 'new-file.js'), 'export const y = 42\n')
+setupReviewerConfig('check-untracked', {
+  name: 'check-untracked',
+  command: "if [[ \"$REVIEWLOOP_CONTEXT\" == *new-file.js* ]]; then echo 'PASS'; else echo 'needs changes: missing untracked file'; fi",
+  scope: 'diff',
+  max_rounds: 3,
+})
+result = runScript(['--reviewer', 'check-untracked', '--round', '1'])
+assert(result.status === 0, 'exits 0 for untracked file check')
+json = JSON.parse(result.stdout)
+assert(json.verdict === 'pass', 'diff scope includes untracked file context')
 
 // Test: fail verdict
 console.log('\nreviewloop.sh (fail verdict):')

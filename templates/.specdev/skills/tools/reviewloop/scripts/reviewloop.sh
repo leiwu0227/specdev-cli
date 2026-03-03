@@ -26,13 +26,66 @@ ROUND=""
 SCOPE=""
 CONTEXT=""
 
+# --- Helpers ---
+require_arg_value() {
+  local flag="$1"
+  local next="${2-}"
+  if [[ -z "$next" || "$next" == --* ]]; then
+    echo "Error: ${flag} requires a value" >&2
+    exit 1
+  fi
+}
+
+collect_changed_files() {
+  {
+    git diff HEAD --name-only 2>/dev/null || true
+    git ls-files --others --exclude-standard 2>/dev/null || true
+  } | awk 'NF && !seen[$0]++'
+}
+
+append_files_to_context() {
+  local files="$1"
+  local out="$2"
+  if [[ -z "$files" ]]; then
+    printf '%s' "$out"
+    return
+  fi
+
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    if [[ -f "$f" ]]; then
+      out="${out}--- ${f} ---
+$(cat "$f")
+"
+    fi
+  done <<< "$files"
+
+  printf '%s' "$out"
+}
+
 # --- Parse arguments ---
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --reviewer) REVIEWER="$2"; shift 2 ;;
-    --round)    ROUND="$2";    shift 2 ;;
-    --scope)    SCOPE="$2";    shift 2 ;;
-    --context)  CONTEXT="$2";  shift 2 ;;
+    --reviewer)
+      require_arg_value "--reviewer" "${2-}"
+      REVIEWER="$2"
+      shift 2
+      ;;
+    --round)
+      require_arg_value "--round" "${2-}"
+      ROUND="$2"
+      shift 2
+      ;;
+    --scope)
+      require_arg_value "--scope" "${2-}"
+      SCOPE="$2"
+      shift 2
+      ;;
+    --context)
+      require_arg_value "--context" "${2-}"
+      CONTEXT="$2"
+      shift 2
+      ;;
     *) echo "Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
@@ -113,18 +166,14 @@ REVIEW_CONTEXT=""
 case "$EFFECTIVE_SCOPE" in
   diff)
     REVIEW_CONTEXT="$(git diff HEAD 2>/dev/null || true)"
+    UNTRACKED_FILES="$(git ls-files --others --exclude-standard 2>/dev/null || true)"
+    if [[ -n "$UNTRACKED_FILES" ]]; then
+      REVIEW_CONTEXT="$(append_files_to_context "$UNTRACKED_FILES" "$REVIEW_CONTEXT")"
+    fi
     ;;
   files)
-    CHANGED_FILES="$(git diff HEAD --name-only 2>/dev/null || true)"
-    if [[ -n "$CHANGED_FILES" ]]; then
-      while IFS= read -r f; do
-        if [[ -f "$f" ]]; then
-          REVIEW_CONTEXT="${REVIEW_CONTEXT}--- ${f} ---
-$(cat "$f")
-"
-        fi
-      done <<< "$CHANGED_FILES"
-    fi
+    CHANGED_FILES="$(collect_changed_files)"
+    REVIEW_CONTEXT="$(append_files_to_context "$CHANGED_FILES" "$REVIEW_CONTEXT")"
     ;;
   custom)
     REVIEW_CONTEXT="$CONTEXT"
@@ -158,7 +207,7 @@ export REVIEWLOOP_CONTEXT_FILE="$TMPFILE"
 CMD="$COMMAND"
 CMD="${CMD//\{prompt\}/\$REVIEWLOOP_PROMPT}"
 CMD="${CMD//\{stdin\}/\$REVIEWLOOP_CONTEXT}"
-export REVIEWLOOP_FILES="$(git diff HEAD --name-only 2>/dev/null || true)"
+export REVIEWLOOP_FILES="$(collect_changed_files)"
 CMD="${CMD//\{files\}/\$REVIEWLOOP_FILES}"
 
 # --- Execute reviewer command ---

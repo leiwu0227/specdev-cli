@@ -1,4 +1,4 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync, openSync, closeSync } from 'fs'
 import { join } from 'path'
 import { spawnSync } from 'child_process'
 
@@ -7,10 +7,26 @@ export function cleanupDir(path) {
 }
 
 export function runSpecdev(args, options = {}) {
-  return spawnSync(process.execPath, ['./bin/specdev.js', ...args], {
-    encoding: 'utf-8',
+  const token = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  const stdoutPath = join('/tmp', `specdev-test-${token}.stdout`)
+  const stderrPath = join('/tmp', `specdev-test-${token}.stderr`)
+  const outFd = openSync(stdoutPath, 'w')
+  const errFd = openSync(stderrPath, 'w')
+
+  const result = spawnSync(process.execPath, ['./bin/specdev.js', ...args], {
+    stdio: ['ignore', outFd, errFd],
     ...options,
   })
+
+  closeSync(outFd)
+  closeSync(errFd)
+
+  const stdout = existsSync(stdoutPath) ? readFileSync(stdoutPath, 'utf-8') : ''
+  const stderr = existsSync(stderrPath) ? readFileSync(stderrPath, 'utf-8') : ''
+  rmSync(stdoutPath, { force: true })
+  rmSync(stderrPath, { force: true })
+
+  return { ...result, stdout, stderr }
 }
 
 /**
