@@ -95,6 +95,7 @@ Once all design sections are validated:
 **After stopping**, the user may:
 - Review the design themselves and provide feedback
 - Run `specdev review brainstorm` in a separate session for an independent review
+- Request an automated external review via the **reviewloop** tool skill
 - Run `specdev approve brainstorm` to proceed to breakdown
 
 ## Red Flags
@@ -110,3 +111,4 @@ Once all design sections are validated:
 
 - **After this skill:** breakdown (starts after user runs `specdev approve brainstorm`)
 - **Review:** User may run `specdev review brainstorm` before approving
+- **Reviewloop:** User may request automated external review (e.g., Codex) via the reviewloop tool skill before approving

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import fse from 'fs-extra'
 
-const OFFICIAL_TOOL_SKILLS = ['autoloop']
+const OFFICIAL_TOOL_SKILLS = ['reviewloop']
 
 const CLAUDE_SKILL_MARKERS = [
   join('specdev-assignment', 'SKILL.md'),
@@ -31,6 +31,7 @@ export async function updateSpecdevSystem(source, destination) {
       '_guides/task',
       '_guides/workflow',
       'skills/core/orientation',
+      'skills/tools/autoloop',
     ]
     for (const path of removePaths) {
       const destPath = join(destination, path)
