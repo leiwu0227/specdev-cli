@@ -95,7 +95,16 @@ specdev approve implementation        # Gate: proceed to summary
 
 ### Phase 4: Summary (automatic)
 
-Runs automatically after implementation approval. Distills learnings into workflow observations and documentation gaps for future reference.
+Runs automatically after implementation approval. The agent captures per-assignment learnings:
+- `capture/project-notes-diff.md` — gaps in project documentation
+- `capture/workflow-diff.md` — what worked and what didn't
+
+After multiple assignments are complete, you can aggregate learnings across them:
+
+```bash
+specdev distill workflow               # aggregate workflow observations
+specdev distill project                # aggregate project learnings
+```
 
 ## Lost? Check your status
 
@@ -143,4 +152,9 @@ Agent:     specdev assignment my-feature       # brainstorm → design.md
            specdev checkpoint implementation   # validate implementation (optional)
            specdev reviewloop implementation   # automated review (optional)
            specdev approve implementation      # gate → summary runs automatically
+                                               # summary → capture learnings
+
+# After multiple assignments:
+Terminal:  specdev distill workflow             # aggregate workflow observations
+           specdev distill project             # aggregate project learnings
 ```
