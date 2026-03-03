@@ -1,6 +1,6 @@
 import { join, isAbsolute } from 'path'
 import fse from 'fs-extra'
-import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { resolveAssignmentPath, assignmentName, parseAssignmentId } from '../utils/assignment.js'
 import { readActiveTools } from '../utils/active-tools.js'
 import { blankLine } from '../utils/output.js'
 
@@ -43,6 +43,13 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   }
 }
 
+const REQUIRED_SECTIONS = {
+  feature:         ['Overview', 'Goals', 'Non-Goals', 'Design', 'Success Criteria'],
+  bugfix:          ['Overview', 'Root Cause', 'Fix Design', 'Success Criteria'],
+  refactor:        ['Overview', 'Non-Goals', 'Design', 'Success Criteria'],
+  familiarization: ['Overview'],
+}
+
 async function checkpointBrainstorm(assignmentPath, name) {
   const missing = []
 
@@ -58,12 +65,28 @@ async function checkpointBrainstorm(assignmentPath, name) {
     }
   }
 
+  let designContent = ''
   if (!(await fse.pathExists(designPath))) {
     missing.push('brainstorm/design.md')
   } else {
-    const content = await fse.readFile(designPath, 'utf-8')
-    if (content.trim().length < 20) {
+    designContent = await fse.readFile(designPath, 'utf-8')
+    if (designContent.trim().length < 20) {
       missing.push('brainstorm/design.md (empty or too short)')
+    }
+  }
+
+  // Validate required sections based on assignment type
+  if (designContent && missing.length === 0) {
+    const parsed = parseAssignmentId(name)
+    const type = parsed.type || 'feature'
+    const required = REQUIRED_SECTIONS[type] || REQUIRED_SECTIONS.feature
+
+    for (const section of required) {
+      const escaped = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const pattern = new RegExp(`^##\\s+${escaped}`, 'm')
+      if (!pattern.test(designContent)) {
+        missing.push(`brainstorm/design.md missing required section: ## ${section}`)
+      }
     }
   }
 
