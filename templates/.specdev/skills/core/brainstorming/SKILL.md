@@ -35,6 +35,19 @@ next: breakdown
 4. Continue until you understand: purpose, constraints, success criteria
 5. Do not proceed until you understand what you are building
 
+**Question categories to cover** (not a rigid script — guide the conversation through these topics as relevant):
+
+| Category | Core? | What to learn |
+|----------|-------|---------------|
+| Problem/goal | Always | What are we solving and why? |
+| Scope boundaries | Always | What should this NOT do? |
+| Success criteria | Always | How do we verify it works? |
+| Target users/callers | When relevant | Who uses this? |
+| Edge cases | When relevant | What could go wrong? |
+| Dependencies | When relevant | What does this touch or rely on? |
+| Existing patterns | When relevant | How does the codebase handle similar things? |
+| Testing approach | When relevant | How will this be tested? |
+
 ### Phase 2: Explore Approaches
 
 1. Present 2-3 different approaches with trade-offs
@@ -44,14 +57,24 @@ next: breakdown
 
 ### Phase 3: Design Sections
 
-Present the design incrementally for validation.
+Present the design incrementally for validation. Use `_templates/brainstorm-design.md` as a starting point.
 
-1. Break the design into sections of 200-300 words
-2. Present one section at a time
+**Scale sections to the assignment type:**
+
+| Type | Required sections |
+|------|------------------|
+| feature | Overview, Goals, Non-Goals, Design, Success Criteria |
+| bugfix | Overview, Root Cause, Fix Design, Success Criteria |
+| refactor | Overview, Non-Goals, Design, Success Criteria |
+| familiarization | Overview |
+
+You may always add optional sections (User Stories, Dependencies, Risks, Technical Constraints, Testing Approach, Open Questions) when the complexity warrants it.
+
+1. Copy the template, keep sections relevant to the assignment type, remove the rest
+2. Present one section at a time (200-300 words each)
 3. After each section, ask: "Does this look right so far?"
-4. Cover: architecture, components, data flow, error handling, testing approach
-5. Be ready to revise if something doesn't make sense
-6. Record key decisions and their reasoning as you go
+4. Be ready to revise if something doesn't make sense
+5. Record key decisions and their reasoning as you go
 
 ### Phase 4: Write to Assignment
 
@@ -80,6 +103,8 @@ Once all design sections are validated:
 - Committing to an approach before exploring alternatives — always show 2-3 options
 - Presenting the entire design at once — 200-300 word sections, validate each
 - Jumping to implementation details too early — stay at design level during brainstorm
+- Missing Non-Goals section for features/refactors — scope boundaries prevent wasted work
+- Missing Success Criteria — "how do we know it's done" must be explicit
 
 ## Integration
 
