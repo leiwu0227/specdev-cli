@@ -67,6 +67,19 @@ result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds with custom tool skill')
 assert(existsSync(join(customToolDir, 'SKILL.md')), 'preserves custom tool skills')
 
+// ---- Test update refreshes official tool skills ----
+console.log('\nupdate refreshes official tool skills:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+
+const autoloopSkillPath = join(TEST_DIR, '.specdev', 'skills', 'tools', 'autoloop', 'SKILL.md')
+writeFileSync(autoloopSkillPath, '# tampered autoloop skill\n')
+result = runCmd(['update', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'update succeeds with tampered official tool skill')
+const autoloopAfterUpdate = readFileSync(autoloopSkillPath, 'utf-8')
+assert(autoloopAfterUpdate.includes('name: autoloop'), 'official autoloop skill restored after update')
+assert(!autoloopAfterUpdate.includes('tampered autoloop'), 'tampered official tool content replaced')
+
 // ---- Test update backfills missing platform adapters ----
 console.log('\nupdate backfills missing adapters:')
 cleanup()

@@ -25,8 +25,10 @@
 <!-- (Bugfix only) What's broken and why. -->
 
 ## Design
-<!-- Technical approach: architecture, components, data flow. -->
-<!-- For bugfix, use "Fix Design" as the heading instead. -->
+<!-- (Feature/refactor/familiarization) Technical approach: architecture, components, data flow. -->
+
+## Fix Design
+<!-- (Bugfix) Technical fix approach: code path changes, safeguards, rollback/mitigation notes. -->
 
 ## Success Criteria
 <!-- How do we know it's done? Verifiable conditions. -->

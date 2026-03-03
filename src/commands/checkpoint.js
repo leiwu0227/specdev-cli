@@ -83,7 +83,8 @@ async function checkpointBrainstorm(assignmentPath, name) {
 
     for (const section of required) {
       const escaped = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const pattern = new RegExp(`^##\\s+${escaped}`, 'm')
+      // Strict heading match: exact section title only (no suffix words).
+      const pattern = new RegExp(`^##\\s+${escaped}\\s*$`, 'm')
       if (!pattern.test(designContent)) {
         missing.push(`brainstorm/design.md missing required section: ## ${section}`)
       }

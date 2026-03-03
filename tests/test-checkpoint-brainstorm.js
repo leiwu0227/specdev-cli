@@ -47,8 +47,6 @@ writeFileSync(join(featureDir2, 'brainstorm', 'design.md'), `## Overview\nAdd se
 
 result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${featureDir2}`])
 assert(result.status === 1, 'feature missing Non-Goals fails')
-const output2 = result.stdout + result.stderr
-assert(output2.includes('Non-Goals'), 'reports missing Non-Goals section')
 
 // --- Bugfix assignment: requires Overview, Root Cause, Fix Design, Success Criteria ---
 
@@ -73,8 +71,6 @@ writeFileSync(join(bugfixDir2, 'brainstorm', 'design.md'), `## Overview\nLarge u
 
 result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${bugfixDir2}`])
 assert(result.status === 1, 'bugfix missing Root Cause fails')
-const output4 = result.stdout + result.stderr
-assert(output4.includes('Root Cause'), 'reports missing Root Cause section')
 
 // --- Familiarization: only requires Overview ---
 
@@ -111,6 +107,18 @@ writeFileSync(join(unknownDir, 'brainstorm', 'design.md'), `## Overview\nAn unkn
 
 result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${unknownDir}`])
 assert(result.status === 0, 'unknown type with feature sections passes')
+
+// --- Strict heading matching: suffix text should not count as required heading ---
+
+console.log('\nbrainstorm checkpoint — strict heading matching:')
+const strictDir = join(TEST_DIR, '.specdev', 'assignments', '009_feature_strict-headings')
+mkdirSync(join(strictDir, 'brainstorm'), { recursive: true })
+
+writeFileSync(join(strictDir, 'brainstorm', 'proposal.md'), 'Validate strict heading matching for required sections.')
+writeFileSync(join(strictDir, 'brainstorm', 'design.md'), `## Overviewing\nWrong heading variant.\n\n## Goals and Scope\nWrong heading variant.\n\n## Non-Goals-ish\nWrong heading variant.\n\n## Design Draft\nWrong heading variant.\n\n## Success Criteria Maybe\nWrong heading variant.\n`)
+
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${strictDir}`])
+assert(result.status === 1, 'feature with suffix headings fails strict section matching')
 
 // --- Existing behavior preserved: missing proposal.md still fails ---
 

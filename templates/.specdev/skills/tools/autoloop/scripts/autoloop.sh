@@ -97,8 +97,8 @@ fi
 
 # --- Apply defaults ---
 MAX_ROUNDS="${MAX_ROUNDS:-3}"
-PASS_PATTERN="${PASS_PATTERN:-LGTM|no issues|approved|pass}"
-FAIL_PATTERN="${FAIL_PATTERN:-needs changes|issues found|fail|reject}"
+PASS_PATTERN="${PASS_PATTERN:-LGTM|no issues|approved|PASS|pass}"
+FAIL_PATTERN="${FAIL_PATTERN:-needs changes|issues found|\\bfailed\\b|\\bfail\\b|reject}"
 
 if ! [[ "$MAX_ROUNDS" =~ ^[0-9]+$ ]] || [[ "$MAX_ROUNDS" -lt 1 ]]; then
   echo "Error: reviewer config '${REVIEWER}' has invalid max_rounds '${MAX_ROUNDS}' (must be a positive integer)" >&2

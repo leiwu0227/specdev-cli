@@ -173,6 +173,19 @@ json = JSON.parse(result.stdout)
 assert(json.verdict === 'fail', 'verdict is fail')
 assert(json.findings.includes('const'), 'findings preserve content with quotes')
 
+// Test: pass output containing "failures" should still pass
+console.log('\nautoloop.sh (pass text with failures word):')
+setupReviewerConfig('pass-with-failures-word', {
+  name: 'pass-with-failures-word',
+  command: "echo 'PASS: no failures found'",
+  scope: 'diff',
+  max_rounds: 3,
+})
+result = runScript(['--reviewer', 'pass-with-failures-word', '--round', '1'])
+assert(result.status === 0, 'exits 0')
+json = JSON.parse(result.stdout)
+assert(json.verdict === 'pass', 'verdict is pass when output says no failures')
+
 // Test: reviewer config missing required command
 console.log('\nautoloop.sh (missing command field):')
 setupReviewerConfig('missing-command', {

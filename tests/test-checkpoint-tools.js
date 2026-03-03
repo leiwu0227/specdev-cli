@@ -1,4 +1,4 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs'
+import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync, openSync, closeSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,7 +17,20 @@ function assert(condition, msg) {
 }
 
 function runCmd(args) {
-  return spawnSync('node', [CLI, ...args], { encoding: 'utf-8' })
+  if (!existsSync(TEST_DIR)) mkdirSync(TEST_DIR, { recursive: true })
+  const token = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  const stdoutPath = join(TEST_DIR, `.tmp-${token}.stdout`)
+  const stderrPath = join(TEST_DIR, `.tmp-${token}.stderr`)
+  const outFd = openSync(stdoutPath, 'w')
+  const errFd = openSync(stderrPath, 'w')
+  const result = spawnSync('node', [CLI, ...args], { stdio: ['ignore', outFd, errFd] })
+  closeSync(outFd)
+  closeSync(errFd)
+  const stdout = existsSync(stdoutPath) ? readFileSync(stdoutPath, 'utf-8') : ''
+  const stderr = existsSync(stderrPath) ? readFileSync(stderrPath, 'utf-8') : ''
+  rmSync(stdoutPath, { force: true })
+  rmSync(stderrPath, { force: true })
+  return { ...result, stdout, stderr }
 }
 
 function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true }) }
