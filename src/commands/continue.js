@@ -11,6 +11,7 @@ import { askChoice } from '../utils/prompt.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
 import { resolveAssignmentSelector } from '../utils/assignment.js'
+import { getLatestRound } from '../utils/review-feedback.js'
 
 const ASSIGNMENT_AMBIGUITY_WINDOW_MS = 15 * 60 * 1000
 
@@ -34,9 +35,16 @@ export async function continueCommand(flags = {}) {
 
   // Check for review feedback from a separate review session
   const feedbackPath = join(selected.path, 'review', 'review-feedback.md')
-  const hasReviewFeedback = await fse.pathExists(feedbackPath)
+  let reviewStatus = null
+  if (await fse.pathExists(feedbackPath)) {
+    const feedbackContent = await fse.readFile(feedbackPath, 'utf-8')
+    const latest = getLatestRound(feedbackContent)
+    if (latest && latest.verdict === 'needs-changes') {
+      reviewStatus = 'needs-changes'
+    }
+  }
 
-  const payload = buildContinuePayload(detected, selected, selection, hasReviewFeedback)
+  const payload = buildContinuePayload(detected, selected, selection, reviewStatus)
   emit(payload, json)
   if (payload.status === 'blocked') process.exitCode = 1
 }
@@ -73,7 +81,7 @@ function buildNoAssignmentPayload() {
   }
 }
 
-function buildContinuePayload(detected, selected, selection, hasReviewFeedback) {
+function buildContinuePayload(detected, selected, selection, reviewStatus) {
   return {
     version: 1,
     status: detected.blockers.length > 0 ? 'blocked' : 'ok',
@@ -84,7 +92,7 @@ function buildContinuePayload(detected, selected, selection, hasReviewFeedback) 
     next_action: detected.next_action,
     blockers: detected.blockers,
     progress: detected.progress,
-    review_feedback: hasReviewFeedback ? 'review/review-feedback.md' : null,
+    review_feedback: reviewStatus === 'needs-changes' ? 'review/review-feedback.md' : null,
   }
 }
 
