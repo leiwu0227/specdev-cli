@@ -14,7 +14,7 @@
     "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:scan && npm run test:assignment && npm run test:utils && npm run test:scripts && npm run test:workflow && npm run test:skills && npm run test:update && npm run test:distill && npm run test:reviewloop && npm run test:checkpoints && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:scan && npm run test:assignment && npm run test:utils && npm run test:scripts && npm run test:workflow && npm run test:skills && npm run test:update && npm run test:distill && npm run test:reviewloop && npm run test:reviewloop-command && npm run test:checkpoints && npm run test:cleanup",
     "test:init": "node ./tests/test-init.js",
     "test:scan": "node ./tests/test-scan.js",
     "test:assignment": "node ./tests/test-assignment.js",
@@ -25,8 +25,9 @@
     "test:update": "node ./tests/test-update.js",
     "test:distill": "node ./tests/test-distill.js",
     "test:reviewloop": "node ./tests/test-reviewloop.js",
+    "test:reviewloop-command": "node ./tests/test-reviewloop-command.js",
     "test:checkpoints": "node ./tests/test-checkpoints.js",
-    "test:cleanup": "rm -rf ./tests/test-init-output ./test-scan-output ./test-assignment-output ./tests/test-assignment-schema-output ./tests/test-utils-output ./tests/test-scripts-output ./tests/test-scripts-output-worktrees ./test-workflow-output ./tests/test-skills-output ./tests/test-update-output ./tests/test-distill-output ./tests/test-reviewloop-output ./tests/test-checkpoints-output",
+    "test:cleanup": "rm -rf ./tests/test-init-output ./test-scan-output ./test-assignment-output ./tests/test-assignment-schema-output ./tests/test-utils-output ./tests/test-scripts-output ./tests/test-scripts-output-worktrees ./test-workflow-output ./tests/test-skills-output ./tests/test-update-output ./tests/test-distill-output ./tests/test-reviewloop-output ./tests/test-reviewloop-command-output ./tests/test-checkpoints-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
     "release": "npm version patch && npm publish",

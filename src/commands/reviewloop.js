@@ -1,11 +1,21 @@
 import { join } from 'path'
+import { spawn } from 'child_process'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { resolveTargetDir } from '../utils/command-context.js'
-import { blankLine, printLines, printSection } from '../utils/output.js'
+import { blankLine, printSection } from '../utils/output.js'
+import {
+  parseReviewFeedback,
+  getLatestRound,
+  hasUnaddressedFindings,
+} from '../utils/review-feedback.js'
+import { approvePhase } from '../utils/approve-phase.js'
 
 /**
- * specdev reviewloop <phase> — Automated external review loop (signal to agent)
+ * specdev reviewloop <phase> — Automated external review loop
+ *
+ * Spawns an external reviewer process, reads its verdict from
+ * review-feedback.md, and auto-approves on pass.
  */
 export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   const VALID_PHASES = ['brainstorm', 'implementation']
@@ -25,79 +35,193 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     return
   }
 
+  // Accept assignment as positional arg (e.g. specdev reviewloop brainstorm 1)
   if (!flags.assignment && positionalArgs[1]) {
     flags.assignment = positionalArgs[1]
   }
 
   const assignmentPath = await resolveAssignmentPath(flags)
   const name = assignmentName(assignmentPath)
+  const targetDir = resolveTargetDir(flags)
 
-  console.log(`Reviewloop: ${name}`)
-  console.log(`   Phase: ${phase}`)
-  blankLine()
+  // ── Without --reviewer: list available reviewers and exit ──
 
-  // Check artifacts exist
-  if (phase === 'brainstorm') {
-    const designPath = join(assignmentPath, 'brainstorm', 'design.md')
-    if (await fse.pathExists(designPath)) {
-      printSection('Artifact found:')
-      console.log(`   ${name}/brainstorm/design.md`)
-    } else {
-      console.error('❌ brainstorm/design.md not found')
-      console.log('   Complete brainstorming before running reviewloop.')
+  if (!flags.reviewer) {
+    console.log(`Reviewloop: ${name}`)
+    console.log(`   Phase: ${phase}`)
+    blankLine()
+
+    const reviewersDir = join(
+      targetDir,
+      '.specdev',
+      'skills',
+      'core',
+      'reviewloop',
+      'reviewers',
+    )
+    const reviewers = []
+    if (await fse.pathExists(reviewersDir)) {
+      const files = await fse.readdir(reviewersDir)
+      for (const f of files) {
+        if (f.endsWith('.json')) reviewers.push(f.replace('.json', ''))
+      }
+    }
+
+    if (reviewers.length === 0) {
+      console.error('No reviewer configs found')
+      console.log(
+        '   Add reviewer JSON configs to .specdev/skills/core/reviewloop/reviewers/',
+      )
       process.exitCode = 1
       return
     }
-  } else if (phase === 'implementation') {
-    const planPath = join(assignmentPath, 'breakdown', 'plan.md')
-    if (await fse.pathExists(planPath)) {
-      printSection('Artifact found:')
-      console.log(`   ${name}/breakdown/plan.md`)
-    } else {
-      printSection('No plan artifact found — reviewing code changes only.')
-    }
-  }
 
-  // Scan for available reviewers
-  const targetDir = resolveTargetDir(flags)
-  const reviewersDir = join(targetDir, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers')
-  const reviewers = []
-  if (await fse.pathExists(reviewersDir)) {
-    const files = await fse.readdir(reviewersDir)
-    for (const f of files) {
-      if (f.endsWith('.json')) reviewers.push(f.replace('.json', ''))
-    }
-  }
-
-  blankLine()
-  if (reviewers.length > 0) {
     printSection('Available reviewers:')
     for (const r of reviewers) {
       console.log(`   - ${r}`)
     }
-  } else {
-    console.error('❌ No reviewer configs found')
-    console.log('   Add reviewer JSON configs to .specdev/skills/core/reviewloop/reviewers/')
+    blankLine()
+    console.log('Ask the user which reviewer to use, then run:')
+    console.log(`   specdev reviewloop ${phase} --reviewer=<name>`)
+    return
+  }
+
+  // ── With --reviewer: run the review loop ──
+
+  const reviewerName = flags.reviewer
+  const reviewerConfigPath = join(
+    targetDir,
+    '.specdev',
+    'skills',
+    'core',
+    'reviewloop',
+    'reviewers',
+    `${reviewerName}.json`,
+  )
+
+  if (!(await fse.pathExists(reviewerConfigPath))) {
+    console.error(`Reviewer config not found: ${reviewerName}`)
+    console.log(`   Expected: ${reviewerConfigPath}`)
+    process.exitCode = 1
+    return
+  }
+
+  let config
+  try {
+    config = await fse.readJson(reviewerConfigPath)
+  } catch {
+    console.error(`Invalid reviewer config: ${reviewerConfigPath}`)
+    process.exitCode = 1
+    return
+  }
+
+  if (!config.command) {
+    console.error(`Reviewer config missing required field 'command'`)
+    process.exitCode = 1
+    return
+  }
+
+  const maxRounds = config.max_rounds || 3
+
+  // Read review artifacts
+  const reviewDir = join(assignmentPath, 'review')
+  await fse.ensureDir(reviewDir)
+
+  const feedbackPath = join(reviewDir, 'review-feedback.md')
+  const changelogPath = join(reviewDir, 'changelog.md')
+
+  const feedbackContent = (await fse.pathExists(feedbackPath))
+    ? await fse.readFile(feedbackPath, 'utf-8')
+    : ''
+  const changelogContent = (await fse.pathExists(changelogPath))
+    ? await fse.readFile(changelogPath, 'utf-8')
+    : ''
+
+  // Stale feedback guard
+  if (hasUnaddressedFindings(feedbackContent, changelogContent)) {
+    console.error(
+      'Previous review findings have not been addressed. Run specdev check-review.',
+    )
+    process.exitCode = 1
+    return
+  }
+
+  // Derive round number
+  const { rounds } = parseReviewFeedback(feedbackContent)
+  const round = rounds.length + 1
+
+  if (round > maxRounds) {
+    console.error('Max rounds reached. Escalating to user.')
+    process.exitCode = 1
+    return
+  }
+
+  console.log(`Reviewloop: ${name}`)
+  console.log(`   Phase: ${phase}`)
+  console.log(`   Reviewer: ${reviewerName}`)
+  console.log(`   Round: ${round}/${maxRounds}`)
+  blankLine()
+
+  // Build environment for the reviewer process
+  const childEnv = {
+    ...process.env,
+    SPECDEV_PHASE: phase,
+    SPECDEV_ASSIGNMENT: name,
+    SPECDEV_ROUND: String(round),
+  }
+
+  // Spawn the reviewer command
+  const exitCode = await new Promise((resolve, reject) => {
+    const child = spawn('bash', ['-c', config.command], {
+      cwd: targetDir,
+      env: childEnv,
+      stdio: 'inherit',
+    })
+    child.on('error', reject)
+    child.on('close', (code) => resolve(code))
+  })
+
+  if (exitCode !== 0) {
+    console.error(`Reviewer exited with code ${exitCode}`)
+    process.exitCode = 1
+    return
+  }
+
+  // Re-read feedback after reviewer ran
+  const updatedFeedback = (await fse.pathExists(feedbackPath))
+    ? await fse.readFile(feedbackPath, 'utf-8')
+    : ''
+
+  const latestRound = getLatestRound(updatedFeedback)
+
+  if (!latestRound || latestRound.round !== round) {
+    console.error(
+      `Expected round ${round} in review-feedback.md but found ${latestRound ? `round ${latestRound.round}` : 'no rounds'}`,
+    )
     process.exitCode = 1
     return
   }
 
   blankLine()
-  printSection('Next step — ask the user which reviewer to use (from the list above)')
 
-  blankLine()
-  printSection('Then run:')
-  printLines([
-    `   bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh \\`,
-    `     --reviewer <name> --round 1`,
-  ])
-
-  blankLine()
-  printSection('After each round:')
-  printLines([
-    '  - verdict=pass → report success, continue workflow',
-    '  - verdict=fail, escalate=false → fix findings, re-run with --round N+1',
-    '  - verdict=fail, escalate=true → STOP, show findings to user, ask how to proceed',
-  ])
-  blankLine()
+  if (latestRound.verdict === 'approved') {
+    const result = await approvePhase(assignmentPath, phase)
+    if (result.approved) {
+      printSection(`Review approved! Phase '${phase}' has been approved.`)
+    } else {
+      printSection('Review approved, but phase approval had errors:')
+      for (const err of result.errors) {
+        console.log(`   - ${err}`)
+      }
+    }
+  } else if (latestRound.verdict === 'needs-changes') {
+    if (round >= maxRounds) {
+      console.error('Max rounds reached. Escalating to user.')
+    } else {
+      printSection('Run specdev check-review to address findings')
+    }
+  } else {
+    printSection(`Unexpected verdict: ${latestRound.verdict}`)
+    console.log('   Run specdev check-review to inspect results')
+  }
 }
