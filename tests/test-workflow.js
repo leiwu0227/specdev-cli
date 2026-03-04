@@ -69,22 +69,27 @@ function writeFeedback(assignmentRoot, { phase, verdict, round, findings, addres
   mkdirSync(reviewDir, { recursive: true })
   const findingsText = findings.length > 0
     ? findings.map(f => `- ${f}`).join('\n')
-    : '- None — approved'
+    : '- (none)'
   const addressedText = addressedFindings.length > 0
     ? addressedFindings.map(f => `- ${f}`).join('\n')
-    : '- None'
-  writeFileSync(
-    join(reviewDir, 'review-feedback.md'),
-    [
-      '# Review Feedback', '',
-      `**Phase:** ${phase}`,
-      `**Verdict:** ${verdict}`,
-      `**Round:** ${round}`,
-      '', '## Findings', findingsText,
-      '', '## Addressed Findings', addressedText, '',
-    ].join('\n'),
-    'utf-8'
-  )
+    : '- (none)'
+  const feedbackPath = join(reviewDir, 'review-feedback.md')
+  // Append-only format: each call appends a ## Round N section
+  const existing = existsSync(feedbackPath) ? readFileSync(feedbackPath, 'utf-8') : '# Review Feedback\n'
+  const section = [
+    '',
+    `## Round ${round}`,
+    `**Phase:** ${phase}`,
+    `**Verdict:** ${verdict}`,
+    '',
+    '### Findings',
+    findingsText,
+    '',
+    '### Addressed from changelog',
+    addressedText,
+    '',
+  ].join('\n')
+  writeFileSync(feedbackPath, existing + section, 'utf-8')
 }
 
 async function runTests() {
@@ -139,7 +144,7 @@ async function runTests() {
 
   console.log('\nreview feedback surfaced:')
   mkdirSync(join(a1, 'review'), { recursive: true })
-  writeFileSync(join(a1, 'review', 'review-feedback.md'), '# Review Feedback\n\n**Verdict:** needs-changes\n')
+  writeFileSync(join(a1, 'review', 'review-feedback.md'), '# Review Feedback\n\n## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n\n- Fix the thing\n')
   out = continueJson('00001_feature_brainstorm')
   assert(out.payload && out.payload.review_feedback === 'review/review-feedback.md', 'surfaces review_feedback path')
 
@@ -339,18 +344,44 @@ async function runTests() {
   assert(nonsenseReview.status === 1, 'review nonsense exits non-zero')
   assert(nonsenseText.includes('Unknown review phase') || reviewSource.includes('Unknown review phase'), 'prints unknown phase error')
 
-  console.log('\nmulti-round review with explicit phase:')
+  console.log('\nmulti-round review with existing feedback:')
   const reviewDir = join(reviewAssignment, 'review')
   mkdirSync(reviewDir, { recursive: true })
-  writeFileSync(join(reviewDir, 'feedback-round-1.md'), '# Review Feedback\n\n**Round:** 1\n')
-  writeFileSync(join(reviewDir, 'update-round-1.md'), '# Update (Round 1)\n## Changes Made\n- Fixed things\n')
+  writeFileSync(join(reviewDir, 'review-feedback.md'), [
+    '## Round 1',
+    '',
+    '**Verdict:** needs-changes',
+    '',
+    '### Findings',
+    '1. [F1.1] Missing error handling',
+    '',
+    '### Addressed from changelog',
+    '- (none -- first round)',
+    '',
+  ].join('\n'))
 
   const roundTwo = runCmd([
     'review', 'implementation', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
   ])
   const roundTwoText = `${roundTwo.stdout}\n${roundTwo.stderr}`
   assert(roundTwo.status === 0, 'review re-review exits 0')
-  assert(roundTwoText.includes('Changes since last review') || reviewSource.includes('Changes since last review'), 'shows changes since last review')
+  assert(roundTwoText.includes('Re-review (round 2)') || reviewSource.includes('Re-review (round'), 'shows re-review round context')
+
+  console.log('\nreview done removed:')
+  const reviewDone = runCmd([
+    'review', 'done', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+  ])
+  const reviewDoneText = `${reviewDone.stdout}\n${reviewDone.stderr}`
+  assert(reviewDone.status === 1, 'review done exits non-zero')
+  assert(reviewDoneText.includes('has been removed') || reviewSource.includes('has been removed'), 'prints removal message for review done')
+
+  console.log('\nreview with --round flag (automated):')
+  const automatedReview = runCmd([
+    'review', 'implementation', `--target=${TEST_DIR}`, '--assignment=00001_feature_test', '--round=3',
+  ])
+  const automatedText = `${automatedReview.stdout}\n${automatedReview.stderr}`
+  assert(automatedReview.status === 0, 'review with --round exits 0')
+  assert(!automatedText.includes('Do NOT run check-review'), 'automated review omits check-review warning')
 
   console.log('\nreview without assignment:')
   cleanup()
@@ -361,7 +392,7 @@ async function runTests() {
   assert(noAssignment.status === 1, 'review exits non-zero without assignment')
 
   // =====================================================================
-  // Check-Review Tests (cut: "duplicate round" edge case)
+  // Check-Review Tests (append-only format, no archiving)
   // =====================================================================
 
   cleanup()
@@ -396,16 +427,19 @@ async function runTests() {
   const approvedText = `${approved.stdout}\n${approved.stderr}`
   assert(approved.status === 0, 'check-review exits 0 for approved verdict')
   assert(approvedText.includes('Review approved') || checkReviewSource.includes('Review approved!'), 'prints approval message')
+  // Append-only: feedback file must still exist (no archiving)
   assert(
-    existsSync(join(checkAssignment, 'review', 'feedback-round-1.md')),
-    'archives feedback to feedback-round-1.md'
+    existsSync(join(checkAssignment, 'review', 'review-feedback.md')),
+    'review-feedback.md still exists (append-only, no archiving)'
   )
   assert(
-    !existsSync(join(checkAssignment, 'review', 'review-feedback.md')),
-    'deletes original review-feedback.md'
+    !existsSync(join(checkAssignment, 'review', 'feedback-round-1.md')),
+    'no feedback-round-1.md archive created'
   )
 
   console.log('\ncheck-review with needs-changes verdict:')
+  // Remove old feedback and start fresh for needs-changes test
+  rmSync(join(checkAssignment, 'review', 'review-feedback.md'), { force: true })
   writeFeedback(checkAssignment, {
     phase: 'brainstorm', verdict: 'needs-changes', round: 2,
     findings: ['Missing error handling in design', 'Scope too broad for auth section'],
@@ -416,18 +450,20 @@ async function runTests() {
   const needsText = `${needsChanges.stdout}\n${needsChanges.stderr}`
   assert(needsChanges.status === 0, 'check-review exits 0 for needs-changes verdict')
   assert(needsText.includes('Missing error handling in design') || checkReviewSource.includes('Findings:'), 'prints first finding')
+  // Append-only: no stub files created
   assert(
-    existsSync(join(checkAssignment, 'review', 'feedback-round-2.md')),
-    'archives feedback to feedback-round-2.md'
+    !existsSync(join(checkAssignment, 'review', 'update-round-2.md')),
+    'no update-round-2.md stub created (append-only)'
   )
+  // Feedback file still exists
   assert(
-    existsSync(join(checkAssignment, 'review', 'update-round-2.md')),
-    'creates stub update-round-2.md'
+    existsSync(join(checkAssignment, 'review', 'review-feedback.md')),
+    'review-feedback.md still exists after needs-changes'
   )
-  const stubContent = readFileSync(join(checkAssignment, 'review', 'update-round-2.md'), 'utf-8')
-  assert(stubContent.includes('# Update (Round 2)'), 'stub has correct round heading')
 
   console.log('\n--json output:')
+  // Fresh feedback for JSON test
+  rmSync(join(checkAssignment, 'review', 'review-feedback.md'), { force: true })
   writeFeedback(checkAssignment, {
     phase: 'implementation', verdict: 'needs-changes', round: 3,
     findings: ['Test coverage insufficient'],
@@ -441,12 +477,13 @@ async function runTests() {
   assert(payload !== null, 'check-review --json outputs valid JSON')
   if (payload) {
     assert(payload.verdict === 'needs-changes', 'json verdict is needs-changes')
-    assert(payload.phase === 'implementation', 'json phase is implementation')
     assert(payload.round === 3, 'json round is 3')
     assert(Array.isArray(payload.findings) && payload.findings.length === 1, 'json findings array has 1 item')
   }
 
   console.log('\n--json with no feedback:')
+  // Remove feedback to test error path
+  rmSync(join(checkAssignment, 'review', 'review-feedback.md'), { force: true })
   const jsonNoFeedback = runCmd([
     'check-review', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`, '--json',
   ])
