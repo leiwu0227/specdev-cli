@@ -34,3 +34,14 @@
 - [F1.1] Backward-compatibility decision remains explicit and implemented (old commands removed).
 - [F1.2] Core error handling and output shape for `distill`/`distill done` are implemented.
 - [F1.3] Pending-list cap to 5 is implemented in `continue`.
+
+## Round 4
+
+**Verdict:** approved
+
+### Findings
+1. No blocking or minor issues found in this round.
+
+### Addressed from changelog
+- [F3.1] Verified `distill_pending.assignments` now sorts by assignment name before slicing to oldest 5.
+- [F3.2] Verified `distill done` now checks "already processed" before validation gates, preserving exit-0 no-op behavior.

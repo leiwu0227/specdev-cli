@@ -14,7 +14,7 @@ Developers who use AI coding agents and want structured, repeatable workflows. T
 
 - **Runtime:** Node.js (ESM modules, `"type": "module"`)
 - **Dependencies:** `fs-extra` (file operations), `js-yaml` (YAML frontmatter parsing)
-- **Shell scripts:** Bash scripts for deterministic mechanics (context scanning, test verification, review loops)
+- **Shell scripts:** Bash hook for SessionStart context loading
 - **Package:** `@specdev/cli` v0.0.4, published via npm
 - **Entry point:** `bin/specdev.js` → `src/utils/cli.js` → `src/commands/dispatch.js`
 - **No build step** — runs directly from source
@@ -41,6 +41,8 @@ hooks/                  Platform hooks (SessionStart for Claude Code)
 - Types: `feature | bugfix | refactor | familiarization` — parsed by `parseAssignmentId()`
 - Tool skills: SKILL.md (agent protocol) + scripts/ (deterministic mechanics) + optional wrappers per agent platform
 - `OFFICIAL_TOOL_SKILLS` in `src/utils/update.js` controls which tool skills are auto-managed
+- **Knowledge system:** After assignments complete, `specdev distill` aggregates capture diffs and heuristics into JSON; agent writes to `knowledge/` branches (codestyle, architecture, domain, workflow). `specdev distill done` validates big_picture word count and feature_descriptions entry, then marks processed via `knowledge/.processed_captures.json`.
+- **Reviewloop:** `src/commands/reviewloop.js` orchestrates external reviewer CLIs (e.g. codex) in automated review rounds with feedback written to `review/review-feedback.md`
 
 ## Conventions and constraints
 

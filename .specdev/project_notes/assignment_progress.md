@@ -23,7 +23,7 @@ Below is a list of proposed assignments and their completion progress.
 
 | # | Assignment Name | Status | Completed Date | Notes |
 |---|-----------------|--------|----------------|-------|
-| 00000 | placholder | placholder | yyyy-mm-dd | placholder |
+| 00001 | distill-improvement | Done | 2026-03-04 | Refactored distill commands, integrated into knowledge-capture |
 
 ---
 

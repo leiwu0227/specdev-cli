@@ -1,0 +1,11 @@
+{
+  "tasks": [
+    { "number": 1, "name": "Create combined distill command", "status": "completed" },
+    { "number": 2, "name": "Create distill done command", "status": "completed" },
+    { "number": 3, "name": "Delete old distill commands and update dispatch", "status": "completed" },
+    { "number": 4, "name": "Update help.js", "status": "completed" },
+    { "number": 5, "name": "Add distill-pending nudge to continue.js", "status": "completed" },
+    { "number": 6, "name": "Update knowledge-capture SKILL.md", "status": "completed" },
+    { "number": 7, "name": "Final integration test", "status": "completed" }
+  ]
+}
