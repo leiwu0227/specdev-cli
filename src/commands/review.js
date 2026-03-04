@@ -1,12 +1,14 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { parseReviewFeedback } from '../utils/review-feedback.js'
 import { blankLine, printBullets, printLines, printSection } from '../utils/output.js'
 
 /**
- * specdev review <phase> — Phase-aware manual review (separate session)
+ * specdev review <phase> — Phase-aware review (separate session or automated)
  *
  * Requires an explicit phase argument: brainstorm or implementation.
+ * Supports --round N for automated flows; auto-detects round otherwise.
  */
 export async function reviewCommand(positionalArgs = [], flags = {}) {
   const VALID_PHASES = ['brainstorm', 'implementation']
@@ -15,13 +17,14 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   if (!phase) {
     console.error('Missing required phase argument')
     console.log(`   Usage: specdev review <${VALID_PHASES.join(' | ')}>`)
-    console.log(`   Usage: specdev review done`)
     process.exitCode = 1
     return
   }
 
   if (phase === 'done') {
-    return reviewDoneCommand(positionalArgs, flags)
+    console.error('specdev review done has been removed. The review agent should write findings directly to review/review-feedback.md')
+    process.exitCode = 1
+    return
   }
 
   if (phase === 'breakdown') {
@@ -93,23 +96,29 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   const reviewDir = join(assignmentPath, 'review')
   await fse.ensureDir(reviewDir)
 
-  // Detect previous rounds from archived files
-  const nextRound = await detectNextRound(reviewDir)
+  // Detect round: use --round flag if provided, otherwise auto-detect from review-feedback.md
+  const feedbackFilePath = join(reviewDir, 'review-feedback.md')
+  let nextRound
+  const isAutomated = flags.round != null
 
-  // Show previous round context if available
+  if (isAutomated) {
+    nextRound = Number(flags.round)
+  } else {
+    // Auto-detect: count existing ## Round headers in review-feedback.md
+    nextRound = 1
+    if (await fse.pathExists(feedbackFilePath)) {
+      const existingContent = await fse.readFile(feedbackFilePath, 'utf-8')
+      const { rounds } = parseReviewFeedback(existingContent)
+      nextRound = rounds.length + 1
+    }
+  }
+
+  // Show previous round context if round 2+
   if (nextRound > 1) {
-    const prevRound = nextRound - 1
-    const updateFile = join(reviewDir, `update-round-${prevRound}.md`)
-    const prevFeedback = join(reviewDir, `feedback-round-${prevRound}.md`)
-
     blankLine()
     printSection(`Re-review (round ${nextRound}):`)
-    if (await fse.pathExists(updateFile)) {
-      console.log(`   Changes since last review: ${name}/review/update-round-${prevRound}.md`)
-    }
-    if (await fse.pathExists(prevFeedback)) {
-      console.log(`   Previous findings: ${name}/review/feedback-round-${prevRound}.md`)
-    }
+    console.log(`   Read previous findings: ${name}/review/review-feedback.md`)
+    console.log(`   Read changes since last round: ${name}/review/changelog.md`)
   }
 
   const feedbackPath = `${name}/review/review-feedback.md`
@@ -118,88 +127,31 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   printSection('Write findings to:')
   console.log(`   ${feedbackPath}`)
   blankLine()
-  printSection('Feedback format:')
+  printSection('Feedback format (append to file):')
+
+  const addressedExample = nextRound === 1
+    ? '  - (none -- first round)'
+    : '  - [FN.X] description of addressed finding'
+
   printLines([
     '  ```markdown',
-    '  # Review Feedback',
+    `  ## Round ${nextRound}`,
     '  ',
-    `  **Phase:** ${phase}`,
     '  **Verdict:** approved | needs-changes',
-    `  **Round:** ${nextRound}`,
     '  ',
-    '  ## Findings',
-    '  - [list findings, or "None — approved"]',
+    '  ### Findings',
+    `  1. [F${nextRound}.1] Description of finding`,
     '  ',
-    '  ## Addressed Findings',
-    '  - [items fixed in this round, or "None"]',
+    '  ### Addressed from changelog',
+    addressedExample,
     '  ```',
   ])
   blankLine()
   console.log(`Reviewing assignment: ${name}`)
   blankLine()
-  console.log('After writing findings, run:')
-  console.log(`   specdev review done`)
-  console.log('')
-  console.log('IMPORTANT: Do NOT run check-review in this session.')
-  console.log('check-review is for the MAIN coding agent in a separate session.')
-}
 
-async function reviewDoneCommand(positionalArgs, flags) {
-  // Accept assignment as positional arg (e.g. specdev review done 1)
-  if (!flags.assignment && positionalArgs[1]) {
-    flags.assignment = positionalArgs[1]
-  }
-
-  const assignmentPath = await resolveAssignmentPath(flags)
-  const name = assignmentName(assignmentPath)
-  const reviewDir = join(assignmentPath, 'review')
-  const feedbackPath = join(reviewDir, 'review-feedback.md')
-
-  if (!(await fse.pathExists(feedbackPath))) {
-    console.error('❌ review-feedback.md not found')
-    console.log(`   Expected: ${name}/review/review-feedback.md`)
-    console.log('   Write your findings to this file before running review done.')
-    process.exitCode = 1
-    return
-  }
-
-  const content = await fse.readFile(feedbackPath, 'utf-8')
-  const missing = []
-  if (!content.match(/\*\*Phase:\*\*/i)) missing.push('**Phase:** field')
-  if (!content.match(/\*\*Verdict:\*\*/i)) missing.push('**Verdict:** field')
-  if (!content.match(/## Findings/i)) missing.push('## Findings section')
-
-  if (missing.length > 0) {
-    console.error('❌ review-feedback.md is incomplete')
-    for (const item of missing) {
-      console.log(`   Missing: ${item}`)
-    }
-    console.log('   Fix the file and run specdev review done again.')
-    process.exitCode = 1
-    return
-  }
-
-  console.log(`✅ Review feedback validated for ${name}`)
-  blankLine()
-  console.log('Feedback file is ready. The MAIN coding agent should run:')
-  console.log(`   specdev check-review --assignment=${name}`)
-  blankLine()
-  console.log('You can now end this review session.')
-}
-
-async function detectNextRound(reviewDir) {
-  try {
-    const files = await fse.readdir(reviewDir)
-    let maxRound = 0
-    for (const f of files) {
-      const match = f.match(/^feedback-round-(\d+)\.md$/)
-      if (match) {
-        const n = Number.parseInt(match[1], 10)
-        if (n > maxRound) maxRound = n
-      }
-    }
-    return maxRound + 1
-  } catch {
-    return 1
+  if (!isAutomated) {
+    console.log('IMPORTANT: Do NOT run check-review in this session.')
+    console.log('check-review is for the MAIN coding agent in a separate session.')
   }
 }
