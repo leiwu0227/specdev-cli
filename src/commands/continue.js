@@ -5,7 +5,7 @@ import {
   resolveTargetDir,
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
-import { scanAssignments, scanSingleAssignment } from '../utils/scan.js'
+import { scanAssignments, scanSingleAssignment, readProcessedCaptures } from '../utils/scan.js'
 import { detectAssignmentState } from '../utils/state.js'
 import { askChoice } from '../utils/prompt.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
@@ -45,6 +45,22 @@ export async function continueCommand(flags = {}) {
   }
 
   const payload = buildContinuePayload(detected, selected, selection, reviewStatus)
+
+  // Check for unprocessed distill assignments
+  const knowledgePath = join(specdevPath, 'knowledge')
+  const allAssignments = await scanAssignments(specdevPath)
+  const captureAssignments = allAssignments.filter(a => a.capture)
+  const processedProject = await readProcessedCaptures(knowledgePath, 'project')
+  const unprocessedDistill = captureAssignments.filter(a => !processedProject.has(a.name))
+
+  if (unprocessedDistill.length > 0) {
+    const MAX_SHOWN = 5
+    payload.distill_pending = {
+      count: unprocessedDistill.length,
+      assignments: unprocessedDistill.slice(0, MAX_SHOWN).map(a => a.name),
+    }
+  }
+
   emit(payload, json)
   if (payload.status === 'blocked') process.exitCode = 1
 }
@@ -137,6 +153,14 @@ function emit(payload, asJson) {
         `${blocker.code}: ${blocker.detail} (fix: ${blocker.recommended_fix})`
     )
     printListSection('Blockers:', items)
+  }
+
+  if (payload.distill_pending) {
+    console.log('')
+    console.log('Distill Pending:')
+    const suffix = payload.distill_pending.count > 5 ? ' (showing oldest 5)' : ''
+    console.log(`  ${payload.distill_pending.count} assignment(s) have unprocessed captures${suffix}`)
+    console.log('  Run: specdev distill --assignment=<name>')
   }
 }
 

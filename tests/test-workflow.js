@@ -169,6 +169,27 @@ async function runTests() {
   out = continueJson('00001_feature_brainstorm')
   assert(out.payload && out.payload.state === 'completed', 'detects completed')
 
+  console.log('\ncontinue — distill pending nudge:')
+  // Create a completed assignment with capture diffs but not marked as processed
+  const distillAssignment = join(TEST_DIR, '.specdev', 'assignments', '00003_feature_distill-pending')
+  mkdirSync(join(distillAssignment, 'brainstorm'), { recursive: true })
+  mkdirSync(join(distillAssignment, 'breakdown'), { recursive: true })
+  mkdirSync(join(distillAssignment, 'implementation'), { recursive: true })
+  mkdirSync(join(distillAssignment, 'capture'), { recursive: true })
+  writeFileSync(join(distillAssignment, 'brainstorm', 'proposal.md'), '# Proposal\nContent here...\n')
+  writeFileSync(join(distillAssignment, 'brainstorm', 'design.md'), '# Design\nContent here...\n')
+  writeFileSync(join(distillAssignment, 'breakdown', 'plan.md'), '# Plan\nContent here...\n')
+  writeFileSync(join(distillAssignment, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ status: 'completed' }] }))
+  writeFileSync(join(distillAssignment, 'capture', 'project-notes-diff.md'), '# Diff\n')
+  writeFileSync(join(distillAssignment, 'capture', 'workflow-diff.md'), '# Diff\n')
+  writeFileSync(join(distillAssignment, 'status.json'), JSON.stringify({ brainstorm_approved: true, implementation_approved: true }))
+
+  let result = runCmd(['continue', '--json', `--target=${TEST_DIR}`, '--assignment=00003_feature_distill-pending'])
+  let json = JSON.parse(result.stdout.trim())
+  assert(json.distill_pending !== undefined, 'continue output includes distill_pending')
+  assert(json.distill_pending.count >= 1, 'distill_pending count is at least 1')
+  assert(Array.isArray(json.distill_pending.assignments), 'distill_pending has assignments array')
+
   console.log('\nnumeric assignment shorthand:')
   out = continueJson('1')
   assert(out.result.status === 0, 'accepts numeric --assignment selector')
