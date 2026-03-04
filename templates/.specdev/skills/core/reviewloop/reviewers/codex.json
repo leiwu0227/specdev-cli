@@ -1,7 +1,5 @@
 {
   "name": "codex",
-  "command": "codex exec review --uncommitted 'If acceptable, reply PASS. If issues found, describe them.'",
-  "max_rounds": 3,
-  "pass_pattern": "LGTM|no issues|approved|pass|PASS",
-  "fail_pattern": "needs changes|issues found|\\bfail\\b|\\breject\\b"
+  "command": "codex exec --full-auto --ephemeral \"Run specdev review $SPECDEV_PHASE --assignment $SPECDEV_ASSIGNMENT --round $SPECDEV_ROUND. Follow its instructions.\"",
+  "max_rounds": 3
 }

@@ -1,77 +1,53 @@
 ---
 name: reviewloop
-description: Automated external review loop — invoke external CLI reviewer, fix issues, resubmit until pass
+description: Automated external review loop — spawns external CLI reviewer, reads verdict from artifacts, auto-approves on pass
 type: core
-phase: implement
+phase: brainstorm, implement
 input: Completed work (code changes, design docs, etc.)
-output: Review verdict (pass/fail) with findings
-next: continue current workflow
+output: Review verdict in review/review-feedback.md
+next: auto-approve on pass, check-review on fail
 triggers:
-  - after implementation tasks complete
-  - after brainstorm design finishes
-  - when user requests external review
+  - after brainstorm checkpoint passes
+  - after implementation checkpoint passes
+  - when user requests automated external review
 ---
 
 # Reviewloop — Automated External Review
 
-Invoke an external CLI reviewer (Codex, OpenCode, Aider, etc.) in an automated fix-resubmit loop. The script handles mechanics (invoke CLI, parse pass/fail, enforce round limits). You handle judgment (what to fix, how to fix it).
+Run an external CLI reviewer (Codex, OpenCode, Aider, etc.) against the current assignment. The CLI command handles all mechanics: spawn reviewer, read verdict from artifacts, enforce round limits, auto-approve on pass.
 
-## Setup
-
-Reviewer configs live in `reviewers/` next to this file. Each is a JSON file. The reviewer CLI runs in the project directory and explores the repo itself — it can read files, run tests, and understand full context:
-
-```json
-{
-  "name": "codex",
-  "command": "codex exec review --uncommitted 'If acceptable, reply PASS. If issues found, describe them.'",
-  "scope": "diff",
-  "max_rounds": 3
-}
-```
-
-A default Codex config is included. Copy and customize it for other reviewers.
-
-**Config fields:**
-- `command` (required) — shell command to run (the reviewer CLI explores the repo itself)
-- `max_rounds` — max fix-resubmit cycles before escalating (default: 3)
-- `pass_pattern` — regex to detect pass (default: `LGTM|no issues|approved|pass|PASS`)
-- `fail_pattern` — regex to detect fail, checked first (default: `needs changes|issues found|\bfailed\b|\bfail\b|reject`)
-
-## Protocol
-
-### Step 1: Prompt the user
-
-When your work is ready for review, ask which reviewer to use. List available reviewers by checking `reviewers/*.json`.
-
-### Step 2: Run the loop
-
-Execute the script:
+## Usage
 
 ```bash
-bash .specdev/skills/core/reviewloop/scripts/reviewloop.sh --reviewer <name> --round 1
+specdev reviewloop <phase>
+specdev reviewloop <phase> --reviewer=<name>
 ```
 
-The script returns JSON:
+Without `--reviewer`: lists available reviewers. Ask the user to select one.
+With `--reviewer`: spawns the reviewer and processes the result.
 
-```json
-{
-  "verdict": "pass|fail",
-  "round": 1,
-  "max_rounds": 3,
-  "escalate": false,
-  "findings": "reviewer output text"
-}
-```
+## Review Artifacts
 
-### Step 3: Handle the result
+Two append-only files with clear ownership:
 
-- **verdict = pass** — Report success to user. Continue with workflow.
-- **verdict = fail, escalate = false** — Read `findings`. Fix the issues. Re-run with `--round N+1`.
-- **verdict = fail, escalate = true** — STOP. Show all findings to the user. Ask how to proceed. Do NOT continue fixing on your own.
+- `review/review-feedback.md` — review agent writes findings (append `## Round N`)
+- `review/changelog.md` — main agent writes what it fixed (append `## Round N`)
+
+Each agent only writes to its own file and reads the other's.
+
+## Flow
+
+1. Run `specdev reviewloop <phase>` — lists reviewers
+2. Ask user which reviewer to use
+3. Run `specdev reviewloop <phase> --reviewer=<name>`
+4. Command spawns reviewer, waits for completion
+5. Reads verdict from `review/review-feedback.md`
+6. **Pass** → auto-approves phase, proceed to next phase
+7. **Fail** → run `specdev check-review` to read findings, fix issues, write `changelog.md`
+8. Re-run `specdev reviewloop` for next round
 
 ## Hard Rules
 
-1. **Never skip a round** — always re-run the script after fixing issues
+1. **Never skip check-review** — always read findings before the next round
 2. **Never argue with findings** — fix what the reviewer says or escalate to the user
-3. **Never modify the verdict** — the script decides pass/fail, not you
-4. **Never exceed max rounds** — when escalate is true, stop and defer to the user
+3. **Never exceed max rounds** — when max is reached, stop and defer to the user
