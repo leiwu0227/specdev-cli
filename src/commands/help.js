@@ -26,9 +26,8 @@ export function helpCommand() {
     '  check-review        Read and address review feedback',
     '  implement           Set up and kick off implementation phase',
     '  reviewloop <phase>  Automated external review loop (brainstorm | implementation)',
-    '  distill project     Aggregate project knowledge from assignments (JSON)',
-    '  distill workflow    Aggregate workflow observations from assignments (JSON)',
-    '  distill mark-processed <type> <names>  Mark assignments as distilled',
+    '  distill              Aggregate knowledge from assignment captures (JSON)',
+    '  distill done <name>  Validate and mark assignment as distilled',
     '  help                Show this help message',
     '  --version, -v       Show version number',
   ])
@@ -61,8 +60,8 @@ export function helpCommand() {
     '  specdev check-review              # Read feedback in main session',
     '',
     '  # Knowledge distillation',
-    '  specdev distill workflow',
-    '  specdev distill project',
+    '  specdev distill --assignment=<name>',
+    '  specdev distill done <name>',
   ])
   blankLine()
   printSection('For more information, visit: https://github.com/leiwu0227/specdev-cli')

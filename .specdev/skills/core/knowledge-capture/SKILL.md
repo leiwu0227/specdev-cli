@@ -4,7 +4,7 @@ description: Distill learnings into knowledge branches after assignment completi
 type: core
 phase: capture
 input: Completed assignment
-output: Knowledge diff files
+output: Knowledge diff files, updated project_notes, knowledge branches
 next: null
 ---
 
@@ -13,8 +13,8 @@ next: null
 ## Contract
 
 - **Input:** A completed, verified assignment
-- **Process:** Compare learnings against project_notes → compare flow against specdev workflow → update catalogs → finalize
-- **Output:** `capture/project-notes-diff.md` + `capture/workflow-diff.md`, catalogs updated, assignment marked done
+- **Process:** Write capture diffs → update big_picture → update catalogs → run distill → finalize
+- **Output:** `capture/` diffs, updated `project_notes/`, knowledge branches updated, assignment marked done
 - **Next:** None — this is the final phase
 
 ## Process
@@ -36,8 +36,6 @@ next: null
 - [Aspects already well-documented]
 ```
 
-**Do NOT update `big_picture.md` directly.** Write diffs only — the user decides whether to apply.
-
 ### Step 2: Workflow Diff
 
 1. Reflect on each phase: brainstorm, breakdown, implement, review
@@ -54,20 +52,55 @@ next: null
 - [Friction points, gaps, suggestions]
 ```
 
-### Step 3: Update Catalogs and Finalize
+### Step 3: Update Big Picture
+
+1. Read `project_notes/big_picture.md`
+2. Update it with new information from this assignment:
+   - Add new systems or components that were built
+   - Revise descriptions that are now outdated
+   - Remove things that no longer exist
+3. **Keep it lean — under 2000 words.** Architecture-level facts only, no implementation details.
+4. If the file is already near the limit, replace outdated content rather than appending.
+
+### Step 4: Update Catalogs
 
 1. Add an entry to `project_notes/feature_descriptions.md`:
    - Feature/Refactor: `### [Name]` with Assignment, Completed, Description (1-2 sentences), Key files
    - Familiarization: `### [System]` with Assignment, Completed, Summary (1-2 sentences), Key insights
    - Keep entries brief — this is a catalog, not detailed documentation
 2. Mark assignment as DONE in `project_notes/assignment_progress.md`
-3. Distill any reusable learnings into `knowledge/` branches (codestyle, architecture, domain, workflow)
+
+### Step 5: Run Distill (hard requirement)
+
+1. Run `specdev distill --assignment=<name>`
+2. Read the JSON output — it contains:
+   - Your capture diffs (for reference)
+   - Existing knowledge file listings per branch
+   - `big_picture_word_count` and `big_picture_word_limit` (verify you're under limit)
+   - Heuristic suggestions (cross-assignment patterns)
+3. Write synthesized observations to `knowledge/` branches as appropriate:
+   - `knowledge/codestyle/` — naming conventions, formatting patterns, code style decisions
+   - `knowledge/architecture/` — system design, component relationships, key decisions
+   - `knowledge/domain/` — domain concepts, business logic patterns
+   - `knowledge/workflow/` — process patterns, tool usage observations
+4. Write workflow observations to `knowledge/_workflow_feedback/` as appropriate
+5. If no new observations to write, that's OK — not every assignment produces reusable knowledge
+
+### Step 6: Finalize (hard requirement)
+
+1. Run `specdev distill done <assignment-name>`
+2. This validates:
+   - `big_picture.md` is under 2000 words
+   - Assignment name appears in `feature_descriptions.md`
+3. If validation fails: fix the issue and re-run `specdev distill done`
+4. On success: assignment is marked as processed and complete
 
 ## Red Flags
 
-- Updating `big_picture.md` directly — write diffs only, user decides whether to apply
 - Being too vague — "it went fine" is not useful. Be specific.
 - Skipping this phase — even small assignments produce learnings
+- Skipping the distill step — every assignment must run `specdev distill` and `specdev distill done`
+- Bloating `big_picture.md` — if near the word limit, replace outdated content instead of appending
 
 ## Integration
 
