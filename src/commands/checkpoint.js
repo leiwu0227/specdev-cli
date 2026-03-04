@@ -107,8 +107,9 @@ async function checkpointBrainstorm(assignmentPath, name) {
   console.log('   brainstorm/design.md ✓')
   blankLine()
   console.log('Ready for review. User may run:')
-  console.log('   specdev review brainstorm (optional, in separate session)')
-  console.log('   specdev approve brainstorm (to proceed)')
+  console.log('   specdev reviewloop brainstorm — automated external review (e.g., Codex)')
+  console.log('   specdev review brainstorm — manual review in a separate session')
+  console.log('   specdev approve brainstorm — skip review and proceed to breakdown')
 }
 
 async function checkpointImplementation(assignmentPath, name, flags = {}) {
@@ -206,6 +207,7 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
 
   blankLine()
   console.log('Ready for review. User may run:')
-  console.log('   specdev review implementation (optional, in separate session)')
-  console.log('   specdev approve implementation (to proceed)')
+  console.log('   specdev reviewloop implementation — automated external review (e.g., Codex)')
+  console.log('   specdev review implementation — manual review in a separate session')
+  console.log('   specdev approve implementation — skip review and proceed to summary')
 }

@@ -33,6 +33,7 @@ export async function updateSpecdevSystem(source, destination) {
       'skills/core/orientation',
       'skills/tools/autoloop',
       'skills/tools/reviewloop',
+      'skills/core/reviewloop/reviewers/codex-with-context.json',
     ]
     for (const path of removePaths) {
       const destPath = join(destination, path)
