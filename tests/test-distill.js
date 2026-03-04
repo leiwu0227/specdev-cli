@@ -105,6 +105,72 @@ assert(result.status !== 0, 'distill project no longer works')
 result = runCmd(['distill', 'workflow', `--target=${TEST_DIR}`])
 assert(result.status !== 0, 'distill workflow no longer works')
 
+// =====================================================================
+// Distill Done
+// =====================================================================
+
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+
+const specdevDone = join(TEST_DIR, '.specdev')
+const doneDirAssignment = join(specdevDone, 'assignments', '00001_feature_done-test')
+mkdirSync(join(doneDirAssignment, 'capture'), { recursive: true })
+writeFileSync(join(doneDirAssignment, 'capture', 'workflow-diff.md'), '# Diff\n')
+
+// Create big_picture.md under limit
+const projectNotes = join(specdevDone, 'project_notes')
+writeFileSync(join(projectNotes, 'big_picture.md'), 'A short overview of the project.\n')
+
+// Create feature_descriptions.md with entry
+writeFileSync(join(projectNotes, 'feature_descriptions.md'),
+  '# Feature Descriptions\n\n### Done Test\n**Assignment:** 00001_feature_done-test\n')
+
+console.log('\ndistill done — success:')
+result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'distill done exits 0')
+try {
+  json = JSON.parse(result.stdout.trim())
+  assert(json.status === 'ok', 'distill done status ok')
+  assert(json.marked === '00001_feature_done-test', 'marked correct assignment')
+} catch {
+  assert(false, 'distill done output is valid JSON')
+}
+
+// Verify marked as processed — distill still works but assignment is tracked
+result = runCmd(['distill', `--target=${TEST_DIR}`, '--assignment=00001_feature_done-test'])
+json = JSON.parse(result.stdout.trim())
+assert(json.status === 'ok' || json.status === 'no_captures', 'distill still runs on processed assignment')
+
+console.log('\ndistill done — big_picture over limit:')
+writeFileSync(join(projectNotes, 'big_picture.md'), ('word '.repeat(2001)).trim())
+result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
+assert(result.status !== 0, 'fails when big_picture over word limit')
+assert(
+  result.stderr.includes('big_picture.md') || result.stdout.includes('big_picture.md'),
+  'error mentions big_picture.md'
+)
+
+console.log('\ndistill done — missing feature_descriptions entry:')
+writeFileSync(join(projectNotes, 'big_picture.md'), 'Short.\n')
+writeFileSync(join(projectNotes, 'feature_descriptions.md'), '# Feature Descriptions\n')
+result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
+assert(result.status !== 0, 'fails when assignment not in feature_descriptions')
+
+console.log('\ndistill done — unknown assignment:')
+result = runCmd(['distill', 'done', 'does-not-exist', `--target=${TEST_DIR}`])
+assert(result.status !== 0, 'fails with unknown assignment')
+
+console.log('\ndistill done — already processed:')
+writeFileSync(join(projectNotes, 'feature_descriptions.md'),
+  '# Feature Descriptions\n\n### Done Test\n**Assignment:** 00001_feature_done-test\n')
+runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
+result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'already processed exits 0')
+
+console.log('\nold mark-processed removed:')
+result = runCmd(['distill', 'mark-processed', 'project', '00001_feature_done-test', `--target=${TEST_DIR}`])
+assert(result.status !== 0, 'mark-processed no longer works')
+
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)
