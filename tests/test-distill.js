@@ -125,22 +125,6 @@ writeFileSync(join(projectNotes, 'big_picture.md'), 'A short overview of the pro
 writeFileSync(join(projectNotes, 'feature_descriptions.md'),
   '# Feature Descriptions\n\n### Done Test\n**Assignment:** 00001_feature_done-test\n')
 
-console.log('\ndistill done — success:')
-result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
-assert(result.status === 0, 'distill done exits 0')
-try {
-  json = JSON.parse(result.stdout.trim())
-  assert(json.status === 'ok', 'distill done status ok')
-  assert(json.marked === '00001_feature_done-test', 'marked correct assignment')
-} catch {
-  assert(false, 'distill done output is valid JSON')
-}
-
-// Verify marked as processed — distill still works but assignment is tracked
-result = runCmd(['distill', `--target=${TEST_DIR}`, '--assignment=00001_feature_done-test'])
-json = JSON.parse(result.stdout.trim())
-assert(json.status === 'ok' || json.status === 'no_captures', 'distill still runs on processed assignment')
-
 console.log('\ndistill done — big_picture over limit:')
 writeFileSync(join(projectNotes, 'big_picture.md'), ('word '.repeat(2001)).trim())
 result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
@@ -160,10 +144,26 @@ console.log('\ndistill done — unknown assignment:')
 result = runCmd(['distill', 'done', 'does-not-exist', `--target=${TEST_DIR}`])
 assert(result.status !== 0, 'fails with unknown assignment')
 
-console.log('\ndistill done — already processed:')
+console.log('\ndistill done — success:')
+writeFileSync(join(projectNotes, 'big_picture.md'), 'A short overview of the project.\n')
 writeFileSync(join(projectNotes, 'feature_descriptions.md'),
   '# Feature Descriptions\n\n### Done Test\n**Assignment:** 00001_feature_done-test\n')
-runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
+result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'distill done exits 0')
+try {
+  json = JSON.parse(result.stdout.trim())
+  assert(json.status === 'ok', 'distill done status ok')
+  assert(json.marked === '00001_feature_done-test', 'marked correct assignment')
+} catch {
+  assert(false, 'distill done output is valid JSON')
+}
+
+// Verify marked as processed — distill still works but assignment is tracked
+result = runCmd(['distill', `--target=${TEST_DIR}`, '--assignment=00001_feature_done-test'])
+json = JSON.parse(result.stdout.trim())
+assert(json.status === 'ok' || json.status === 'no_captures', 'distill still runs on processed assignment')
+
+console.log('\ndistill done — already processed:')
 result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'already processed exits 0')
 

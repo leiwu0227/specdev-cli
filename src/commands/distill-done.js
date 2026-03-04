@@ -33,7 +33,19 @@ export async function distillDoneCommand(positionalArgs = [], flags = {}) {
     return
   }
 
-  // Validate big_picture.md word count (always enforced, even if already processed)
+  // Check if already processed first (no-op exit 0)
+  const processedProject = await readProcessedCaptures(knowledgePath, 'project')
+  const processedWorkflow = await readProcessedCaptures(knowledgePath, 'workflow')
+  if (processedProject.has(assignmentName) && processedWorkflow.has(assignmentName)) {
+    console.log(JSON.stringify({
+      status: 'ok',
+      message: 'Already processed.',
+      marked: assignmentName,
+    }, null, 2))
+    return
+  }
+
+  // Validate big_picture.md word count
   const bigPicturePath = join(specdevPath, 'project_notes', 'big_picture.md')
   if (await fse.pathExists(bigPicturePath)) {
     const content = await fse.readFile(bigPicturePath, 'utf-8')
@@ -45,7 +57,7 @@ export async function distillDoneCommand(positionalArgs = [], flags = {}) {
     }
   }
 
-  // Validate feature_descriptions.md contains assignment name (always enforced)
+  // Validate feature_descriptions.md contains assignment name
   const featureDescPath = join(specdevPath, 'project_notes', 'feature_descriptions.md')
   if (await fse.pathExists(featureDescPath)) {
     const content = await fse.readFile(featureDescPath, 'utf-8')
@@ -57,18 +69,6 @@ export async function distillDoneCommand(positionalArgs = [], flags = {}) {
   } else {
     console.error(`feature_descriptions.md not found. Create it with an entry for ${assignmentName} and retry.`)
     process.exitCode = 1
-    return
-  }
-
-  // Check if already processed (after validation passes)
-  const processedProject = await readProcessedCaptures(knowledgePath, 'project')
-  const processedWorkflow = await readProcessedCaptures(knowledgePath, 'workflow')
-  if (processedProject.has(assignmentName) && processedWorkflow.has(assignmentName)) {
-    console.log(JSON.stringify({
-      status: 'ok',
-      message: 'Already processed.',
-      marked: assignmentName,
-    }, null, 2))
     return
   }
 

@@ -51,7 +51,9 @@ export async function continueCommand(flags = {}) {
   const allAssignments = await scanAssignments(specdevPath)
   const captureAssignments = allAssignments.filter(a => a.capture)
   const processedProject = await readProcessedCaptures(knowledgePath, 'project')
-  const unprocessedDistill = captureAssignments.filter(a => !processedProject.has(a.name))
+  const unprocessedDistill = captureAssignments
+    .filter(a => !processedProject.has(a.name))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   if (unprocessedDistill.length > 0) {
     const MAX_SHOWN = 5
