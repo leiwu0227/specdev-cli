@@ -1,9 +1,8 @@
 import { initCommand } from './init.js'
 import { updateCommand } from './update.js'
 import { helpCommand } from './help.js'
-import { distillWorkflowCommand } from './distill-workflow.js'
-import { distillProjectCommand } from './distill-project.js'
-import { distillMarkCommand } from './distill-mark.js'
+import { distillCommand } from './distill.js'
+import { distillDoneCommand } from './distill-done.js'
 import { skillsCommand } from './skills.js'
 import { startCommand } from './start.js'
 import { assignmentCommand } from './assignment.js'
@@ -37,17 +36,12 @@ const commandHandlers = {
 export async function dispatchCommand(command, positionalArgs, flags) {
   if (command === 'distill') {
     const subcommand = positionalArgs[0]
-    if (subcommand === 'workflow') {
-      await distillWorkflowCommand(flags)
-    } else if (subcommand === 'project') {
-      await distillProjectCommand(flags)
-    } else if (subcommand === 'mark-processed') {
-      const markArgs = positionalArgs.slice(1)
-      await distillMarkCommand(markArgs, flags)
+    if (subcommand === 'done') {
+      const doneArgs = positionalArgs.slice(1)
+      await distillDoneCommand(doneArgs, flags)
     } else {
-      console.error(`Unknown distill subcommand: ${subcommand || '(none)'}`)
-      console.log('Usage: specdev distill <project|workflow|mark-processed>')
-      process.exitCode = 1
+      // No subcommand = combined distill
+      await distillCommand(flags)
     }
     return
   }
