@@ -26,7 +26,7 @@ Must pass before requesting review.
 - `specdev review brainstorm` — manual review in a separate session
 - `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex)
 
-**Gate:** User runs `specdev approve brainstorm`. Do not proceed without approval.
+**Gate:** `specdev approve brainstorm` must have been run. If you used `specdev reviewloop` and it printed "Phase 'brainstorm' has been approved", the gate is already satisfied — proceed immediately to breakdown. Otherwise, ask the user to run `specdev approve brainstorm`.
 Breakdown runs automatically after approval — no separate command needed.
 
 ---
@@ -56,7 +56,7 @@ Must pass before requesting review.
 - `specdev review implementation` — manual review in a separate session
 - `specdev reviewloop implementation` — automated review via external CLI (e.g., Codex)
 
-**Gate:** User runs `specdev approve implementation`. Do not proceed without approval.
+**Gate:** `specdev approve implementation` must have been run. If you used `specdev reviewloop` and it printed "Phase 'implementation' has been approved", the gate is already satisfied — proceed immediately to summary. Otherwise, ask the user to run `specdev approve implementation`.
 
 ---
 

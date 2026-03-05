@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# poll-for-feedback.sh — Block until review-feedback.md appears
+# poll-for-feedback.sh — Block until {phase}-feedback.md appears
 #
 # Usage: poll-for-feedback.sh <assignment-path> <phase> [timeout-seconds]
-# Blocks until review/review-feedback.md appears with matching phase
-# Output: Contents of review-feedback.md
+# Blocks until review/{phase}-feedback.md appears with matching phase
+# Output: Contents of {phase}-feedback.md
 # Exit: 0 = feedback received, 1 = timeout or error
 
 ASSIGNMENT_PATH="${1:-}"
@@ -24,7 +24,7 @@ if [ -z "$PHASE" ]; then
 fi
 
 ASSIGNMENT_PATH=$(cd "$ASSIGNMENT_PATH" && pwd)
-FEEDBACK_FILE="$ASSIGNMENT_PATH/review/review-feedback.md"
+FEEDBACK_FILE="$ASSIGNMENT_PATH/review/${PHASE}-feedback.md"
 ELAPSED=0
 INTERVAL=5
 

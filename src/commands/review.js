@@ -22,7 +22,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   }
 
   if (phase === 'done') {
-    console.error('specdev review done has been removed. The review agent should write findings directly to review/review-feedback.md')
+    console.error('specdev review done has been removed. The review agent should write findings directly to review/{phase}-feedback.md')
     process.exitCode = 1
     return
   }
@@ -97,7 +97,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   await fse.ensureDir(reviewDir)
 
   // Detect round: use --round flag if provided, otherwise auto-detect from review-feedback.md
-  const feedbackFilePath = join(reviewDir, 'review-feedback.md')
+  const feedbackFilePath = join(reviewDir, `${phase}-feedback.md`)
   let nextRound
   const isAutomated = flags.round != null
 
@@ -117,11 +117,11 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   if (nextRound > 1) {
     blankLine()
     printSection(`Re-review (round ${nextRound}):`)
-    console.log(`   Read previous findings: ${name}/review/review-feedback.md`)
-    console.log(`   Read changes since last round: ${name}/review/changelog.md`)
+    console.log(`   Read previous findings: ${name}/review/${phase}-feedback.md`)
+    console.log(`   Read changes since last round: ${name}/review/${phase}-changelog.md`)
   }
 
-  const feedbackPath = `${name}/review/review-feedback.md`
+  const feedbackPath = `${name}/review/${phase}-feedback.md`
 
   blankLine()
   printSection('Write findings to:')

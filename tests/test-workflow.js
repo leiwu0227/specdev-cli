@@ -73,7 +73,7 @@ function writeFeedback(assignmentRoot, { phase, verdict, round, findings, addres
   const addressedText = addressedFindings.length > 0
     ? addressedFindings.map(f => `- ${f}`).join('\n')
     : '- (none)'
-  const feedbackPath = join(reviewDir, 'review-feedback.md')
+  const feedbackPath = join(reviewDir, `${phase}-feedback.md`)
   // Append-only format: each call appends a ## Round N section
   const existing = existsSync(feedbackPath) ? readFileSync(feedbackPath, 'utf-8') : '# Review Feedback\n'
   const section = [
@@ -144,12 +144,12 @@ async function runTests() {
 
   console.log('\nreview feedback surfaced:')
   mkdirSync(join(a1, 'review'), { recursive: true })
-  writeFileSync(join(a1, 'review', 'review-feedback.md'), '# Review Feedback\n\n## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n\n- Fix the thing\n')
+  writeFileSync(join(a1, 'review', 'implementation-feedback.md'), '# Review Feedback\n\n## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n\n- Fix the thing\n')
   out = continueJson('00001_feature_brainstorm')
-  assert(out.payload && out.payload.review_feedback === 'review/review-feedback.md', 'surfaces review_feedback path')
+  assert(out.payload && out.payload.review_feedback === 'review/implementation-feedback.md', 'surfaces review_feedback path')
 
   console.log('\nimplementation_checkpoint_ready:')
-  rmSync(join(a1, 'review', 'review-feedback.md'))
+  rmSync(join(a1, 'review', 'implementation-feedback.md'))
   writeFileSync(
     join(a1, 'implementation', 'progress.json'),
     JSON.stringify({ tasks: [{ number: 1, status: 'completed' }, { number: 2, status: 'completed' }] }, null, 2) + '\n'
@@ -335,7 +335,7 @@ async function runTests() {
   const brainstormText = `${brainstormReview.stdout}\n${brainstormReview.stderr}`
   assert(brainstormReview.status === 0, 'review brainstorm exits 0', brainstormReview.stderr)
   assert(brainstormText.includes('Phase: brainstorm') || reviewSource.includes('Phase: ${phase}'), 'shows brainstorm phase')
-  assert(brainstormText.includes('review-feedback.md') || reviewSource.includes('review-feedback.md'), 'tells reviewer where to write findings')
+  assert(brainstormText.includes('brainstorm-feedback.md') || reviewSource.includes('${phase}-feedback.md'), 'tells reviewer where to write findings')
   assert(existsSync(join(reviewAssignment, 'review')), 'creates review/ directory')
 
   console.log('\nreview implementation:')
@@ -368,7 +368,7 @@ async function runTests() {
   console.log('\nmulti-round review with existing feedback:')
   const reviewDir = join(reviewAssignment, 'review')
   mkdirSync(reviewDir, { recursive: true })
-  writeFileSync(join(reviewDir, 'review-feedback.md'), [
+  writeFileSync(join(reviewDir, 'implementation-feedback.md'), [
     '## Round 1',
     '',
     '**Verdict:** needs-changes',
@@ -428,7 +428,7 @@ async function runTests() {
 
   console.log('\ncheck-review with no feedback:')
   const noFeedback = runCmd([
-    'check-review', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
+    'check-review', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
   ])
   const noFeedbackText = `${noFeedback.stdout}\n${noFeedback.stderr}`
   assert(noFeedback.status === 1, 'check-review exits non-zero without feedback file')
@@ -443,15 +443,15 @@ async function runTests() {
     addressedFindings: ['Clarified error-handling section'],
   })
   const approved = runCmd([
-    'check-review', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
+    'check-review', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
   ])
   const approvedText = `${approved.stdout}\n${approved.stderr}`
   assert(approved.status === 0, 'check-review exits 0 for approved verdict')
   assert(approvedText.includes('Review approved') || checkReviewSource.includes('Review approved!'), 'prints approval message')
   // Append-only: feedback file must still exist (no archiving)
   assert(
-    existsSync(join(checkAssignment, 'review', 'review-feedback.md')),
-    'review-feedback.md still exists (append-only, no archiving)'
+    existsSync(join(checkAssignment, 'review', 'brainstorm-feedback.md')),
+    'brainstorm-feedback.md still exists (append-only, no archiving)'
   )
   assert(
     !existsSync(join(checkAssignment, 'review', 'feedback-round-1.md')),
@@ -460,13 +460,13 @@ async function runTests() {
 
   console.log('\ncheck-review with needs-changes verdict:')
   // Remove old feedback and start fresh for needs-changes test
-  rmSync(join(checkAssignment, 'review', 'review-feedback.md'), { force: true })
+  rmSync(join(checkAssignment, 'review', 'brainstorm-feedback.md'), { force: true })
   writeFeedback(checkAssignment, {
     phase: 'brainstorm', verdict: 'needs-changes', round: 2,
     findings: ['Missing error handling in design', 'Scope too broad for auth section'],
   })
   const needsChanges = runCmd([
-    'check-review', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
+    'check-review', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
   ])
   const needsText = `${needsChanges.stdout}\n${needsChanges.stderr}`
   assert(needsChanges.status === 0, 'check-review exits 0 for needs-changes verdict')
@@ -478,19 +478,19 @@ async function runTests() {
   )
   // Feedback file still exists
   assert(
-    existsSync(join(checkAssignment, 'review', 'review-feedback.md')),
-    'review-feedback.md still exists after needs-changes'
+    existsSync(join(checkAssignment, 'review', 'brainstorm-feedback.md')),
+    'brainstorm-feedback.md still exists after needs-changes'
   )
 
   console.log('\n--json output:')
   // Fresh feedback for JSON test
-  rmSync(join(checkAssignment, 'review', 'review-feedback.md'), { force: true })
+  rmSync(join(checkAssignment, 'review', 'brainstorm-feedback.md'), { force: true })
   writeFeedback(checkAssignment, {
     phase: 'implementation', verdict: 'needs-changes', round: 3,
     findings: ['Test coverage insufficient'],
   })
   const jsonOut = runCmd([
-    'check-review', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`, '--json',
+    'check-review', 'implementation', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`, '--json',
   ])
   assert(jsonOut.status === 0, 'check-review --json exits 0')
   let payload = null
@@ -504,9 +504,9 @@ async function runTests() {
 
   console.log('\n--json with no feedback:')
   // Remove feedback to test error path
-  rmSync(join(checkAssignment, 'review', 'review-feedback.md'), { force: true })
+  rmSync(join(checkAssignment, 'review', 'implementation-feedback.md'), { force: true })
   const jsonNoFeedback = runCmd([
-    'check-review', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`, '--json',
+    'check-review', 'implementation', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`, '--json',
   ])
   assert(jsonNoFeedback.status === 1, 'check-review --json exits non-zero with no feedback')
   let errPayload = null

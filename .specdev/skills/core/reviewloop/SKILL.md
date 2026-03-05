@@ -4,7 +4,7 @@ description: Automated external review loop — spawns external CLI reviewer, re
 type: core
 phase: brainstorm, implement
 input: Completed work (code changes, design docs, etc.)
-output: Review verdict in review/review-feedback.md
+output: Review verdict in review/{phase}-feedback.md
 next: auto-approve on pass, check-review on fail
 triggers:
   - after brainstorm checkpoint passes
@@ -30,8 +30,8 @@ With `--reviewer`: spawns the reviewer and processes the result.
 
 Two append-only files with clear ownership:
 
-- `review/review-feedback.md` — review agent writes findings (append `## Round N`)
-- `review/changelog.md` — main agent writes what it fixed (append `## Round N`)
+- `review/{phase}-feedback.md` — review agent writes findings (append `## Round N`)
+- `review/{phase}-changelog.md` — main agent writes what it fixed (append `## Round N`)
 
 Each agent only writes to its own file and reads the other's.
 
@@ -41,9 +41,9 @@ Each agent only writes to its own file and reads the other's.
 2. Ask user which reviewer to use
 3. Run `specdev reviewloop <phase> --reviewer=<name>`
 4. Command spawns reviewer, waits for completion
-5. Reads verdict from `review/review-feedback.md`
+5. Reads verdict from `review/{phase}-feedback.md`
 6. **Pass** → auto-approves phase, proceed to next phase
-7. **Fail** → run `specdev check-review` to read findings, fix issues, write `changelog.md`
+7. **Fail** → run `specdev check-review` to read findings, fix issues, write `{phase}-changelog.md`
 8. Re-run `specdev reviewloop` for next round
 
 ## Hard Rules

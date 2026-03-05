@@ -28,7 +28,7 @@ const commandHandlers = {
   migrate: ({ flags }) => migrateCommand(flags),
   continue: ({ flags }) => continueCommand(flags),
   revise: ({ flags }) => reviseCommand(flags),
-  'check-review': ({ flags }) => checkReviewCommand(flags),
+  'check-review': ({ positionalArgs, flags }) => checkReviewCommand(positionalArgs, flags),
   reviewloop: ({ positionalArgs, flags }) => reviewloopCommand(positionalArgs, flags),
   implement: ({ positionalArgs, flags }) => implementCommand(positionalArgs, flags),
 }

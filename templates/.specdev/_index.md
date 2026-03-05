@@ -16,6 +16,8 @@ Reference dictionary for all SpecDev resources. Consult when you need to find a 
 
 - **`_guides/migration_guide.md`** — Migrating legacy (V3) assignment layouts to V4 subfolder structure. Only needed when `specdev update` detects old root-level phase files. Covers the `specdev migrate` command and file move mappings.
 
+- **`_guides/update_guide.md`** — Manual patches to apply after running `specdev update`. Covers changes to CLAUDE.md and other files that `specdev update` does not overwrite automatically.
+
 ## Core Skills
 
 ### Brainstorm phase — choose one based on assignment type:

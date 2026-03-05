@@ -15,7 +15,7 @@ import { approvePhase } from '../utils/approve-phase.js'
  * specdev reviewloop <phase> — Automated external review loop
  *
  * Spawns an external reviewer process, reads its verdict from
- * review-feedback.md, and auto-approves on pass.
+ * {phase}-feedback.md, and auto-approves on pass.
  */
 export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   const VALID_PHASES = ['brainstorm', 'implementation']
@@ -127,8 +127,8 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   const reviewDir = join(assignmentPath, 'review')
   await fse.ensureDir(reviewDir)
 
-  const feedbackPath = join(reviewDir, 'review-feedback.md')
-  const changelogPath = join(reviewDir, 'changelog.md')
+  const feedbackPath = join(reviewDir, `${phase}-feedback.md`)
+  const changelogPath = join(reviewDir, `${phase}-changelog.md`)
 
   const feedbackContent = (await fse.pathExists(feedbackPath))
     ? await fse.readFile(feedbackPath, 'utf-8')
@@ -196,7 +196,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
   if (!latestRound || latestRound.round !== round) {
     console.error(
-      `Expected round ${round} in review-feedback.md but found ${latestRound ? `round ${latestRound.round}` : 'no rounds'}`,
+      `Expected round ${round} in ${phase}-feedback.md but found ${latestRound ? `round ${latestRound.round}` : 'no rounds'}`,
     )
     process.exitCode = 1
     return

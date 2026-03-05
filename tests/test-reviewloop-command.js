@@ -91,16 +91,16 @@ function setupReviewer(name, config) {
   writeFileSync(join(dir, `${name}.json`), JSON.stringify(config, null, 2))
 }
 
-function writeFeedback(assignmentRoot, content) {
+function writeFeedback(assignmentRoot, phase, content) {
   const dir = join(assignmentRoot, 'review')
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, 'review-feedback.md'), content, 'utf-8')
+  writeFileSync(join(dir, `${phase}-feedback.md`), content, 'utf-8')
 }
 
-function writeChangelog(assignmentRoot, content) {
+function writeChangelog(assignmentRoot, phase, content) {
   const dir = join(assignmentRoot, 'review')
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, 'changelog.md'), content, 'utf-8')
+  writeFileSync(join(dir, `${phase}-changelog.md`), content, 'utf-8')
 }
 
 const ASSIGNMENT_NAME = '00001_feature_test'
@@ -233,6 +233,7 @@ setupReviewer('mock', {
 // Write feedback with needs-changes but no matching changelog
 writeFeedback(
   a2,
+  'brainstorm',
   '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix X\n',
 )
 result = runCmd([
@@ -251,7 +252,7 @@ assert(
 )
 
 console.log('\nreviewloop (stale guard passes with changelog):')
-writeChangelog(a2, '## Round 1\n\n### Changes\n- Fixed X\n')
+writeChangelog(a2, 'brainstorm', '## Round 1\n\n### Changes\n- Fixed X\n')
 // Now it should not hit the stale guard (but will run the reviewer)
 // The mock reviewer won't write feedback, so it will fail at the round validation step
 result = runCmd([
@@ -285,6 +286,7 @@ setupReviewer('mock', {
 // Write 2 rounds of feedback (both addressed)
 writeFeedback(
   a3,
+  'brainstorm',
   [
     '## Round 1',
     '',
@@ -301,7 +303,7 @@ writeFeedback(
     '1. [F2.1] Fix Y',
   ].join('\n'),
 )
-writeChangelog(a3, '## Round 1\n\n- Fixed X\n\n## Round 2\n\n- Fixed Y\n')
+writeChangelog(a3, 'brainstorm', '## Round 1\n\n- Fixed X\n\n## Round 2\n\n- Fixed Y\n')
 result = runCmd([
   'reviewloop',
   'brainstorm',
@@ -329,7 +331,7 @@ mkdirSync(reviewDirPath, { recursive: true })
 
 // Create a mock reviewer that writes an approved round to review-feedback.md
 // The reviewer command will be run with cwd=targetDir
-const feedbackRelPath = `.specdev/assignments/${ASSIGNMENT_NAME}/review/review-feedback.md`
+const feedbackRelPath = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
 setupReviewer('pass-mock', {
   name: 'pass-mock',
   command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPath}"`,
@@ -379,7 +381,7 @@ fillBigPicture()
 const a5 = createAssignment(ASSIGNMENT_NAME)
 mkdirSync(join(a5, 'review'), { recursive: true })
 
-const feedbackRelPath2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/review-feedback.md`
+const feedbackRelPath2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
 setupReviewer('fail-mock', {
   name: 'fail-mock',
   command: `printf '## Round 1\\n\\n**Verdict:** needs-changes\\n\\n### Findings\\n1. [F1.1] Missing tests\\n' >> "${feedbackRelPath2}"`,
@@ -415,11 +417,12 @@ mkdirSync(join(a6, 'review'), { recursive: true })
 // Pre-populate with round 1 that was addressed
 writeFeedback(
   a6,
+  'brainstorm',
   '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix X\n',
 )
-writeChangelog(a6, '## Round 1\n\n- Fixed X\n')
+writeChangelog(a6, 'brainstorm', '## Round 1\n\n- Fixed X\n')
 
-const feedbackRelPath3 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/review-feedback.md`
+const feedbackRelPath3 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
 setupReviewer('fail-mock-2', {
   name: 'fail-mock-2',
   command: `printf '\\n## Round 2\\n\\n**Verdict:** needs-changes\\n\\n### Findings\\n1. [F2.1] Still broken\\n' >> "${feedbackRelPath3}"`,
@@ -479,7 +482,7 @@ fillBigPicture()
 const a8 = createAssignment(ASSIGNMENT_NAME)
 mkdirSync(join(a8, 'review'), { recursive: true })
 
-const feedbackRelPath4 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/review-feedback.md`
+const feedbackRelPath4 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
 // Reviewer writes round 5 but we expect round 1
 setupReviewer('wrong-round', {
   name: 'wrong-round',
@@ -496,8 +499,8 @@ result = runCmd([
 ])
 assert(result.status === 1, 'exits 1 when wrong round written')
 assert(
-  result.stderr.includes('Expected round 1'),
-  'error mentions expected round',
+  result.stderr.includes('Expected round 1') && result.stderr.includes('brainstorm-feedback.md'),
+  'error mentions expected round and feedback filename',
 )
 
 // =====================================================================
@@ -512,7 +515,7 @@ const a9 = createAssignment(ASSIGNMENT_NAME)
 mkdirSync(join(a9, 'review'), { recursive: true })
 
 const envLogPath = join(TEST_DIR, 'env-log.txt')
-const feedbackRelPath5 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/review-feedback.md`
+const feedbackRelPath5 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
 setupReviewer('env-check', {
   name: 'env-check',
   command: `echo "PHASE=$SPECDEV_PHASE ASSIGNMENT=$SPECDEV_ASSIGNMENT ROUND=$SPECDEV_ROUND" > "${join(TEST_DIR, 'env-log.txt').replace(/\\/g, '/')}" && printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPath5}"`,
@@ -565,7 +568,7 @@ writeFileSync(
 )
 mkdirSync(join(a10, 'review'), { recursive: true })
 
-const feedbackRelPath6 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/review-feedback.md`
+const feedbackRelPath6 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/implementation-feedback.md`
 setupReviewer('impl-pass', {
   name: 'impl-pass',
   command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPath6}"`,

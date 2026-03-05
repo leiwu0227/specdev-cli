@@ -34,17 +34,21 @@ export async function continueCommand(flags = {}) {
   const detected = await detectAssignmentState(assignmentSummary, selected.path)
 
   // Check for review feedback from a separate review session
-  const feedbackPath = join(selected.path, 'review', 'review-feedback.md')
+  // Determine current phase from detected state
+  const currentPhase = detected.state.startsWith('brainstorm') ? 'brainstorm' : 'implementation'
+  const feedbackPath = join(selected.path, 'review', `${currentPhase}-feedback.md`)
   let reviewStatus = null
+  let reviewFeedbackRelPath = null
   if (await fse.pathExists(feedbackPath)) {
     const feedbackContent = await fse.readFile(feedbackPath, 'utf-8')
     const latest = getLatestRound(feedbackContent)
     if (latest && latest.verdict === 'needs-changes') {
       reviewStatus = 'needs-changes'
+      reviewFeedbackRelPath = `review/${currentPhase}-feedback.md`
     }
   }
 
-  const payload = buildContinuePayload(detected, selected, selection, reviewStatus)
+  const payload = buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath)
 
   // Check for unprocessed distill assignments
   const knowledgePath = join(specdevPath, 'knowledge')
@@ -99,7 +103,7 @@ function buildNoAssignmentPayload() {
   }
 }
 
-function buildContinuePayload(detected, selected, selection, reviewStatus) {
+function buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath) {
   return {
     version: 1,
     status: detected.blockers.length > 0 ? 'blocked' : 'ok',
@@ -110,7 +114,7 @@ function buildContinuePayload(detected, selected, selection, reviewStatus) {
     next_action: detected.next_action,
     blockers: detected.blockers,
     progress: detected.progress,
-    review_feedback: reviewStatus === 'needs-changes' ? 'review/review-feedback.md' : null,
+    review_feedback: reviewStatus === 'needs-changes' ? reviewFeedbackRelPath : null,
   }
 }
 
@@ -320,7 +324,8 @@ async function latestAssignmentArtifactMtime(assignmentPath) {
     'breakdown/plan.md',
     'breakdown/metadata.json',
     'implementation/progress.json',
-    'review/review-feedback.md',
+    'review/brainstorm-feedback.md',
+    'review/implementation-feedback.md',
     'review_report.md',
   ]
 

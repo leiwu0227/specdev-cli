@@ -4,7 +4,7 @@ description: Phase-aware holistic reviewer — runs via specdev review in a sepa
 type: core
 phase: verify
 input: Assignment folder with completed phase outputs
-output: review/review-feedback.md
+output: review/{phase}-feedback.md
 next: null
 ---
 
@@ -14,7 +14,7 @@ next: null
 
 - **Input:** An assignment folder with completed phase outputs
 - **Process:** Detect phase → read phase artifacts → holistic review → discuss findings with user
-- **Output:** `review/review-feedback.md` with verdict and findings
+- **Output:** `review/{phase}-feedback.md` with verdict and findings
 - **Next:** User communicates findings to the main agent session (or approves)
 
 ## How to Launch
@@ -54,7 +54,7 @@ Use `.specdev/skills/core/review-agent/prompts/implementation-reviewer.md`. Chec
 
 ## Feedback Format
 
-### review-feedback.md (written by review agent)
+### {phase}-feedback.md (written by review agent)
 
 ```markdown
 # Review Feedback

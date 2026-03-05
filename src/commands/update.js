@@ -110,6 +110,7 @@ export async function updateCommand(flags = {}) {
     blankLine()
     console.log('💡 Your project-specific files remain untouched (except official built-in tool skills)')
     console.log('💡 If this project has legacy assignments, run: specdev migrate')
+    console.log('💡 Check _guides/update_guide.md for manual patches to CLAUDE.md and other unmanaged files')
   } catch (error) {
     console.error('❌ Failed to update SpecDev:', error.message)
     process.exitCode = 1

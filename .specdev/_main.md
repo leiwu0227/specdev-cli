@@ -6,6 +6,10 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 
 All work is organized into **assignments**. An assignment is a self-contained unit of work — a feature, bugfix, refactor, or investigation — tracked in its own folder under `assignments/`. Each assignment progresses through the same 4 phases in order, producing specific artifacts at each step. The CLI enforces gates between phases so work cannot advance until artifacts are validated and the user approves.
 
+## CLI
+
+`specdev` is a Node.js CLI installed globally via npm. Run it directly as `specdev <command>`. It is NOT a Python package — never use pip/python/pipx.
+
 ## First Steps
 
 1. Read `project_notes/big_picture.md` — understand the project
@@ -32,3 +36,4 @@ Read `_guides/workflow.md` for the full phase-by-phase guide with skill referenc
 - No completion claims without evidence.
 - Announce subtasks with "Specdev: <action>".
 - Read `_guides/codestyle_guide.md` before writing any code.
+- When a specdev assignment is active, specdev skills take precedence over superpowers equivalents. See `_guides/superpowers_exclusions.md`.

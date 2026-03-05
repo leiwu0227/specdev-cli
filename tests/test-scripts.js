@@ -249,7 +249,7 @@ assert(timeoutResult.status !== 0, 'poll exits non-zero on timeout')
 assert(timeoutResult.stderr.includes('timeout'), 'poll stderr contains timeout message')
 
 console.log('\npoll-for-feedback.sh — wrong phase:')
-writeFileSync(join(REVIEW_DIR, 'review-feedback.md'), FEEDBACK_CONTENT_IMPL)
+writeFileSync(join(REVIEW_DIR, 'implementation-feedback.md'), FEEDBACK_CONTENT_IMPL)
 const wrongPhaseResult = spawnSync('bash', [POLL_SCRIPT, ASSIGNMENT_DIR, 'breakdown', '1'], {
   encoding: 'utf-8',
   timeout: 10000
@@ -257,7 +257,7 @@ const wrongPhaseResult = spawnSync('bash', [POLL_SCRIPT, ASSIGNMENT_DIR, 'breakd
 assert(wrongPhaseResult.status !== 0, 'poll exits non-zero when phase does not match')
 
 console.log('\npoll-for-feedback.sh — correct phase:')
-writeFileSync(join(REVIEW_DIR, 'review-feedback.md'), FEEDBACK_CONTENT_BREAKDOWN)
+writeFileSync(join(REVIEW_DIR, 'breakdown-feedback.md'), FEEDBACK_CONTENT_BREAKDOWN)
 const correctResult = spawnSync('bash', [POLL_SCRIPT, ASSIGNMENT_DIR, 'breakdown', '2'], {
   encoding: 'utf-8',
   timeout: 10000
