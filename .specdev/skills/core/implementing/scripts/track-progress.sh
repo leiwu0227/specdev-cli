@@ -71,7 +71,7 @@ if [ -z "$TASK_NUM" ] || [ -z "$ACTION" ]; then
   exit 1
 fi
 
-NOW=$(date -Iseconds)
+NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 case "$ACTION" in
   started)
