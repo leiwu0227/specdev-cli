@@ -22,7 +22,9 @@ next: knowledge-capture
 | Script | Purpose | When to run |
 |--------|---------|-------------|
 | `.specdev/skills/core/implementing/scripts/extract-tasks.sh` | Parse plan into structured JSON task list | At the start |
-| `.specdev/skills/core/implementing/scripts/track-progress.sh` | Mark tasks started/completed, get summary | After each task |
+| `.specdev/skills/core/implementing/scripts/prepare-task.sh` | Mark started, resolve skills, output ready-to-use prompt + mode as JSON | Before dispatching each task |
+| `.specdev/skills/core/implementing/scripts/complete-task.sh` | Mark completed, store summary, report batch status | After each task completes |
+| `.specdev/skills/core/implementing/scripts/track-progress.sh` | Low-level progress primitive (used internally by prepare/complete scripts) | For summary only |
 
 ## Prompts
 
@@ -45,17 +47,18 @@ Execute tasks in batches of 3. For each batch:
 
 #### Per task (within the batch):
 
-1. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> <N> started`
-2. **Dispatch implementer** — use `.specdev/skills/core/implementing/prompts/implementer.md` with FULL task text
+1. **Prepare** — run `.specdev/skills/core/implementing/scripts/prepare-task.sh <plan-file> <N>`
+   - This marks the task as started, resolves skills, and outputs JSON with `task_number`, `total_tasks`, `mode`, and `prompt`
+   - You MUST use the `prompt` field from this output to dispatch the subagent — do not construct the prompt manually
+2. **Dispatch implementer** — fresh subagent with the `prompt` from step 1
    - Fresh subagent, no prior context
-   - If the task has a `Skills:` field, read each listed SKILL.md and inject content into the `{TASK_SKILLS}` placeholder
-   - Look for skills in `skills/core/` first, then `skills/tools/`
    - Subagent implements, tests, commits, self-reviews
-3. **Mode-based review:**
+3. **Mode-based review** — use the `mode` from step 1:
    - `full`: dispatch `.specdev/skills/core/implementing/prompts/code-reviewer.md` — FAIL/NOT READY blocks; implementer fixes → re-review loop
    - `standard`: self-review only (implementer already did this) — no reviewer subagent
    - `lightweight`: skip review unless the task touched executable logic
-4. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> <N> completed`
+4. **Complete** — run `.specdev/skills/core/implementing/scripts/complete-task.sh <plan-file> <N> "<summary from subagent>"`
+   - This marks the task as completed, stores the summary, and reports batch progress
 
 #### After each batch:
 
@@ -79,11 +82,11 @@ The last batch may have fewer than 3 tasks.
 
 ## Red Flags
 
+- **Constructing the implementer prompt manually instead of using `prepare-task.sh`** — the script handles progress tracking, skill resolution, and template filling automatically
 - Summarizing task text — always send FULL task text to subagent
 - Reusing a subagent across tasks — fresh context per task
 - Accepting first pass without fixing findings — loop until clean
-- Ignoring Skills: field — if a task declares skills, load and inject them
-- Injecting skills not listed — only inject what the task declares
+- Skipping `complete-task.sh` after a task finishes — always record completion and summary
 
 ## Integration
 
