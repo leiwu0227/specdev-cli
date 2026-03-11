@@ -35,6 +35,16 @@ assert(existsSync(skillMd), 'SKILL.md exists at core/ path')
 const defaultConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'codex.json')
 assert(existsSync(defaultConfig), 'codex.json reviewer config exists')
 
+const cursorConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'cursor.json')
+assert(existsSync(cursorConfig), 'cursor.json reviewer config exists')
+
+if (existsSync(cursorConfig)) {
+  const cursorContent = JSON.parse(readFileSync(cursorConfig, 'utf-8'))
+  assert(cursorContent.name === 'cursor', 'cursor.json has name=cursor')
+  assert(cursorContent.command && cursorContent.command.includes('cursor-agent'), 'cursor.json command includes cursor-agent')
+  assert(typeof cursorContent.max_rounds === 'number', 'cursor.json has numeric max_rounds')
+}
+
 const skillContent = readFileSync(skillMd, 'utf-8')
 assert(skillContent.includes('type: core'), 'SKILL.md has type: core')
 assert(skillContent.includes('name: reviewloop'), 'SKILL.md has name: reviewloop')
