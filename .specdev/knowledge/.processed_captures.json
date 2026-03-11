@@ -1,8 +1,10 @@
 {
   "project": [
-    "00001_familiarization_distill-improvement"
+    "00001_familiarization_distill-improvement",
+    "00002_feature_cursor-reviewer"
   ],
   "workflow": [
-    "00001_familiarization_distill-improvement"
+    "00001_familiarization_distill-improvement",
+    "00002_feature_cursor-reviewer"
   ]
 }

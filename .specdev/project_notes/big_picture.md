@@ -28,7 +28,7 @@ src/commands/dispatch.js  Routes command name → handler
 src/utils/              Shared utilities (assignment resolution, scanning, output)
 templates/.specdev/     Template source — copied into projects on init/update
   skills/core/          Core phase skills (brainstorming, breakdown, implementing, etc.)
-  skills/tools/         Tool skills (reviewloop) — optional, installable
+  skills/tools/         Tool skills — optional, installable
   _templates/           Assignment and design templates
   _guides/              Workflow and migration guides
 hooks/                  Platform hooks (SessionStart for Claude Code)
@@ -42,7 +42,7 @@ hooks/                  Platform hooks (SessionStart for Claude Code)
 - Tool skills: SKILL.md (agent protocol) + scripts/ (deterministic mechanics) + optional wrappers per agent platform
 - `OFFICIAL_TOOL_SKILLS` in `src/utils/update.js` controls which tool skills are auto-managed
 - **Knowledge system:** After assignments complete, `specdev distill` aggregates capture diffs and heuristics into JSON; agent writes to `knowledge/` branches (codestyle, architecture, domain, workflow). `specdev distill done` validates big_picture word count and feature_descriptions entry, then marks processed via `knowledge/.processed_captures.json`.
-- **Reviewloop:** `src/commands/reviewloop.js` orchestrates external reviewer CLIs (e.g. codex) in automated review rounds with feedback written to `review/review-feedback.md`
+- **Reviewloop:** `src/commands/reviewloop.js` orchestrates external reviewer CLIs (codex, cursor, etc.) in automated review rounds with feedback written to `review/{phase}-feedback.md`. Reviewer configs are JSON files in `skills/core/reviewloop/reviewers/`.
 
 ## Conventions and constraints
 

@@ -24,6 +24,7 @@ Below is a list of proposed assignments and their completion progress.
 | # | Assignment Name | Status | Completed Date | Notes |
 |---|-----------------|--------|----------------|-------|
 | 00001 | distill-improvement | Done | 2026-03-04 | Refactored distill commands, integrated into knowledge-capture |
+| 00002 | cursor-reviewer | Done | 2026-03-11 | Added cursor-agent as reviewloop reviewer |
 
 ---
 

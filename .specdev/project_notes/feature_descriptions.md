@@ -6,7 +6,11 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 
 ## Features
 
-*(Updated by feature assignments)*
+### Cursor Reviewer
+**Assignment:** 00002_feature_cursor-reviewer
+**Completed:** 2026-03-11
+**Description:** Added Cursor CLI (`cursor-agent`) as a reviewer option for the reviewloop system. Config-driven — just a JSON file, no code changes to core modules.
+**Key files:** `templates/.specdev/skills/core/reviewloop/reviewers/cursor.json`
 
 ---
 

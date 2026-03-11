@@ -2,6 +2,6 @@
   "tasks": [
     { "number": 1, "name": "Add cursor.json reviewer config template", "status": "completed" },
     { "number": 2, "name": "Add cursor to reviewloop command listing test", "status": "completed" },
-    { "number": 3, "name": "Add checkReviewerCLIs test for cursor-agent detection", "status": "in_progress" }
+    { "number": 3, "name": "Add checkReviewerCLIs test for cursor-agent detection", "status": "completed" }
   ]
 }
