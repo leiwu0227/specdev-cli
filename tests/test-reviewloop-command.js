@@ -184,6 +184,26 @@ assert(
 )
 
 // =====================================================================
+// Cursor in default reviewer listing after init
+// =====================================================================
+
+console.log('\nreviewloop listing (cursor in defaults after init):')
+cleanup()
+initProject()
+fillBigPicture()
+createAssignment(ASSIGNMENT_NAME)
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  `--assignment=${ASSIGNMENT_NAME}`,
+])
+const cursorListOutput = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'exits 0 when listing default reviewers')
+assert(cursorListOutput.includes('cursor'), 'cursor appears in default reviewer list')
+assert(cursorListOutput.includes('codex'), 'codex still appears in default reviewer list')
+
+// =====================================================================
 // Reviewer config validation
 // =====================================================================
 
