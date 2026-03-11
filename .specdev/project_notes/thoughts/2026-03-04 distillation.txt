@@ -1,0 +1,5 @@
+Does the `specdev assignment` read the .specdev/knowledge folder? I think it should probably read the project_notes only to get familiar. 
+
+I am thinking more like a reveal on demand architecture about the project. 
+
+So also, we should probably include a bit more description for each assignment so the `specdev assignment` can read it to get a sense. 

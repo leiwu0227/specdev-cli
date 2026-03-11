@@ -620,6 +620,27 @@ if (existsSync(join(a10, 'status.json'))) {
 }
 
 // =====================================================================
+// checkReviewerCLIs returns cursor-agent binary for cursor config
+// =====================================================================
+
+console.log('\ncheckReviewerCLIs (cursor config detection):')
+cleanup()
+initProject()
+fillBigPicture()
+
+const { checkReviewerCLIs } = await import('../src/utils/reviewers.js')
+const specdevPath = join(TEST_DIR, '.specdev')
+const cliResults = await checkReviewerCLIs(specdevPath)
+
+const cursorResult = cliResults.find(r => r.name === 'cursor')
+assert(cursorResult !== undefined, 'checkReviewerCLIs returns cursor entry')
+assert(cursorResult.binary === 'cursor-agent', 'cursor entry has binary=cursor-agent')
+assert(typeof cursorResult.found === 'boolean', 'cursor entry has boolean found field')
+
+const codexResult = cliResults.find(r => r.name === 'codex')
+assert(codexResult !== undefined, 'checkReviewerCLIs still returns codex entry')
+
+// =====================================================================
 // Done
 // =====================================================================
 
