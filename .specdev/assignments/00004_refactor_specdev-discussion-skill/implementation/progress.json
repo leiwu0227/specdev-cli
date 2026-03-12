@@ -1,0 +1,48 @@
+{
+  "plan_file": "/mnt/h/oceanwave/lib/specdev-cli/.specdev/assignments/00004_refactor_specdev-discussion-skill/breakdown/plan.md",
+  "total_tasks": 6,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-03-12T13:50:57Z",
+      "completed_at": "2026-03-12T13:53:06Z",
+      "summary": "Renamed discuss.js to discussion.js, updated dispatch route and import, updated tests. All 9 tests pass."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-03-12T13:53:13Z",
+      "completed_at": "2026-03-12T13:55:01Z",
+      "summary": "Updated help.js, review.js, reviewloop.js, checkpoint.js error messages. Added help test. 11 tests pass."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-03-12T13:55:08Z",
+      "completed_at": "2026-03-12T13:56:27Z",
+      "summary": "Updated 6 doc files, grep confirms zero stale references. Committed."
+    },
+    {
+      "number": 4,
+      "status": "completed",
+      "started_at": "2026-03-12T14:03:31Z",
+      "completed_at": "2026-03-12T14:05:20Z",
+      "summary": "Created .claude/skills/specdev-discussion/SKILL.md, added tests. 14 tests pass."
+    },
+    {
+      "number": 5,
+      "status": "completed",
+      "started_at": "2026-03-12T14:05:29Z",
+      "completed_at": "2026-03-12T14:06:58Z",
+      "summary": "Created discussion_progress.md in project_notes and templates. Added tests. 17 tests pass."
+    },
+    {
+      "number": 6,
+      "status": "completed",
+      "started_at": "2026-03-12T14:12:28Z",
+      "completed_at": "2026-03-12T14:20:17Z",
+      "summary": "Full test suite passes (all 12 suites, 0 failures). Grep confirms zero stale references in src/templates/tests. big_picture.md also updated."
+    }
+  ]
+}

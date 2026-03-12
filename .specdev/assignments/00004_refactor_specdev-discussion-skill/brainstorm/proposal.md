@@ -1,0 +1,3 @@
+# Proposal: Rename specdev discuss → specdev discussion and add agent skill
+
+Rename the `specdev discuss` CLI command to `specdev discussion` and create a corresponding `.claude/skills/specdev-discussion/SKILL.md` that mirrors the `specdev-assignment` skill pattern. Currently `specdev discuss` only creates a folder and prints instructions — there's no agent skill to orchestrate the brainstorming workflow. This refactor aligns discussions with assignments: a minimal CLI command for ID reservation + folder creation, and a skill that calls it and drives the brainstorm process. Additionally, add `discussion_progress.md` to `.specdev/project_notes/` as a central tracking location for all discussions.

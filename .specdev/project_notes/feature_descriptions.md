@@ -20,7 +20,13 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Assignment:** 00003_refactor_mandatory-assignment-flag
 **Completed:** 2026-03-12
 **Description:** Replaced heuristic assignment auto-detection with `.current` pointer file and `specdev focus` command. Added discussions system (`D####` IDs) for pre-assignment brainstorming with promotion to assignments. Added `--type/--slug` flags for automated assignment creation, `--discussion` flag for promotion.
-**Key files:** `src/commands/focus.js`, `src/commands/discuss.js`, `src/utils/current.js`, `src/utils/discussion.js`, `src/commands/assignment.js`, `src/commands/reviewloop.js`
+**Key files:** `src/commands/focus.js`, `src/commands/discussion.js`, `src/utils/current.js`, `src/utils/discussion.js`, `src/commands/assignment.js`, `src/commands/reviewloop.js`
+
+### Specdev Discussion Skill
+**Assignment:** 00004_refactor_specdev-discussion-skill
+**Completed:** 2026-03-12
+**Description:** Renamed `specdev discuss` CLI command to `specdev discussion` and created `.claude/skills/specdev-discussion/SKILL.md` agent skill mirroring the assignment skill pattern. Added `discussion_progress.md` to project_notes for tracking discussions.
+**Key files:** `src/commands/discussion.js`, `src/commands/dispatch.js`, `.claude/skills/specdev-discussion/SKILL.md`, `.specdev/project_notes/discussion_progress.md`
 
 ---
 
