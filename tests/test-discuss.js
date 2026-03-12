@@ -1,4 +1,4 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { runSpecdev, assertTest } from './helpers.js'
 
@@ -46,6 +46,13 @@ function main() {
   r = runSpecdev(['help'])
   ok = assertTest(r.stdout.includes('discussion <desc>'), 'help shows discussion command') && ok
   ok = assertTest(!r.stdout.includes('discuss <desc>'), 'help does not show old discuss command') && ok
+
+  // Test 6: skill file exists with correct frontmatter
+  const skillPath = join(process.cwd(), '.claude', 'skills', 'specdev-discussion', 'SKILL.md')
+  ok = assertTest(existsSync(skillPath), 'specdev-discussion skill file exists') && ok
+  const skillContent = readFileSync(skillPath, 'utf-8')
+  ok = assertTest(skillContent.includes('name: specdev-discussion'), 'skill has correct name frontmatter') && ok
+  ok = assertTest(skillContent.includes('specdev discussion'), 'skill references correct command name') && ok
 
   cleanup()
   if (!ok) process.exit(1)
