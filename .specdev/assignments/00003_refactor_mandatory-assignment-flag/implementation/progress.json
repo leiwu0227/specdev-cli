@@ -1,0 +1,90 @@
+{
+  "plan_file": "/mnt/h/oceanwave/lib/specdev-cli/.specdev/assignments/00003_refactor_mandatory-assignment-flag/breakdown/plan.md",
+  "total_tasks": 14,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-03-11T19:00:33Z",
+      "completed_at": "2026-03-11T19:01:53Z"
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-03-11T19:01:53Z",
+      "completed_at": "2026-03-11T19:04:07Z"
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-03-11T19:04:07Z",
+      "completed_at": "2026-03-11T19:06:26Z"
+    },
+    {
+      "number": 4,
+      "status": "completed",
+      "started_at": "2026-03-11T19:07:07Z",
+      "completed_at": "2026-03-11T19:08:54Z"
+    },
+    {
+      "number": 5,
+      "status": "completed",
+      "started_at": "2026-03-11T19:08:54Z",
+      "completed_at": "2026-03-11T19:10:30Z"
+    },
+    {
+      "number": 6,
+      "status": "completed",
+      "started_at": "2026-03-11T19:10:30Z",
+      "completed_at": "2026-03-11T19:12:50Z"
+    },
+    {
+      "number": 7,
+      "status": "completed",
+      "started_at": "2026-03-11T19:13:32Z",
+      "completed_at": "2026-03-11T19:14:16Z"
+    },
+    {
+      "number": 8,
+      "status": "completed",
+      "started_at": "2026-03-11T19:14:16Z",
+      "completed_at": "2026-03-11T19:16:05Z"
+    },
+    {
+      "number": 9,
+      "status": "completed",
+      "started_at": "2026-03-11T19:16:05Z",
+      "completed_at": "2026-03-11T19:17:14Z"
+    },
+    {
+      "number": 10,
+      "status": "completed",
+      "started_at": "2026-03-11T19:17:40Z",
+      "completed_at": "2026-03-11T19:20:03Z"
+    },
+    {
+      "number": 11,
+      "status": "completed",
+      "started_at": "2026-03-11T19:20:03Z",
+      "completed_at": "2026-03-11T22:35:04Z"
+    },
+    {
+      "number": 12,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-03-11T22:35:04Z"
+    },
+    {
+      "number": 13,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-03-11T22:35:04Z"
+    },
+    {
+      "number": 14,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-03-11T22:35:04Z"
+    }
+  ]
+}

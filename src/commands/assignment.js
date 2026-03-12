@@ -8,6 +8,8 @@ import { blankLine } from '../utils/output.js'
 import { askChoice } from '../utils/prompt.js'
 import { continueCommand } from './continue.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
+import { writeCurrent } from '../utils/current.js'
+import { resolveDiscussionSelector } from '../utils/discussion.js'
 
 export async function assignmentCommand(args = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -66,7 +68,8 @@ export async function assignmentCommand(args = [], flags = {}) {
         )
 
         if (choice === 0) {
-          await continueCommand({ ...flags, assignment: existingAssignment })
+          await writeCurrent(specdevPath, existingAssignment)
+          await continueCommand(flags)
           return
         }
         if (choice === 2) {
@@ -75,7 +78,7 @@ export async function assignmentCommand(args = [], flags = {}) {
         }
       } else {
         console.error(`❌ Numeric label "${description}" matches existing assignment: ${existingAssignment}`)
-        console.log(`   To continue existing work, run: specdev continue --assignment=${existingAssignment}`)
+        console.log(`   To continue existing work, run: specdev focus ${existingAssignment}`)
         console.log('   To create a new assignment, use a descriptive name (e.g. "auth-refactor").')
         process.exitCode = 1
         return
@@ -90,6 +93,53 @@ export async function assignmentCommand(args = [], flags = {}) {
   const paddedId = String(nextId).padStart(5, '0')
 
   const json = Boolean(flags.json)
+  const type = flags.type
+  const slug = flags.slug
+
+  if (type && slug) {
+    const folderName = `${paddedId}_${type}_${slug}`
+    const assignmentPath = join(assignmentsDir, folderName)
+    await fse.ensureDir(join(assignmentPath, 'brainstorm'))
+    await fse.ensureDir(join(assignmentPath, 'context'))
+
+    // Copy brainstorm artifacts from discussion if --discussion provided
+    if (flags.discussion) {
+      const resolved = await resolveDiscussionSelector(specdevPath, flags.discussion)
+      if (!resolved || resolved.error) {
+        console.error(`Discussion not found: ${flags.discussion}`)
+        process.exitCode = 1
+        return
+      }
+      const srcBrainstorm = join(resolved.path, 'brainstorm')
+      const destBrainstorm = join(assignmentPath, 'brainstorm')
+      if (await fse.pathExists(srcBrainstorm)) {
+        await fse.copy(srcBrainstorm, destBrainstorm, { overwrite: true })
+      }
+    }
+
+    await writeCurrent(specdevPath, folderName)
+
+    if (json) {
+      console.log(JSON.stringify({
+        version: 1,
+        status: 'ok',
+        id: paddedId,
+        name: folderName,
+        path: assignmentPath,
+        description,
+        current_set: true,
+      }))
+      return
+    }
+
+    console.log(`Assignment ID: ${paddedId}`)
+    console.log(`Created: ${folderName}/`)
+    console.log(`Focused on: ${folderName}`)
+    blankLine()
+    console.log('Start brainstorming:')
+    console.log('   Read .specdev/skills/core/brainstorming/SKILL.md and follow it.')
+    return
+  }
 
   if (json) {
     console.log(JSON.stringify({

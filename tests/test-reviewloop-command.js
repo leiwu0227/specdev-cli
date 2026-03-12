@@ -105,6 +105,11 @@ function writeChangelog(assignmentRoot, phase, content) {
 
 const ASSIGNMENT_NAME = '00001_feature_test'
 
+function setCurrent(assignmentName) {
+  const currentPath = join(TEST_DIR, '.specdev', '.current')
+  writeFileSync(currentPath, assignmentName, 'utf-8')
+}
+
 // =====================================================================
 // Arg handling tests
 // =====================================================================
@@ -137,6 +142,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a1 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 
 console.log('\nreviewloop listing (no reviewers):')
 // Remove default reviewers
@@ -153,7 +159,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
 ])
 assert(result.status === 1, 'exits 1 when no reviewers found')
 assert(
@@ -168,7 +174,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
 ])
 const listOutput = `${result.stdout}\n${result.stderr}`
 assert(result.status === 0, 'exits 0 when listing reviewers')
@@ -192,11 +198,12 @@ cleanup()
 initProject()
 fillBigPicture()
 createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
 ])
 const cursorListOutput = `${result.stdout}\n${result.stderr}`
 assert(result.status === 0, 'exits 0 when listing default reviewers')
@@ -212,7 +219,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=nonexistent',
 ])
 assert(result.status === 1, 'exits 1 for unknown reviewer')
@@ -227,7 +234,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=no-cmd',
 ])
 assert(result.status === 1, 'exits 1 when command field missing')
@@ -245,6 +252,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a2 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 setupReviewer('mock', {
   name: 'mock',
   command: 'echo "mock reviewer"',
@@ -260,7 +268,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=mock',
 ])
 assert(result.status === 1, 'exits 1 when findings unaddressed')
@@ -279,7 +287,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=mock',
 ])
 // Should NOT fail with the stale guard message
@@ -298,6 +306,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a3 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 setupReviewer('mock', {
   name: 'mock',
   command: 'echo "mock reviewer"',
@@ -328,7 +337,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=mock',
 ])
 assert(result.status === 1, 'exits 1 when max rounds reached')
@@ -346,6 +355,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a4 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 const reviewDirPath = join(a4, 'review')
 mkdirSync(reviewDirPath, { recursive: true })
 
@@ -362,7 +372,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=pass-mock',
 ])
 const passOutput = `${result.stdout}\n${result.stderr}`
@@ -399,6 +409,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a5 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 mkdirSync(join(a5, 'review'), { recursive: true })
 
 const feedbackRelPath2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
@@ -412,7 +423,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=fail-mock',
 ])
 const failOutput = `${result.stdout}\n${result.stderr}`
@@ -432,6 +443,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a6 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 mkdirSync(join(a6, 'review'), { recursive: true })
 
 // Pre-populate with round 1 that was addressed
@@ -453,7 +465,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=fail-mock-2',
 ])
 const maxOutput = `${result.stdout}\n${result.stderr}`
@@ -473,6 +485,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a7 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 setupReviewer('bad-cmd', {
   name: 'bad-cmd',
   command: 'exit 1',
@@ -482,7 +495,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=bad-cmd',
 ])
 assert(result.status === 1, 'exits 1 when reviewer command fails')
@@ -500,6 +513,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a8 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 mkdirSync(join(a8, 'review'), { recursive: true })
 
 const feedbackRelPath4 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
@@ -514,7 +528,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=wrong-round',
 ])
 assert(result.status === 1, 'exits 1 when wrong round written')
@@ -532,6 +546,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a9 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 mkdirSync(join(a9, 'review'), { recursive: true })
 
 const envLogPath = join(TEST_DIR, 'env-log.txt')
@@ -546,7 +561,7 @@ result = runCmd([
   'reviewloop',
   'brainstorm',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=env-check',
 ])
 assert(result.status === 0, 'exits 0 with env-check reviewer', result.stderr)
@@ -576,6 +591,7 @@ cleanup()
 initProject()
 fillBigPicture()
 const a10 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
 // Setup implementation artifacts for approvePhase to succeed
 mkdirSync(join(a10, 'implementation'), { recursive: true })
 writeFileSync(
@@ -599,7 +615,7 @@ result = runCmd([
   'reviewloop',
   'implementation',
   `--target=${TEST_DIR}`,
-  `--assignment=${ASSIGNMENT_NAME}`,
+
   '--reviewer=impl-pass',
 ])
 const implOutput = `${result.stdout}\n${result.stderr}`

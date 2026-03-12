@@ -1,10 +1,12 @@
-import { join, isAbsolute } from 'path'
+import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName, parseAssignmentId } from '../utils/assignment.js'
+import { resolveDiscussionSelector } from '../utils/discussion.js'
+import { resolveTargetDir } from '../utils/command-context.js'
 import { readActiveTools } from '../utils/active-tools.js'
 import { blankLine } from '../utils/output.js'
 
-const VALID_PHASES = ['brainstorm', 'implementation']
+const VALID_PHASES = ['brainstorm', 'implementation', 'discussion']
 
 export async function checkpointCommand(positionalArgs = [], flags = {}) {
   const phase = positionalArgs[0]
@@ -23,17 +25,30 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
     return
   }
 
-  let assignmentPath
-  // Accept assignment as positional arg (e.g. specdev checkpoint brainstorm 1)
-  if (!flags.assignment && positionalArgs[1]) {
-    flags.assignment = positionalArgs[1]
+  if (phase === 'discussion') {
+    if (!flags.discussion) {
+      console.error('--discussion flag is required. Use specdev discuss --list to see available discussions.')
+      process.exitCode = 1
+      return
+    }
+    const targetDir = resolveTargetDir(flags)
+    const specdevPath = join(targetDir, '.specdev')
+    const resolved = await resolveDiscussionSelector(specdevPath, flags.discussion)
+    if (!resolved || resolved.error) {
+      const msg = resolved?.error === 'malformed'
+        ? `Invalid discussion ID "${flags.discussion}". Expected format: D0001`
+        : `Discussion ${flags.discussion} not found.`
+      console.error(msg)
+      process.exitCode = 1
+      return
+    }
+    // Run brainstorm validation against the discussion path
+    // Discussion names parse as type null, so type defaults to 'feature' (intentional)
+    await checkpointBrainstorm(resolved.path, resolved.name)
+    return
   }
 
-  if (flags.assignment && isAbsolute(flags.assignment)) {
-    assignmentPath = flags.assignment
-  } else {
-    assignmentPath = await resolveAssignmentPath(flags)
-  }
+  const assignmentPath = await resolveAssignmentPath(flags)
   const name = assignmentName(assignmentPath)
 
   if (phase === 'brainstorm') {

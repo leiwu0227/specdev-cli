@@ -1,6 +1,8 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
+import { resolveDiscussionSelector } from '../utils/discussion.js'
+import { resolveTargetDir } from '../utils/command-context.js'
 import { parseReviewFeedback } from '../utils/review-feedback.js'
 import { blankLine, printBullets, printLines, printSection } from '../utils/output.js'
 
@@ -11,7 +13,7 @@ import { blankLine, printBullets, printLines, printSection } from '../utils/outp
  * Supports --round N for automated flows; auto-detects round otherwise.
  */
 export async function reviewCommand(positionalArgs = [], flags = {}) {
-  const VALID_PHASES = ['brainstorm', 'implementation']
+  const VALID_PHASES = ['brainstorm', 'implementation', 'discussion']
   const phase = positionalArgs[0]
 
   if (!phase) {
@@ -41,9 +43,102 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
     return
   }
 
-  // Accept assignment as positional arg (e.g. specdev review brainstorm 1)
-  if (!flags.assignment && positionalArgs[1]) {
-    flags.assignment = positionalArgs[1]
+  if (phase === 'discussion') {
+    const discussionSelector = flags.discussion || process.env.SPECDEV_DISCUSSION
+    if (!discussionSelector) {
+      console.error('--discussion flag is required. Use specdev discuss --list to see available discussions.')
+      process.exitCode = 1
+      return
+    }
+    flags = { ...flags, discussion: discussionSelector }
+    const targetDir = resolveTargetDir(flags)
+    const specdevPath = join(targetDir, '.specdev')
+    const resolved = await resolveDiscussionSelector(specdevPath, flags.discussion)
+    if (!resolved || resolved.error) {
+      const msg = resolved?.error === 'malformed'
+        ? `Invalid discussion ID "${flags.discussion}". Expected format: D0001`
+        : `Discussion ${flags.discussion} not found.`
+      console.error(msg)
+      process.exitCode = 1
+      return
+    }
+
+    // Use discussion as if it were a brainstorm review
+    const assignmentPath = resolved.path
+    const name = resolved.name
+
+    console.log(`Manual Review: ${name}`)
+    console.log(`   Phase: discussion (brainstorm)`)
+    blankLine()
+
+    printSection('Review scope: Design completeness and feasibility')
+    blankLine()
+    printSection('Artifacts to review:')
+    const artifacts = []
+    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))) {
+      artifacts.push(`${name}/brainstorm/proposal.md`)
+    }
+    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))) {
+      artifacts.push(`${name}/brainstorm/design.md`)
+    }
+    printBullets(artifacts, '   - ')
+    blankLine()
+    printSection('Check:')
+    printLines([
+      '  1. Is the design complete? Any missing sections?',
+      '  2. Is it feasible with the current tech stack?',
+      '  3. Are edge cases and error handling addressed?',
+      '  4. Is the scope appropriate (not too large)?',
+    ])
+
+    const reviewDir = join(assignmentPath, 'review')
+    await fse.ensureDir(reviewDir)
+
+    const feedbackFilePath = join(reviewDir, 'brainstorm-feedback.md')
+    let nextRound = 1
+    const isAutomated = flags.round != null
+    if (isAutomated) {
+      nextRound = Number(flags.round)
+    } else if (await fse.pathExists(feedbackFilePath)) {
+      const existingContent = await fse.readFile(feedbackFilePath, 'utf-8')
+      const { rounds } = parseReviewFeedback(existingContent)
+      nextRound = rounds.length + 1
+    }
+
+    if (nextRound > 1) {
+      blankLine()
+      printSection(`Re-review (round ${nextRound}):`)
+      console.log(`   Read previous findings: ${name}/review/brainstorm-feedback.md`)
+      console.log(`   Read changes since last round: ${name}/review/brainstorm-changelog.md`)
+    }
+
+    blankLine()
+    printSection('Write findings to:')
+    console.log(`   ${name}/review/brainstorm-feedback.md`)
+    blankLine()
+    printSection('Feedback format (append to file):')
+    const addressedExample = nextRound === 1 ? '  - (none -- first round)' : '  - [FN.X] description of addressed finding'
+    printLines([
+      '  ```markdown',
+      `  ## Round ${nextRound}`,
+      '  ',
+      '  **Verdict:** approved | needs-changes',
+      '  ',
+      '  ### Findings',
+      `  1. [F${nextRound}.1] Description of finding`,
+      '  ',
+      '  ### Addressed from changelog',
+      addressedExample,
+      '  ```',
+    ])
+    blankLine()
+    console.log(`Reviewing discussion: ${name}`)
+    blankLine()
+    if (!isAutomated) {
+      console.log('IMPORTANT: Do NOT run check-review in this session.')
+      console.log('check-review is for the MAIN coding agent in a separate session.')
+    }
+    return
   }
 
   const assignmentPath = await resolveAssignmentPath(flags)

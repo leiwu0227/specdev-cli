@@ -1,5 +1,5 @@
 {
   "name": "cursor",
-  "command": "cursor-agent -f -p \"Run specdev review $SPECDEV_PHASE --assignment $SPECDEV_ASSIGNMENT --round $SPECDEV_ROUND. Follow its instructions.\"",
+  "command": "cursor-agent -f -p \"Run specdev review $SPECDEV_PHASE --round $SPECDEV_ROUND. Follow its instructions.\"",
   "max_rounds": 3
 }

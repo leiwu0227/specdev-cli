@@ -15,6 +15,8 @@ import { reviseCommand } from './revise.js'
 import { checkReviewCommand } from './check-review.js'
 import { reviewloopCommand } from './reviewloop.js'
 import { implementCommand } from './implement.js'
+import { focusCommand } from './focus.js'
+import { discussCommand } from './discuss.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -31,6 +33,8 @@ const commandHandlers = {
   'check-review': ({ positionalArgs, flags }) => checkReviewCommand(positionalArgs, flags),
   reviewloop: ({ positionalArgs, flags }) => reviewloopCommand(positionalArgs, flags),
   implement: ({ positionalArgs, flags }) => implementCommand(positionalArgs, flags),
+  focus: ({ positionalArgs, flags }) => focusCommand(positionalArgs, flags),
+  discuss: ({ positionalArgs, flags }) => discussCommand(positionalArgs, flags),
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {

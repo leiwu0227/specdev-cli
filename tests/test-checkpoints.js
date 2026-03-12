@@ -35,6 +35,11 @@ function runCmd(args) {
 
 function cleanup() { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true }) }
 
+function setCurrent(assignmentName) {
+  const currentPath = join(TEST_DIR, '.specdev', '.current')
+  writeFileSync(currentPath, assignmentName, 'utf-8')
+}
+
 // =====================================================================
 // Brainstorm Checkpoint
 // =====================================================================
@@ -49,7 +54,8 @@ mkdirSync(join(featureDir, 'brainstorm'), { recursive: true })
 writeFileSync(join(featureDir, 'brainstorm', 'proposal.md'), 'Add JWT authentication to the API endpoints.')
 writeFileSync(join(featureDir, 'brainstorm', 'design.md'), `## Overview\nAdd JWT auth to protect API endpoints.\n\n## Goals\nSecure all API endpoints with token-based auth.\n\n## Non-Goals\nNo OAuth or social login in v1.\n\n## Design\nMiddleware validates JWT on each request.\n\n## Success Criteria\nAll protected endpoints return 401 without valid token.\n`)
 
-let result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${featureDir}`])
+setCurrent('001_feature_auth')
+let result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'feature with all required sections passes')
 
 console.log('\nbrainstorm checkpoint — feature missing Non-Goals:')
@@ -59,7 +65,8 @@ mkdirSync(join(featureDir2, 'brainstorm'), { recursive: true })
 writeFileSync(join(featureDir2, 'brainstorm', 'proposal.md'), 'Add full-text search to the app.')
 writeFileSync(join(featureDir2, 'brainstorm', 'design.md'), `## Overview\nAdd search functionality.\n\n## Goals\nUsers can search content.\n\n## Design\nUse elasticsearch index.\n\n## Success Criteria\nSearch returns results within 200ms.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${featureDir2}`])
+setCurrent('002_feature_search')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 1, 'feature missing Non-Goals fails')
 
 console.log('\nbrainstorm checkpoint — bugfix with all sections:')
@@ -69,7 +76,8 @@ mkdirSync(join(bugfixDir, 'brainstorm'), { recursive: true })
 writeFileSync(join(bugfixDir, 'brainstorm', 'proposal.md'), 'Fix null pointer crash on empty input.')
 writeFileSync(join(bugfixDir, 'brainstorm', 'design.md'), `## Overview\nApp crashes when input is empty.\n\n## Root Cause\nMissing null check in parser.\n\n## Fix Design\nAdd guard clause before parsing.\n\n## Success Criteria\nEmpty input returns empty result without crash.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${bugfixDir}`])
+setCurrent('003_bugfix_crash')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'bugfix with all required sections passes')
 
 console.log('\nbrainstorm checkpoint — bugfix missing Root Cause:')
@@ -79,7 +87,8 @@ mkdirSync(join(bugfixDir2, 'brainstorm'), { recursive: true })
 writeFileSync(join(bugfixDir2, 'brainstorm', 'proposal.md'), 'Fix timeout on large uploads.')
 writeFileSync(join(bugfixDir2, 'brainstorm', 'design.md'), `## Overview\nLarge uploads time out.\n\n## Fix Design\nIncrease timeout and add chunking.\n\n## Success Criteria\nUploads up to 100MB complete successfully.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${bugfixDir2}`])
+setCurrent('004_bugfix_timeout')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 1, 'bugfix missing Root Cause fails')
 
 console.log('\nbrainstorm checkpoint — familiarization with Overview:')
@@ -89,7 +98,8 @@ mkdirSync(join(famDir, 'brainstorm'), { recursive: true })
 writeFileSync(join(famDir, 'brainstorm', 'proposal.md'), 'Understand the authentication module.')
 writeFileSync(join(famDir, 'brainstorm', 'design.md'), `## Overview\nExplore the auth module to understand token flow and middleware chain.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${famDir}`])
+setCurrent('005_familiarization_codebase')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'familiarization with Overview only passes')
 
 console.log('\nbrainstorm checkpoint — refactor with all sections:')
@@ -99,7 +109,8 @@ mkdirSync(join(refactorDir, 'brainstorm'), { recursive: true })
 writeFileSync(join(refactorDir, 'brainstorm', 'proposal.md'), 'Refactor database layer to use connection pooling.')
 writeFileSync(join(refactorDir, 'brainstorm', 'design.md'), `## Overview\nReplace individual connections with a connection pool.\n\n## Non-Goals\nNo schema changes or migrations in this refactor.\n\n## Design\nIntroduce a pool manager that wraps pg.Pool.\n\n## Success Criteria\nAll existing tests pass. Connection count drops under load.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${refactorDir}`])
+setCurrent('006_refactor_db-layer')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'refactor with all required sections passes')
 
 console.log('\nbrainstorm checkpoint — unknown type falls back to feature:')
@@ -109,7 +120,8 @@ mkdirSync(join(unknownDir, 'brainstorm'), { recursive: true })
 writeFileSync(join(unknownDir, 'brainstorm', 'proposal.md'), 'Do something with an unknown type assignment.')
 writeFileSync(join(unknownDir, 'brainstorm', 'design.md'), `## Overview\nAn unknown type assignment.\n\n## Goals\nTest fallback behavior.\n\n## Non-Goals\nNothing excluded.\n\n## Design\nSimple implementation.\n\n## Success Criteria\nIt works.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${unknownDir}`])
+setCurrent('007_unknown_thing')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'unknown type with feature sections passes')
 
 console.log('\nbrainstorm checkpoint — strict heading matching:')
@@ -119,7 +131,8 @@ mkdirSync(join(strictDir, 'brainstorm'), { recursive: true })
 writeFileSync(join(strictDir, 'brainstorm', 'proposal.md'), 'Validate strict heading matching for required sections.')
 writeFileSync(join(strictDir, 'brainstorm', 'design.md'), `## Overviewing\nWrong heading variant.\n\n## Goals and Scope\nWrong heading variant.\n\n## Non-Goals-ish\nWrong heading variant.\n\n## Design Draft\nWrong heading variant.\n\n## Success Criteria Maybe\nWrong heading variant.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${strictDir}`])
+setCurrent('009_feature_strict-headings')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 1, 'feature with suffix headings fails strict section matching')
 
 console.log('\nbrainstorm checkpoint — missing proposal.md still fails:')
@@ -128,7 +141,8 @@ mkdirSync(join(noProposalDir, 'brainstorm'), { recursive: true })
 
 writeFileSync(join(noProposalDir, 'brainstorm', 'design.md'), `## Overview\nHas design but no proposal.\n\n## Goals\nTest.\n\n## Non-Goals\nNone.\n\n## Design\nSimple.\n\n## Success Criteria\nWorks.\n`)
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${noProposalDir}`])
+setCurrent('008_feature_noproposal')
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 1, 'missing proposal.md still fails')
 
 // =====================================================================
@@ -164,11 +178,12 @@ writeFileSync(join(assignmentDir, 'implementation', 'progress.json'), JSON.strin
 }))
 
 console.log('\ncheckpoint implementation (advisory):')
-result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, `--assignment=${assignmentDir}`])
+setCurrent('001_feature_test')
+result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'checkpoint passes (tools are advisory)')
 
 console.log('\ncheckpoint implementation --json:')
-result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, `--assignment=${assignmentDir}`, '--json'])
+result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, '--json'])
 assert(result.status === 0, 'checkpoint --json passes')
 const output = result.stdout.trim()
 try {
@@ -194,7 +209,7 @@ Build it.
 `)
 
 console.log('\ncheckpoint with waiver:')
-result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, `--assignment=${assignmentDir}`, '--json'])
+result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, '--json'])
 const waiverJson = JSON.parse(result.stdout.trim())
 const mockToolWarnings = waiverJson.warnings.filter(w => w.skill === 'mock-tool')
 const skippedWarning = mockToolWarnings.find(w => w.code === 'TOOL_SKILL_SKIPPED')

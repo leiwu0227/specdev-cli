@@ -72,10 +72,19 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 
 | Command | Purpose | When to use |
 |---------|---------|-------------|
-| `specdev assignment "<desc>"` | Reserve next assignment ID | Starting new work |
+| `specdev assignment "<desc>"` | Reserve next assignment ID; sets `.current` pointer | Starting new work |
+| `specdev assignment "<desc>" --type=<type> --slug=<slug>` | Reserve ID with explicit type and folder slug | Automated/scripted assignment creation |
+| `specdev assignment "<desc>" --discussion=<id>` | Promote a discussion to a full assignment | After a `specdev discuss` exploration |
+| `specdev focus <id>` | Set the active assignment (writes `.specdev/.current`) | Switching between assignments |
+| `specdev discuss "<desc>"` | Start a parallel brainstorming discussion (no full assignment) | Exploring ideas before committing to an assignment |
 | `specdev checkpoint <phase>` | Validate phase artifacts exist and are well-formed | Before requesting review or approval |
+| `specdev checkpoint <phase> --discussion=<id>` | Validate discussion artifacts | Within a discussion workflow |
 | `specdev approve <phase>` | Hard gate: signal to proceed past a phase | After user reviews and is satisfied |
 | `specdev continue` | Detect current assignment state, suggest next action | Resuming work in a new session |
 | `specdev review <phase>` | Launch manual review in a separate session | Optional quality check (brainstorm or implementation) |
+| `specdev review <phase> --discussion=<id>` | Launch manual review for a discussion | Optional review of discussion output |
+| `specdev reviewloop <phase> --discussion=<id>` | Automated review loop for a discussion | Automated review of discussion output |
 | `specdev check-review` | Read review feedback and address findings | After a review session has been run |
 | `specdev skills` | List all installed skills with descriptions | During breakdown to declare task skills |
+| `specdev distill --assignment=<name>` | Aggregate knowledge from assignment captures | Knowledge distillation (`--assignment` flag required) |
+| `specdev migrate --assignment=<name>` | Migrate a legacy assignment to V4 layout | Legacy migration (`--assignment` flag required) |

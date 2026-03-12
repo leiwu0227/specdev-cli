@@ -18,6 +18,8 @@ export function helpCommand() {
     '  start               Check/fill project context (big_picture.md)',
     '  migrate             Migrate legacy assignment files to V4 layout',
     '  assignment <desc>   Reserve ID for new assignment, agent names the folder',
+    '  focus <id>          Set active assignment (writes .specdev/.current)',
+    '  discuss <desc>      Start a parallel brainstorming discussion',
     '  checkpoint <phase>  Validate phase artifacts before review',
     '  approve <phase>     Hard gate: approve phase and proceed',
     '  continue            Detect current state and suggest next action',
@@ -37,7 +39,10 @@ export function helpCommand() {
     '  --force, -f       Overwrite existing .specdev folder',
     '  --dry-run         Show what would be copied without copying',
     '  --target=<path>   Specify target directory (default: current directory)',
-    '  --assignment=<id> Specify assignment (default: latest)',
+    '  --assignment=<id> Specify assignment (distill and migrate only)',
+    '  --discussion=<id> Target a discussion instead of an assignment',
+    '  --type=<type>     Assignment type for folder creation (assignment command)',
+    '  --slug=<slug>     Assignment slug for folder creation (assignment command)',
   ])
   blankLine()
   printSection('WORKFLOW:')
@@ -45,6 +50,8 @@ export function helpCommand() {
     '  specdev init',
     '  specdev start                     # Fill in project context',
     '  specdev assignment "Add auth"     # Reserve ID, agent names the folder',
+    '  specdev focus <id>                # Switch active assignment',
+    '  specdev discuss "Explore auth"    # Start a parallel brainstorming discussion',
     '  specdev checkpoint brainstorm     # Validate brainstorm artifacts',
     '  specdev approve brainstorm        # Hard gate: breakdown begins',
     '  specdev implement                 # Kick off implementation after breakdown',

@@ -12,10 +12,6 @@ import { blankLine, printLines, printSection } from '../utils/output.js'
  * without needing a separate file read.
  */
 export async function implementCommand(positionalArgs = [], flags = {}) {
-  if (!flags.assignment && positionalArgs[0]) {
-    flags.assignment = positionalArgs[0]
-  }
-
   const assignmentPath = await resolveAssignmentPath(flags)
   const name = assignmentName(assignmentPath)
   const targetDir = resolveTargetDir(flags)

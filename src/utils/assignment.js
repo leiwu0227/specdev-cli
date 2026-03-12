@@ -1,6 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
-import { findLatestAssignment } from './scan.js'
+import { resolveCurrentAssignment } from './current.js'
 import {
   resolveTargetDir,
   requireSpecdevDirectory,
@@ -63,34 +63,39 @@ export async function resolveAssignmentSelector(specdevPath, selector) {
 }
 
 /**
- * Resolve assignment path from flags (--assignment or latest)
+ * Resolve assignment path from .current pointer
  */
 export async function resolveAssignmentPath(flags) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
 
-  if (flags.assignment) {
-    const resolved = await resolveAssignmentSelector(specdevPath, flags.assignment)
-    if (!resolved) {
-      console.error(`❌ Assignment not found: ${flags.assignment}`)
-      process.exit(1)
-    }
-    if (resolved.ambiguous) {
-      console.error(`❌ Assignment id is ambiguous: ${resolved.wanted}`)
-      console.error(`   Matches: ${resolved.matches.join(', ')}`)
-      console.error('   Use --assignment=<full-assignment-name>')
-      process.exit(1)
-    }
-    return resolved.path
+  const current = await resolveCurrentAssignment(specdevPath)
+
+  if (current.error === 'stale') {
+    console.error(`❌ Active assignment "${current.name}" not found. Run specdev focus <id> to set a valid assignment.`)
+    process.exit(1)
   }
 
-  const latest = await findLatestAssignment(specdevPath)
-  if (!latest) {
+  if (current.error === 'missing') {
+    const assignmentsDir = join(specdevPath, 'assignments')
+    if (await fse.pathExists(assignmentsDir)) {
+      const entries = await fse.readdir(assignmentsDir, { withFileTypes: true })
+      const dirs = entries.filter(e => e.isDirectory()).map(e => e.name)
+      if (dirs.length > 0) {
+        console.error('❌ No active assignment. Run specdev focus <id> to set one.')
+        console.error('   Available:')
+        for (const d of dirs) {
+          console.error(`   - ${d}`)
+        }
+        process.exit(1)
+      }
+    }
     console.error('❌ No assignments found')
     process.exit(1)
   }
-  return latest.path
+
+  return current.path
 }
 
 /**

@@ -53,9 +53,19 @@ function writeGateStatus(assignmentRoot, gates) {
   writeFileSync(join(assignmentRoot, 'status.json'), JSON.stringify(gates, null, 2) + '\n', 'utf-8')
 }
 
+function setCurrent(assignmentName) {
+  const currentPath = join(TEST_DIR, '.specdev', '.current')
+  writeFileSync(currentPath, assignmentName, 'utf-8')
+}
+
+function clearCurrent() {
+  const currentPath = join(TEST_DIR, '.specdev', '.current')
+  if (existsSync(currentPath)) rmSync(currentPath)
+}
+
 function continueJson(assignment) {
   const args = ['continue', `--target=${TEST_DIR}`, '--json']
-  if (assignment) args.push(`--assignment=${assignment}`)
+  if (assignment) setCurrent(assignment)
   const result = runCmd(args)
   let payload = null
   if (result.stdout.trim()) {
@@ -108,6 +118,7 @@ async function runTests() {
 
   console.log('\nno_assignment:')
   fillBigPicture()
+  clearCurrent()
   out = continueJson()
   assert(out.result.status === 1, 'exits non-zero when no assignment exists')
   assert(out.payload && out.payload.state === 'no_assignment', 'reports no_assignment state')
@@ -184,23 +195,12 @@ async function runTests() {
   writeFileSync(join(distillAssignment, 'capture', 'workflow-diff.md'), '# Diff\n')
   writeFileSync(join(distillAssignment, 'status.json'), JSON.stringify({ brainstorm_approved: true, implementation_approved: true }))
 
-  let result = runCmd(['continue', '--json', `--target=${TEST_DIR}`, '--assignment=00003_feature_distill-pending'])
+  setCurrent('00003_feature_distill-pending')
+  let result = runCmd(['continue', '--json', `--target=${TEST_DIR}`])
   let json = JSON.parse(result.stdout.trim())
   assert(json.distill_pending !== undefined, 'continue output includes distill_pending')
   assert(json.distill_pending.count >= 1, 'distill_pending count is at least 1')
   assert(Array.isArray(json.distill_pending.assignments), 'distill_pending has assignments array')
-
-  console.log('\nnumeric assignment shorthand:')
-  out = continueJson('1')
-  assert(out.result.status === 0, 'accepts numeric --assignment selector')
-  assert(out.payload && out.payload.assignment === '00001_feature_brainstorm', 'resolves numeric selector to assignment name')
-
-  console.log('\nambiguous numeric assignment shorthand:')
-  const a1Alt = createAssignment('001_feature_brainstorm-alt')
-  mkdirSync(join(a1Alt, 'brainstorm'), { recursive: true })
-  out = continueJson('1')
-  assert(out.result.status === 1, 'fails when numeric selector is ambiguous')
-  assert(out.payload && out.payload.state === 'assignment_ambiguous', 'reports assignment_ambiguous for numeric selector')
 
   console.log('\nlegacy layout blocker:')
   const a2 = createAssignment('00002_feature_legacy')
@@ -224,35 +224,21 @@ async function runTests() {
   assert(out.payload && out.payload.state === 'revision_requires_rebreakdown', 'detects revision_requires_rebreakdown state')
   assert(out.payload && out.payload.blockers.some((b) => b.code === 'design_revision_mismatch'), 'reports design_revision_mismatch blocker')
 
-  console.log('\nassignment ambiguity requires clarification:')
+  console.log('\nno current with multiple assignments:')
   cleanup()
   runCmd(['init', `--target=${TEST_DIR}`])
   fillBigPicture()
 
   const amb1 = createAssignment('00001_feature_alpha')
   mkdirSync(join(amb1, 'brainstorm'), { recursive: true })
-  writeFileSync(join(amb1, 'brainstorm', 'proposal.md'), '# Proposal\n')
-  writeFileSync(join(amb1, 'brainstorm', 'design.md'), '# Design\n')
-  writeGateStatus(amb1, { brainstorm_approved: true })
-  mkdirSync(join(amb1, 'breakdown'), { recursive: true })
-  writeFileSync(join(amb1, 'breakdown', 'plan.md'), '# Plan\n')
-  mkdirSync(join(amb1, 'implementation'), { recursive: true })
-  writeFileSync(join(amb1, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ number: 1, status: 'in_progress' }] }, null, 2))
 
   const amb2 = createAssignment('00002_feature_beta')
   mkdirSync(join(amb2, 'brainstorm'), { recursive: true })
-  writeFileSync(join(amb2, 'brainstorm', 'proposal.md'), '# Proposal\n')
-  writeFileSync(join(amb2, 'brainstorm', 'design.md'), '# Design\n')
-  writeGateStatus(amb2, { brainstorm_approved: true })
-  mkdirSync(join(amb2, 'breakdown'), { recursive: true })
-  writeFileSync(join(amb2, 'breakdown', 'plan.md'), '# Plan\n')
-  mkdirSync(join(amb2, 'implementation'), { recursive: true })
-  writeFileSync(join(amb2, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ number: 1, status: 'in_progress' }] }, null, 2))
 
+  clearCurrent()
   out = continueJson()
-  assert(out.result.status === 1, 'exits non-zero when active assignment is ambiguous')
-  assert(out.payload && out.payload.state === 'assignment_ambiguous', 'reports assignment_ambiguous state')
-  assert(out.payload && Array.isArray(out.payload.candidates) && out.payload.candidates.length >= 2, 'includes candidate assignments for disambiguation')
+  assert(out.result.status === 1, 'exits non-zero when no .current is set')
+  assert(out.payload && out.payload.state === 'no_assignment', 'reports no_assignment state')
 
   // =====================================================================
   // Revise Tests
@@ -264,8 +250,9 @@ async function runTests() {
   mkdirSync(join(reviseAssignment, 'brainstorm'), { recursive: true })
 
   console.log('\nrevise without design.md:')
+  setCurrent('00001_feature_test')
   const noDesign = runCmd([
-    'revise', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'revise', `--target=${TEST_DIR}`,
   ])
   assert(noDesign.status === 1, 'revise exits non-zero without design.md')
 
@@ -273,7 +260,7 @@ async function runTests() {
   writeFileSync(join(reviseAssignment, 'brainstorm', 'design.md'), '# Design\n\n## Architecture\nSome design content.\n')
   writeFileSync(join(reviseAssignment, 'brainstorm', 'proposal.md'), '# Proposal\n')
   const designOnly = runCmd([
-    'revise', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'revise', `--target=${TEST_DIR}`,
   ])
   assert(designOnly.status === 0, 'revise exits 0 with design.md only', designOnly.stderr)
   assert(existsSync(join(reviseAssignment, 'brainstorm', 'revision.json')), 'writes brainstorm/revision.json')
@@ -289,7 +276,7 @@ async function runTests() {
   writeFileSync(join(reviseAssignment, 'implementation', 'progress.json'), '{}')
   writeFileSync(join(reviseAssignment, 'review_report.md'), '# Review\n')
   const withArtifacts = runCmd([
-    'revise', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'revise', `--target=${TEST_DIR}`,
   ])
   assert(withArtifacts.status === 0, 'revise exits 0 with downstream artifacts', withArtifacts.stderr)
   assert(existsSync(join(reviseAssignment, 'breakdown')), 'breakdown/ preserved')
@@ -318,8 +305,9 @@ async function runTests() {
   writeFileSync(join(reviewAssignment, 'brainstorm', 'design.md'), '# Design\n')
 
   console.log('\nreview with no phase argument:')
+  setCurrent('00001_feature_test')
   const noPhase = runCmd([
-    'review', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'review', `--target=${TEST_DIR}`,
   ])
   const noPhaseText = `${noPhase.stdout}\n${noPhase.stderr}`
   assert(noPhase.status === 1, 'review exits non-zero', `status=${noPhase.status}`)
@@ -330,7 +318,7 @@ async function runTests() {
 
   console.log('\nreview brainstorm:')
   const brainstormReview = runCmd([
-    'review', 'brainstorm', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'review', 'brainstorm', `--target=${TEST_DIR}`,
   ])
   const brainstormText = `${brainstormReview.stdout}\n${brainstormReview.stderr}`
   assert(brainstormReview.status === 0, 'review brainstorm exits 0', brainstormReview.stderr)
@@ -345,13 +333,13 @@ async function runTests() {
   writeFileSync(join(reviewAssignment, 'implementation', 'progress.json'), '{}')
 
   const implReview = runCmd([
-    'review', 'implementation', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'review', 'implementation', `--target=${TEST_DIR}`,
   ])
   assert(implReview.status === 0, 'review implementation exits 0', implReview.stderr)
 
   console.log('\nreview breakdown:')
   const breakdownReview = runCmd([
-    'review', 'breakdown', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'review', 'breakdown', `--target=${TEST_DIR}`,
   ])
   const breakdownText = `${breakdownReview.stdout}\n${breakdownReview.stderr}`
   assert(breakdownReview.status === 1, 'review breakdown exits non-zero')
@@ -359,7 +347,7 @@ async function runTests() {
 
   console.log('\nreview nonsense:')
   const nonsenseReview = runCmd([
-    'review', 'nonsense', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'review', 'nonsense', `--target=${TEST_DIR}`,
   ])
   const nonsenseText = `${nonsenseReview.stdout}\n${nonsenseReview.stderr}`
   assert(nonsenseReview.status === 1, 'review nonsense exits non-zero')
@@ -382,7 +370,7 @@ async function runTests() {
   ].join('\n'))
 
   const roundTwo = runCmd([
-    'review', 'implementation', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'review', 'implementation', `--target=${TEST_DIR}`,
   ])
   const roundTwoText = `${roundTwo.stdout}\n${roundTwo.stderr}`
   assert(roundTwo.status === 0, 'review re-review exits 0')
@@ -390,7 +378,7 @@ async function runTests() {
 
   console.log('\nreview done removed:')
   const reviewDone = runCmd([
-    'review', 'done', `--target=${TEST_DIR}`, '--assignment=00001_feature_test',
+    'review', 'done', `--target=${TEST_DIR}`,
   ])
   const reviewDoneText = `${reviewDone.stdout}\n${reviewDone.stderr}`
   assert(reviewDone.status === 1, 'review done exits non-zero')
@@ -398,7 +386,7 @@ async function runTests() {
 
   console.log('\nreview with --round flag (automated):')
   const automatedReview = runCmd([
-    'review', 'implementation', `--target=${TEST_DIR}`, '--assignment=00001_feature_test', '--round=3',
+    'review', 'implementation', `--target=${TEST_DIR}`, '--round=3',
   ])
   const automatedText = `${automatedReview.stdout}\n${automatedReview.stderr}`
   assert(automatedReview.status === 0, 'review with --round exits 0')
@@ -427,8 +415,9 @@ async function runTests() {
   writeFileSync(join(checkAssignment, 'brainstorm', 'design.md'), '# Design\n')
 
   console.log('\ncheck-review with no feedback:')
+  setCurrent(checkAssignmentName)
   const noFeedback = runCmd([
-    'check-review', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
+    'check-review', 'brainstorm', `--target=${TEST_DIR}`,
   ])
   const noFeedbackText = `${noFeedback.stdout}\n${noFeedback.stderr}`
   assert(noFeedback.status === 1, 'check-review exits non-zero without feedback file')
@@ -443,8 +432,7 @@ async function runTests() {
     addressedFindings: ['Clarified error-handling section'],
   })
   const approved = runCmd([
-    'check-review', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
-  ])
+    'check-review', 'brainstorm', `--target=${TEST_DIR}`,   ])
   const approvedText = `${approved.stdout}\n${approved.stderr}`
   assert(approved.status === 0, 'check-review exits 0 for approved verdict')
   assert(approvedText.includes('Review approved') || checkReviewSource.includes('Review approved!'), 'prints approval message')
@@ -466,8 +454,7 @@ async function runTests() {
     findings: ['Missing error handling in design', 'Scope too broad for auth section'],
   })
   const needsChanges = runCmd([
-    'check-review', 'brainstorm', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`,
-  ])
+    'check-review', 'brainstorm', `--target=${TEST_DIR}`,   ])
   const needsText = `${needsChanges.stdout}\n${needsChanges.stderr}`
   assert(needsChanges.status === 0, 'check-review exits 0 for needs-changes verdict')
   assert(needsText.includes('Missing error handling in design') || checkReviewSource.includes('Findings:'), 'prints first finding')
@@ -490,7 +477,7 @@ async function runTests() {
     findings: ['Test coverage insufficient'],
   })
   const jsonOut = runCmd([
-    'check-review', 'implementation', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`, '--json',
+    'check-review', 'implementation', `--target=${TEST_DIR}`, '--json',
   ])
   assert(jsonOut.status === 0, 'check-review --json exits 0')
   let payload = null
@@ -506,7 +493,7 @@ async function runTests() {
   // Remove feedback to test error path
   rmSync(join(checkAssignment, 'review', 'implementation-feedback.md'), { force: true })
   const jsonNoFeedback = runCmd([
-    'check-review', 'implementation', `--target=${TEST_DIR}`, `--assignment=${checkAssignmentName}`, '--json',
+    'check-review', 'implementation', `--target=${TEST_DIR}`, '--json',
   ])
   assert(jsonNoFeedback.status === 1, 'check-review --json exits non-zero with no feedback')
   let errPayload = null

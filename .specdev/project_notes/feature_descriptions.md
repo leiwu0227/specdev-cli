@@ -16,7 +16,11 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 
 ## Architecture & Structure
 
-*(Updated by refactor assignments)*
+### Discussions + .current Pointer
+**Assignment:** 00003_refactor_mandatory-assignment-flag
+**Completed:** 2026-03-12
+**Description:** Replaced heuristic assignment auto-detection with `.current` pointer file and `specdev focus` command. Added discussions system (`D####` IDs) for pre-assignment brainstorming with promotion to assignments. Added `--type/--slug` flags for automated assignment creation, `--discussion` flag for promotion.
+**Key files:** `src/commands/focus.js`, `src/commands/discuss.js`, `src/utils/current.js`, `src/utils/discussion.js`, `src/commands/assignment.js`, `src/commands/reviewloop.js`
 
 ---
 

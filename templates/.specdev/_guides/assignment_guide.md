@@ -4,13 +4,20 @@
 
 ## Setup rules
 
-- User must provide an assignment name. If missing, ask for it.
+- User must provide an assignment description. If missing, ask for it.
+- Run `specdev assignment "<description>"` to reserve the next ID. This sets `.specdev/.current` automatically.
+  - To supply type and slug explicitly (e.g., in automated flows): add `--type=<type> --slug=<slug>`
+  - To promote an existing discussion to a full assignment: add `--discussion=<id>`
 - Create `.specdev/assignments/#####_type_name/`.
   - `#####` is the next 5-digit assignment number from `project_notes/assignment_progress.md`.
   - `type` is `feature`, `refactor`, `bugfix`, `familiarization`, etc.
   - `name` is kebab-case.
 - Copy `.specdev/_templates/gate_checklist.md` to `review/validation_checklist.md`.
 - Copy `.specdev/skills/skills_invoked_template.md` to `skills_invoked.md`.
+
+## Switching assignments
+
+Run `specdev focus <id>` to change the active assignment. This updates `.specdev/.current` and is the only supported way to switch — do not edit `.current` manually.
 
 ## Before starting
 

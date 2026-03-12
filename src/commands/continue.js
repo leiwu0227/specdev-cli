@@ -7,13 +7,10 @@ import {
 } from '../utils/command-context.js'
 import { scanAssignments, scanSingleAssignment, readProcessedCaptures } from '../utils/scan.js'
 import { detectAssignmentState } from '../utils/state.js'
-import { askChoice } from '../utils/prompt.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
-import { resolveAssignmentSelector } from '../utils/assignment.js'
 import { getLatestRound } from '../utils/review-feedback.js'
-
-const ASSIGNMENT_AMBIGUITY_WINDOW_MS = 15 * 60 * 1000
+import { resolveCurrentAssignment } from '../utils/current.js'
 
 export async function continueCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -95,11 +92,11 @@ function buildNoAssignmentPayload() {
     blockers: [
       {
         code: 'no_assignment',
-        detail: 'No assignments found in .specdev/assignments',
-        recommended_fix: 'Run specdev assignment <name>',
+        detail: 'No active assignment set',
+        recommended_fix: 'Run specdev focus <id> or specdev assignment <description>',
       },
     ],
-    next_action: 'Create a new assignment to begin work',
+    next_action: 'Set an active assignment via specdev focus <id>',
   }
 }
 
@@ -171,171 +168,31 @@ function emit(payload, asJson) {
 }
 
 async function resolveAssignment(specdevPath, flags) {
-  const assignmentsDir = join(specdevPath, 'assignments')
-  if (!(await fse.pathExists(assignmentsDir))) {
-    return { selected: null }
-  }
+  const current = await resolveCurrentAssignment(specdevPath)
 
-  if (typeof flags.assignment === 'string') {
-    const resolved = await resolveAssignmentSelector(specdevPath, flags.assignment)
-    if (!resolved) {
-      return {
-        selected: null,
-        payload: {
-          version: 1,
-          status: 'blocked',
-          state: 'assignment_not_found',
-          blockers: [
-            {
-              code: 'assignment_not_found',
-              detail: `Assignment not found: ${flags.assignment}`,
-              recommended_fix: 'Run specdev continue without --assignment, or pick a valid assignment',
-            },
-          ],
-          next_action: 'Choose an existing assignment and retry',
-        },
-      }
-    }
-    if (resolved.ambiguous) {
-      return {
-        selected: null,
-        payload: {
-          version: 1,
-          status: 'blocked',
-          state: 'assignment_ambiguous',
-          blockers: [
-            {
-              code: 'assignment_ambiguous',
-              detail: `Assignment id is ambiguous: ${resolved.wanted} (${resolved.matches.join(', ')})`,
-              recommended_fix: 'Use --assignment with a full assignment name',
-            },
-          ],
-          next_action: 'Choose one of the matching assignments and retry',
-        },
-      }
-    }
-    return {
-      selected: { name: resolved.name, path: resolved.path },
-      selectedBy: 'flag',
-    }
-  }
-
-  const assignments = await scanAssignments(specdevPath)
-  if (assignments.length === 0) {
-    return { selected: null }
-  }
-
-  const analyses = await Promise.all(
-    assignments.map(async (assignment) => {
-      const detected = await detectAssignmentState(assignment, assignment.path)
-      const mtime = await latestAssignmentArtifactMtime(assignment.path)
-      return { assignment, detected, mtime }
-    })
-  )
-
-  analyses.sort((a, b) => {
-    const scoreDelta = statePriority(b.detected.state) - statePriority(a.detected.state)
-    if (scoreDelta !== 0) return scoreDelta
-    const timeDelta = b.mtime - a.mtime
-    if (timeDelta !== 0) return timeDelta
-    return a.assignment.name.localeCompare(b.assignment.name)
-  })
-
-  const top = analyses[0]
-  const competing = analyses.filter(
-    (item) =>
-      statePriority(item.detected.state) === statePriority(top.detected.state) &&
-      Math.abs(item.mtime - top.mtime) <= ASSIGNMENT_AMBIGUITY_WINDOW_MS
-  )
-
-  if (competing.length > 1) {
-    if (process.stdin.isTTY && process.stdout.isTTY) {
-      const idx = await askChoice(
-        'Multiple active assignments look equally likely. Which assignment should continue?',
-        competing.map(
-          (item) =>
-            `${item.assignment.name} (${item.detected.state}; ${item.detected.progress.summary})`
-        )
-      )
-      const chosen = competing[idx]
-      return {
-        selected: { name: chosen.assignment.name, path: chosen.assignment.path },
-        selectedBy: 'interactive_clarification',
-      }
-    }
-
+  if (current.error === 'stale') {
     return {
       selected: null,
       payload: {
         version: 1,
         status: 'blocked',
-        state: 'assignment_ambiguous',
-        blockers: [
-          {
-            code: 'assignment_ambiguous',
-            detail:
-              `Multiple assignments appear active: ${competing.map((item) => item.assignment.name).join(', ')}`,
-            recommended_fix: 'Run specdev continue --assignment=<name>',
-          },
-        ],
-        candidates: competing.map((item) => ({
-          assignment: item.assignment.name,
-          state: item.detected.state,
-          progress: item.detected.progress.summary,
-        })),
-        next_action: 'Specify assignment explicitly via --assignment=<name>',
+        state: 'stale_current',
+        blockers: [{
+          code: 'stale_current',
+          detail: `Active assignment "${current.name}" not found`,
+          recommended_fix: 'Run specdev focus <id> to set a valid assignment',
+        }],
+        next_action: 'Run specdev focus <id>',
       },
     }
   }
 
+  if (current.error === 'missing') {
+    return { selected: null }
+  }
+
   return {
-    selected: { name: top.assignment.name, path: top.assignment.path },
-    selectedBy: 'heuristic',
+    selected: { name: current.name, path: current.path },
+    selectedBy: 'current',
   }
-}
-
-function statePriority(state) {
-  switch (state) {
-    case 'revision_requires_rebreakdown':
-      return 100
-    case 'implementation_in_progress':
-      return 95
-    case 'implementation_checkpoint_ready':
-      return 92
-    case 'breakdown_in_progress':
-      return 85
-    case 'brainstorm_checkpoint_ready':
-      return 75
-    case 'brainstorm_in_progress':
-      return 70
-    case 'summary_in_progress':
-      return 60
-    case 'completed':
-      return 10
-    default:
-      return 50
-  }
-}
-
-async function latestAssignmentArtifactMtime(assignmentPath) {
-  const artifactPaths = [
-    'brainstorm/design.md',
-    'brainstorm/proposal.md',
-    'breakdown/plan.md',
-    'breakdown/metadata.json',
-    'implementation/progress.json',
-    'review/brainstorm-feedback.md',
-    'review/implementation-feedback.md',
-    'review_report.md',
-  ]
-
-  let latest = 0
-  for (const rel of artifactPaths) {
-    const full = join(assignmentPath, rel)
-    if (!(await fse.pathExists(full))) continue
-    const stat = await fse.stat(full)
-    latest = Math.max(latest, stat.mtimeMs)
-  }
-
-  return latest
 }

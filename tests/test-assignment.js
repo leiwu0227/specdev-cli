@@ -268,6 +268,103 @@ async function runTests() {
     rmSync(tmpRoot3, { recursive: true, force: true })
   }
 
+  // =====================================================================
+  // Assignment --type and --slug Tests
+  // =====================================================================
+
+  console.log('\nassignment with --type and --slug creates folder and sets .current:')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
+  const typedResult = await runAssignmentDirect(['Add', 'auth'], { target: TEST_DIR, type: 'feature', slug: 'auth', json: true })
+  assert(typedResult.status === 0, 'exits 0 with --type and --slug', typedResult.stderr)
+  let typedParsed
+  try {
+    typedParsed = JSON.parse(typedResult.stdout)
+  } catch {
+    typedParsed = null
+  }
+  assert(typedParsed !== null, 'outputs valid JSON', typedResult.stdout)
+  if (typedParsed) {
+    assert(typedParsed.id === '00001', 'JSON has correct id')
+    assert(typedParsed.name === '00001_feature_auth', 'JSON has correct name')
+    assert(typedParsed.current_set === true, 'JSON has current_set true')
+  }
+  const typedFolder = join(TEST_DIR, '.specdev/assignments/00001_feature_auth')
+  assert(existsSync(typedFolder), 'assignment folder exists')
+  assert(existsSync(join(typedFolder, 'brainstorm')), 'brainstorm/ subdir exists')
+  assert(existsSync(join(typedFolder, 'context')), 'context/ subdir exists')
+  const currentPath = join(TEST_DIR, '.specdev/.current')
+  const currentExists = existsSync(currentPath)
+  assert(currentExists, '.current file exists')
+  if (currentExists) {
+    const currentContent = readFileSync(currentPath, 'utf-8').trim()
+    assert(currentContent === '00001_feature_auth', '.current contains folder name', `got: ${currentContent}`)
+  }
+
+  console.log('\nassignment without --type/--slug still works (just reserves ID):')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
+  const noTypeResult = await runAssignmentDirect(['Add', 'auth'], { target: TEST_DIR, json: true })
+  assert(noTypeResult.status === 0, 'exits 0 without --type/--slug')
+  let noTypeParsed
+  try {
+    noTypeParsed = JSON.parse(noTypeResult.stdout)
+  } catch {
+    noTypeParsed = null
+  }
+  assert(noTypeParsed !== null, 'outputs valid JSON', noTypeResult.stdout)
+  if (noTypeParsed) {
+    assert(noTypeParsed.id === '00001', 'JSON has correct id')
+    assert(noTypeParsed.current_set === undefined, 'JSON does not have current_set')
+  }
+  const noTypeAssignmentsDir = join(TEST_DIR, '.specdev/assignments')
+  const noTypeEntries = existsSync(noTypeAssignmentsDir) ? readdirSync(noTypeAssignmentsDir).filter(e => !e.startsWith('.')) : []
+  assert(noTypeEntries.length === 0, 'no folder created without --type/--slug', `found: ${noTypeEntries.join(', ')}`)
+
+  // =====================================================================
+  // Assignment --discussion promotion Tests
+  // =====================================================================
+
+  console.log('\nassignment with --discussion copies brainstorm artifacts:')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
+  // Create a discussion with brainstorm artifacts
+  const discussionDir = join(TEST_DIR, '.specdev/discussions/D0001_test-feature')
+  mkdirSync(join(discussionDir, 'brainstorm'), { recursive: true })
+  writeFileSync(join(discussionDir, 'brainstorm', 'proposal.md'), '# Proposal\nFrom discussion')
+  writeFileSync(join(discussionDir, 'brainstorm', 'design.md'), '# Design\nFrom discussion')
+
+  const promoResult = await runAssignmentDirect(
+    ['promoted', 'feature'],
+    { target: TEST_DIR, type: 'feature', slug: 'promoted', discussion: 'D0001', json: true }
+  )
+  assert(promoResult.status === 0, 'exits 0 with --discussion promotion', promoResult.stderr)
+  let promoParsed
+  try { promoParsed = JSON.parse(promoResult.stdout) } catch { promoParsed = null }
+  assert(promoParsed !== null, 'outputs valid JSON', promoResult.stdout)
+  if (promoParsed) {
+    assert(promoParsed.name === '00001_feature_promoted', 'JSON has correct name')
+    assert(promoParsed.current_set === true, 'JSON has current_set true')
+  }
+  const promoAssignmentDir = join(TEST_DIR, '.specdev/assignments/00001_feature_promoted')
+  assert(existsSync(join(promoAssignmentDir, 'brainstorm', 'proposal.md')), 'proposal.md copied from discussion')
+  assert(existsSync(join(promoAssignmentDir, 'brainstorm', 'design.md')), 'design.md copied from discussion')
+  const copiedProposal = readFileSync(join(promoAssignmentDir, 'brainstorm', 'proposal.md'), 'utf-8')
+  assert(copiedProposal.includes('From discussion'), 'proposal.md has discussion content')
+
+  console.log('\nassignment with --discussion but invalid discussion ID:')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
+  const badDiscResult = await runAssignmentDirect(
+    ['bad', 'promo'],
+    { target: TEST_DIR, type: 'feature', slug: 'bad-promo', discussion: 'D9999', json: true }
+  )
+  assert(badDiscResult.status === 1, 'exits non-zero for invalid discussion', badDiscResult.stderr)
+
   cleanup()
   console.log('')
   if (failures > 0) { console.error(`❌ ${failures} assignment test(s) failed`); process.exit(1) }

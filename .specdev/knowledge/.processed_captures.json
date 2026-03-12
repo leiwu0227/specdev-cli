@@ -1,10 +1,12 @@
 {
   "project": [
     "00001_familiarization_distill-improvement",
-    "00002_feature_cursor-reviewer"
+    "00002_feature_cursor-reviewer",
+    "00003_refactor_mandatory-assignment-flag"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
-    "00002_feature_cursor-reviewer"
+    "00002_feature_cursor-reviewer",
+    "00003_refactor_mandatory-assignment-flag"
   ]
 }

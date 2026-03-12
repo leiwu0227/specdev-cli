@@ -36,13 +36,15 @@ hooks/                  Platform hooks (SessionStart for Claude Code)
 
 **Key patterns:**
 - Commands follow a consistent signature: `export async function fooCommand(positionalArgs, flags)`
-- Assignment resolution: `resolveAssignmentPath(flags)` finds the latest or specified assignment
+- **`.current` pointer:** `.specdev/.current` file tracks the active assignment. Set by `specdev focus <id>` or auto-set on `specdev assignment --type --slug`. All commands read `.current` — no heuristic auto-detection.
+- **Two assignment creation paths:** Plain `specdev assignment "desc"` reserves an ID for human folder creation. `specdev assignment "desc" --type=<type> --slug=<slug>` creates folders and sets `.current` automatically (used by agents).
+- **Discussions:** Lightweight pre-assignment brainstorming under `.specdev/discussions/D####_slug/`. Created via `specdev discuss "desc"`. Require explicit `--discussion` flag on commands. Promotable to assignments via `specdev assignment "desc" --discussion=D0001 --type --slug`.
 - Assignment IDs: `00001_feature_auth` — sequential number + type + name
 - Types: `feature | bugfix | refactor | familiarization` — parsed by `parseAssignmentId()`
 - Tool skills: SKILL.md (agent protocol) + scripts/ (deterministic mechanics) + optional wrappers per agent platform
 - `OFFICIAL_TOOL_SKILLS` in `src/utils/update.js` controls which tool skills are auto-managed
 - **Knowledge system:** After assignments complete, `specdev distill` aggregates capture diffs and heuristics into JSON; agent writes to `knowledge/` branches (codestyle, architecture, domain, workflow). `specdev distill done` validates big_picture word count and feature_descriptions entry, then marks processed via `knowledge/.processed_captures.json`.
-- **Reviewloop:** `src/commands/reviewloop.js` orchestrates external reviewer CLIs (codex, cursor, etc.) in automated review rounds with feedback written to `review/{phase}-feedback.md`. Reviewer configs are JSON files in `skills/core/reviewloop/reviewers/`.
+- **Reviewloop:** `src/commands/reviewloop.js` orchestrates external reviewer CLIs (codex, cursor, etc.) in automated review rounds with feedback written to `review/{phase}-feedback.md`. Reviewer configs are JSON files in `skills/core/reviewloop/reviewers/`. Supports discussion reviewloop via `SPECDEV_DISCUSSION` env var passed to reviewer subprocesses.
 
 ## Conventions and constraints
 

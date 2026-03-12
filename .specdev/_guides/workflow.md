@@ -8,7 +8,11 @@ Every assignment follows these 4 phases in order. Do not skip phases.
 
 **Goal:** Understand the problem and produce a validated design or research output.
 
-**Start:** Run `specdev assignment "<description>"` to reserve an ID.
+**Start:** Run `specdev assignment "<description>"` to reserve an ID. This also sets `.specdev/.current` to the new assignment.
+- To include explicit folder naming: `specdev assignment "<description>" --type=<type> --slug=<slug>`
+- To switch to an existing assignment: `specdev focus <id>` (updates `.specdev/.current`)
+- To explore ideas without committing to a full assignment: `specdev discuss "<description>"` — creates a lightweight discussion folder; promote later with `specdev assignment "<desc>" --discussion=<id> --type=<type> --slug=<slug>`
+
 Create the assignment folder: `assignments/NNNNN_<type>_<slug>/`
 Where type is: feature | bugfix | refactor | familiarization
 And slug is a short hyphenated name derived from the description.
