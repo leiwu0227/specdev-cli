@@ -38,7 +38,7 @@ hooks/                  Platform hooks (SessionStart for Claude Code)
 - Commands follow a consistent signature: `export async function fooCommand(positionalArgs, flags)`
 - **`.current` pointer:** `.specdev/.current` file tracks the active assignment. Set by `specdev focus <id>` or auto-set on `specdev assignment --type --slug`. All commands read `.current` — no heuristic auto-detection.
 - **Two assignment creation paths:** Plain `specdev assignment "desc"` reserves an ID for human folder creation. `specdev assignment "desc" --type=<type> --slug=<slug>` creates folders and sets `.current` automatically (used by agents).
-- **Discussions:** Lightweight pre-assignment brainstorming under `.specdev/discussions/D####_slug/`. Created via `specdev discuss "desc"`. Require explicit `--discussion` flag on commands. Promotable to assignments via `specdev assignment "desc" --discussion=D0001 --type --slug`.
+- **Discussions:** Lightweight pre-assignment brainstorming under `.specdev/discussions/D####_slug/`. Created via `specdev discussion "desc"`. Require explicit `--discussion` flag on commands. Promotable to assignments via `specdev assignment "desc" --discussion=D0001 --type --slug`.
 - Assignment IDs: `00001_feature_auth` — sequential number + type + name
 - Types: `feature | bugfix | refactor | familiarization` — parsed by `parseAssignmentId()`
 - Tool skills: SKILL.md (agent protocol) + scripts/ (deterministic mechanics) + optional wrappers per agent platform
