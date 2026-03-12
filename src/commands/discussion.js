@@ -39,8 +39,8 @@ export async function discussCommand(positionalArgs = [], flags = {}) {
   const description = positionalArgs.join(' ').trim()
   if (!description) {
     console.error('❌ No description provided')
-    console.log('   Usage: specdev discuss "explore auth approaches"')
-    console.log('   Usage: specdev discuss --list')
+    console.log('   Usage: specdev discussion "explore auth approaches"')
+    console.log('   Usage: specdev discussion --list')
     process.exitCode = 1
     return
   }

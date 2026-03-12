@@ -16,7 +16,7 @@ import { checkReviewCommand } from './check-review.js'
 import { reviewloopCommand } from './reviewloop.js'
 import { implementCommand } from './implement.js'
 import { focusCommand } from './focus.js'
-import { discussCommand } from './discuss.js'
+import { discussCommand } from './discussion.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -34,7 +34,7 @@ const commandHandlers = {
   reviewloop: ({ positionalArgs, flags }) => reviewloopCommand(positionalArgs, flags),
   implement: ({ positionalArgs, flags }) => implementCommand(positionalArgs, flags),
   focus: ({ positionalArgs, flags }) => focusCommand(positionalArgs, flags),
-  discuss: ({ positionalArgs, flags }) => discussCommand(positionalArgs, flags),
+  discussion: ({ positionalArgs, flags }) => discussCommand(positionalArgs, flags),
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
