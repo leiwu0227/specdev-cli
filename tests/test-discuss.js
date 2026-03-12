@@ -54,6 +54,13 @@ function main() {
   ok = assertTest(skillContent.includes('name: specdev-discussion'), 'skill has correct name frontmatter') && ok
   ok = assertTest(skillContent.includes('specdev discussion'), 'skill references correct command name') && ok
 
+  // Test 7: discussion_progress.md template exists
+  const templatePath = join(process.cwd(), 'templates', '.specdev', 'project_notes', 'discussion_progress.md')
+  ok = assertTest(existsSync(templatePath), 'discussion_progress.md template exists') && ok
+  const templateContent = readFileSync(templatePath, 'utf-8')
+  ok = assertTest(templateContent.includes('Discussion Progress'), 'template has correct header') && ok
+  ok = assertTest(templateContent.includes('Promoted To'), 'template has Promoted To column') && ok
+
   cleanup()
   if (!ok) process.exit(1)
 }
