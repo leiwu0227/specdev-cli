@@ -7,3 +7,4 @@ test-manual/
 .env
 dist/
 coverage/
+tests/tmp-*/
