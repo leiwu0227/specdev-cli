@@ -74,9 +74,9 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 |---------|---------|-------------|
 | `specdev assignment "<desc>"` | Reserve next assignment ID; sets `.current` pointer | Starting new work |
 | `specdev assignment "<desc>" --type=<type> --slug=<slug>` | Reserve ID with explicit type and folder slug | Automated/scripted assignment creation |
-| `specdev assignment "<desc>" --discussion=<id>` | Promote a discussion to a full assignment | After a `specdev discuss` exploration |
+| `specdev assignment "<desc>" --discussion=<id>` | Promote a discussion to a full assignment | After a `specdev discussion` exploration |
 | `specdev focus <id>` | Set the active assignment (writes `.specdev/.current`) | Switching between assignments |
-| `specdev discuss "<desc>"` | Start a parallel brainstorming discussion (no full assignment) | Exploring ideas before committing to an assignment |
+| `specdev discussion "<desc>"` | Start a parallel brainstorming discussion (no full assignment) | Exploring ideas before committing to an assignment |
 | `specdev checkpoint <phase>` | Validate phase artifacts exist and are well-formed | Before requesting review or approval |
 | `specdev checkpoint <phase> --discussion=<id>` | Validate discussion artifacts | Within a discussion workflow |
 | `specdev approve <phase>` | Hard gate: signal to proceed past a phase | After user reviews and is satisfied |

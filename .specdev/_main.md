@@ -16,7 +16,7 @@ All work is organized into **assignments**. An assignment is a self-contained un
 2. Check `.specdev/.current` for the active assignment pointer
    - `.current` exists → run `specdev focus <id>` if you need to switch, otherwise resume from the listed assignment
    - No active assignment → run `specdev assignment "<description>"` to reserve an ID (this sets `.current` automatically)
-   - For parallel exploration before committing to an assignment → run `specdev discuss "<description>"`
+   - For parallel exploration before committing to an assignment → run `specdev discussion "<description>"`
 
 **Reference:** `_index.md` is the detailed lookup for all guides, skills, commands, and project context. Consult it when you need to find a specific resource.
 
