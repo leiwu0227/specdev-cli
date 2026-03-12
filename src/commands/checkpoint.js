@@ -27,7 +27,7 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
 
   if (phase === 'discussion') {
     if (!flags.discussion) {
-      console.error('--discussion flag is required. Use specdev discuss --list to see available discussions.')
+      console.error('--discussion flag is required. Use specdev discussion --list to see available discussions.')
       process.exitCode = 1
       return
     }

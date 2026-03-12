@@ -46,7 +46,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   if (phase === 'discussion') {
     const discussionSelector = flags.discussion || process.env.SPECDEV_DISCUSSION
     if (!discussionSelector) {
-      console.error('--discussion flag is required. Use specdev discuss --list to see available discussions.')
+      console.error('--discussion flag is required. Use specdev discussion --list to see available discussions.')
       process.exitCode = 1
       return
     }

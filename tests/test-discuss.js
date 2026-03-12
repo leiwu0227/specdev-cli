@@ -42,6 +42,11 @@ function main() {
   r = runSpecdev(['discussion', `--target=${TEST_DIR}`])
   ok = assertTest(r.status !== 0, 'discussion with no args exits non-zero') && ok
 
+  // Test 5: help output references 'discussion' not 'discuss'
+  r = runSpecdev(['help'])
+  ok = assertTest(r.stdout.includes('discussion <desc>'), 'help shows discussion command') && ok
+  ok = assertTest(!r.stdout.includes('discuss <desc>'), 'help does not show old discuss command') && ok
+
   cleanup()
   if (!ok) process.exit(1)
 }
