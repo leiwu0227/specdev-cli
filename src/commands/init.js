@@ -146,9 +146,12 @@ description: Start a parallel brainstorming discussion
 
 Run \`specdev discussion "<description>"\` to reserve a discussion ID.
 
-Read the output to get the reserved ID and folder path, then:
-1. Follow \`.specdev/skills/core/brainstorming/SKILL.md\` exactly, writing artifacts to the discussion's brainstorm/ folder
-2. After creating the discussion, add a row to \`.specdev/project_notes/discussion_progress.md\`
+Read the output to get the reserved ID (e.g. D0001) and folder path, then:
+1. Follow \`.specdev/skills/core/brainstorming/SKILL.md\` for Phases 1-3 (Understand, Explore, Design), writing artifacts to the discussion's brainstorm/ folder
+2. After writing brainstorm/proposal.md and brainstorm/design.md, add a row to \`.specdev/project_notes/discussion_progress.md\`
+3. Tell the user: \`specdev reviewloop discussion --discussion=<ID>\` for review (optional)
+
+**Discussions are NOT assignments.** Do NOT use \`specdev reviewloop brainstorm\`, \`specdev approve\`, or \`specdev continue\` — those require an assignment.
 
 Announce every subtask with "Specdev: <action>".
 `,
@@ -156,6 +159,8 @@ Announce every subtask with "Specdev: <action>".
 name: specdev-reviewloop
 description: Automated external review loop — spawns an external reviewer CLI, reads verdict, auto-approves on pass
 ---
+
+## For assignments
 
 Run \`specdev reviewloop <phase>\` where phase is \`brainstorm\` or \`implementation\`.
 
@@ -168,6 +173,19 @@ Flow:
 3. \`specdev reviewloop <phase> --reviewer=<name>\` — runs review
 4. On pass → auto-approves the phase. **The gate is satisfied — proceed immediately to the next phase.** Do NOT ask the user to run \`specdev approve\` separately.
 5. On fail → run \`specdev check-review <phase>\` to address findings, then re-run reviewloop
+
+## For discussions
+
+Run \`specdev reviewloop discussion --discussion=<ID>\` where ID is the discussion ID (e.g. D0001).
+
+Flow:
+1. \`specdev reviewloop discussion --discussion=<ID>\` — lists reviewers
+2. Ask user which reviewer
+3. \`specdev reviewloop discussion --discussion=<ID> --reviewer=<name>\` — runs review
+4. On pass → discussion review complete. No phase approval needed.
+5. On fail → address findings, then re-run
+
+**Do NOT use \`specdev reviewloop brainstorm\` for discussions — that requires an assignment.**
 
 This is a Node.js CLI command — run it directly, never via pip/python.
 `,
