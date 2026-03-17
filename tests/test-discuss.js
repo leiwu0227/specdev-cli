@@ -23,20 +23,20 @@ function main() {
   let r = runSpecdev(['discussion', 'auth ideas', `--target=${TEST_DIR}`, '--json'])
   let ok = assertTest(r.status === 0, 'discussion exits 0', r.stderr)
   const output = JSON.parse(r.stdout)
-  ok = assertTest(output.id === 'D0001', 'discussion returns D0001') && ok
-  ok = assertTest(existsSync(join(TEST_DIR, '.specdev', 'discussions', 'D0001_auth-ideas', 'brainstorm')), 'discussion creates folder with brainstorm subdir') && ok
+  ok = assertTest(output.id === 'D00001', 'discussion returns D00001') && ok
+  ok = assertTest(existsSync(join(TEST_DIR, '.specdev', 'discussions', 'D00001_auth-ideas', 'brainstorm')), 'discussion creates folder with brainstorm subdir') && ok
 
-  // Test 2: second discussion gets D0002
+  // Test 2: second discussion gets D00002
   r = runSpecdev(['discussion', 'perf tuning', `--target=${TEST_DIR}`, '--json'])
   ok = assertTest(r.status === 0, 'second discussion exits 0', r.stderr) && ok
   const output2 = JSON.parse(r.stdout)
-  ok = assertTest(output2.id === 'D0002', 'second discussion returns D0002') && ok
+  ok = assertTest(output2.id === 'D00002', 'second discussion returns D00002') && ok
 
   // Test 3: discussion --list lists discussions
   r = runSpecdev(['discussion', '--list', `--target=${TEST_DIR}`])
   ok = assertTest(r.status === 0, 'discussion --list exits 0', r.stderr) && ok
-  ok = assertTest(r.stdout.includes('D0001_auth-ideas'), 'discussion --list shows D0001') && ok
-  ok = assertTest(r.stdout.includes('D0002_perf-tuning'), 'discussion --list shows D0002') && ok
+  ok = assertTest(r.stdout.includes('D00001_auth-ideas'), 'discussion --list shows D00001') && ok
+  ok = assertTest(r.stdout.includes('D00002_perf-tuning'), 'discussion --list shows D00002') && ok
 
   // Test 4: discussion with no description errors
   r = runSpecdev(['discussion', `--target=${TEST_DIR}`])

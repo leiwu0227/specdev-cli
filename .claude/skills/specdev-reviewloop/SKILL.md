@@ -19,7 +19,7 @@ Flow:
 
 ## For discussions
 
-Run `specdev reviewloop discussion --discussion=<ID>` where ID is the discussion ID (e.g. `D0001`).
+Run `specdev reviewloop discussion --discussion=<ID>` where ID is the discussion ID (e.g. `D00001`).
 
 Without `--reviewer`: lists available reviewers. Ask the user which to use.
 With `--reviewer=<name>`: spawns the reviewer and processes results automatically.

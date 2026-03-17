@@ -25,7 +25,7 @@ Below is a list of discussions and their status.
 
 ## Instructions
 
-1. When creating a new discussion, add a row with the discussion ID (D0001 format)
+1. When creating a new discussion, add a row with the discussion ID (D00001 format)
 2. Update status as the discussion progresses
 3. When promoted, record the assignment ID in the "Promoted To" column
 4. Use Notes column for context or abandonment reasons

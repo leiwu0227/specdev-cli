@@ -2,13 +2,13 @@ import { join } from 'path'
 import fse from 'fs-extra'
 
 export function parseDiscussionId(name) {
-  const match = name.match(/^(D\d{4})_(.+)$/)
+  const match = name.match(/^(D\d{4,5})_(.+)$/)
   if (match) return { id: match[1], slug: match[2] }
   return { id: null, slug: name }
 }
 
 export async function resolveDiscussionSelector(specdevPath, selector) {
-  if (!/^D\d{4}/.test(selector)) {
+  if (!/^D\d{4,5}/.test(selector)) {
     return { error: 'malformed', selector }
   }
 
@@ -46,5 +46,5 @@ export async function getNextDiscussionId(specdevPath) {
     .filter(n => n > 0)
 
   const nextNum = ids.length > 0 ? Math.max(...ids) + 1 : 1
-  return `D${String(nextNum).padStart(4, '0')}`
+  return `D${String(nextNum).padStart(5, '0')}`
 }

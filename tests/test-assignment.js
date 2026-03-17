@@ -332,14 +332,14 @@ async function runTests() {
   runCmd(['init', `--target=${TEST_DIR}`])
   writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
   // Create a discussion with brainstorm artifacts
-  const discussionDir = join(TEST_DIR, '.specdev/discussions/D0001_test-feature')
+  const discussionDir = join(TEST_DIR, '.specdev/discussions/D00001_test-feature')
   mkdirSync(join(discussionDir, 'brainstorm'), { recursive: true })
   writeFileSync(join(discussionDir, 'brainstorm', 'proposal.md'), '# Proposal\nFrom discussion')
   writeFileSync(join(discussionDir, 'brainstorm', 'design.md'), '# Design\nFrom discussion')
 
   const promoResult = await runAssignmentDirect(
     ['promoted', 'feature'],
-    { target: TEST_DIR, type: 'feature', slug: 'promoted', discussion: 'D0001', json: true }
+    { target: TEST_DIR, type: 'feature', slug: 'promoted', discussion: 'D00001', json: true }
   )
   assert(promoResult.status === 0, 'exits 0 with --discussion promotion', promoResult.stderr)
   let promoParsed
@@ -361,7 +361,7 @@ async function runTests() {
   writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
   const badDiscResult = await runAssignmentDirect(
     ['bad', 'promo'],
-    { target: TEST_DIR, type: 'feature', slug: 'bad-promo', discussion: 'D9999', json: true }
+    { target: TEST_DIR, type: 'feature', slug: 'bad-promo', discussion: 'D99999', json: true }
   )
   assert(badDiscResult.status === 1, 'exits non-zero for invalid discussion', badDiscResult.stderr)
 

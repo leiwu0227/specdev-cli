@@ -49,7 +49,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     const resolved = await resolveDiscussionSelector(specdevPath, flags.discussion)
     if (!resolved || resolved.error) {
       const msg = resolved?.error === 'malformed'
-        ? `Invalid discussion ID "${flags.discussion}". Expected format: D0001`
+        ? `Invalid discussion ID "${flags.discussion}". Expected format: D00001`
         : `Discussion ${flags.discussion} not found.`
       console.error(msg)
       process.exitCode = 1
@@ -137,7 +137,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     blankLine()
 
     // Set SPECDEV env vars for discussion reviewloop
-    const discussionId = discussionName.match(/^(D\d{4})/)?.[1] || discussionName
+    const discussionId = discussionName.match(/^(D\d{4,5})/)?.[1] || discussionName
     const childEnv = {
       ...process.env,
       SPECDEV_PHASE: 'discussion',

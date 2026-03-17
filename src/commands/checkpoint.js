@@ -36,7 +36,7 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
     const resolved = await resolveDiscussionSelector(specdevPath, flags.discussion)
     if (!resolved || resolved.error) {
       const msg = resolved?.error === 'malformed'
-        ? `Invalid discussion ID "${flags.discussion}". Expected format: D0001`
+        ? `Invalid discussion ID "${flags.discussion}". Expected format: D00001`
         : `Discussion ${flags.discussion} not found.`
       console.error(msg)
       process.exitCode = 1

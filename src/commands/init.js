@@ -146,7 +146,7 @@ description: Start a parallel brainstorming discussion
 
 Run \`specdev discussion "<description>"\` to reserve a discussion ID.
 
-Read the output to get the reserved ID (e.g. D0001) and folder path, then:
+Read the output to get the reserved ID (e.g. D00001) and folder path, then:
 1. Follow \`.specdev/skills/core/brainstorming/SKILL.md\` for Phases 1-3 (Understand, Explore, Design), writing artifacts to the discussion's brainstorm/ folder
 2. After writing brainstorm/proposal.md and brainstorm/design.md, add a row to \`.specdev/project_notes/discussion_progress.md\`
 3. Tell the user: \`specdev reviewloop discussion --discussion=<ID>\` for review (optional)
@@ -176,7 +176,7 @@ Flow:
 
 ## For discussions
 
-Run \`specdev reviewloop discussion --discussion=<ID>\` where ID is the discussion ID (e.g. D0001).
+Run \`specdev reviewloop discussion --discussion=<ID>\` where ID is the discussion ID (e.g. D00001).
 
 Flow:
 1. \`specdev reviewloop discussion --discussion=<ID>\` — lists reviewers
