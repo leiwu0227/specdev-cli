@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { writeSync } from 'fs'
+import { writeSync, readdirSync } from 'fs'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { blankLine, printSection } from '../utils/output.js'
@@ -33,14 +33,42 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
   }
 
   const reviewDir = join(assignmentPath, 'review')
-  const feedbackPath = join(reviewDir, `${phase}-feedback.md`)
+
+  // Determine feedback file path
+  let feedbackPath
+  let feedbackFilename
+
+  if (flags.reviewer) {
+    feedbackFilename = `${phase}-feedback-${flags.reviewer}.md`
+    feedbackPath = join(reviewDir, feedbackFilename)
+  } else {
+    feedbackFilename = `${phase}-feedback.md`
+    feedbackPath = join(reviewDir, feedbackFilename)
+
+    // If default doesn't exist, scan for reviewer-specific files
+    if (!(await fse.pathExists(feedbackPath)) && await fse.pathExists(reviewDir)) {
+      const files = readdirSync(reviewDir)
+        .filter(f => f.startsWith(`${phase}-feedback-`) && f.endsWith('.md'))
+        .sort()
+
+      for (const f of files) {
+        const content = await fse.readFile(join(reviewDir, f), 'utf-8')
+        const latest = getLatestRound(content)
+        if (latest && latest.verdict === 'needs-changes') {
+          feedbackFilename = f
+          feedbackPath = join(reviewDir, f)
+          break
+        }
+      }
+    }
+  }
 
   if (!(await fse.pathExists(feedbackPath))) {
     const payload = {
       version: 1,
       status: 'error',
       error: 'no_feedback',
-      detail: `No review/${phase}-feedback.md found`,
+      detail: `No review/${feedbackFilename} found`,
     }
     if (json) {
       writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
@@ -60,13 +88,13 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
       version: 1,
       status: 'error',
       error: 'no_feedback',
-      detail: `${phase}-feedback.md exists but contains no rounds`,
+      detail: `${feedbackFilename} exists but contains no rounds`,
     }
     if (json) {
       writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
     } else {
       console.error('No review feedback found')
-      console.log(`   ${phase}-feedback.md exists but contains no rounds`)
+      console.log(`   ${feedbackFilename} exists but contains no rounds`)
     }
     process.exitCode = 1
     return
@@ -84,7 +112,7 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
       next_action:
         latest.verdict === 'approved'
           ? 'Run specdev approve <phase> to proceed'
-          : `Address findings, then append to review/${phase}-changelog.md under ## Round ${latest.round}`,
+          : `Address findings, then append to review/${feedbackFilename.replace('-feedback', '-changelog')} under ## Round ${latest.round}`,
     }
     writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
     return
@@ -116,7 +144,7 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
 
     printSection('Action required:')
     console.log('   1. Address each finding in the phase artifacts')
-    console.log(`   2. Append changes to: ${name}/review/${phase}-changelog.md under ## Round ${latest.round}`)
+    console.log(`   2. Append changes to: ${name}/review/${feedbackFilename.replace('-feedback', '-changelog')} under ## Round ${latest.round}`)
     console.log('   3. Say "auto review" or run specdev review in a separate session')
   }
 }

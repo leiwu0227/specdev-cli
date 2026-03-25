@@ -636,6 +636,166 @@ if (existsSync(join(a10, 'status.json'))) {
 }
 
 // =====================================================================
+// Multi-reviewer: comma-separated
+// =====================================================================
+
+console.log('\nreviewloop multi-reviewer (comma-separated):')
+cleanup()
+initProject()
+fillBigPicture()
+const aMulti1 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+mkdirSync(join(aMulti1, 'review'), { recursive: true })
+
+const feedbackRelMulti1 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-pass-a.md`
+const feedbackRelMulti2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-pass-b.md`
+setupReviewer('pass-a', {
+  name: 'pass-a',
+  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelMulti1}"`,
+  max_rounds: 5,
+})
+setupReviewer('pass-b', {
+  name: 'pass-b',
+  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelMulti2}"`,
+  max_rounds: 5,
+})
+
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=pass-a,pass-b',
+])
+const multiOutput = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'multi-reviewer exits 0 when all approve', result.stderr)
+assert(multiOutput.includes('pass-a'), 'output mentions first reviewer')
+assert(multiOutput.includes('pass-b'), 'output mentions second reviewer')
+assert(
+  multiOutput.includes("Phase 'brainstorm' has been approved"),
+  'phase approved after all reviewers pass',
+  multiOutput,
+)
+
+// Verify separate feedback files exist
+const feedbackA = join(aMulti1, 'review', 'brainstorm-feedback-pass-a.md')
+const feedbackB = join(aMulti1, 'review', 'brainstorm-feedback-pass-b.md')
+assert(existsSync(feedbackA), 'reviewer A feedback file exists')
+assert(existsSync(feedbackB), 'reviewer B feedback file exists')
+
+// =====================================================================
+// Multi-reviewer: second reviewer needs-changes stops chain
+// =====================================================================
+
+console.log('\nreviewloop multi-reviewer (chain stops on needs-changes):')
+cleanup()
+initProject()
+fillBigPicture()
+const aMulti2 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+mkdirSync(join(aMulti2, 'review'), { recursive: true })
+
+const feedbackRelStop1 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-pass-c.md`
+const feedbackRelStop2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-fail-c.md`
+setupReviewer('pass-c', {
+  name: 'pass-c',
+  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelStop1}"`,
+  max_rounds: 5,
+})
+setupReviewer('fail-c', {
+  name: 'fail-c',
+  command: `printf '## Round 1\\n\\n**Verdict:** needs-changes\\n\\n### Findings\\n1. [F1.1] Fix X\\n' >> "${feedbackRelStop2}"`,
+  max_rounds: 5,
+})
+
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=pass-c,fail-c',
+])
+const stopOutput = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'chain-stop exits 0', result.stderr)
+assert(stopOutput.includes('pass-c'), 'first reviewer ran')
+assert(stopOutput.includes('fail-c'), 'second reviewer ran')
+assert(
+  !stopOutput.includes("Phase 'brainstorm' has been approved"),
+  'phase NOT approved when second reviewer needs changes',
+  stopOutput,
+)
+
+// =====================================================================
+// Multi-reviewer: skip already-approved reviewer on re-run
+// =====================================================================
+
+console.log('\nreviewloop multi-reviewer (skip approved on re-run):')
+// Re-run same chain — pass-c should be skipped (already approved)
+// fail-c has needs-changes from round 1, so we need a changelog first
+const changelogFailC = join(aMulti2, 'review', 'brainstorm-changelog-fail-c.md')
+writeFileSync(changelogFailC, '## Round 1\n\n- Fixed X\n')
+
+// Replace fail-c to now approve on round 2
+const failCPath = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'fail-c.json')
+const failCApprove = {
+  name: 'fail-c',
+  command: `printf '\\n## Round 2\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelStop2}"`,
+  max_rounds: 5,
+}
+writeFileSync(failCPath, JSON.stringify(failCApprove))
+
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=pass-c,fail-c',
+])
+const resumeOutput = `${result.stdout}\n${result.stderr}`
+assert(resumeOutput.includes('already approved, skipping'), 'pass-c skipped as already approved')
+assert(
+  resumeOutput.includes("Phase 'brainstorm' has been approved"),
+  'phase approved after resumed reviewer passes',
+  resumeOutput,
+)
+
+// =====================================================================
+// check-review with --reviewer flag (multi-reviewer)
+// =====================================================================
+
+console.log('\ncheck-review with --reviewer flag:')
+cleanup()
+initProject()
+fillBigPicture()
+const aCheck1 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+const checkReviewDir = join(aCheck1, 'review')
+mkdirSync(checkReviewDir, { recursive: true })
+
+// Write reviewer-specific feedback file
+writeFileSync(
+  join(checkReviewDir, 'brainstorm-feedback-test-rev.md'),
+  '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix ABC\n',
+)
+
+result = runCmd([
+  'check-review',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=test-rev',
+])
+const checkRevOutput = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'check-review with --reviewer exits 0', result.stderr)
+assert(checkRevOutput.includes('Fix ABC'), 'shows reviewer-specific findings')
+
+// Test auto-detect: no --reviewer, no default feedback, scan for suffixed files
+console.log('\ncheck-review auto-detect multi-reviewer:')
+result = runCmd([
+  'check-review',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+])
+const autoDetectOutput = `${result.stdout}\n${result.stderr}`
+assert(autoDetectOutput.includes('Fix ABC'), 'auto-detect finds reviewer-specific feedback')
+
+// =====================================================================
 // checkReviewerCLIs returns cursor-agent binary for cursor config
 // =====================================================================
 

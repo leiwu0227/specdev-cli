@@ -24,6 +24,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added round-specific review focus instructions via shared `review-focus.json` config. Rounds progress from architecture to code efficiency to domain-specific to general. Focus passed via `SPECDEV_FOCUS` env var. All reviewers updated to `max_rounds: 5`.
 **Key files:** `src/utils/review-focus.js`, `src/commands/reviewloop.js`, `src/commands/review.js`, `templates/.specdev/skills/core/reviewloop/review-focus.json`
 
+### Multi-Reviewer Support
+**Assignment:** 00007_feature_multi-reviewer
+**Completed:** 2026-03-25
+**Description:** Added `--reviewer=a,b,c` comma-separated syntax to run multiple reviewers in succession. Each reviewer gets independent round counters, separate feedback files (`{phase}-feedback-{reviewer}.md`), and skip-on-resume capability. Phase approved only after all reviewers pass. `check-review` supports `--reviewer` flag and auto-detect.
+**Key files:** `src/commands/reviewloop.js`, `src/commands/check-review.js`
+
 ---
 
 ## Architecture & Structure

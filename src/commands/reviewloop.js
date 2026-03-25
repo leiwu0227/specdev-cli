@@ -15,6 +15,177 @@ import { approvePhase } from '../utils/approve-phase.js'
 import { resolveRoundFocus } from '../utils/review-focus.js'
 
 /**
+ * Run a single reviewer for a given phase.
+ * @returns {Promise<{approved: boolean, error: boolean, message: string}>}
+ */
+async function runSingleReviewer({
+  targetDir, assignmentPath, name, phase, reviewerName,
+  feedbackFilename, changelogFilename, extraEnv,
+}) {
+  const specdevPath = join(targetDir, '.specdev')
+  const reviewerConfigPath = join(specdevPath, 'skills', 'core', 'reviewloop', 'reviewers', `${reviewerName}.json`)
+
+  if (!(await fse.pathExists(reviewerConfigPath))) {
+    console.error(`Reviewer config not found: ${reviewerName}`)
+    console.log(`   Expected: ${reviewerConfigPath}`)
+    return { approved: false, error: true, message: 'config not found' }
+  }
+
+  let config
+  try {
+    config = await fse.readJson(reviewerConfigPath)
+  } catch {
+    console.error(`Invalid reviewer config: ${reviewerConfigPath}`)
+    return { approved: false, error: true, message: 'invalid config' }
+  }
+
+  if (!config.command) {
+    console.error(`Reviewer config missing required field 'command'`)
+    return { approved: false, error: true, message: 'missing command' }
+  }
+
+  const maxRounds = config.max_rounds || 3
+
+  const reviewDir = join(assignmentPath, 'review')
+  await fse.ensureDir(reviewDir)
+
+  const feedbackPath = join(reviewDir, feedbackFilename)
+  const changelogPath = join(reviewDir, changelogFilename)
+
+  const feedbackContent = (await fse.pathExists(feedbackPath))
+    ? await fse.readFile(feedbackPath, 'utf-8')
+    : ''
+  const changelogContent = (await fse.pathExists(changelogPath))
+    ? await fse.readFile(changelogPath, 'utf-8')
+    : ''
+
+  if (hasUnaddressedFindings(feedbackContent, changelogContent)) {
+    console.error('Previous review findings have not been addressed. Run specdev check-review.')
+    return { approved: false, error: true, message: 'unaddressed findings' }
+  }
+
+  const { rounds } = parseReviewFeedback(feedbackContent)
+  const round = rounds.length + 1
+
+  if (round > maxRounds) {
+    console.error('Max rounds reached. Escalating to user.')
+    return { approved: false, error: true, message: 'max rounds' }
+  }
+
+  console.log(`Reviewloop: ${name}`)
+  console.log(`   Phase: ${phase}`)
+  console.log(`   Reviewer: ${reviewerName}`)
+  console.log(`   Round: ${round}/${maxRounds}`)
+  blankLine()
+
+  await writeCurrent(specdevPath, name)
+
+  const focusText = await resolveRoundFocus(specdevPath, round)
+
+  const childEnv = {
+    ...process.env,
+    SPECDEV_PHASE: phase,
+    SPECDEV_ASSIGNMENT: name,
+    SPECDEV_ROUND: String(round),
+    SPECDEV_FOCUS: focusText,
+    ...extraEnv,
+  }
+
+  const exitCode = await new Promise((resolve, reject) => {
+    const child = spawn('bash', ['-c', config.command], {
+      cwd: targetDir,
+      env: childEnv,
+      stdio: 'inherit',
+    })
+    child.on('error', reject)
+    child.on('close', (code) => resolve(code))
+  })
+
+  if (exitCode !== 0) {
+    console.error(`Reviewer exited with code ${exitCode}`)
+    return { approved: false, error: true, message: 'reviewer failed' }
+  }
+
+  const updatedFeedback = (await fse.pathExists(feedbackPath))
+    ? await fse.readFile(feedbackPath, 'utf-8')
+    : ''
+
+  const latestRound = getLatestRound(updatedFeedback)
+
+  if (!latestRound || latestRound.round !== round) {
+    console.error(
+      `Expected round ${round} in ${feedbackFilename} but found ${latestRound ? `round ${latestRound.round}` : 'no rounds'}`,
+    )
+    return { approved: false, error: true, message: 'wrong round' }
+  }
+
+  blankLine()
+
+  if (latestRound.verdict === 'approved') {
+    return { approved: true, error: false, message: 'approved' }
+  } else if (latestRound.verdict === 'needs-changes') {
+    if (round >= maxRounds) {
+      console.error('Max rounds reached. Escalating to user.')
+    } else {
+      printSection('Run specdev check-review to address findings')
+    }
+    return { approved: false, error: false, message: 'needs-changes' }
+  } else {
+    printSection(`Unexpected verdict: ${latestRound.verdict}`)
+    console.log('   Run specdev check-review to inspect results')
+    return { approved: false, error: false, message: 'unexpected verdict' }
+  }
+}
+
+/**
+ * Run a list of reviewers sequentially. Skip already-approved reviewers.
+ * @returns {Promise<boolean>} true if all reviewers approved
+ */
+async function runReviewerChain({
+  targetDir, assignmentPath, name, phase, feedbackPhase, reviewerNames, isMulti, extraEnv,
+}) {
+  const fbPhase = feedbackPhase || phase
+  for (const reviewerName of reviewerNames) {
+    const feedbackFilename = isMulti
+      ? `${fbPhase}-feedback-${reviewerName}.md`
+      : `${fbPhase}-feedback.md`
+    const changelogFilename = isMulti
+      ? `${fbPhase}-changelog-${reviewerName}.md`
+      : `${fbPhase}-changelog.md`
+
+    // Check if already approved (for resume capability)
+    if (isMulti) {
+      const reviewDir = join(assignmentPath, 'review')
+      const fbPath = join(reviewDir, feedbackFilename)
+      if (await fse.pathExists(fbPath)) {
+        const fbContent = await fse.readFile(fbPath, 'utf-8')
+        const latest = getLatestRound(fbContent)
+        if (latest && latest.verdict === 'approved') {
+          console.log(`Reviewer ${reviewerName} already approved, skipping`)
+          continue
+        }
+      }
+    }
+
+    const result = await runSingleReviewer({
+      targetDir, assignmentPath, name, phase, reviewerName,
+      feedbackFilename, changelogFilename, extraEnv,
+    })
+
+    if (result.error) {
+      process.exitCode = 1
+      return false
+    }
+
+    if (!result.approved) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
  * specdev reviewloop <phase> — Automated external review loop
  *
  * Spawns an external reviewer process, reads its verdict from
@@ -57,8 +228,6 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
       return
     }
 
-    // Run the review loop using discussion path instead of assignment path
-    // Reuse the existing reviewloop logic but with discussion path
     const discussionName = resolved.name
     const discussionPath = resolved.path
 
@@ -90,101 +259,23 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     }
 
     // With --reviewer: run the review loop for discussion
-    const reviewerName = flags.reviewer
-    const reviewerConfigPath = join(targetDir, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', `${reviewerName}.json`)
-    if (!(await fse.pathExists(reviewerConfigPath))) {
-      console.error(`Reviewer config not found: ${reviewerName}`)
-      process.exitCode = 1
-      return
-    }
-    let config
-    try { config = await fse.readJson(reviewerConfigPath) } catch {
-      console.error(`Invalid reviewer config: ${reviewerConfigPath}`)
-      process.exitCode = 1
-      return
-    }
-    if (!config.command) {
-      console.error("Reviewer config missing required field 'command'")
-      process.exitCode = 1
-      return
-    }
-
-    const maxRounds = config.max_rounds || 3
-    const reviewDir = join(discussionPath, 'review')
-    await fse.ensureDir(reviewDir)
-    const feedbackPath = join(reviewDir, 'brainstorm-feedback.md')
-    const changelogPath = join(reviewDir, 'brainstorm-changelog.md')
-    const feedbackContent = (await fse.pathExists(feedbackPath)) ? await fse.readFile(feedbackPath, 'utf-8') : ''
-    const changelogContent = (await fse.pathExists(changelogPath)) ? await fse.readFile(changelogPath, 'utf-8') : ''
-
-    if (hasUnaddressedFindings(feedbackContent, changelogContent)) {
-      console.error('Previous review findings have not been addressed. Run specdev check-review.')
-      process.exitCode = 1
-      return
-    }
-
-    const { rounds } = parseReviewFeedback(feedbackContent)
-    const round = rounds.length + 1
-    if (round > maxRounds) {
-      console.error('Max rounds reached. Escalating to user.')
-      process.exitCode = 1
-      return
-    }
-
-    console.log(`Reviewloop: ${discussionName}`)
-    console.log(`   Phase: discussion`)
-    console.log(`   Reviewer: ${reviewerName}`)
-    console.log(`   Round: ${round}/${maxRounds}`)
-    blankLine()
-
-    // Set SPECDEV env vars for discussion reviewloop
     const discussionId = discussionName.match(/^(D\d{4,5})/)?.[1] || discussionName
-    const focusText = await resolveRoundFocus(join(targetDir, '.specdev'), round)
-    const childEnv = {
-      ...process.env,
-      SPECDEV_PHASE: 'discussion',
-      SPECDEV_ASSIGNMENT: discussionName,
-      SPECDEV_DISCUSSION: discussionId,
-      SPECDEV_ROUND: String(round),
-      SPECDEV_FOCUS: focusText,
-    }
+    const reviewerNames = flags.reviewer.split(',').map(r => r.trim())
+    const isMulti = reviewerNames.length > 1
 
-    const exitCode = await new Promise((resolve, reject) => {
-      const child = spawn('bash', ['-c', config.command], {
-        cwd: targetDir,
-        env: childEnv,
-        stdio: 'inherit',
-      })
-      child.on('error', reject)
-      child.on('close', (code) => resolve(code))
+    const allApproved = await runReviewerChain({
+      targetDir,
+      assignmentPath: discussionPath,
+      name: discussionName,
+      phase: 'discussion',
+      feedbackPhase: 'brainstorm',
+      reviewerNames,
+      isMulti,
+      extraEnv: { SPECDEV_DISCUSSION: discussionId },
     })
 
-    if (exitCode !== 0) {
-      console.error(`Reviewer exited with code ${exitCode}`)
-      process.exitCode = 1
-      return
-    }
-
-    const updatedFeedback = (await fse.pathExists(feedbackPath)) ? await fse.readFile(feedbackPath, 'utf-8') : ''
-    const latestRound = getLatestRound(updatedFeedback)
-
-    if (!latestRound || latestRound.round !== round) {
-      console.error(`Expected round ${round} in brainstorm-feedback.md but found ${latestRound ? `round ${latestRound.round}` : 'no rounds'}`)
-      process.exitCode = 1
-      return
-    }
-
-    blankLine()
-    if (latestRound.verdict === 'approved') {
+    if (allApproved) {
       printSection('Discussion review approved!')
-    } else if (latestRound.verdict === 'needs-changes') {
-      if (round >= maxRounds) {
-        console.error('Max rounds reached. Escalating to user.')
-      } else {
-        printSection('Run specdev check-review to address findings')
-      }
-    } else {
-      printSection(`Unexpected verdict: ${latestRound.verdict}`)
     }
     return
   }
@@ -236,148 +327,27 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
   // ── With --reviewer: run the review loop ──
 
-  const reviewerName = flags.reviewer
-  const reviewerConfigPath = join(
+  const reviewerNames = flags.reviewer.split(',').map(r => r.trim())
+  const isMulti = reviewerNames.length > 1
+
+  const allApproved = await runReviewerChain({
     targetDir,
-    '.specdev',
-    'skills',
-    'core',
-    'reviewloop',
-    'reviewers',
-    `${reviewerName}.json`,
-  )
-
-  if (!(await fse.pathExists(reviewerConfigPath))) {
-    console.error(`Reviewer config not found: ${reviewerName}`)
-    console.log(`   Expected: ${reviewerConfigPath}`)
-    process.exitCode = 1
-    return
-  }
-
-  let config
-  try {
-    config = await fse.readJson(reviewerConfigPath)
-  } catch {
-    console.error(`Invalid reviewer config: ${reviewerConfigPath}`)
-    process.exitCode = 1
-    return
-  }
-
-  if (!config.command) {
-    console.error(`Reviewer config missing required field 'command'`)
-    process.exitCode = 1
-    return
-  }
-
-  const maxRounds = config.max_rounds || 3
-
-  // Read review artifacts
-  const reviewDir = join(assignmentPath, 'review')
-  await fse.ensureDir(reviewDir)
-
-  const feedbackPath = join(reviewDir, `${phase}-feedback.md`)
-  const changelogPath = join(reviewDir, `${phase}-changelog.md`)
-
-  const feedbackContent = (await fse.pathExists(feedbackPath))
-    ? await fse.readFile(feedbackPath, 'utf-8')
-    : ''
-  const changelogContent = (await fse.pathExists(changelogPath))
-    ? await fse.readFile(changelogPath, 'utf-8')
-    : ''
-
-  // Stale feedback guard
-  if (hasUnaddressedFindings(feedbackContent, changelogContent)) {
-    console.error(
-      'Previous review findings have not been addressed. Run specdev check-review.',
-    )
-    process.exitCode = 1
-    return
-  }
-
-  // Derive round number
-  const { rounds } = parseReviewFeedback(feedbackContent)
-  const round = rounds.length + 1
-
-  if (round > maxRounds) {
-    console.error('Max rounds reached. Escalating to user.')
-    process.exitCode = 1
-    return
-  }
-
-  console.log(`Reviewloop: ${name}`)
-  console.log(`   Phase: ${phase}`)
-  console.log(`   Reviewer: ${reviewerName}`)
-  console.log(`   Round: ${round}/${maxRounds}`)
-  blankLine()
-
-  // Ensure .current is set so the reviewer subprocess can read it
-  const specdevPath = join(targetDir, '.specdev')
-  await writeCurrent(specdevPath, name)
-
-  // Resolve round focus
-  const focusText = await resolveRoundFocus(specdevPath, round)
-
-  // Build environment for the reviewer process
-  const childEnv = {
-    ...process.env,
-    SPECDEV_PHASE: phase,
-    SPECDEV_ASSIGNMENT: name,
-    SPECDEV_ROUND: String(round),
-    SPECDEV_FOCUS: focusText,
-  }
-
-  // Spawn the reviewer command
-  const exitCode = await new Promise((resolve, reject) => {
-    const child = spawn('bash', ['-c', config.command], {
-      cwd: targetDir,
-      env: childEnv,
-      stdio: 'inherit',
-    })
-    child.on('error', reject)
-    child.on('close', (code) => resolve(code))
+    assignmentPath,
+    name,
+    phase,
+    reviewerNames,
+    isMulti,
   })
 
-  if (exitCode !== 0) {
-    console.error(`Reviewer exited with code ${exitCode}`)
-    process.exitCode = 1
-    return
-  }
-
-  // Re-read feedback after reviewer ran
-  const updatedFeedback = (await fse.pathExists(feedbackPath))
-    ? await fse.readFile(feedbackPath, 'utf-8')
-    : ''
-
-  const latestRound = getLatestRound(updatedFeedback)
-
-  if (!latestRound || latestRound.round !== round) {
-    console.error(
-      `Expected round ${round} in ${phase}-feedback.md but found ${latestRound ? `round ${latestRound.round}` : 'no rounds'}`,
-    )
-    process.exitCode = 1
-    return
-  }
-
-  blankLine()
-
-  if (latestRound.verdict === 'approved') {
-    const result = await approvePhase(assignmentPath, phase)
-    if (result.approved) {
+  if (allApproved) {
+    const approveResult = await approvePhase(assignmentPath, phase)
+    if (approveResult.approved) {
       printSection(`Review approved! Phase '${phase}' has been approved.`)
     } else {
       printSection('Review approved, but phase approval had errors:')
-      for (const err of result.errors) {
+      for (const err of approveResult.errors) {
         console.log(`   - ${err}`)
       }
     }
-  } else if (latestRound.verdict === 'needs-changes') {
-    if (round >= maxRounds) {
-      console.error('Max rounds reached. Escalating to user.')
-    } else {
-      printSection('Run specdev check-review to address findings')
-    }
-  } else {
-    printSection(`Unexpected verdict: ${latestRound.verdict}`)
-    console.log('   Run specdev check-review to inspect results')
   }
 }
