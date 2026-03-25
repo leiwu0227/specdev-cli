@@ -12,6 +12,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added Cursor CLI (`cursor-agent`) as a reviewer option for the reviewloop system. Config-driven — just a JSON file, no code changes to core modules.
 **Key files:** `templates/.specdev/skills/core/reviewloop/reviewers/cursor.json`
 
+### Claude Reviewer
+**Assignment:** 00005_feature_claude-reviewer
+**Completed:** 2026-03-25
+**Description:** Added Claude Code as a reviewer option for the reviewloop system. Config-driven — JSON file with `--dangerously-skip-permissions` for fully automated reviews.
+**Key files:** `templates/.specdev/skills/core/reviewloop/reviewers/claude.json`
+
 ---
 
 ## Architecture & Structure

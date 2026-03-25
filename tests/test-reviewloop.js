@@ -45,6 +45,17 @@ if (existsSync(cursorConfig)) {
   assert(typeof cursorContent.max_rounds === 'number', 'cursor.json has numeric max_rounds')
 }
 
+const claudeConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'claude.json')
+assert(existsSync(claudeConfig), 'claude.json reviewer config exists')
+
+if (existsSync(claudeConfig)) {
+  const claudeContent = JSON.parse(readFileSync(claudeConfig, 'utf-8'))
+  assert(claudeContent.name === 'claude', 'claude.json has name=claude')
+  assert(claudeContent.command && claudeContent.command.includes('claude'), 'claude.json command includes claude')
+  assert(claudeContent.command && claudeContent.command.includes('--dangerously-skip-permissions'), 'claude.json command includes --dangerously-skip-permissions')
+  assert(typeof claudeContent.max_rounds === 'number', 'claude.json has numeric max_rounds')
+}
+
 const skillContent = readFileSync(skillMd, 'utf-8')
 assert(skillContent.includes('type: core'), 'SKILL.md has type: core')
 assert(skillContent.includes('name: reviewloop'), 'SKILL.md has name: reviewloop')

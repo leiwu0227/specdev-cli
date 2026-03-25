@@ -27,6 +27,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00002 | cursor-reviewer | Done | 2026-03-11 | Added cursor-agent as reviewloop reviewer |
 | 00003 | mandatory-assignment-flag | Done | 2026-03-12 | .current pointer, discussions, focus command |
 | 00004 | specdev-discussion-skill | Done | 2026-03-12 | Renamed discuss→discussion, added agent skill + discussion_progress.md |
+| 00005 | claude-reviewer | Done | 2026-03-25 | Added Claude Code as reviewloop reviewer |
 
 ---
 
