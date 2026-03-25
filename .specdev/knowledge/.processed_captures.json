@@ -4,13 +4,15 @@
     "00002_feature_cursor-reviewer",
     "00003_refactor_mandatory-assignment-flag",
     "00004_refactor_specdev-discussion-skill",
-    "00005_feature_claude-reviewer"
+    "00005_feature_claude-reviewer",
+    "00006_feature_reviewer-focus-areas"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
     "00002_feature_cursor-reviewer",
     "00003_refactor_mandatory-assignment-flag",
     "00004_refactor_specdev-discussion-skill",
-    "00005_feature_claude-reviewer"
+    "00005_feature_claude-reviewer",
+    "00006_feature_reviewer-focus-areas"
   ]
 }

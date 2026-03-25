@@ -91,6 +91,14 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
       '  4. Is the scope appropriate (not too large)?',
     ])
 
+    // Display round focus if set via reviewloop
+    const focusDiscussion = process.env.SPECDEV_FOCUS
+    if (focusDiscussion) {
+      blankLine()
+      printSection('Review Focus:')
+      console.log(`   ${focusDiscussion}`)
+    }
+
     const reviewDir = join(assignmentPath, 'review')
     await fse.ensureDir(reviewDir)
 
@@ -168,6 +176,14 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
       '  3. Are edge cases and error handling addressed?',
       '  4. Is the scope appropriate (not too large)?',
     ])
+
+    // Display round focus if set via reviewloop
+    const focusBrainstorm = process.env.SPECDEV_FOCUS
+    if (focusBrainstorm) {
+      blankLine()
+      printSection('Review Focus:')
+      console.log(`   ${focusBrainstorm}`)
+    }
   } else if (phase === 'implementation') {
     printSection('Review scope: Spec compliance + code quality')
     blankLine()
@@ -185,6 +201,14 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
       '  3. Tag findings as CRITICAL or MINOR',
       '  4. Discuss findings with user before concluding',
     ])
+
+    // Display round focus if set via reviewloop
+    const focusImpl = process.env.SPECDEV_FOCUS
+    if (focusImpl) {
+      blankLine()
+      printSection('Review Focus:')
+      console.log(`   ${focusImpl}`)
+    }
   }
 
   // Ensure review/ directory exists

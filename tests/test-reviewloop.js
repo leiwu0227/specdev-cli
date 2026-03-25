@@ -56,6 +56,29 @@ if (existsSync(claudeConfig)) {
   assert(typeof claudeContent.max_rounds === 'number', 'claude.json has numeric max_rounds')
 }
 
+const focusConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'review-focus.json')
+assert(existsSync(focusConfig), 'review-focus.json exists after init')
+
+if (existsSync(focusConfig)) {
+  const focusContent = JSON.parse(readFileSync(focusConfig, 'utf-8'))
+  assert(focusContent.round_focus, 'review-focus.json has round_focus object')
+  assert(typeof focusContent.round_focus['1'] === 'string', 'review-focus.json has round 1 focus')
+  assert(typeof focusContent.round_focus['2'] === 'string', 'review-focus.json has round 2 focus')
+  assert(typeof focusContent.round_focus['3'] === 'string', 'review-focus.json has round 3 focus')
+  assert(typeof focusContent.round_focus.default === 'string', 'review-focus.json has default focus')
+}
+
+console.log('\nreviewer max_rounds check:')
+const reviewersDir = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers')
+const reviewerFiles = ['codex.json', 'cursor.json', 'claude.json']
+for (const file of reviewerFiles) {
+  const filePath = join(reviewersDir, file)
+  if (existsSync(filePath)) {
+    const content = JSON.parse(readFileSync(filePath, 'utf-8'))
+    assert(content.max_rounds === 5, `${file} has max_rounds=5`)
+  }
+}
+
 const skillContent = readFileSync(skillMd, 'utf-8')
 assert(skillContent.includes('type: core'), 'SKILL.md has type: core')
 assert(skillContent.includes('name: reviewloop'), 'SKILL.md has name: reviewloop')

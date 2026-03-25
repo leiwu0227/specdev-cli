@@ -18,6 +18,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added Claude Code as a reviewer option for the reviewloop system. Config-driven — JSON file with `--dangerously-skip-permissions` for fully automated reviews.
 **Key files:** `templates/.specdev/skills/core/reviewloop/reviewers/claude.json`
 
+### Reviewer Focus Areas
+**Assignment:** 00006_feature_reviewer-focus-areas
+**Completed:** 2026-03-25
+**Description:** Added round-specific review focus instructions via shared `review-focus.json` config. Rounds progress from architecture to code efficiency to domain-specific to general. Focus passed via `SPECDEV_FOCUS` env var. All reviewers updated to `max_rounds: 5`.
+**Key files:** `src/utils/review-focus.js`, `src/commands/reviewloop.js`, `src/commands/review.js`, `templates/.specdev/skills/core/reviewloop/review-focus.json`
+
 ---
 
 ## Architecture & Structure

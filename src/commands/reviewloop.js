@@ -12,6 +12,7 @@ import {
   hasUnaddressedFindings,
 } from '../utils/review-feedback.js'
 import { approvePhase } from '../utils/approve-phase.js'
+import { resolveRoundFocus } from '../utils/review-focus.js'
 
 /**
  * specdev reviewloop <phase> — Automated external review loop
@@ -138,12 +139,14 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
     // Set SPECDEV env vars for discussion reviewloop
     const discussionId = discussionName.match(/^(D\d{4,5})/)?.[1] || discussionName
+    const focusText = await resolveRoundFocus(join(targetDir, '.specdev'), round)
     const childEnv = {
       ...process.env,
       SPECDEV_PHASE: 'discussion',
       SPECDEV_ASSIGNMENT: discussionName,
       SPECDEV_DISCUSSION: discussionId,
       SPECDEV_ROUND: String(round),
+      SPECDEV_FOCUS: focusText,
     }
 
     const exitCode = await new Promise((resolve, reject) => {
@@ -311,12 +314,16 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   const specdevPath = join(targetDir, '.specdev')
   await writeCurrent(specdevPath, name)
 
+  // Resolve round focus
+  const focusText = await resolveRoundFocus(specdevPath, round)
+
   // Build environment for the reviewer process
   const childEnv = {
     ...process.env,
     SPECDEV_PHASE: phase,
     SPECDEV_ASSIGNMENT: name,
     SPECDEV_ROUND: String(round),
+    SPECDEV_FOCUS: focusText,
   }
 
   // Spawn the reviewer command
