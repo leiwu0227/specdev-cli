@@ -75,7 +75,7 @@ for (const file of reviewerFiles) {
   const filePath = join(reviewersDir, file)
   if (existsSync(filePath)) {
     const content = JSON.parse(readFileSync(filePath, 'utf-8'))
-    assert(content.max_rounds === 5, `${file} has max_rounds=5`)
+    assert(content.max_rounds === 10, `${file} has max_rounds=10`)
   }
 }
 
