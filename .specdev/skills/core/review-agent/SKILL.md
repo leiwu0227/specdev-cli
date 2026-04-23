@@ -51,7 +51,7 @@ Use `.specdev/skills/core/review-agent/prompts/implementation-reviewer.md`. Chec
 - Do all tests pass?
 - Is there scope drift (things built that weren't in the design)?
 
-**ALWAYS scan the codebase to verify claims** — never assume. Prefer simplification over addition. Flag patch-stacking where layered fixes should be consolidated. Only flag issues worth the cost of fixing.
+**ALWAYS scan the codebase to verify claims** — never assume. Prefer simplification over addition. Flag patch-stacking where layered fixes should be consolidated. Flag special-case production code that exists only to satisfy tests — the tests may need updating instead. Only flag issues worth the cost of fixing.
 
 ## Feedback Format
 

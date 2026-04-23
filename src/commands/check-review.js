@@ -145,6 +145,7 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
     printSection('Action required:')
     console.log('   1. Address each finding. Simplify, don\'t patch-stack.')
     console.log('      Consolidate layered fixes into clean solutions.')
+    console.log('      Never patch special-case code just to fit tests — update tests if outdated.')
     console.log('   2. You MAY push back — mark as [REJECTED] with justification.')
     console.log('      Valid reasons: low cost-benefit, unlikely edge case, over-engineering, out of scope.')
     console.log(`   3. Append changes to: ${name}/review/${feedbackFilename.replace('-feedback', '-changelog')} under ## Round ${latest.round}`)

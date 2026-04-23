@@ -176,6 +176,8 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
         '  4. Prefer simplification over addition. If code can be made simpler',
         '     while preserving functionality, suggest that — not more code.',
         '     Flag patch-stacking: layered fixes that should be consolidated.',
+        '  5. Flag special-case code that exists only to satisfy tests.',
+        '     If tests are outdated, recommend updating the tests instead.',
       ],
     })
   }
