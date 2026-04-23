@@ -1,10 +1,5 @@
 {
   "round_focus": {
-    "1": "Architecture & structure — review modularity, separation of concerns, API design, and dependency direction. Identify structural issues.",
-    "2": "Code efficiency — eliminate dead code, replace imperative loops with functional alternatives, extract magic numbers into constants, prefer pure functions with minimal side effects, verify Big O complexity of algorithms.",
-    "3": "Domain & task-specific — verify implementation matches the spec/design, check edge cases, validate error handling.",
-    "4": "Security & input validation — check for injection vulnerabilities, validate untrusted input, review authentication/authorization, ensure secrets are not exposed.",
-    "5": "Testing & coverage — verify test coverage for new code, check test quality, ensure edge cases are tested, validate mocks are appropriate.",
-    "default": "General review — catch anything missed in previous rounds."
+    "default": "General review — check spec compliance, code quality, and correctness. Apply cost-benefit analysis: only flag issues where the cost of the bug or maintenance burden clearly outweighs the cost of fixing it. Do NOT request defensive code for unlikely edge cases, speculative future-proofing, or stylistic preferences. Prefer simplification over addition — suggest removing complexity, not adding more code. Flag patch-stacking where layered fixes should be consolidated. If the code works correctly for its intended use cases, approve it."
   }
 }

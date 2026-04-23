@@ -14,6 +14,25 @@ import {
 import { approvePhase } from '../utils/approve-phase.js'
 import { resolveRoundFocus } from '../utils/review-focus.js'
 
+function printDesignDigressionPrompt(name) {
+  blankLine()
+  printSection('Design digression check:')
+  console.log(`   Read ${name}/review/brainstorm-changelog*.md and ${name}/brainstorm/design.md.`)
+  console.log('   Summarize only important digressions from the original design to the user.')
+  console.log('   Skip minor fixes, wording changes, and trivial adjustments.')
+  blankLine()
+}
+
+function printSimplificationPrompt() {
+  blankLine()
+  printSection('Post-review simplification:')
+  console.log('   Review all changes made during the review rounds.')
+  console.log('   Consolidate patch-stacked fixes into clean solutions.')
+  console.log('   Remove any unnecessary complexity added to satisfy review findings.')
+  console.log('   The goal: code should be simpler after review, not more complex.')
+  blankLine()
+}
+
 /**
  * Run a single reviewer for a given phase.
  * @returns {Promise<{approved: boolean, error: boolean, message: string}>}
@@ -340,6 +359,12 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   })
 
   if (allApproved) {
+    if (phase === 'brainstorm') {
+      printDesignDigressionPrompt(name)
+    } else if (phase === 'implementation') {
+      printSimplificationPrompt()
+    }
+
     const approveResult = await approvePhase(assignmentPath, phase)
     if (approveResult.approved) {
       printSection(`Review approved! Phase '${phase}' has been approved.`)

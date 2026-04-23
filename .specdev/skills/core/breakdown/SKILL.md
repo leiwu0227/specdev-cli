@@ -126,6 +126,18 @@ Run `specdev implement` and follow its output exactly.
 
 Do NOT stop, report, or wait for user input between plan completion and implementation start.
 
+## Design Principles
+
+Apply these when planning tasks — they are not optional:
+
+- **Modular** — small, focused units with clear boundaries and separation of duties
+- **Minimal side effects** — prefer pure functions; isolate state changes
+- **Idempotent** — operations should be safe to retry
+- **No overengineering** — solve the actual problem, not hypothetical future ones
+- **No deep layering** — avoid function call chains that obscure what's happening; prefer flat, direct code
+- **Readable and reviewable** — code should be obvious at a glance; variable and function names must convey meaning
+- **Elegant** — the simplest solution that fully solves the problem
+
 ## Rules
 
 - Exact file paths always — never "add a test file"

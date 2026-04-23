@@ -6,14 +6,82 @@ import { resolveTargetDir } from '../utils/command-context.js'
 import { parseReviewFeedback } from '../utils/review-feedback.js'
 import { blankLine, printBullets, printLines, printSection } from '../utils/output.js'
 
+const VALID_PHASES = ['brainstorm', 'implementation', 'discussion']
+
+const COST_BENEFIT_LINES = [
+  '  Only flag issues worth the cost of fixing. Skip unlikely edge cases,',
+  '  speculative future-proofing, and stylistic preferences.',
+  '  Accept [REJECTED] findings unless they would cause a real bug.',
+]
+
+function printPhaseHeader({ name, phase, scope, artifacts, checks }) {
+  printSection(`Review scope: ${scope}`)
+  blankLine()
+  printSection('Artifacts to review:')
+  printBullets(artifacts, '   - ')
+  blankLine()
+  printSection('Check:')
+  printLines(checks)
+  blankLine()
+  printSection('Cost-benefit principle:')
+  printLines(COST_BENEFIT_LINES)
+
+  const focus = process.env.SPECDEV_FOCUS
+  if (focus) {
+    blankLine()
+    printSection('Review Focus:')
+    console.log(`   ${focus}`)
+  }
+}
+
+function printFeedbackFormat(nextRound) {
+  const addressedExample = nextRound === 1
+    ? '  - (none -- first round)'
+    : '  - [FN.X] description of addressed finding'
+
+  printLines([
+    '  ```markdown',
+    `  ## Round ${nextRound}`,
+    '  ',
+    '  **Verdict:** approved | needs-changes',
+    '  ',
+    '  ### Findings',
+    `  1. [F${nextRound}.1] Description of finding`,
+    '  ',
+    '  ### Addressed from changelog',
+    addressedExample,
+    '  ```',
+  ])
+}
+
+async function detectRound(reviewDir, feedbackFilename, flags) {
+  const feedbackFilePath = join(reviewDir, feedbackFilename)
+  if (flags.round != null) return Number(flags.round)
+
+  let nextRound = 1
+  if (await fse.pathExists(feedbackFilePath)) {
+    const content = await fse.readFile(feedbackFilePath, 'utf-8')
+    const { rounds } = parseReviewFeedback(content)
+    nextRound = rounds.length + 1
+  }
+  return nextRound
+}
+
+async function collectBrainstormArtifacts(assignmentPath, name) {
+  const artifacts = []
+  if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))) {
+    artifacts.push(`${name}/brainstorm/proposal.md`)
+  }
+  if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))) {
+    artifacts.push(`${name}/brainstorm/design.md`)
+  }
+  return artifacts
+}
+
 /**
  * specdev review <phase> — Phase-aware review (separate session or automated)
- *
- * Requires an explicit phase argument: brainstorm or implementation.
- * Supports --round N for automated flows; auto-detects round otherwise.
  */
 export async function reviewCommand(positionalArgs = [], flags = {}) {
-  const VALID_PHASES = ['brainstorm', 'implementation', 'discussion']
   const phase = positionalArgs[0]
 
   if (!phase) {
@@ -24,14 +92,13 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   }
 
   if (phase === 'done') {
-    console.error('specdev review done has been removed. The review agent should write findings directly to review/{phase}-feedback.md')
+    console.error('specdev review done has been removed. Write findings directly to review/{phase}-feedback.md')
     process.exitCode = 1
     return
   }
 
   if (phase === 'breakdown') {
     console.error('Breakdown uses inline subagent review, not manual review')
-    console.log('   Breakdown is handled automatically after specdev approve brainstorm.')
     process.exitCode = 1
     return
   }
@@ -42,6 +109,8 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
     process.exitCode = 1
     return
   }
+
+  let assignmentPath, name, feedbackPhase
 
   if (phase === 'discussion') {
     const discussionSelector = flags.discussion || process.env.SPECDEV_DISCUSSION
@@ -62,211 +131,79 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
       process.exitCode = 1
       return
     }
-
-    // Use discussion as if it were a brainstorm review
-    const assignmentPath = resolved.path
-    const name = resolved.name
-
-    console.log(`Manual Review: ${name}`)
-    console.log(`   Phase: discussion (brainstorm)`)
-    blankLine()
-
-    printSection('Review scope: Design completeness and feasibility')
-    blankLine()
-    printSection('Artifacts to review:')
-    const artifacts = []
-    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))) {
-      artifacts.push(`${name}/brainstorm/proposal.md`)
-    }
-    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))) {
-      artifacts.push(`${name}/brainstorm/design.md`)
-    }
-    printBullets(artifacts, '   - ')
-    blankLine()
-    printSection('Check:')
-    printLines([
-      '  1. Is the design complete? Any missing sections?',
-      '  2. Is it feasible with the current tech stack?',
-      '  3. Are edge cases and error handling addressed?',
-      '  4. Is the scope appropriate (not too large)?',
-    ])
-
-    // Display round focus if set via reviewloop
-    const focusDiscussion = process.env.SPECDEV_FOCUS
-    if (focusDiscussion) {
-      blankLine()
-      printSection('Review Focus:')
-      console.log(`   ${focusDiscussion}`)
-    }
-
-    const reviewDir = join(assignmentPath, 'review')
-    await fse.ensureDir(reviewDir)
-
-    const feedbackFilePath = join(reviewDir, 'brainstorm-feedback.md')
-    let nextRound = 1
-    const isAutomated = flags.round != null
-    if (isAutomated) {
-      nextRound = Number(flags.round)
-    } else if (await fse.pathExists(feedbackFilePath)) {
-      const existingContent = await fse.readFile(feedbackFilePath, 'utf-8')
-      const { rounds } = parseReviewFeedback(existingContent)
-      nextRound = rounds.length + 1
-    }
-
-    if (nextRound > 1) {
-      blankLine()
-      printSection(`Re-review (round ${nextRound}):`)
-      console.log(`   Read previous findings: ${name}/review/brainstorm-feedback.md`)
-      console.log(`   Read changes since last round: ${name}/review/brainstorm-changelog.md`)
-    }
-
-    blankLine()
-    printSection('Write findings to:')
-    console.log(`   ${name}/review/brainstorm-feedback.md`)
-    blankLine()
-    printSection('Feedback format (append to file):')
-    const addressedExample = nextRound === 1 ? '  - (none -- first round)' : '  - [FN.X] description of addressed finding'
-    printLines([
-      '  ```markdown',
-      `  ## Round ${nextRound}`,
-      '  ',
-      '  **Verdict:** approved | needs-changes',
-      '  ',
-      '  ### Findings',
-      `  1. [F${nextRound}.1] Description of finding`,
-      '  ',
-      '  ### Addressed from changelog',
-      addressedExample,
-      '  ```',
-    ])
-    blankLine()
-    console.log(`Reviewing discussion: ${name}`)
-    blankLine()
-    if (!isAutomated) {
-      console.log('IMPORTANT: Do NOT run check-review in this session.')
-      console.log('check-review is for the MAIN coding agent in a separate session.')
-    }
-    return
+    assignmentPath = resolved.path
+    name = resolved.name
+    feedbackPhase = 'brainstorm'
+  } else {
+    assignmentPath = await resolveAssignmentPath(flags)
+    name = assignmentName(assignmentPath)
+    feedbackPhase = phase
   }
 
-  const assignmentPath = await resolveAssignmentPath(flags)
-  const name = assignmentName(assignmentPath)
-
+  const displayPhase = phase === 'discussion' ? 'discussion (brainstorm)' : phase
   console.log(`Manual Review: ${name}`)
-  console.log(`   Phase: ${phase}`)
+  console.log(`   Phase: ${displayPhase}`)
   blankLine()
 
-  if (phase === 'brainstorm') {
-    printSection('Review scope: Design completeness and feasibility')
-    blankLine()
-    printSection('Artifacts to review:')
-    const artifacts = []
-    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))) {
-      artifacts.push(`${name}/brainstorm/proposal.md`)
-    }
-    if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))) {
-      artifacts.push(`${name}/brainstorm/design.md`)
-    }
-    printBullets(artifacts, '   - ')
-    blankLine()
-    printSection('Check:')
-    printLines([
-      '  1. Is the design complete? Any missing sections?',
-      '  2. Is it feasible with the current tech stack?',
-      '  3. Are edge cases and error handling addressed?',
-      '  4. Is the scope appropriate (not too large)?',
-    ])
-
-    // Display round focus if set via reviewloop
-    const focusBrainstorm = process.env.SPECDEV_FOCUS
-    if (focusBrainstorm) {
-      blankLine()
-      printSection('Review Focus:')
-      console.log(`   ${focusBrainstorm}`)
-    }
-  } else if (phase === 'implementation') {
-    printSection('Review scope: Spec compliance + code quality')
-    blankLine()
-    printSection('Artifacts to review:')
-    printBullets([
-      `${name}/brainstorm/design.md (what was requested)`,
-      `${name}/breakdown/plan.md (what was planned)`,
-      'Changed code files (what was built)',
-    ], '   - ')
-    blankLine()
-    printSection('Check:')
-    printLines([
-      '  1. Spec compliance: does implementation match the design?',
-      '  2. Code quality: architecture, testing, style',
-      '  3. Tag findings as CRITICAL or MINOR',
-      '  4. Discuss findings with user before concluding',
-    ])
-
-    // Display round focus if set via reviewloop
-    const focusImpl = process.env.SPECDEV_FOCUS
-    if (focusImpl) {
-      blankLine()
-      printSection('Review Focus:')
-      console.log(`   ${focusImpl}`)
-    }
+  if (phase === 'brainstorm' || phase === 'discussion') {
+    const artifacts = await collectBrainstormArtifacts(assignmentPath, name)
+    printPhaseHeader({
+      name, phase,
+      scope: 'Design completeness and feasibility',
+      artifacts,
+      checks: [
+        '  1. Is the design complete? Any missing sections?',
+        '  2. Is it feasible with the current tech stack?',
+        '  3. Is the scope appropriate (not too large)?',
+        '  4. ALWAYS scan the codebase to verify claims — never assume.',
+        '     Read the actual files, grep for symbols, check dependencies.',
+        '     Take eager effort to find answers; do not take shortcuts.',
+      ],
+    })
+  } else {
+    printPhaseHeader({
+      name, phase,
+      scope: 'Spec compliance + code quality',
+      artifacts: [
+        `${name}/brainstorm/design.md (what was requested)`,
+        `${name}/breakdown/plan.md (what was planned)`,
+        'Changed code files (what was built)',
+      ],
+      checks: [
+        '  1. Spec compliance: does implementation match the design?',
+        '  2. Code quality: architecture, testing, style',
+        '  3. Tag findings as CRITICAL or MINOR',
+        '  4. Prefer simplification over addition. If code can be made simpler',
+        '     while preserving functionality, suggest that — not more code.',
+        '     Flag patch-stacking: layered fixes that should be consolidated.',
+      ],
+    })
   }
 
-  // Ensure review/ directory exists
   const reviewDir = join(assignmentPath, 'review')
   await fse.ensureDir(reviewDir)
 
-  // Detect round: use --round flag if provided, otherwise auto-detect from review-feedback.md
-  const feedbackFilePath = join(reviewDir, `${phase}-feedback.md`)
-  let nextRound
+  const feedbackFilename = `${feedbackPhase}-feedback.md`
+  const nextRound = await detectRound(reviewDir, feedbackFilename, flags)
   const isAutomated = flags.round != null
 
-  if (isAutomated) {
-    nextRound = Number(flags.round)
-  } else {
-    // Auto-detect: count existing ## Round headers in review-feedback.md
-    nextRound = 1
-    if (await fse.pathExists(feedbackFilePath)) {
-      const existingContent = await fse.readFile(feedbackFilePath, 'utf-8')
-      const { rounds } = parseReviewFeedback(existingContent)
-      nextRound = rounds.length + 1
-    }
-  }
-
-  // Show previous round context if round 2+
   if (nextRound > 1) {
     blankLine()
     printSection(`Re-review (round ${nextRound}):`)
-    console.log(`   Read previous findings: ${name}/review/${phase}-feedback.md`)
-    console.log(`   Read changes since last round: ${name}/review/${phase}-changelog.md`)
+    console.log(`   Read previous findings: ${name}/review/${feedbackFilename}`)
+    console.log(`   Read changes since last round: ${name}/review/${feedbackPhase}-changelog.md`)
   }
-
-  const feedbackPath = `${name}/review/${phase}-feedback.md`
 
   blankLine()
   printSection('Write findings to:')
-  console.log(`   ${feedbackPath}`)
+  console.log(`   ${name}/review/${feedbackFilename}`)
   blankLine()
   printSection('Feedback format (append to file):')
-
-  const addressedExample = nextRound === 1
-    ? '  - (none -- first round)'
-    : '  - [FN.X] description of addressed finding'
-
-  printLines([
-    '  ```markdown',
-    `  ## Round ${nextRound}`,
-    '  ',
-    '  **Verdict:** approved | needs-changes',
-    '  ',
-    '  ### Findings',
-    `  1. [F${nextRound}.1] Description of finding`,
-    '  ',
-    '  ### Addressed from changelog',
-    addressedExample,
-    '  ```',
-  ])
+  printFeedbackFormat(nextRound)
   blankLine()
-  console.log(`Reviewing assignment: ${name}`)
+
+  const label = phase === 'discussion' ? 'discussion' : 'assignment'
+  console.log(`Reviewing ${label}: ${name}`)
   blankLine()
 
   if (!isAutomated) {

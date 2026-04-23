@@ -143,8 +143,11 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
     blankLine()
 
     printSection('Action required:')
-    console.log('   1. Address each finding in the phase artifacts')
-    console.log(`   2. Append changes to: ${name}/review/${feedbackFilename.replace('-feedback', '-changelog')} under ## Round ${latest.round}`)
-    console.log('   3. Say "auto review" or run specdev review in a separate session')
+    console.log('   1. Address each finding. Simplify, don\'t patch-stack.')
+    console.log('      Consolidate layered fixes into clean solutions.')
+    console.log('   2. You MAY push back — mark as [REJECTED] with justification.')
+    console.log('      Valid reasons: low cost-benefit, unlikely edge case, over-engineering, out of scope.')
+    console.log(`   3. Append changes to: ${name}/review/${feedbackFilename.replace('-feedback', '-changelog')} under ## Round ${latest.round}`)
+    console.log('   4. Say "auto review" or run specdev review in a separate session')
   }
 }
