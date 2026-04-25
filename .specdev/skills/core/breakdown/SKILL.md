@@ -49,6 +49,8 @@ This is a lightweight sanity check — the design was already validated section-
 
 ### Phase 3: Detail Each Task
 
+Every task MUST be an H3 heading (`### Task N: …`). The breakdown scripts grep for `^### Task [0-9]` — H2 (`## Task N:`) silently produces zero tasks and breaks downstream tracking.
+
 Every task MUST follow this structure (compact form shown):
 
     ### Task N: [Name]

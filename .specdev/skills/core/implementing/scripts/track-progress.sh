@@ -37,6 +37,13 @@ mkdir -p "$IMPLEMENTATION_DIR"
 if [ ! -f "$PROGRESS_FILE" ]; then
   TASK_COUNT=$(grep -c '^### Task [0-9]' "$PLAN_FILE" || true)
 
+  if [ "$TASK_COUNT" -eq 0 ]; then
+    echo "Error: no '### Task N:' headings found in $PLAN_FILE" >&2
+    echo "       The breakdown scripts grep for '^### Task [0-9]' (H3)." >&2
+    echo "       Did you use '## Task N:' (H2) by mistake? Tasks must be H3." >&2
+    exit 1
+  fi
+
   node -e "
     const fs = require('fs');
     const planFile = process.argv[1];

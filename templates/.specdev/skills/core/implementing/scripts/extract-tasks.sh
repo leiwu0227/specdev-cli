@@ -21,8 +21,10 @@ CONTENT=$(cat "$PLAN_FILE")
 TASK_COUNT=$(echo "$CONTENT" | grep -c '^### Task [0-9]' || true)
 
 if [ "$TASK_COUNT" -eq 0 ]; then
-  echo "[]"
-  exit 0
+  echo "Error: no '### Task N:' headings found in $PLAN_FILE" >&2
+  echo "       The breakdown scripts grep for '^### Task [0-9]' (H3)." >&2
+  echo "       Did you use '## Task N:' (H2) by mistake? Tasks must be H3." >&2
+  exit 1
 fi
 
 # Build JSON array
