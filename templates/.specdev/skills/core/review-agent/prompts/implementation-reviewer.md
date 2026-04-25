@@ -23,6 +23,7 @@ Review the implementation holistically:
 3. **Test coverage** — Are all behaviors tested? Any gaps?
 4. **Scope** — Was anything built that wasn't in the design? Anything missing?
 5. **Quality** — Any obvious issues visible at the integration level?
+6. **Silent test relaxation** — Cross-check every test assertion change against the design's Success Criteria and the plan's stated targets. Flag any assertion that was loosened to mask an implementation that misses the spec (e.g. line-count, latency, or accuracy thresholds raised in the test instead of the implementation being trimmed/optimized to fit). The test diff alone won't reveal this — only the cross-document comparison will.
 
 ## Output
 

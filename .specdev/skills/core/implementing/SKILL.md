@@ -87,6 +87,7 @@ The last batch may have fewer than 3 tasks.
 - Reusing a subagent across tasks — fresh context per task
 - Accepting first pass without fixing findings — loop until clean
 - Skipping `complete-task.sh` after a task finishes — always record completion and summary
+- **Loosening a test assertion to make it pass** — before relaxing any assertion, identify whether the test or the implementation is wrong. If the assertion came from `brainstorm/design.md` Success Criteria or `breakdown/plan.md`, the implementation is wrong by definition — trim/refactor to fit, or update the design first with a documented reason. Silent test relaxation is a unilateral spec change.
 
 ## Integration
 
