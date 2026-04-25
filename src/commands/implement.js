@@ -25,14 +25,12 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
     return
   }
 
-  // Create implementation directory and progress file
+  // Create implementation directory. progress.json is lazy-initialized by
+  // track-progress.sh on the first call, which seeds it from the plan's task
+  // headings. Eagerly writing `{}` here would race that init and leave the file
+  // without a `tasks` array, breaking subsequent reads.
   const implDir = join(assignmentPath, 'implementation')
   await fse.ensureDir(implDir)
-
-  const progressPath = join(implDir, 'progress.json')
-  if (!await fse.pathExists(progressPath)) {
-    await fse.writeJson(progressPath, {}, { spaces: 2 })
-  }
 
   console.log(`🚀 Implementation ready: ${name}`)
   blankLine()
@@ -47,7 +45,6 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
 
   printSection('Setup complete:')
   console.log(`   ✓ ${name}/implementation/ created`)
-  console.log(`   ✓ ${name}/implementation/progress.json initialized`)
   blankLine()
 
   printSection('Plan:')
