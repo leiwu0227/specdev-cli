@@ -64,7 +64,7 @@ async function readProjectSummary(specdevPath) {
 async function readCurrentWorkflow(specdevPath) {
   try {
     const current = await resolveCurrentAssignment(specdevPath)
-    if (!current) return null
+    if (current.error) return null
     const summary = await scanSingleAssignment(current.path, current.name)
     if (!summary) return null
     const detected = await detectAssignmentState(summary, current.path)
@@ -124,7 +124,7 @@ function firstUsefulParagraph(content) {
 }
 
 function formatList(items, emptyMessage) {
-  return items.length > 0 ? items : [`- ${emptyMessage}`]
+  return items.length > 0 ? items : [emptyMessage]
 }
 
 function boundSections(sections) {

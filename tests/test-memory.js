@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { cleanupDir, runSpecdev, assertTest } from './helpers.js'
 
@@ -73,6 +73,12 @@ const before = memory
 result = runCmd(['memory', 'refresh', `--target=${TEST_DIR}`])
 const after = readFileSync(memoryPath, 'utf-8')
 assert(after === before, 'memory refresh is idempotent with unchanged inputs')
+
+rmSync(join(specdev, '.current'), { force: true })
+result = runCmd(['memory', 'refresh', `--target=${TEST_DIR}`])
+const noCurrentMemory = readFileSync(memoryPath, 'utf-8')
+assert(result.status === 0, 'memory refresh succeeds without current assignment')
+assert(noCurrentMemory.includes('No active workflow found.'), 'missing current assignment is handled explicitly')
 
 console.log('\nmemory refresh --json:')
 result = runCmd(['memory', 'refresh', `--target=${TEST_DIR}`, '--json'])
