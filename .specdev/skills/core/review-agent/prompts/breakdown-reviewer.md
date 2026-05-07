@@ -16,11 +16,12 @@ Review the plan as a whole:
 
 1. **Coverage** — Does every design requirement have a corresponding task?
 2. **Ordering** — Are tasks ordered by dependency? Can each task build on the previous?
-3. **Granularity** — Is each task 2-5 minutes? Are any too large or too small?
-4. **Completeness** — Does every task have exact file paths, complete code, exact commands?
-5. **TDD** — Does every task follow RED-GREEN-REFACTOR?
-6. **Gaps** — Are there missing tasks? Unnecessary tasks?
-7. **Integration** — Will the tasks integrate correctly when all complete?
+3. **Granularity** — Is each task a coherent implementation slice with bite-sized 2-5 minute steps? Are any tasks too broad or artificially tiny?
+4. **Execution mode** — Does the plan choose `inline`, `subagent`, or `parallel`, and is that choice justified by task coupling and file ownership?
+5. **Completeness** — Does every task have exact file paths, complete code, exact commands?
+6. **TDD** — Does every task follow RED-GREEN-REFACTOR?
+7. **Gaps** — Are there missing tasks? Unnecessary tasks?
+8. **Integration** — Will the tasks integrate correctly when all complete?
 
 ## Output
 

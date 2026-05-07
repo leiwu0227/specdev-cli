@@ -30,13 +30,13 @@ Reference dictionary for all SpecDev resources. Consult when you need to find a 
 
 ### Breakdown phase:
 
-- **`skills/core/breakdown/SKILL.md`** — Turns validated design into ordered executable tasks. Each task: 2-5 minutes, complete TDD steps with exact code and commands, file paths, commit message. Includes a scaffolding check (triggers only for cross-module, high-risk, or >5-file changes), granularity gate, and skill declaration for subagent injection. Subagent reviews the plan (1-2 rounds), then auto-chains to implementing.
+- **`skills/core/breakdown/SKILL.md`** — Turns validated design into an implementation plan. Each task is a coherent change slice with bite-sized 2-5 minute TDD steps, exact code and commands, file paths, commit message, and a declared execution mode (`inline`, `subagent`, or `parallel`). Subagent reviews the plan (1-2 rounds), then auto-chains to implementing.
 
 ### Implement phase:
 
-- **`skills/core/implementing/SKILL.md`** — Executes plan tasks via subagent dispatch. One fresh subagent per task (implementer prompt), followed by unified reviewer (spec compliance + code quality). Tracks progress via `scripts/track-progress.sh`. Supports `full` mode (TDD + review loop) and `lightweight` mode (trivial scaffold/config). Final test suite run before user approval.
+- **`skills/core/implementing/SKILL.md`** — Executes plan tasks according to the plan's execution mode: inline by default, fresh subagent per task when boundaries are clear, or parallel worktrees for disjoint file ownership. Tracks progress via `scripts/track-progress.sh`. Supports task review modes: `standard`, `full`, and `lightweight`. Final test suite run before user approval.
 
-- **`skills/core/test-driven-development/SKILL.md`** — The RED-GREEN-REFACTOR cycle. Write failing test → verify RED via `scripts/verify-tests.sh` → write minimal code → verify GREEN → refactor → commit. Injected into implementer subagents when tasks declare it in their `Skills:` field.
+- **`skills/core/test-driven-development/SKILL.md`** — The RED-GREEN-REFACTOR cycle. Write failing test → verify RED via `scripts/verify-tests.sh` → write minimal code → verify GREEN → refactor → commit. Used by the current agent or injected into implementer subagents when tasks declare it in their `Skills:` field.
 
 - **`skills/core/parallel-worktrees/SKILL.md`** — Git worktree isolation for tasks with zero overlapping file writes. Analyzes parallelizability, creates worktrees via `scripts/setup-worktree.sh`, dispatches independent subagents, merges branches, runs integration tests. Use when plan has clearly independent tasks.
 

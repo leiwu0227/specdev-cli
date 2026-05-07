@@ -31,6 +31,8 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   // without a `tasks` array, breaking subsequent reads.
   const implDir = join(assignmentPath, 'implementation')
   await fse.ensureDir(implDir)
+  const planContent = await fse.readFile(planPath, 'utf8')
+  const executionMode = parseExecutionMode(planContent)
 
   console.log(`🚀 Implementation ready: ${name}`)
   blankLine()
@@ -39,6 +41,8 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   const specdevPath = join(targetDir, '.specdev')
   const skillBase = join(specdevPath, 'skills', 'core', 'implementing')
   const extractScript = join(skillBase, 'scripts', 'extract-tasks.sh')
+  const prepareScript = join(skillBase, 'scripts', 'prepare-task.sh')
+  const completeScript = join(skillBase, 'scripts', 'complete-task.sh')
   const trackScript = join(skillBase, 'scripts', 'track-progress.sh')
   const implementerPrompt = join(skillBase, 'prompts', 'implementer.md')
   const reviewerPrompt = join(skillBase, 'prompts', 'code-reviewer.md')
@@ -49,6 +53,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
 
   printSection('Plan:')
   console.log(`   ${planPath}`)
+  console.log(`   Execution mode: ${executionMode}`)
   blankLine()
 
   printSection('Step 1: Extract tasks')
@@ -59,16 +64,17 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   printSection('Step 2: Execute tasks in batches of 3')
   printLines([
     '   For each task:',
-    `     a. Run: bash ${trackScript} ${planPath} <N> started`,
-    `     b. Dispatch a FRESH subagent with ${implementerPrompt}`,
-    '        - Send the FULL task text (never summarize)',
-    '        - If task has Skills: field, read each listed SKILL.md and inject into {TASK_SKILLS}',
-    '        - Look for skills in skills/core/ first, then skills/tools/',
+    `     a. Run: bash ${prepareScript} ${planPath} <N>`,
+    '        - Use the returned prompt as the task contract',
+    '     b. Execute according to the plan execution mode:',
+    '        - inline: implement, test, commit, and self-review in this session',
+    `        - subagent: dispatch a fresh subagent with the returned prompt and ${implementerPrompt}`,
+    '        - parallel: use skills/core/parallel-worktrees/SKILL.md for isolated worktrees',
     '     c. Mode-based review:',
     `        - full: dispatch ${reviewerPrompt} — FAIL/NOT READY blocks; fix → re-review`,
-    '        - standard: self-review only (implementer already did this)',
+    '        - standard: self-review only',
     '        - lightweight: skip review unless task touched executable logic',
-    `     d. Run: bash ${trackScript} ${planPath} <N> completed`,
+    `     d. Run: bash ${completeScript} ${planPath} <N> "<summary of task changes>"`,
   ])
   blankLine()
 
@@ -94,4 +100,9 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   blankLine()
 
   printSection('Begin now — extract tasks and start the first batch.')
+}
+
+function parseExecutionMode(planContent) {
+  const match = planContent.match(/^\*\*Execution Mode:\*\*\s*(inline|subagent|parallel)\s*$/im)
+  return match ? match[1].toLowerCase() : 'inline'
 }

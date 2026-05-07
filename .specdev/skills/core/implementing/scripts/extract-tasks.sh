@@ -67,12 +67,12 @@ while IFS= read -r header_line; do
   # Extract skills
   SKILLS_LINE=$(echo "$TASK_SECTION" | grep '^\*\*Skills:\*\*' || true)
   MODE_LINE=$(echo "$TASK_SECTION" | grep '^\*\*Mode:\*\*' || true)
-  MODE="full"
+  MODE="standard"
   if [ -n "$MODE_LINE" ]; then
     MODE_RAW=$(echo "$MODE_LINE" | sed 's/^\*\*Mode:\*\*\s*//' | tr '[:upper:]' '[:lower:]' | xargs)
-    if [ "$MODE_RAW" = "lightweight" ]; then
-      MODE="lightweight"
-    fi
+    case "$MODE_RAW" in
+      full|standard|lightweight) MODE="$MODE_RAW" ;;
+    esac
   fi
   SKILLS_JSON="["
   if [ -n "$SKILLS_LINE" ]; then

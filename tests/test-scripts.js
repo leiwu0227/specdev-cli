@@ -141,7 +141,7 @@ try {
 assert(tasks.length === 2, 'has 2 tasks')
 assert(tasks[0] && tasks[0].name.includes('Foo'), 'task 1 name contains "Foo"')
 assert(tasks[0] && tasks[0].mode === 'lightweight', 'task 1 mode parsed as lightweight')
-assert(tasks[1] && tasks[1].mode === 'full', 'task 2 mode defaults to full')
+assert(tasks[1] && tasks[1].mode === 'standard', 'task 2 mode defaults to standard')
 
 const extractBadResult = spawnSync('bash', [extractScript], { encoding: 'utf-8' })
 assert(extractBadResult.status !== 0, 'extract exits non-zero with missing file arg')

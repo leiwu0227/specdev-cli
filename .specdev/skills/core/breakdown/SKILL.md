@@ -1,6 +1,6 @@
 ---
 name: breakdown
-description: Turn a validated design into bite-sized executable steps — automatic, no user interaction
+description: Turn a validated design into a coherent implementation plan with bite-sized TDD steps — automatic, no user interaction
 type: core
 phase: breakdown
 input: brainstorm/design.md
@@ -13,7 +13,7 @@ next: implementing
 ## Contract
 
 - **Input:** `brainstorm/design.md` from the assignment folder
-- **Process:** Review design (subagent, up to 2 rounds) → decompose into tasks → detail each task with TDD steps, exact code, exact commands
+- **Process:** Review design (subagent, up to 2 rounds) → decompose into coherent tasks → choose execution mode → detail each task with bite-sized TDD steps, exact code, exact commands
 - **Output:** `breakdown/plan.md` in the assignment folder
 - **Next phase:** implementing (automatic)
 
@@ -43,9 +43,22 @@ This is a lightweight sanity check — the design was already validated section-
 1. Read `brainstorm/design.md` — understand the architecture, components, and success criteria
 2. Break the design into ordered tasks. Each task should be:
 
-- **2-5 minutes of work** — one logical unit
+- **A coherent implementation slice** — usually one component, behavior, or integration point
+- **Sized for reviewable progress** — typically 20-60 minutes, smaller for risky changes
 - **Independent enough to commit** — each task produces working code
 - **Ordered by dependency** — later tasks build on earlier ones
+
+The 2-5 minute rule applies to the steps inside a task, not to top-level tasks. Do not split a single coherent change across many artificial tasks just to make every task tiny.
+
+### Phase 2.5: Choose Execution Mode
+
+Add an execution mode to the plan header:
+
+- `inline`: Main agent executes tasks directly. Use for small, tightly coupled, or ordinary changes.
+- `subagent`: Fresh subagent per task. Use when tasks have clear boundaries and the handoff value outweighs coordination cost.
+- `parallel`: Independent subagents/worktrees. Use only when file ownership is disjoint and integration risk is low.
+
+Default to `inline` unless the plan has naturally independent task boundaries.
 
 ### Phase 3: Detail Each Task
 
@@ -112,6 +125,8 @@ All other tasks default to `standard`. Use `lightweight` only for trivial scaffo
 
 **Tech Stack:** [From design]
 
+**Execution Mode:** inline
+
 ---
 ```
 
@@ -152,7 +167,8 @@ Apply these when planning tasks — they are not optional:
 ## Red Flags
 
 - Vague task steps ("add error handling") — show the actual code
-- Tasks longer than 5 minutes — break them down further
+- Large unfocused tasks — split by component, behavior, or integration point
+- Tiny artificial tasks — merge into a coherent task with bite-sized steps
 - Missing test steps — every task must have RED and GREEN
 
 ## Integration

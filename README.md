@@ -98,7 +98,7 @@ Interactive Q&A with the user to validate scope and design. Questions are guided
 
 Skill: `skills/core/breakdown/SKILL.md`
 
-Runs automatically after brainstorm approval. Decomposes the design into executable TDD tasks. Each task is small, self-contained, and includes exact file paths, code, and commands. Internal subagent review validates the plan (1-2 rounds).
+Runs automatically after brainstorm approval. Decomposes the design into a plan of coherent implementation tasks. Each task contains bite-sized TDD steps with exact file paths, code, and commands. The plan declares whether execution should be inline, subagent-based, or parallel. Internal subagent review validates the plan (1-2 rounds).
 
 **Produces:** `breakdown/plan.md`
 
@@ -106,7 +106,7 @@ Runs automatically after brainstorm approval. Decomposes the design into executa
 
 Skill: `skills/core/implementing/SKILL.md`
 
-A fresh subagent is dispatched per task. Each subagent follows strict TDD (Red-Green-Refactor) and goes through two per-task reviews (spec compliance, then code quality) before the task is considered done.
+Tasks run in batches using the plan's execution mode. The default is inline execution by the current agent; plans can opt into fresh subagents per task or parallel worktrees when task boundaries are clean. Each task follows TDD (Red-Green-Refactor) with mode-based review.
 
 **Produces:** committed code per task, `implementation/progress.json`
 

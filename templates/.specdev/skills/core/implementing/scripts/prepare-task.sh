@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# prepare-task.sh — Prepare a task for the implementer subagent
+# prepare-task.sh — Prepare a task for implementation
 #
 # Usage: prepare-task.sh <plan-file> <task-number>
 # Output: JSON to stdout with task_number, total_tasks, mode, prompt
@@ -65,8 +65,8 @@ if [ -z "$TASK_TEXT" ]; then
   exit 1
 fi
 
-# Step 3: Determine mode (from **Mode:** field, default "full")
-MODE="full"
+# Step 3: Determine mode (from **Mode:** field, default "standard")
+MODE="standard"
 MODE_LINE=$(echo "$TASK_TEXT" | grep '^\*\*Mode:\*\*' || true)
 if [ -n "$MODE_LINE" ]; then
   MODE_RAW=$(echo "$MODE_LINE" | sed 's/^\*\*Mode:\*\*\s*//' | tr '[:upper:]' '[:lower:]' | xargs)

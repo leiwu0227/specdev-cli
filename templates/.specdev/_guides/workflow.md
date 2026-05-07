@@ -37,7 +37,7 @@ Breakdown runs automatically after approval — no separate command needed.
 
 ## Phase 2: Breakdown
 
-**Goal:** Decompose the approved design into executable tasks.
+**Goal:** Turn the approved design into an implementation plan with coherent tasks, bite-sized TDD steps, and an execution mode.
 
 **Skill:** `skills/core/breakdown/SKILL.md`
 
@@ -49,7 +49,7 @@ Breakdown runs automatically after approval — no separate command needed.
 
 ## Phase 3: Implement
 
-**Goal:** Execute tasks in batches of 3, one subagent per task, TDD, mode-based review.
+**Goal:** Execute tasks in batches of 3 using the plan's execution mode, TDD, and mode-based review.
 
 **Skill:** `skills/core/implementing/SKILL.md`
 
