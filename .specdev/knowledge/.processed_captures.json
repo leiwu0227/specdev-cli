@@ -8,7 +8,8 @@
     "00006_feature_reviewer-focus-areas",
     "00007_feature_multi-reviewer",
     "00008_feature_workflow-status-json",
-    "00009_feature_reviewer-preflight-checks"
+    "00009_feature_reviewer-preflight-checks",
+    "00010_feature_structured-skill-inspection"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -19,6 +20,7 @@
     "00006_feature_reviewer-focus-areas",
     "00007_feature_multi-reviewer",
     "00008_feature_workflow-status-json",
-    "00009_feature_reviewer-preflight-checks"
+    "00009_feature_reviewer-preflight-checks",
+    "00010_feature_structured-skill-inspection"
   ]
 }

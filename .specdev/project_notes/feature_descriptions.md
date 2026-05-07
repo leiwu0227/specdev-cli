@@ -42,6 +42,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added `specdev reviewloop <phase> --preflight --reviewer=<name> [--json]` to validate reviewer readiness without launching external CLIs. Normal reviewer execution now runs blocking preflight checks before spawning.
 **Key files:** `src/utils/reviewer-preflight.js`, `src/commands/reviewloop.js`, `tests/test-reviewloop-command.js`
 
+### Structured Skill Inspection
+**Assignment:** 00010_feature_structured-skill-inspection
+**Completed:** 2026-05-07
+**Description:** Added `specdev skills --json` and `specdev skills view <name> [path]` so agents can discover skills structurally and load one skill file or support file at a time.
+**Key files:** `src/utils/skills.js`, `src/commands/skills.js`, `tests/test-skills.js`
+
 ---
 
 ## Architecture & Structure
