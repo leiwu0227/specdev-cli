@@ -156,11 +156,17 @@ async function runTests() {
   console.log('\nreview feedback surfaced:')
   mkdirSync(join(a1, 'review'), { recursive: true })
   writeFileSync(join(a1, 'review', 'implementation-feedback.md'), '# Review Feedback\n\n## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n\n- Fix the thing\n')
+  writeFileSync(join(a1, 'review', 'implementation-reviewer-claude-round-1.log'), 'reviewer stdout\n')
   out = continueJson('00001_feature_brainstorm')
   assert(out.payload && out.payload.review_feedback === 'review/implementation-feedback.md', 'surfaces review_feedback path')
+  assert(
+    out.payload && Array.isArray(out.payload.review_logs) && out.payload.review_logs[0].path === 'review/implementation-reviewer-claude-round-1.log',
+    'surfaces reviewloop reviewer log path'
+  )
 
   console.log('\nimplementation_checkpoint_ready:')
   rmSync(join(a1, 'review', 'implementation-feedback.md'))
+  rmSync(join(a1, 'review', 'implementation-reviewer-claude-round-1.log'))
   writeFileSync(
     join(a1, 'implementation', 'progress.json'),
     JSON.stringify({ tasks: [{ number: 1, status: 'completed' }, { number: 2, status: 'completed' }] }, null, 2) + '\n'

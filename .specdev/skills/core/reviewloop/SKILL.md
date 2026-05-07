@@ -26,12 +26,21 @@ specdev reviewloop <phase> --reviewer=<name>
 Without `--reviewer`: lists available reviewers. Ask the user to select one.
 With `--reviewer`: spawns the reviewer and processes the result.
 
+## Reviewer Launch Notes
+
+See `reviewers/README.md` for per-reviewer launch contracts. In particular:
+
+- Claude runs in print mode and must write the feedback file before exiting.
+- Codex runs through `codex exec` with isolated ephemeral review state.
+- Reviewer stdout/stderr is captured to the per-round log artifact below.
+
 ## Review Artifacts
 
 Two append-only files with clear ownership:
 
 - `review/{phase}-feedback.md` — review agent writes findings (append `## Round N`)
 - `review/{phase}-changelog.md` — main agent writes what it fixed (append `## Round N`)
+- `review/{phase}-reviewer-{name}-round-N.log` — captured stdout/stderr for debugging reviewer failures
 
 Each agent only writes to its own file and reads the other's.
 

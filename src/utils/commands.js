@@ -1,0 +1,29 @@
+export const COMMANDS = [
+  { name: 'init', usage: 'init', description: 'Initialize .specdev folder in current directory' },
+  { name: 'update', usage: 'update', description: 'Update system files while preserving project files' },
+  { name: 'skills', usage: 'skills', description: 'List available skills with activation status' },
+  { name: 'skills install', usage: 'skills install', description: 'Install tool skills with coding agent wrappers' },
+  { name: 'skills remove', usage: 'skills remove <n>', description: 'Remove an installed tool skill' },
+  { name: 'skills sync', usage: 'skills sync', description: 'Reconcile active tools with available skills' },
+  { name: 'start', usage: 'start', description: 'Check/fill project context (big_picture.md)' },
+  { name: 'migrate', usage: 'migrate', description: 'Migrate legacy assignment files to V4 layout' },
+  { name: 'assignment', usage: 'assignment <desc>', description: 'Reserve ID for new assignment, agent names the folder' },
+  { name: 'focus', usage: 'focus <id>', description: 'Set active assignment (writes .specdev/.current)' },
+  { name: 'discussion', usage: 'discussion <desc>', description: 'Start a parallel brainstorming discussion' },
+  { name: 'checkpoint', usage: 'checkpoint <phase>', description: 'Validate phase artifacts before review' },
+  { name: 'approve', usage: 'approve <phase>', description: 'Hard gate: approve phase and proceed' },
+  { name: 'continue', usage: 'continue', description: 'Detect current state and suggest next action' },
+  { name: 'revise', usage: 'revise', description: 'Record design revision, re-enter brainstorm' },
+  { name: 'review', usage: 'review <phase>', description: 'Manual review (brainstorm | implementation)' },
+  { name: 'check-review', usage: 'check-review', description: 'Read and address review feedback' },
+  { name: 'implement', usage: 'implement', description: 'Set up and kick off implementation phase' },
+  { name: 'reviewloop', usage: 'reviewloop <phase>', description: 'Automated external review loop (brainstorm | implementation)' },
+  { name: 'distill', usage: 'distill', description: 'Aggregate knowledge from assignment captures (JSON)' },
+  { name: 'distill done', usage: 'distill done <name>', description: 'Validate and mark assignment as distilled' },
+  { name: 'help', usage: 'help', description: 'Show this help message' },
+  { name: 'version', usage: '--version, -v', description: 'Show version number' },
+]
+
+export function formatCommandLine(command) {
+  return `  ${command.usage.padEnd(20)} ${command.description}`
+}

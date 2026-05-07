@@ -60,6 +60,15 @@ if (existsSync(claudeConfig)) {
   assert(claudeContent.timeout_seconds === 300, 'claude.json has timeout_seconds=300')
 }
 
+const reviewersReadme = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'README.md')
+assert(existsSync(reviewersReadme), 'reviewers README exists')
+if (existsSync(reviewersReadme)) {
+  const reviewersReadmeContent = readFileSync(reviewersReadme, 'utf-8')
+  assert(reviewersReadmeContent.includes('Claude'), 'reviewers README documents Claude')
+  assert(reviewersReadmeContent.includes('Codex'), 'reviewers README documents Codex')
+  assert(reviewersReadmeContent.includes('reviewer log'), 'reviewers README documents reviewer logs')
+}
+
 const focusConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'review-focus.json')
 assert(existsSync(focusConfig), 'review-focus.json exists after init')
 

@@ -36,6 +36,7 @@ export async function continueCommand(flags = {}) {
   const feedbackPath = join(selected.path, 'review', `${currentPhase}-feedback.md`)
   let reviewStatus = null
   let reviewFeedbackRelPath = null
+  const reviewLogs = await collectReviewLogs(selected.path, currentPhase)
   if (await fse.pathExists(feedbackPath)) {
     const feedbackContent = await fse.readFile(feedbackPath, 'utf-8')
     const latest = getLatestRound(feedbackContent)
@@ -45,7 +46,7 @@ export async function continueCommand(flags = {}) {
     }
   }
 
-  const payload = buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath)
+  const payload = buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath, reviewLogs)
 
   // Check for unprocessed distill assignments
   const knowledgePath = join(specdevPath, 'knowledge')
@@ -100,7 +101,7 @@ function buildNoAssignmentPayload() {
   }
 }
 
-function buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath) {
+function buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath, reviewLogs) {
   return {
     version: 1,
     status: detected.blockers.length > 0 ? 'blocked' : 'ok',
@@ -112,6 +113,7 @@ function buildContinuePayload(detected, selected, selection, reviewStatus, revie
     blockers: detected.blockers,
     progress: detected.progress,
     review_feedback: reviewStatus === 'needs-changes' ? reviewFeedbackRelPath : null,
+    review_logs: reviewLogs,
   }
 }
 
@@ -137,6 +139,14 @@ function emit(payload, asJson) {
     console.log('')
     console.log('Review Feedback:')
     console.log(`  Read ${payload.review_feedback} in the assignment folder and address findings.`)
+  }
+
+  if (payload.review_logs && payload.review_logs.length > 0) {
+    console.log('')
+    console.log('Reviewloop Diagnostics:')
+    for (const log of payload.review_logs) {
+      console.log(`  ${log.path}`)
+    }
   }
 
   console.log('')
@@ -165,6 +175,30 @@ function emit(payload, asJson) {
     console.log(`  ${payload.distill_pending.count} assignment(s) have unprocessed captures${suffix}`)
     console.log('  Run: specdev distill --assignment=<name>')
   }
+}
+
+async function collectReviewLogs(assignmentPath, phase) {
+  const reviewDir = join(assignmentPath, 'review')
+  if (!await fse.pathExists(reviewDir)) return []
+
+  const entries = await fse.readdir(reviewDir)
+  const logPattern = new RegExp(`^${phase}-reviewer-.+-round-\\d+\\.log$`)
+  const logs = []
+
+  for (const entry of entries) {
+    if (!logPattern.test(entry)) continue
+    const absPath = join(reviewDir, entry)
+    const stat = await fse.stat(absPath)
+    logs.push({
+      path: `review/${entry}`,
+      mtime_ms: stat.mtimeMs,
+      size: stat.size,
+    })
+  }
+
+  return logs
+    .sort((a, b) => b.mtime_ms - a.mtime_ms)
+    .slice(0, 5)
 }
 
 async function resolveAssignment(specdevPath, flags) {

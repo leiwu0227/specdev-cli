@@ -1,4 +1,5 @@
 import { blankLine, printLines, printSection } from '../utils/output.js'
+import { COMMANDS, formatCommandLine } from '../utils/commands.js'
 
 export function helpCommand() {
   blankLine()
@@ -8,31 +9,7 @@ export function helpCommand() {
   printLines(['  specdev <command> [options]'])
   blankLine()
   printSection('COMMANDS:')
-  printLines([
-    '  init                Initialize .specdev folder in current directory',
-    '  update              Update system files while preserving project files',
-    '  skills              List available skills with activation status',
-    '  skills install      Install tool skills with coding agent wrappers',
-    '  skills remove <n>   Remove an installed tool skill',
-    '  skills sync         Reconcile active tools with available skills',
-    '  start               Check/fill project context (big_picture.md)',
-    '  migrate             Migrate legacy assignment files to V4 layout',
-    '  assignment <desc>   Reserve ID for new assignment, agent names the folder',
-    '  focus <id>          Set active assignment (writes .specdev/.current)',
-    '  discussion <desc>   Start a parallel brainstorming discussion',
-    '  checkpoint <phase>  Validate phase artifacts before review',
-    '  approve <phase>     Hard gate: approve phase and proceed',
-    '  continue            Detect current state and suggest next action',
-    '  revise              Record design revision, re-enter brainstorm',
-    '  review <phase>      Manual review (brainstorm | implementation)',
-    '  check-review        Read and address review feedback',
-    '  implement           Set up and kick off implementation phase',
-    '  reviewloop <phase>  Automated external review loop (brainstorm | implementation)',
-    '  distill              Aggregate knowledge from assignment captures (JSON)',
-    '  distill done <name>  Validate and mark assignment as distilled',
-    '  help                Show this help message',
-    '  --version, -v       Show version number',
-  ])
+  printLines(COMMANDS.map(formatCommandLine))
   blankLine()
   printSection('OPTIONS:')
   printLines([
