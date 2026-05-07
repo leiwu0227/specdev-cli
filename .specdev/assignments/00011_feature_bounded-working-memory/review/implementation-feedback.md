@@ -22,3 +22,28 @@
 
 ### Addressed from changelog
 - (none -- first round)
+
+## Round 2
+
+**Verdict:** approved
+
+**Review focus:** Code efficiency — dead code, imperative vs functional, magic numbers, pure functions, Big O complexity.
+
+### Findings
+
+1. [F2.1] **MINOR** — Magic number `3` in `boundSections` (`working-memory.js:136,140`).
+
+   The `while` guards use `knowledge.length > 3` and `assignments.length > 3` to stop trimming when a section is down to its structural minimum (empty line + heading + one content line). The value is correct but the meaning is implicit. A named constant like `MIN_SECTION_LINES = 3` would make the floor self-documenting.
+
+   Not worth a code change on its own — the function is short and the meaning is clear from context. Noting for completeness.
+
+### Addressed from changelog
+- F1.1: `readCurrentWorkflow` now checks `current.error` (line 67), matching every other caller of `resolveCurrentAssignment`. Verified correct.
+- F1.2: `formatList` now returns plain prose for empty states instead of a bullet item. Verified correct.
+
+### Efficiency observations (no action needed)
+- Constants are properly extracted: `MAX_WORKING_MEMORY_WORDS`, `MAX_RECENT_ASSIGNMENTS`, `KNOWLEDGE_BRANCHES`, `BIG_PICTURE_WORD_LIMIT`.
+- Side effects are isolated to command handlers; `buildWorkingMemory` and its helpers are pure (read-only I/O, no mutations).
+- `boundSections` rebuilds the full string on each trim iteration, but content is bounded to ~800 words, making this trivially fast.
+- `readRecentCompletedAssignments` runs `detectAssignmentState` sequentially rather than in parallel. Acceptable — assignment count is small and sequential I/O is simpler.
+- No dead code found. No unused imports or unreachable branches.
