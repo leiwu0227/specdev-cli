@@ -5,6 +5,7 @@ export const COMMANDS = [
   { name: 'skills install', usage: 'skills install', description: 'Install tool skills with coding agent wrappers' },
   { name: 'skills remove', usage: 'skills remove <n>', description: 'Remove an installed tool skill' },
   { name: 'skills sync', usage: 'skills sync', description: 'Reconcile active tools with available skills' },
+  { name: 'memory refresh', usage: 'memory refresh', description: 'Regenerate bounded working memory for agents' },
   { name: 'start', usage: 'start', description: 'Check/fill project context (big_picture.md)' },
   { name: 'migrate', usage: 'migrate', description: 'Migrate legacy assignment files to V4 layout' },
   { name: 'assignment', usage: 'assignment <desc>', description: 'Reserve ID for new assignment, agent names the folder' },

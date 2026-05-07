@@ -1,0 +1,25 @@
+{
+  "plan_file": ".specdev/assignments/00011_feature_bounded-working-memory/breakdown/plan.md",
+  "total_tasks": 3,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-07T09:36:19Z",
+      "completed_at": "2026-05-07T09:38:09Z",
+      "summary": "Added specdev memory refresh command skeleton, help metadata, package test script, and RED/GREEN memory command tests."
+    },
+    {
+      "number": 2,
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "number": 3,
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null
+    }
+  ]
+}

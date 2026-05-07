@@ -18,11 +18,13 @@ import { implementCommand } from './implement.js'
 import { focusCommand } from './focus.js'
 import { discussCommand } from './discussion.js'
 import { statusCommand } from './status.js'
+import { memoryCommand } from './memory.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
   update: ({ flags }) => updateCommand(flags),
   skills: ({ positionalArgs, flags }) => skillsCommand(positionalArgs, flags),
+  memory: ({ positionalArgs, flags }) => memoryCommand(positionalArgs, flags),
   start: ({ flags }) => startCommand(flags),
   assignment: ({ positionalArgs, flags }) => assignmentCommand(positionalArgs, flags),
   checkpoint: ({ positionalArgs, flags }) => checkpointCommand(positionalArgs, flags),
