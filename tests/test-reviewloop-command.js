@@ -243,6 +243,67 @@ assert(
   'error mentions missing command field',
 )
 
+console.log('\nreviewloop preflight (valid reviewer):')
+cleanup()
+initProject()
+fillBigPicture()
+const pfAssignment = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+setupReviewer('preflight-ok', {
+  name: 'preflight-ok',
+  command: 'node --version',
+  max_rounds: 3,
+  timeout_seconds: 30,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=preflight-ok',
+  '--preflight',
+  '--json',
+])
+assert(result.status === 0, 'preflight exits 0 for valid reviewer', result.stderr)
+let preflight = JSON.parse(result.stdout)
+assert(preflight.status === 'pass', 'preflight JSON status is pass')
+assert(preflight.reviewers[0].name === 'preflight-ok', 'preflight names reviewer')
+assert(preflight.reviewers[0].command.status === 'pass', 'preflight command passes')
+assert(preflight.reviewers[0].binary.found === true, 'preflight finds node binary')
+assert(!existsSync(join(pfAssignment, 'review', 'brainstorm-feedback.md')), 'preflight does not run reviewer command')
+
+console.log('\nreviewloop preflight (missing command):')
+setupReviewer('preflight-missing-command', { name: 'preflight-missing-command' })
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=preflight-missing-command',
+  '--preflight',
+  '--json',
+])
+assert(result.status === 1, 'preflight exits 1 for missing command')
+preflight = JSON.parse(result.stdout)
+assert(preflight.status === 'fail', 'preflight JSON status is fail')
+assert(preflight.reviewers[0].issues.some((i) => i.code === 'missing_command'), 'preflight reports missing_command')
+
+console.log('\nreviewloop preflight blocks normal execution:')
+cleanup()
+initProject()
+fillBigPicture()
+const pfBlockAssignment = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+setupReviewer('preflight-block', { name: 'preflight-block' })
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=preflight-block',
+])
+assert(result.status === 1, 'normal reviewloop exits 1 when preflight blocks')
+const pfBlockOutput = `${result.stdout}\n${result.stderr}`
+assert(pfBlockOutput.includes('Reviewer preflight failed'), 'normal reviewloop prints preflight failure')
+assert(!existsSync(join(pfBlockAssignment, 'review', 'brainstorm-feedback.md')), 'blocked preflight does not run reviewer')
+
 // =====================================================================
 // Stale feedback guard
 // =====================================================================

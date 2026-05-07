@@ -130,6 +130,7 @@ Before either approval gate, users can optionally review:
 | `specdev checkpoint <phase>` | Validate required artifacts exist |
 | `specdev review <phase>` | Manual review in a separate session |
 | `specdev reviewloop <phase>` | Automated external review via CLI (e.g., Codex) |
+| `specdev reviewloop <phase> --preflight --reviewer=<name> --json` | Check reviewer readiness without launching the reviewer |
 
 ## Assignment Folder Structure
 

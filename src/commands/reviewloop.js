@@ -14,8 +14,11 @@ import {
 } from '../utils/review-feedback.js'
 import { approvePhase } from '../utils/approve-phase.js'
 import { resolveRoundFocus } from '../utils/review-focus.js'
+import {
+  preflightReviewers,
+  reviewerTimeoutSeconds,
+} from '../utils/reviewer-preflight.js'
 
-const DEFAULT_REVIEWER_TIMEOUT_SECONDS = 900
 const REVIEWER_TERMINATION_GRACE_MS = 5000
 const SAFE_LOG_NAME_PATTERN = /[^a-zA-Z0-9._-]/g
 
@@ -38,17 +41,35 @@ function printSimplificationPrompt() {
   blankLine()
 }
 
-function reviewerTimeoutSeconds(config) {
-  const value = Number(config.timeout_seconds)
-  if (!Number.isFinite(value) || value <= 0) {
-    return DEFAULT_REVIEWER_TIMEOUT_SECONDS
-  }
-  return value
-}
-
 function reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round) {
   const safeReviewerName = reviewerName.replace(SAFE_LOG_NAME_PATTERN, '-')
   return join(reviewDir, `${feedbackPhase}-reviewer-${safeReviewerName}-round-${round}.log`)
+}
+
+function emitPreflightResult(result, asJson) {
+  if (asJson) {
+    console.log(JSON.stringify(result, null, 2))
+    return
+  }
+
+  printSection(`Reviewer preflight ${result.status}`)
+  for (const reviewer of result.reviewers) {
+    console.log(`   ${reviewer.name}: ${reviewer.blocking ? 'blocked' : 'ready'}`)
+    for (const issue of reviewer.issues) {
+      const marker = issue.severity === 'error' ? '✗' : '⚠'
+      console.log(`      ${marker} ${issue.code}: ${issue.detail}`)
+    }
+  }
+}
+
+function emitPreflightFailure(result) {
+  console.error('Reviewer preflight failed')
+  for (const reviewer of result.reviewers) {
+    const errors = reviewer.issues.filter((issue) => issue.severity === 'error')
+    for (const issue of errors) {
+      console.error(`   ${reviewer.name}: ${issue.code} — ${issue.detail}`)
+    }
+  }
 }
 
 /**
@@ -364,8 +385,25 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
     // With --reviewer: run the review loop for discussion
     const discussionId = discussionName.match(/^(D\d{4,5})/)?.[1] || discussionName
-    const reviewerNames = flags.reviewer.split(',').map(r => r.trim())
+    const reviewerNames = flags.reviewer.split(',').map(r => r.trim()).filter(Boolean)
     const isMulti = reviewerNames.length > 1
+    const preflight = await preflightReviewers({
+      specdevPath,
+      assignmentPath: discussionPath,
+      reviewerNames,
+    })
+
+    if (flags.preflight) {
+      emitPreflightResult(preflight, Boolean(flags.json))
+      if (preflight.status === 'fail') process.exitCode = 1
+      return
+    }
+
+    if (preflight.status === 'fail') {
+      emitPreflightFailure(preflight)
+      process.exitCode = 1
+      return
+    }
 
     const allApproved = await runReviewerChain({
       targetDir,
@@ -431,8 +469,26 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
   // ── With --reviewer: run the review loop ──
 
-  const reviewerNames = flags.reviewer.split(',').map(r => r.trim())
+  const reviewerNames = flags.reviewer.split(',').map(r => r.trim()).filter(Boolean)
   const isMulti = reviewerNames.length > 1
+  const specdevPath = join(targetDir, '.specdev')
+  const preflight = await preflightReviewers({
+    specdevPath,
+    assignmentPath,
+    reviewerNames,
+  })
+
+  if (flags.preflight) {
+    emitPreflightResult(preflight, Boolean(flags.json))
+    if (preflight.status === 'fail') process.exitCode = 1
+    return
+  }
+
+  if (preflight.status === 'fail') {
+    emitPreflightFailure(preflight)
+    process.exitCode = 1
+    return
+  }
 
   const allApproved = await runReviewerChain({
     targetDir,
