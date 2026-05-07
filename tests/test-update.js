@@ -38,12 +38,25 @@ runCmd(['init', `--target=${TEST_DIR}`])
 
 console.log('\nupdate overwrites skills:')
 const assignmentPath = join(TEST_DIR, '.claude', 'skills', 'specdev-assignment', 'SKILL.md')
+const codexAssignmentPath = join(TEST_DIR, '.codex', 'skills', 'specdev-assignment', 'SKILL.md')
 writeFileSync(assignmentPath, '# tampered content\n')
+writeFileSync(codexAssignmentPath, '# tampered codex content\n')
 let result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds')
 const afterUpdate = readFileSync(assignmentPath, 'utf-8')
 assert(afterUpdate.includes('specdev assignment'), 'skill file restored after update')
 assert(!afterUpdate.includes('tampered'), 'tampered content replaced')
+const codexAfterUpdate = readFileSync(codexAssignmentPath, 'utf-8')
+assert(codexAfterUpdate.includes('specdev assignment'), 'codex skill file restored after update')
+assert(!codexAfterUpdate.includes('tampered'), 'codex tampered content replaced')
+
+console.log('\nupdate backfills Codex command skills:')
+cleanup()
+runCmd(['init', `--target=${TEST_DIR}`])
+rmSync(join(TEST_DIR, '.codex'), { recursive: true, force: true })
+result = runCmd(['update', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'update succeeds without existing .codex directory')
+assert(existsSync(join(TEST_DIR, '.codex', 'skills', 'specdev-assignment', 'SKILL.md')), 'codex command skills backfilled')
 
 console.log('\nupdate refreshes hook script:')
 cleanup()
@@ -96,16 +109,22 @@ cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 
 const claudeSkillsDir = join(TEST_DIR, '.claude', 'skills')
+const codexSkillsDir = join(TEST_DIR, '.codex', 'skills')
 rmSync(join(claudeSkillsDir, 'specdev-assignment'), { recursive: true, force: true })
+rmSync(join(codexSkillsDir, 'specdev-assignment'), { recursive: true, force: true })
 mkdirSync(join(claudeSkillsDir, 'specdev-brainstorm'), { recursive: true })
+mkdirSync(join(codexSkillsDir, 'specdev-brainstorm'), { recursive: true })
 writeFileSync(join(claudeSkillsDir, 'specdev-brainstorm', 'SKILL.md'), '# legacy brainstorm\n')
+writeFileSync(join(codexSkillsDir, 'specdev-brainstorm', 'SKILL.md'), '# legacy brainstorm\n')
 
 result = runCmd(['update', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'update succeeds for legacy slash-skill layout')
 assert(existsSync(join(claudeSkillsDir, 'specdev-assignment', 'SKILL.md')), 'installs specdev-assignment for legacy layout')
+assert(existsSync(join(codexSkillsDir, 'specdev-assignment', 'SKILL.md')), 'installs codex specdev-assignment for legacy layout')
 
 console.log('\nupdate removes deprecated slash skills:')
 assert(!existsSync(join(claudeSkillsDir, 'specdev-brainstorm')), 'removes deprecated specdev-brainstorm skill')
+assert(!existsSync(join(codexSkillsDir, 'specdev-brainstorm')), 'removes deprecated codex specdev-brainstorm skill')
 
 // =====================================================================
 // Update Sync Tests

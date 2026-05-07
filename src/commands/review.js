@@ -199,6 +199,10 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   blankLine()
   printSection('Write findings to:')
   console.log(`   ${name}/review/${feedbackFilename}`)
+  if (isAutomated) {
+    console.log(`   Automated review requirement: append ## Round ${nextRound} with **Verdict:** approved or **Verdict:** needs-changes before exiting.`)
+    console.log('   Do not only print a summary to stdout.')
+  }
   blankLine()
   printSection('Feedback format (append to file):')
   printFeedbackFormat(nextRound)

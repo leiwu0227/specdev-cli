@@ -32,6 +32,7 @@ Two append-only files with clear ownership:
 
 - `review/{phase}-feedback.md` — review agent writes findings (append `## Round N`)
 - `review/{phase}-changelog.md` — main agent writes what it fixed (append `## Round N`)
+- `review/{phase}-reviewer-{name}-round-N.log` — captured stdout/stderr for debugging reviewer failures
 
 Each agent only writes to its own file and reads the other's.
 

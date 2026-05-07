@@ -19,12 +19,12 @@ specdev init
 
 This sets up everything you need:
 - `.specdev/` — the workflow folder with skills, templates, and assignment tracking
-- `.claude/skills/` — slash-command skills for your coding agent
+- `.claude/skills/` and `.codex/skills/` — command skills for Claude Code and Codex
 - Platform adapters (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`) so your agent knows how to use SpecDev
 
 ## Step 3: Tell SpecDev about your project
 
-Open your coding agent (e.g. Claude Code) and run:
+Open your coding agent (Claude Code or Codex) and run:
 
 ```bash
 specdev start

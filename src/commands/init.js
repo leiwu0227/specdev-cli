@@ -198,6 +198,11 @@ export const ALL_ADAPTERS = [
   ADAPTERS.cursor,
 ]
 
+export const COMMAND_SKILL_DIRS = [
+  join('.claude', 'skills'),
+  join('.codex', 'skills'),
+]
+
 export async function initCommand(flags = {}) {
   const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
   const force = flags.force || flags.f
@@ -252,16 +257,18 @@ export async function initCommand(flags = {}) {
       }
     }
 
-    // Install Claude skills
-    const skillsDir = join(targetDir, '.claude', 'skills')
-    for (const [skillName, content] of Object.entries(SKILL_FILES)) {
-      const skillDir = join(skillsDir, skillName)
-      mkdirSync(skillDir, { recursive: true })
-      writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
+    // Install command skills for the supported first-class agents.
+    for (const skillDirRoot of COMMAND_SKILL_DIRS) {
+      const skillsDir = join(targetDir, skillDirRoot)
+      for (const [skillName, content] of Object.entries(SKILL_FILES)) {
+        const skillDir = join(skillsDir, skillName)
+        mkdirSync(skillDir, { recursive: true })
+        writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
+      }
+      console.log(`✅ Installed ${Object.keys(SKILL_FILES).length} skills to ${skillDirRoot}/`)
     }
-    console.log(`✅ Installed ${Object.keys(SKILL_FILES).length} skills to .claude/skills/`)
 
-    // Install SessionStart hook
+    // Install Claude Code SessionStart hook
     const hookDir = join(targetDir, '.claude', 'hooks')
     mkdirSync(hookDir, { recursive: true })
 
@@ -322,10 +329,9 @@ export async function initCommand(flags = {}) {
     blankLine()
     printSection('📖 Next steps:')
     printLines([
-      '   1. Use /specdev-start to fill in your project context (Claude Code)',
-      '      Or edit .specdev/project_notes/big_picture.md manually',
-      '   2. Use /specdev-assignment to start a new feature or change',
-      '   3. Use /specdev-continue to resume where you left off',
+      '   1. Use specdev-start (or run specdev start) to fill in your project context',
+      '   2. Use specdev-assignment (or run specdev assignment) to start a change',
+      '   3. Use specdev-continue (or run specdev continue) to resume where you left off',
     ])
     blankLine()
     printSection('Platform adapters created:')
@@ -335,15 +341,17 @@ export async function initCommand(flags = {}) {
       '   .cursor/rules    Cursor',
     ])
     blankLine()
-    printSection('Claude Code slash commands:')
+    printSection('Agent command skills:')
     printLines([
-      '   /specdev-start        Interactive project context setup',
-      '   /specdev-assignment   Reserve ID and start brainstorm',
-      '   /specdev-continue     Resume from current phase',
-      '   /specdev-review       Phase-aware manual review',
-      '   /specdev-check-review Read and address review feedback',
-      '   /specdev-reviewloop   Automated external review loop',
-      '   /specdev-rewind       Full workflow re-read',
+      '   .claude/skills/       Claude Code',
+      '   .codex/skills/        Codex',
+      '   specdev-start         Interactive project context setup',
+      '   specdev-assignment    Reserve ID and start brainstorm',
+      '   specdev-continue      Resume from current phase',
+      '   specdev-review        Phase-aware manual review',
+      '   specdev-check-review  Read and address review feedback',
+      '   specdev-reviewloop    Automated external review loop',
+      '   specdev-rewind        Full workflow re-read',
     ])
 
     // Check reviewer CLIs

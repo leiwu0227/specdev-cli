@@ -1,7 +1,7 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript, backfillAdapters } from '../utils/update.js'
-import { SKILL_FILES, ALL_ADAPTERS, adapterContent } from './init.js'
+import { SKILL_FILES, ALL_ADAPTERS, COMMAND_SKILL_DIRS, adapterContent } from './init.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
 import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
@@ -65,9 +65,9 @@ export async function updateCommand(flags = {}) {
     })
 
     // Update skill files if installed
-    const skillCount = updateSkillFiles(targetDir, SKILL_FILES)
-    if (skillCount > 0) {
-      console.log(`   ✓ .claude/skills/ (${skillCount} skill files)`)
+    const skillUpdates = updateSkillFiles(targetDir, SKILL_FILES, COMMAND_SKILL_DIRS)
+    for (const update of skillUpdates) {
+      console.log(`   ✓ ${update.path}/ (${update.count} skill files)`)
     }
 
     // Update hook script if installed

@@ -85,31 +85,34 @@ assert(agentsMd.includes('.specdev/_main.md'), 'AGENTS.md points to _main.md')
 const cursorRules = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
 assert(cursorRules.includes('.specdev/_main.md'), '.cursor/rules points to _main.md')
 
-console.log('\ndefault init installs Claude extras:')
-const skillsDir = join(TEST_DIR, '.claude', 'skills')
-assert(existsSync(skillsDir), '.claude/skills/ directory created')
-assert(existsSync(join(skillsDir, 'specdev-start', 'SKILL.md')), 'specdev-start/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')), 'specdev-assignment/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')), 'specdev-rewind/SKILL.md installed')
-assert(!existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), 'specdev-brainstorm removed (redundant with assignment)')
-assert(existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')), 'specdev-continue/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')), 'specdev-review/SKILL.md installed')
+console.log('\ndefault init installs command skills:')
+const claudeSkillsDir = join(TEST_DIR, '.claude', 'skills')
+const codexSkillsDir = join(TEST_DIR, '.codex', 'skills')
+for (const [agentName, skillsDir] of [['Claude', claudeSkillsDir], ['Codex', codexSkillsDir]]) {
+  assert(existsSync(skillsDir), `${agentName} skills directory created`)
+  assert(existsSync(join(skillsDir, 'specdev-start', 'SKILL.md')), `${agentName} specdev-start/SKILL.md installed`)
+  assert(existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')), `${agentName} specdev-assignment/SKILL.md installed`)
+  assert(existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')), `${agentName} specdev-rewind/SKILL.md installed`)
+  assert(!existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), `${agentName} specdev-brainstorm removed (redundant with assignment)`)
+  assert(existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')), `${agentName} specdev-continue/SKILL.md installed`)
+  assert(existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')), `${agentName} specdev-review/SKILL.md installed`)
+}
 
-const startSkill = readFileSync(join(skillsDir, 'specdev-start', 'SKILL.md'), 'utf-8')
+const startSkill = readFileSync(join(claudeSkillsDir, 'specdev-start', 'SKILL.md'), 'utf-8')
 assert(startSkill.includes('big_picture.md'), 'start skill references big_picture.md')
 assert(startSkill.includes('What does this project do'), 'start skill includes Q&A instructions')
 
-const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
+const assignmentSkill = readFileSync(join(codexSkillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
 assert(assignmentSkill.includes('specdev assignment'), 'assignment skill references specdev assignment command')
 assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix instruction')
 
-const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
+const rewindSkill = readFileSync(join(codexSkillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
 
-const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
+const continueSkill = readFileSync(join(codexSkillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
 assert(continueSkill.includes('specdev continue'), 'continue skill references specdev continue command')
 
-const reviewSkill = readFileSync(join(skillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
+const reviewSkill = readFileSync(join(codexSkillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
 assert(reviewSkill.includes('specdev review'), 'review skill references specdev review command')
 
 console.log('\nhook installation:')

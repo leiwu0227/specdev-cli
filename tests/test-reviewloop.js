@@ -52,8 +52,12 @@ if (existsSync(claudeConfig)) {
   const claudeContent = JSON.parse(readFileSync(claudeConfig, 'utf-8'))
   assert(claudeContent.name === 'claude', 'claude.json has name=claude')
   assert(claudeContent.command && claudeContent.command.includes('claude'), 'claude.json command includes claude')
+  assert(claudeContent.command && claudeContent.command.includes('--print'), 'claude.json command includes --print')
+  assert(claudeContent.command && claudeContent.command.includes('--no-session-persistence'), 'claude.json command includes --no-session-persistence')
   assert(claudeContent.command && claudeContent.command.includes('--dangerously-skip-permissions'), 'claude.json command includes --dangerously-skip-permissions')
   assert(typeof claudeContent.max_rounds === 'number', 'claude.json has numeric max_rounds')
+  assert(typeof claudeContent.timeout_seconds === 'number', 'claude.json has numeric timeout_seconds')
+  assert(claudeContent.timeout_seconds === 300, 'claude.json has timeout_seconds=300')
 }
 
 const focusConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'review-focus.json')

@@ -16,9 +16,7 @@ npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
 
-Slash-command skills are installed to `.claude/skills/`. Use `/specdev-start` to fill in your project context interactively, then `/specdev-assignment` to begin your first feature.
-
-For other platforms, fill in `.specdev/project_notes/big_picture.md` manually, then ask your coding agent to read `.specdev/_main.md`.
+Command skills are installed to `.claude/skills/` and `.codex/skills/`. Use `specdev-start` to fill in your project context interactively, then `specdev-assignment` to begin your first feature. You can also run the CLI commands directly from Claude Code or Codex.
 
 ## Commands
 

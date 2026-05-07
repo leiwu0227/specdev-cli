@@ -296,6 +296,11 @@ assert(
   !staleOutput.includes('Previous review findings have not been addressed'),
   'stale guard passes when changelog matches',
 )
+assert(
+  staleOutput.includes('expected ## Round 2'),
+  'missing next-round verdict error is explicit',
+  staleOutput,
+)
 
 // =====================================================================
 // Max rounds enforcement
@@ -503,6 +508,76 @@ assert(
   result.stderr.includes('Reviewer exited with code'),
   'error mentions reviewer exit code',
 )
+assert(
+  result.stderr.includes('Reviewer log:'),
+  'command failure prints reviewer log path',
+)
+
+// =====================================================================
+// Mock reviewer: timeout
+// =====================================================================
+
+console.log('\nreviewloop (reviewer timeout):')
+cleanup()
+initProject()
+fillBigPicture()
+createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+setupReviewer('slow-cmd', {
+  name: 'slow-cmd',
+  command: 'sleep 5',
+  max_rounds: 3,
+  timeout_seconds: 0.01,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+
+  '--reviewer=slow-cmd',
+])
+assert(result.status === 1, 'exits 1 when reviewer times out')
+assert(
+  result.stderr.includes('Reviewer timed out after'),
+  'error mentions reviewer timeout',
+)
+assert(
+  result.stderr.includes('Reviewer log:'),
+  'timeout prints reviewer log path',
+)
+
+// =====================================================================
+// Mock reviewer: stdout/stderr log capture
+// =====================================================================
+
+console.log('\nreviewloop (reviewer log capture):')
+cleanup()
+initProject()
+fillBigPicture()
+const aLog = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+mkdirSync(join(aLog, 'review'), { recursive: true })
+const feedbackRelLog = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
+setupReviewer('log-mock', {
+  name: 'log-mock',
+  command: `echo stdout-line && echo stderr-line >&2 && printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelLog}"`,
+  max_rounds: 3,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+
+  '--reviewer=log-mock',
+])
+assert(result.status === 0, 'exits 0 for log-mock reviewer', result.stderr)
+const reviewerLogPath = join(aLog, 'review', 'brainstorm-reviewer-log-mock-round-1.log')
+assert(existsSync(reviewerLogPath), 'reviewer log file exists')
+if (existsSync(reviewerLogPath)) {
+  const reviewerLog = readFileSync(reviewerLogPath, 'utf-8')
+  assert(reviewerLog.includes('stdout-line'), 'reviewer log captures stdout')
+  assert(reviewerLog.includes('stderr-line'), 'reviewer log captures stderr')
+}
 
 // =====================================================================
 // Mock reviewer: missing expected round in feedback
@@ -533,7 +608,7 @@ result = runCmd([
 ])
 assert(result.status === 1, 'exits 1 when wrong round written')
 assert(
-  result.stderr.includes('Expected round 1') && result.stderr.includes('brainstorm-feedback.md'),
+  result.stderr.includes('expected ## Round 1') && result.stderr.includes('brainstorm-feedback.md'),
   'error mentions expected round and feedback filename',
 )
 

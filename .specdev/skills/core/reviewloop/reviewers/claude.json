@@ -1,5 +1,6 @@
 {
   "name": "claude",
-  "command": "claude --dangerously-skip-permissions -p \"Run specdev review $SPECDEV_PHASE --round $SPECDEV_ROUND. Follow its instructions.\"",
-  "max_rounds": 5
+  "command": "claude --print --no-session-persistence --dangerously-skip-permissions --permission-mode bypassPermissions \"Run specdev review $SPECDEV_PHASE --round $SPECDEV_ROUND. Follow its instructions exactly. You MUST append a ## Round $SPECDEV_ROUND section with **Verdict:** approved or **Verdict:** needs-changes to the feedback file printed by specdev review before exiting. Do not only summarize in stdout.\"",
+  "max_rounds": 5,
+  "timeout_seconds": 300
 }

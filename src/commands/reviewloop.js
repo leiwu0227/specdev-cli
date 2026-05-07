@@ -1,3 +1,4 @@
+import { createWriteStream } from 'fs'
 import { join } from 'path'
 import { spawn } from 'child_process'
 import fse from 'fs-extra'
@@ -13,6 +14,10 @@ import {
 } from '../utils/review-feedback.js'
 import { approvePhase } from '../utils/approve-phase.js'
 import { resolveRoundFocus } from '../utils/review-focus.js'
+
+const DEFAULT_REVIEWER_TIMEOUT_SECONDS = 900
+const REVIEWER_TERMINATION_GRACE_MS = 5000
+const SAFE_LOG_NAME_PATTERN = /[^a-zA-Z0-9._-]/g
 
 function printDesignDigressionPrompt(name) {
   blankLine()
@@ -31,6 +36,19 @@ function printSimplificationPrompt() {
   console.log('   Remove any unnecessary complexity added to satisfy review findings.')
   console.log('   The goal: code should be simpler after review, not more complex.')
   blankLine()
+}
+
+function reviewerTimeoutSeconds(config) {
+  const value = Number(config.timeout_seconds)
+  if (!Number.isFinite(value) || value <= 0) {
+    return DEFAULT_REVIEWER_TIMEOUT_SECONDS
+  }
+  return value
+}
+
+function reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round) {
+  const safeReviewerName = reviewerName.replace(SAFE_LOG_NAME_PATTERN, '-')
+  return join(reviewDir, `${feedbackPhase}-reviewer-${safeReviewerName}-round-${round}.log`)
 }
 
 /**
@@ -64,6 +82,7 @@ async function runSingleReviewer({
   }
 
   const maxRounds = config.max_rounds || 3
+  const timeoutSeconds = reviewerTimeoutSeconds(config)
 
   const reviewDir = join(assignmentPath, 'review')
   await fse.ensureDir(reviewDir)
@@ -95,6 +114,7 @@ async function runSingleReviewer({
   console.log(`   Phase: ${phase}`)
   console.log(`   Reviewer: ${reviewerName}`)
   console.log(`   Round: ${round}/${maxRounds}`)
+  console.log(`   Timeout: ${timeoutSeconds}s`)
   blankLine()
 
   await writeCurrent(specdevPath, name)
@@ -110,18 +130,78 @@ async function runSingleReviewer({
     ...extraEnv,
   }
 
-  const exitCode = await new Promise((resolve, reject) => {
+  const feedbackPhase = feedbackFilename.replace(/-feedback(?:-[^.]+)?\.md$/, '')
+  const logPath = reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round)
+  const logStream = createWriteStream(logPath, { flags: 'a' })
+  let logClosed = false
+  const writeLog = (chunk) => {
+    if (!logClosed) logStream.write(chunk)
+  }
+  const closeLog = () => {
+    if (logClosed) return
+    logClosed = true
+    logStream.end()
+  }
+  writeLog(`Reviewloop reviewer log\nReviewer: ${reviewerName}\nPhase: ${phase}\nRound: ${round}\nCommand: ${config.command}\n\n`)
+
+  const { exitCode, timedOut } = await new Promise((resolve, reject) => {
+    let settled = false
+    let killTimer = null
     const child = spawn('bash', ['-c', config.command], {
       cwd: targetDir,
       env: childEnv,
-      stdio: 'inherit',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: true,
     })
-    child.on('error', reject)
-    child.on('close', (code) => resolve(code))
+
+    const timeoutTimer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      console.error(`Reviewer timed out after ${timeoutSeconds}s: ${reviewerName}`)
+      try {
+        process.kill(-child.pid, 'SIGTERM')
+      } catch { /* process may already have exited */ }
+      killTimer = setTimeout(() => {
+        try {
+          process.kill(-child.pid, 'SIGKILL')
+        } catch { /* process may already have exited */ }
+      }, REVIEWER_TERMINATION_GRACE_MS)
+      resolve({ exitCode: null, timedOut: true })
+    }, timeoutSeconds * 1000)
+
+    child.stdout.on('data', (chunk) => {
+      process.stdout.write(chunk)
+      writeLog(chunk)
+    })
+    child.stderr.on('data', (chunk) => {
+      process.stderr.write(chunk)
+      writeLog(chunk)
+    })
+    child.on('error', (error) => {
+      clearTimeout(timeoutTimer)
+      if (killTimer) clearTimeout(killTimer)
+      closeLog()
+      reject(error)
+    })
+    child.on('close', (code) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeoutTimer)
+      if (killTimer) clearTimeout(killTimer)
+      closeLog()
+      resolve({ exitCode: code, timedOut: false })
+    })
   })
+
+  if (timedOut) {
+    closeLog()
+    console.error(`Reviewer log: ${logPath}`)
+    return { approved: false, error: true, message: 'reviewer timed out' }
+  }
 
   if (exitCode !== 0) {
     console.error(`Reviewer exited with code ${exitCode}`)
+    console.error(`Reviewer log: ${logPath}`)
     return { approved: false, error: true, message: 'reviewer failed' }
   }
 
@@ -131,10 +211,15 @@ async function runSingleReviewer({
 
   const latestRound = getLatestRound(updatedFeedback)
 
-  if (!latestRound || latestRound.round !== round) {
-    console.error(
-      `Expected round ${round} in ${feedbackFilename} but found ${latestRound ? `round ${latestRound.round}` : 'no rounds'}`,
-    )
+  if (!latestRound) {
+    console.error(`Reviewer finished but did not append ## Round ${round} to ${feedbackPath}`)
+    console.error(`Reviewer log: ${logPath}`)
+    return { approved: false, error: true, message: 'missing verdict' }
+  }
+
+  if (latestRound.round !== round) {
+    console.error(`Reviewer finished but ${feedbackPath} contains round ${latestRound.round}, expected ## Round ${round}`)
+    console.error(`Reviewer log: ${logPath}`)
     return { approved: false, error: true, message: 'wrong round' }
   }
 

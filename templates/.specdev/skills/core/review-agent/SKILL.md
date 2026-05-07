@@ -40,35 +40,33 @@ User runs `specdev review brainstorm` or `specdev review implementation` in a se
 Read `brainstorm/proposal.md` and `brainstorm/design.md`. Check:
 - Is the goal clear and specific?
 - Does the architecture make sense?
-- Are there gaps in the design (missing error handling, unclear data flow)?
 - Are the decisions well-reasoned?
+
+**ALWAYS scan the codebase to verify claims** — never assume. Read the actual files, grep for symbols, check dependencies. Take eager effort to find answers; do not take shortcuts or guess based on naming conventions alone.
 
 ### Implementation Review
 
 Use `.specdev/skills/core/review-agent/prompts/implementation-reviewer.md`. Check:
-- Does the full implementation match the design?
+- Does the implementation match the design?
 - Do all tests pass?
-- Are there integration issues between tasks?
 - Is there scope drift (things built that weren't in the design)?
-- Is test coverage adequate?
+
+**ALWAYS scan the codebase to verify claims** — never assume. Prefer simplification over addition. Flag patch-stacking where layered fixes should be consolidated. Flag special-case production code that exists only to satisfy tests — the tests may need updating instead. Only flag issues worth the cost of fixing.
 
 ## Feedback Format
 
 ### {phase}-feedback.md (written by review agent)
 
 ```markdown
-# Review Feedback
+## Round N
 
-**Phase:** breakdown
-**Verdict:** approved / needs-changes
-**Round:** 1
-**Timestamp:** 2025-01-15T10:35:00
+**Verdict:** approved | needs-changes
 
-## Findings
-- [list, or "None — approved"]
+### Findings
+1. [FN.1] Description of finding
 
-## Addressed Findings
-- [items fixed in this round, or "None"]
+### Addressed from changelog
+- [FN.X] description of addressed finding
 ```
 
 ## Red Flags

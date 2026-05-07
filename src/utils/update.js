@@ -4,13 +4,13 @@ import fse from 'fs-extra'
 
 const OFFICIAL_TOOL_SKILLS = []
 
-const CLAUDE_SKILL_MARKERS = [
+const COMMAND_SKILL_MARKERS = [
   join('specdev-assignment', 'SKILL.md'),
   join('specdev-brainstorm', 'SKILL.md'),
   join('specdev-start', 'SKILL.md'),
 ]
 
-const DEPRECATED_CLAUDE_SKILLS = [
+const DEPRECATED_COMMAND_SKILLS = [
   'specdev-brainstorm',
 ]
 
@@ -145,45 +145,52 @@ export async function isValidSpecdevInstallation(specdevPath) {
 }
 
 /**
- * Updates skill files in .claude/skills/ if they exist
- * Auto-detects by checking for known managed slash-skill markers
+ * Updates managed command skill files in each installed agent skill directory.
+ * Auto-detects by checking for known managed command-skill markers.
  *
  * @param {string} targetDir - Project root directory
  * @param {Record<string, string>} skillFiles - Map of skill name to content
- * @returns {number} Number of files updated, or 0 if skipped
+ * @param {Array<string>} skillDirs - Agent skill directories relative to targetDir
+ * @returns {Array<{path: string, count: number}>} Updated directories
  */
-export function updateSkillFiles(targetDir, skillFiles) {
-  const skillsDir = join(targetDir, '.claude', 'skills')
-  const hasManagedSkills = CLAUDE_SKILL_MARKERS.some((marker) =>
-    existsSync(join(skillsDir, marker))
-  )
+export function updateSkillFiles(targetDir, skillFiles, skillDirs = [join('.claude', 'skills')]) {
+  const updates = []
+  const hasAnyManagedSkills = skillDirs.some((skillDirRoot) => {
+    const skillsDir = join(targetDir, skillDirRoot)
+    return COMMAND_SKILL_MARKERS.some((marker) => existsSync(join(skillsDir, marker)))
+  })
 
-  if (!hasManagedSkills) {
-    return 0
+  if (!hasAnyManagedSkills) {
+    return updates
   }
 
-  for (const [skillName, content] of Object.entries(skillFiles)) {
-    const skillDir = join(skillsDir, skillName)
-    if (!existsSync(skillDir)) {
-      mkdirSync(skillDir, { recursive: true })
+  for (const skillDirRoot of skillDirs) {
+    const skillsDir = join(targetDir, skillDirRoot)
+    for (const [skillName, content] of Object.entries(skillFiles)) {
+      const skillDir = join(skillsDir, skillName)
+      if (!existsSync(skillDir)) {
+        mkdirSync(skillDir, { recursive: true })
+      }
+      writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
     }
-    writeFileSync(join(skillDir, 'SKILL.md'), content, 'utf-8')
-  }
 
-  for (const deprecatedSkillName of DEPRECATED_CLAUDE_SKILLS) {
-    const deprecatedSkillDir = join(skillsDir, deprecatedSkillName)
-    if (existsSync(deprecatedSkillDir)) {
-      rmSync(deprecatedSkillDir, { recursive: true, force: true })
+    for (const deprecatedSkillName of DEPRECATED_COMMAND_SKILLS) {
+      const deprecatedSkillDir = join(skillsDir, deprecatedSkillName)
+      if (existsSync(deprecatedSkillDir)) {
+        rmSync(deprecatedSkillDir, { recursive: true, force: true })
+      }
     }
+
+    // Remove stale reviewloop wrapper (promoted to core skill)
+    const reviewloopWrapper = join(skillsDir, 'reviewloop')
+    if (existsSync(reviewloopWrapper)) {
+      rmSync(reviewloopWrapper, { recursive: true, force: true })
+    }
+
+    updates.push({ path: skillDirRoot, count: Object.keys(skillFiles).length })
   }
 
-  // Remove stale reviewloop wrapper (promoted to core skill)
-  const reviewloopWrapper = join(skillsDir, 'reviewloop')
-  if (existsSync(reviewloopWrapper)) {
-    rmSync(reviewloopWrapper, { recursive: true, force: true })
-  }
-
-  return Object.keys(skillFiles).length
+  return updates
 }
 
 /**
