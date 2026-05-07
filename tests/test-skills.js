@@ -93,6 +93,24 @@ assert(jsonTool?.category === 'tool', 'skills json includes tool category')
 assert(jsonTool?.description === 'A test skill', 'skills json includes description')
 assert(jsonTool?.active === false, 'uninstalled tool skill is inactive')
 
+console.log('\nskills view:')
+result = runCmd(['skills', 'view', 'brainstorming', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'skills view succeeds for core skill', result.stderr)
+assert(result.stdout.includes('# Brainstorming'), 'skills view prints SKILL.md content')
+assert(!result.stdout.includes('Available skills'), 'skills view does not print list output')
+
+result = runCmd(['skills', 'view', 'test-folder-skill', 'scripts/run.sh', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'skills view succeeds for support file', result.stderr)
+assert(result.stdout.includes('echo "ok"'), 'skills view prints support file content')
+
+result = runCmd(['skills', 'view', 'test-folder-skill', '../active-tools.json', `--target=${TEST_DIR}`])
+assert(result.status === 1, 'skills view blocks traversal')
+assert(result.stderr.includes('Cannot read outside skill directory'), 'skills view explains traversal block')
+
+result = runCmd(['skills', 'view', 'missing-skill', `--target=${TEST_DIR}`])
+assert(result.status === 1, 'skills view fails for missing skill')
+assert(result.stderr.includes('Unknown skill: missing-skill'), 'skills view reports missing skill')
+
 // =====================================================================
 // Skills Subcommands
 // =====================================================================

@@ -27,6 +27,8 @@ specdev init                           # Initialize .specdev in current director
 specdev update                         # Update core skills, preserve project files
 specdev migrate [--dry-run]            # Migrate legacy assignments to V4 layout
 specdev skills                         # List available skills
+specdev skills --json                  # Machine-readable skill inventory
+specdev skills view <name> [path]      # Print a skill file or support file
 specdev help                           # Show usage information
 ```
 
