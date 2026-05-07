@@ -17,6 +17,7 @@ import { reviewloopCommand } from './reviewloop.js'
 import { implementCommand } from './implement.js'
 import { focusCommand } from './focus.js'
 import { discussCommand } from './discussion.js'
+import { statusCommand } from './status.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -29,6 +30,7 @@ const commandHandlers = {
   review: ({ positionalArgs, flags }) => reviewCommand(positionalArgs, flags),
   migrate: ({ flags }) => migrateCommand(flags),
   continue: ({ flags }) => continueCommand(flags),
+  status: ({ flags }) => statusCommand(flags),
   revise: ({ flags }) => reviseCommand(flags),
   'check-review': ({ positionalArgs, flags }) => checkReviewCommand(positionalArgs, flags),
   reviewloop: ({ positionalArgs, flags }) => reviewloopCommand(positionalArgs, flags),

@@ -6,7 +6,7 @@ import {
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
 import { scanAssignments, scanSingleAssignment, readProcessedCaptures } from '../utils/scan.js'
-import { detectAssignmentState } from '../utils/state.js'
+import { detectAssignmentState, readGateStatus } from '../utils/state.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
 import { getLatestRound } from '../utils/review-feedback.js'
@@ -16,14 +16,16 @@ export async function continueCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   const json = Boolean(flags.json)
+  const asStatus = Boolean(flags.statusPayload)
+  const statusText = Boolean(flags.statusText)
   await requireSpecdevDirectory(specdevPath)
 
   const bigPicture = await readBigPictureStatus(specdevPath)
-  if (!bigPicture.filled) return emitBlocked(buildProjectContextMissingPayload(), json)
+  if (!bigPicture.filled) return emitBlocked(buildProjectContextMissingPayload(), { json, asStatus, statusText })
 
   const selection = await resolveAssignment(specdevPath, flags)
   if (!selection.selected) {
-    return emitBlocked(selection.payload || buildNoAssignmentPayload(), json)
+    return emitBlocked(selection.payload || buildNoAssignmentPayload(), { json, asStatus, statusText })
   }
   const selected = selection.selected
 
@@ -46,7 +48,16 @@ export async function continueCommand(flags = {}) {
     }
   }
 
-  const payload = buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath, reviewLogs)
+  const workflowStatus = await collectWorkflowStatus(selected.path)
+  const payload = buildContinuePayload(
+    detected,
+    selected,
+    selection,
+    reviewStatus,
+    reviewFeedbackRelPath,
+    reviewLogs,
+    workflowStatus
+  )
 
   // Check for unprocessed distill assignments
   const knowledgePath = join(specdevPath, 'knowledge')
@@ -65,7 +76,7 @@ export async function continueCommand(flags = {}) {
     }
   }
 
-  emit(payload, json)
+  emit(payload, { json, asStatus, statusText })
   if (payload.status === 'blocked') process.exitCode = 1
 }
 
@@ -101,7 +112,15 @@ function buildNoAssignmentPayload() {
   }
 }
 
-function buildContinuePayload(detected, selected, selection, reviewStatus, reviewFeedbackRelPath, reviewLogs) {
+function buildContinuePayload(
+  detected,
+  selected,
+  selection,
+  reviewStatus,
+  reviewFeedbackRelPath,
+  reviewLogs,
+  workflowStatus
+) {
   return {
     version: 1,
     status: detected.blockers.length > 0 ? 'blocked' : 'ok',
@@ -112,68 +131,123 @@ function buildContinuePayload(detected, selected, selection, reviewStatus, revie
     next_action: detected.next_action,
     blockers: detected.blockers,
     progress: detected.progress,
+    gates: workflowStatus.gates,
+    artifacts: workflowStatus.artifacts,
     review_feedback: reviewStatus === 'needs-changes' ? reviewFeedbackRelPath : null,
     review_logs: reviewLogs,
   }
 }
 
-function emitBlocked(payload, asJson) {
-  emit(payload, asJson)
+function emitBlocked(payload, options) {
+  emit(payload, options)
   process.exitCode = 1
 }
 
-function emit(payload, asJson) {
+function emit(payload, options = {}) {
+  const asJson = typeof options === 'boolean' ? options : Boolean(options.json)
+  const asStatus = typeof options === 'object' && Boolean(options.asStatus)
+  const statusText = typeof options === 'object' && Boolean(options.statusText)
+  const outputPayload = asStatus ? buildStatusPayload(payload) : payload
+
   if (asJson) {
-    writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
+    writeSync(1, `${JSON.stringify(outputPayload, null, 2)}\n`)
     return
   }
 
-  console.log('SpecDev Continue')
-  if (payload.assignment) {
-    printKeyValue('Assignment', payload.assignment)
-    printKeyValue('State', payload.state)
+  console.log(statusText ? 'SpecDev Status' : 'SpecDev Continue')
+  if (outputPayload.assignment) {
+    printKeyValue('Assignment', outputPayload.assignment)
+    printKeyValue('State', outputPayload.state)
   } else {
-    printKeyValue('State', payload.state)
+    printKeyValue('State', outputPayload.state)
   }
-  if (payload.review_feedback) {
+  if (outputPayload.review_feedback) {
     console.log('')
     console.log('Review Feedback:')
-    console.log(`  Read ${payload.review_feedback} in the assignment folder and address findings.`)
+    console.log(`  Read ${outputPayload.review_feedback} in the assignment folder and address findings.`)
   }
 
-  if (payload.review_logs && payload.review_logs.length > 0) {
+  if (outputPayload.review_logs && outputPayload.review_logs.length > 0) {
     console.log('')
     console.log('Reviewloop Diagnostics:')
-    for (const log of payload.review_logs) {
+    for (const log of outputPayload.review_logs) {
       console.log(`  ${log.path}`)
     }
   }
 
   console.log('')
   console.log('Next Action:')
-  console.log(`  ${payload.next_action}`)
+  console.log(`  ${outputPayload.next_action}`)
 
-  if (payload.progress) {
+  if (outputPayload.progress) {
     console.log('')
     console.log('Progress:')
-    console.log(`  ${payload.progress.summary}`)
+    console.log(`  ${outputPayload.progress.summary}`)
   }
 
-  if (payload.blockers && payload.blockers.length > 0) {
+  if (outputPayload.blockers && outputPayload.blockers.length > 0) {
     console.log('')
-    const items = payload.blockers.map(
+    const items = outputPayload.blockers.map(
       (blocker) =>
         `${blocker.code}: ${blocker.detail} (fix: ${blocker.recommended_fix})`
     )
     printListSection('Blockers:', items)
   }
 
-  if (payload.distill_pending) {
+  if (outputPayload.distill_pending) {
     console.log('')
     console.log('Distill Pending:')
-    const suffix = payload.distill_pending.count > 5 ? ' (showing oldest 5)' : ''
-    console.log(`  ${payload.distill_pending.count} assignment(s) have unprocessed captures${suffix}`)
+    const suffix = outputPayload.distill_pending.count > 5 ? ' (showing oldest 5)' : ''
+    console.log(`  ${outputPayload.distill_pending.count} assignment(s) have unprocessed captures${suffix}`)
     console.log('  Run: specdev distill --assignment=<name>')
+  }
+}
+
+export function buildStatusPayload(payload) {
+  return {
+    command: 'status',
+    version: payload.version,
+    status: payload.status,
+    kind: payload.assignment ? 'assignment' : null,
+    assignment: payload.assignment || null,
+    assignment_path: payload.assignment_path || null,
+    selected_by: payload.selected_by || null,
+    state: payload.state,
+    gates: payload.gates || null,
+    artifacts: payload.artifacts || null,
+    blockers: payload.blockers || [],
+    progress: payload.progress || null,
+    review_feedback: payload.review_feedback || null,
+    review_logs: payload.review_logs || [],
+    distill_pending: payload.distill_pending || null,
+    next_action: payload.next_action,
+  }
+}
+
+async function collectWorkflowStatus(assignmentPath) {
+  const gates = await readGateStatus(assignmentPath)
+  const artifacts = {}
+  const artifactPaths = [
+    'brainstorm/proposal.md',
+    'brainstorm/design.md',
+    'breakdown/plan.md',
+    'implementation/progress.json',
+    'capture/project-notes-diff.md',
+    'capture/workflow-diff.md',
+  ]
+
+  for (const artifact of artifactPaths) {
+    artifacts[artifact] = await fse.pathExists(join(assignmentPath, artifact))
+      ? 'present'
+      : 'missing'
+  }
+
+  return {
+    gates: {
+      brainstorm: gates.brainstorm_approved ? 'approved' : 'pending',
+      implementation: gates.implementation_approved ? 'approved' : 'pending',
+    },
+    artifacts,
   }
 }
 

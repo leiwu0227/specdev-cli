@@ -1,0 +1,13 @@
+{
+  "plan_file": ".specdev/assignments/00008_feature_workflow-status-json/breakdown/plan.md",
+  "total_tasks": 1,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-07T07:21:42Z",
+      "completed_at": "2026-05-07T07:31:30Z",
+      "summary": "Added specdev status command with JSON/text output, workflow gates/artifact status, dispatch/help wiring, and workflow tests. Verification: node ./tests/test-workflow.js passed; npm test passed."
+    }
+  ]
+}

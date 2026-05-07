@@ -46,6 +46,7 @@ specdev check-review                   # Read and address review feedback
 ```bash
 specdev start                          # Check/fill project context
 specdev continue [--json]              # Detect current state, blockers, and next action
+specdev status [--json]                # Show workflow state for humans or automation
 specdev review <phase>                 # Manual review in a separate session
 ```
 

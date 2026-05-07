@@ -74,6 +74,17 @@ function continueJson(assignment) {
   return { result, payload }
 }
 
+function statusJson(assignment) {
+  const args = ['status', `--target=${TEST_DIR}`, '--json']
+  if (assignment) setCurrent(assignment)
+  const result = runCmd(args)
+  let payload = null
+  if (result.stdout.trim()) {
+    try { payload = JSON.parse(result.stdout) } catch { payload = null }
+  }
+  return { result, payload }
+}
+
 function writeFeedback(assignmentRoot, { phase, verdict, round, findings, addressedFindings = [] }) {
   const reviewDir = join(assignmentRoot, 'review')
   mkdirSync(reviewDir, { recursive: true })
@@ -140,6 +151,21 @@ async function runTests() {
   writeGateStatus(a1, { brainstorm_approved: true })
   out = continueJson('00001_feature_brainstorm')
   assert(out.payload && out.payload.state === 'breakdown_in_progress', 'detects breakdown_in_progress')
+
+  console.log('\nstatus --json:')
+  let statusOut = statusJson('00001_feature_brainstorm')
+  assert(statusOut.result.status === 0, 'status --json exits 0 for active assignment', statusOut.result.stderr)
+  assert(statusOut.payload && statusOut.payload.command === 'status', 'status payload identifies command')
+  assert(statusOut.payload && statusOut.payload.assignment === '00001_feature_brainstorm', 'status includes assignment')
+  assert(statusOut.payload && statusOut.payload.kind === 'assignment', 'status includes kind')
+  assert(statusOut.payload && statusOut.payload.gates.brainstorm === 'approved', 'status includes brainstorm gate')
+  assert(statusOut.payload && statusOut.payload.artifacts['brainstorm/proposal.md'] === 'present', 'status includes artifact status')
+  assert(statusOut.payload && statusOut.payload.next_action, 'status includes next_action')
+
+  let statusText = runCmd(['status', `--target=${TEST_DIR}`])
+  assert(statusText.status === 0, 'status text exits 0', statusText.stderr)
+  assert(statusText.stdout.includes('SpecDev Status'), 'status text has heading')
+  assert(statusText.stdout.includes('Next Action:'), 'status text includes next action')
 
   console.log('\nimplementation_in_progress:')
   mkdirSync(join(a1, 'breakdown'), { recursive: true })
@@ -245,6 +271,11 @@ async function runTests() {
   out = continueJson()
   assert(out.result.status === 1, 'exits non-zero when no .current is set')
   assert(out.payload && out.payload.state === 'no_assignment', 'reports no_assignment state')
+
+  statusOut = statusJson()
+  assert(statusOut.result.status === 1, 'status --json exits non-zero without current assignment')
+  assert(statusOut.payload && statusOut.payload.command === 'status', 'blocked status payload identifies command')
+  assert(statusOut.payload && statusOut.payload.status === 'blocked', 'blocked status preserves status')
 
   // =====================================================================
   // Revise Tests

@@ -35,6 +35,7 @@ export function helpCommand() {
     '  specdev checkpoint implementation # Validate implementation artifacts',
     '  specdev approve implementation    # Hard gate: proceed to summary',
     '  specdev continue                  # Diagnose state and next action',
+    '  specdev status --json             # Machine-readable workflow state',
     '',
     '  # Optional: review before approving',
     '  specdev review brainstorm         # Manual review (separate session)',
