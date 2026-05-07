@@ -154,6 +154,7 @@ try {
   json = JSON.parse(result.stdout.trim())
   assert(json.status === 'ok', 'distill done status ok')
   assert(json.marked === '00001_feature_done-test', 'marked correct assignment')
+  assert(json.memory_hint === 'Run specdev memory refresh', 'distill done includes memory refresh hint')
 } catch {
   assert(false, 'distill done output is valid JSON')
 }
@@ -166,6 +167,8 @@ assert(json.status === 'ok' || json.status === 'no_captures', 'distill still run
 console.log('\ndistill done — already processed:')
 result = runCmd(['distill', 'done', '00001_feature_done-test', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'already processed exits 0')
+json = JSON.parse(result.stdout.trim())
+assert(json.memory_hint === 'Run specdev memory refresh', 'already processed includes memory refresh hint')
 
 console.log('\nold mark-processed removed:')
 result = runCmd(['distill', 'mark-processed', 'project', '00001_feature_done-test', `--target=${TEST_DIR}`])

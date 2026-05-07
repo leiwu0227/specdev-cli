@@ -41,6 +41,7 @@ export async function distillDoneCommand(positionalArgs = [], flags = {}) {
       status: 'ok',
       message: 'Already processed.',
       marked: assignmentName,
+      memory_hint: 'Run specdev memory refresh',
     }, null, 2))
     return
   }
@@ -79,5 +80,6 @@ export async function distillDoneCommand(positionalArgs = [], flags = {}) {
   console.log(JSON.stringify({
     status: 'ok',
     marked: assignmentName,
+    memory_hint: 'Run specdev memory refresh',
   }, null, 2))
 }

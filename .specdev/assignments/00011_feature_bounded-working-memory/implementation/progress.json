@@ -18,9 +18,10 @@
     },
     {
       "number": 3,
-      "status": "pending",
-      "started_at": null,
-      "completed_at": null
+      "status": "completed",
+      "started_at": "2026-05-07T09:40:34Z",
+      "completed_at": "2026-05-07T09:51:15Z",
+      "summary": "Added JSON-safe memory_hint to distill done success paths, documented memory refresh and current distill commands, and verified targeted plus full test suite pass."
     }
   ]
 }

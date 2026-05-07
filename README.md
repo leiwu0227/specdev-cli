@@ -29,6 +29,7 @@ specdev migrate [--dry-run]            # Migrate legacy assignments to V4 layout
 specdev skills                         # List available skills
 specdev skills --json                  # Machine-readable skill inventory
 specdev skills view <name> [path]      # Print a skill file or support file
+specdev memory refresh                 # Regenerate bounded working memory
 specdev help                           # Show usage information
 ```
 
@@ -55,9 +56,8 @@ specdev review <phase>                 # Manual review in a separate session
 ### Knowledge distillation
 
 ```bash
-specdev distill workflow               # Aggregate workflow observations from assignments
-specdev distill project                # Aggregate project learnings from assignments
-specdev distill mark-processed <type> <names>  # Mark assignments as distilled
+specdev distill --assignment=<name>    # Aggregate capture diffs as JSON
+specdev distill done <name>            # Mark capture processed and show memory refresh hint
 ```
 
 ## What gets created
