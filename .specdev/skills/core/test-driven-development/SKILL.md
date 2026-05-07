@@ -47,7 +47,7 @@ type: core
 
 1. Run `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh <project-root> [test-command]`
 2. Confirm the output shows `"passed": true`
-3. If tests still fail — fix the implementation. But if the test itself is outdated or wrong, update the test instead of patching special-case code
+3. If tests still fail — fix the implementation, do not modify the test
 4. ALL tests must pass, not just the new one
 
 ### Step 5: REFACTOR
@@ -69,7 +69,7 @@ type: core
 - Test passes immediately on first run — the test is wrong or the behavior exists
 - Skipping the verify step — always run verify-tests.sh, never assume
 - Writing more code than needed to pass the test — minimal means minimal
-- Patching production code with special-case logic just to satisfy a test — think holistically; if the test is outdated or wrong, update the test instead
+- Modifying the test to make it pass — fix the code, not the test
 - Refactoring without verifying — always run tests after refactoring
 
 ## Integration

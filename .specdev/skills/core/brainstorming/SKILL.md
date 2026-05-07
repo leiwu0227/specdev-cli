@@ -34,10 +34,6 @@ next: breakdown
    - Acknowledge each answer before asking the next question
 4. Continue until you understand: purpose, constraints, success criteria
 5. Do not proceed until you understand what you are building
-6. **ALWAYS scan the codebase when you have a question — never assume.**
-   Read the actual files, grep for symbols, check how things work today.
-   Take eager effort to find answers yourself before asking the user.
-   Do not take shortcuts or guess based on naming conventions alone.
 
 **Question categories to cover** (not a rigid script — guide the conversation through these topics as relevant):
 
@@ -52,25 +48,12 @@ next: breakdown
 | Existing patterns | When relevant | How does the codebase handle similar things? |
 | Testing approach | When relevant | How will this be tested? |
 
-### Design Principles
-
-Apply these throughout the design — they are not optional:
-
-- **Modular** — small, focused units with clear boundaries and separation of duties
-- **Minimal side effects** — prefer pure functions; isolate state changes
-- **Idempotent** — operations should be safe to retry
-- **No overengineering** — solve the actual problem, not hypothetical future ones
-- **No deep layering** — avoid function call chains that obscure what's happening
-- **Readable and reviewable** — code should be obvious at a glance; variable and function names must convey meaning
-- **Elegant** — the simplest solution that fully solves the problem
-
 ### Phase 2: Explore Approaches
 
 1. Present 2-3 different approaches with trade-offs
 2. Lead with your recommended approach and explain why
 3. Keep it conversational — this is a discussion, not a presentation
-4. Evaluate approaches against the design principles above
-5. Let the user choose
+4. Let the user choose
 
 ### Phase 3: Design Sections
 
