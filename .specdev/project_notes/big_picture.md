@@ -45,6 +45,7 @@ hooks/                  Platform hooks (SessionStart for Claude Code)
 - `OFFICIAL_TOOL_SKILLS` in `src/utils/update.js` controls which tool skills are auto-managed
 - **Knowledge system:** After assignments complete, `specdev distill` aggregates capture diffs and heuristics into JSON; agent writes to `knowledge/` branches (codestyle, architecture, domain, workflow). `specdev distill done` validates big_picture word count and feature_descriptions entry, then marks processed via `knowledge/.processed_captures.json`.
 - **Reviewloop:** `src/commands/reviewloop.js` orchestrates external reviewer CLIs (codex, cursor, etc.) in automated review rounds with feedback written to `review/{phase}-feedback.md`. Reviewer configs are JSON files in `skills/core/reviewloop/reviewers/` (codex, cursor, cursor-gemini, claude). `review-focus.json` defines round-specific focus areas (architecture → efficiency → domain → general) passed via `SPECDEV_FOCUS` env var. Supports multi-reviewer chains (`--reviewer=a,b,c`) with independent round counters and per-reviewer feedback files. Supports discussion reviewloop via `SPECDEV_DISCUSSION` env var passed to reviewer subprocesses.
+- **Workflow status:** `specdev status [--json]` reuses `continue` state detection to expose the active assignment state, gates, artifact presence, blockers, progress, review diagnostics, and next action for humans or automation.
 
 ## Conventions and constraints
 

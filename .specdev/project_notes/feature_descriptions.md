@@ -30,6 +30,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added `--reviewer=a,b,c` comma-separated syntax to run multiple reviewers in succession. Each reviewer gets independent round counters, separate feedback files (`{phase}-feedback-{reviewer}.md`), and skip-on-resume capability. Phase approved only after all reviewers pass. `check-review` supports `--reviewer` flag and auto-detect.
 **Key files:** `src/commands/reviewloop.js`, `src/commands/check-review.js`
 
+### Workflow Status JSON
+**Assignment:** 00008_feature_workflow-status-json
+**Completed:** 2026-05-07
+**Description:** Added `specdev status [--json]` for human-readable and machine-readable workflow state. The command reports active assignment state, gates, artifact presence, blockers, progress, review diagnostics, distill nudges, and next action.
+**Key files:** `src/commands/status.js`, `src/commands/continue.js`, `tests/test-workflow.js`
+
 ---
 
 ## Architecture & Structure
