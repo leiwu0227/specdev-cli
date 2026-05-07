@@ -44,6 +44,16 @@ async function skillsListCommand(flags) {
   const activeTools = await readActiveTools(join(targetDir, '.specdev'))
   const activeNames = new Set(Object.keys(activeTools.tools))
 
+  if (flags.json) {
+    console.log(JSON.stringify({
+      command: 'skills',
+      version: 1,
+      status: 'ok',
+      skills: skills.map((skill) => toSkillJson(skill, activeNames)),
+    }, null, 2))
+    return
+  }
+
   console.log(`\nAvailable skills (${skills.length}):\n`)
   const coreSkills = skills.filter(s => s.category === 'core')
   const toolSkills = skills.filter(s => s.category === 'tool')
@@ -69,4 +79,19 @@ async function skillsListCommand(flags) {
     console.log()
   }
   console.log()
+}
+
+function toSkillJson(skill, activeNames) {
+  const item = {
+    name: skill.name,
+    category: skill.category,
+    description: skill.description,
+    path: skill.path,
+    skill_md_path: skill.skillMdPath,
+    has_scripts: skill.hasScripts,
+  }
+  if (skill.category === 'tool') {
+    item.active = activeNames.has(skill.name)
+  }
+  return item
 }

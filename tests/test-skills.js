@@ -11,6 +11,7 @@ const TEST_DIR = join(__dirname, 'test-skills-output')
 
 let failures = 0
 let passes = 0
+let result
 
 function assert(condition, msg) {
   if (!condition) { console.error(`  FAIL ${msg}`); failures++ }
@@ -70,6 +71,27 @@ const folderSkill = allSkills.find(s => s.name === 'test-folder-skill')
 assert(!!folderSkill, 'lists folder-based skills')
 assert(folderSkill?.description === 'A test skill', 'shows folder skill description')
 assert(folderSkill?.hasScripts === true, 'indicates scripts available')
+assert(folderSkill?.path?.endsWith('.specdev/skills/tools/test-folder-skill'), 'scanner includes skill path')
+assert(folderSkill?.skillMdPath?.endsWith('.specdev/skills/tools/test-folder-skill/SKILL.md'), 'scanner includes skill md path')
+
+console.log('\nskills listing as json:')
+result = runCmd(['skills', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 0, 'skills --json succeeds', result.stderr)
+const skillsJson = JSON.parse(result.stdout)
+assert(skillsJson.command === 'skills', 'skills json command is skills')
+assert(skillsJson.version === 1, 'skills json version is 1')
+assert(skillsJson.status === 'ok', 'skills json status is ok')
+assert(Array.isArray(skillsJson.skills), 'skills json includes skills array')
+const jsonCore = skillsJson.skills.find((skill) => skill.name === 'brainstorming')
+assert(jsonCore?.category === 'core', 'skills json includes core category')
+assert(jsonCore?.path.endsWith('.specdev/skills/core/brainstorming'), 'skills json includes core path')
+assert(jsonCore?.skill_md_path.endsWith('.specdev/skills/core/brainstorming/SKILL.md'), 'skills json includes skill md path')
+assert(jsonCore?.has_scripts === true, 'skills json includes scripts flag')
+assert(jsonCore?.active === undefined, 'core skills have no active flag')
+const jsonTool = skillsJson.skills.find((skill) => skill.name === 'test-folder-skill')
+assert(jsonTool?.category === 'tool', 'skills json includes tool category')
+assert(jsonTool?.description === 'A test skill', 'skills json includes description')
+assert(jsonTool?.active === false, 'uninstalled tool skill is inactive')
 
 // =====================================================================
 // Skills Subcommands
@@ -79,7 +101,7 @@ cleanup()
 runCmd(['init', `--target=${TEST_DIR}`])
 
 console.log('\nskills (list):')
-let result = runCmd(['skills', `--target=${TEST_DIR}`])
+result = runCmd(['skills', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'skills list succeeds')
 const coreSkills2 = await scanSkillsDir(join(TEST_DIR, '.specdev', 'skills', 'core'), 'core')
 assert(coreSkills2.length > 0, 'shows core skills')

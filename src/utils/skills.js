@@ -98,10 +98,25 @@ export async function scanSkillsDir(dir, category) {
         const content = await fse.readFile(skillMd, 'utf-8')
         const desc = parseFrontmatter(content).description || ''
         const hasScripts = await fse.pathExists(join(dir, entry.name, 'scripts'))
-        skills.push({ name: entry.name, description: desc, hasScripts, category })
+        skills.push({
+          name: entry.name,
+          description: desc,
+          hasScripts,
+          category,
+          path: join(dir, entry.name),
+          skillMdPath: skillMd,
+        })
       }
     } else if (entry.name.endsWith('.md')) {
-      skills.push({ name: entry.name.replace('.md', ''), description: '', hasScripts: false, category })
+      const markdownPath = join(dir, entry.name)
+      skills.push({
+        name: entry.name.replace('.md', ''),
+        description: '',
+        hasScripts: false,
+        category,
+        path: markdownPath,
+        skillMdPath: markdownPath,
+      })
     }
   }
   return skills
