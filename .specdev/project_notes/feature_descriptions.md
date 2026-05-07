@@ -48,6 +48,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added `specdev skills --json` and `specdev skills view <name> [path]` so agents can discover skills structurally and load one skill file or support file at a time.
 **Key files:** `src/utils/skills.js`, `src/commands/skills.js`, `tests/test-skills.js`
 
+### Bounded Working Memory
+**Assignment:** 00011_feature_bounded-working-memory
+**Completed:** 2026-05-07
+**Description:** Added `specdev memory refresh` to generate a bounded `.specdev/project_notes/working_memory.md` file for agents. `specdev distill done` now returns a JSON `memory_hint` prompting refresh after captures are finalized.
+**Key files:** `src/commands/memory.js`, `src/utils/working-memory.js`, `src/commands/distill-done.js`, `tests/test-memory.js`
+
 ---
 
 ## Architecture & Structure

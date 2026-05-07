@@ -33,6 +33,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00008 | workflow-status-json | Done | 2026-05-07 | Added specdev status --json for machine-readable workflow state |
 | 00009 | reviewer-preflight-checks | Done | 2026-05-07 | Added reviewloop --preflight and automatic blocking reviewer readiness checks |
 | 00010 | structured-skill-inspection | Done | 2026-05-07 | Added skills --json and guarded skills view for progressive skill loading |
+| 00011 | bounded-working-memory | Done | 2026-05-07 | Added memory refresh command and bounded working_memory.md generation |
 
 ---
 
