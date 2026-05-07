@@ -36,6 +36,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added `specdev status [--json]` for human-readable and machine-readable workflow state. The command reports active assignment state, gates, artifact presence, blockers, progress, review diagnostics, distill nudges, and next action.
 **Key files:** `src/commands/status.js`, `src/commands/continue.js`, `tests/test-workflow.js`
 
+### Reviewer Preflight Checks
+**Assignment:** 00009_feature_reviewer-preflight-checks
+**Completed:** 2026-05-07
+**Description:** Added `specdev reviewloop <phase> --preflight --reviewer=<name> [--json]` to validate reviewer readiness without launching external CLIs. Normal reviewer execution now runs blocking preflight checks before spawning.
+**Key files:** `src/utils/reviewer-preflight.js`, `src/commands/reviewloop.js`, `tests/test-reviewloop-command.js`
+
 ---
 
 ## Architecture & Structure
