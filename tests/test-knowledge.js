@@ -89,6 +89,31 @@ assert(json?.command === 'knowledge search', 'search json identifies command')
 assert(json?.query === 'bounded memory', 'search json includes query')
 assert(json?.results?.some((entry) => entry.path === 'knowledge/architecture/bounded-memory.md'), 'search json includes matching document')
 
+console.log('\nknowledge list --json:')
+result = runCmd(['knowledge', 'list', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 0, 'knowledge list exits 0', result.stderr || result.stdout)
+try {
+  json = JSON.parse(result.stdout)
+  assert(true, 'knowledge list --json outputs valid JSON')
+} catch {
+  assert(false, 'knowledge list --json outputs valid JSON', result.stdout)
+}
+assert(json?.command === 'knowledge list', 'list json identifies command')
+assert(Array.isArray(json?.files), 'list json has files array')
+assert(json.files.length > 0, 'list json has at least one file')
+const firstFile = json.files[0]
+assert(typeof firstFile?.path === 'string', 'file entry has path')
+assert(typeof firstFile?.branch === 'string', 'file entry has branch')
+assert(typeof firstFile?.title === 'string', 'file entry has title')
+assert(typeof json?.branches === 'object' && json.branches !== null, 'list json has branches object')
+assert(typeof json.branches.architecture === 'number', 'branches has architecture count')
+assert(json.branches.architecture >= 1, 'architecture branch has files')
+
+console.log('\nknowledge list human:')
+result = runCmd(['knowledge', 'list', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'knowledge list human exits 0', result.stderr || result.stdout)
+assert(result.stdout.includes('architecture'), 'human list includes architecture branch')
+
 console.log('\nknowledge search auto-builds index:')
 writeFixture()
 result = runCmd(['knowledge', 'search', 'bounded memory', `--target=${TEST_DIR}`])
