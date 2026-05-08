@@ -1,6 +1,7 @@
 {
   "name": "@specdev/cli",
   "version": "0.0.4",
+  "releaseDate": "2026-05-08",
   "description": "CLI to initialize SpecDev workflow system",
   "type": "module",
   "bin": {
