@@ -25,6 +25,7 @@ export const COMMANDS = [
   { name: 'reviewloop', usage: 'reviewloop <phase>', description: 'Automated external review loop (brainstorm | implementation)' },
   { name: 'distill', usage: 'distill', description: 'Aggregate knowledge from assignment captures (JSON)' },
   { name: 'distill done', usage: 'distill done <name>', description: 'Validate and mark assignment as distilled' },
+  { name: 'context', usage: 'context', description: 'Dump project state, commands, knowledge, and skills for agents' },
   { name: 'help', usage: 'help', description: 'Show this help message' },
   { name: 'version', usage: '--version, -v', description: 'Show version number' },
 ]

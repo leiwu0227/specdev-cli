@@ -21,6 +21,7 @@ import { discussCommand } from './discussion.js'
 import { statusCommand } from './status.js'
 import { memoryCommand } from './memory.js'
 import { knowledgeCommand } from './knowledge.js'
+import { contextCommand } from './context.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -41,6 +42,7 @@ const commandHandlers = {
   implement: ({ positionalArgs, flags }) => implementCommand(positionalArgs, flags),
   focus: ({ positionalArgs, flags }) => focusCommand(positionalArgs, flags),
   discussion: ({ positionalArgs, flags }) => discussCommand(positionalArgs, flags),
+  context: ({ flags }) => contextCommand(flags),
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
