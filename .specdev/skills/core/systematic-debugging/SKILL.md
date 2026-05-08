@@ -19,7 +19,7 @@ This skill has no scripts of its own. It references:
 
 | Script | Source | When to run |
 |--------|--------|-------------|
-| `test-driven-development/scripts/verify-tests.sh` | test-driven-development skill | To run tests and verify reproduce/fix status |
+| `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh` | test-driven-development skill | To run tests and verify reproduce/fix status |
 
 ## Process
 

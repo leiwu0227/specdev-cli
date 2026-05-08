@@ -64,7 +64,7 @@ Must pass before requesting review.
 
 ---
 
-## Phase 4: Summary
+## Phase 4: Summary (Capture)
 
 **Goal:** Capture learnings and update project documentation.
 

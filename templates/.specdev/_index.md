@@ -6,7 +6,7 @@ Reference dictionary for all SpecDev resources. Consult when you need to find a 
 
 ## Workflow
 
-- **`_guides/workflow.md`** — The 4-phase workflow (brainstorm → breakdown → implement → summary). Contains phase-by-phase instructions: what to do, which skill to load, checkpoint/gate commands, and review options. Read this when starting an assignment or resuming work.
+- **`_guides/workflow.md`** — The 4-phase workflow (brainstorm → breakdown → implement → summary (capture)). Contains phase-by-phase instructions: what to do, which skill to load, checkpoint/gate commands, and review options. Read this when starting an assignment or resuming work.
 
 ## Reference Guides
 
@@ -70,6 +70,8 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 
 ## CLI Commands
 
+### Workflow Commands
+
 | Command | Purpose | When to use |
 |---------|---------|-------------|
 | `specdev assignment "<desc>"` | Reserve next assignment ID; sets `.current` pointer | Starting new work |
@@ -81,13 +83,37 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 | `specdev checkpoint <phase> --discussion=<id>` | Validate discussion artifacts | Within a discussion workflow |
 | `specdev approve <phase>` | Hard gate: signal to proceed past a phase | After user reviews and is satisfied |
 | `specdev continue` | Detect current assignment state, suggest next action | Resuming work in a new session |
+| `specdev implement` | Set up and kick off implementation phase | After breakdown completes |
+| `specdev revise` | Record design revision, re-enter brainstorm | When design needs rework after breakdown |
 | `specdev review <phase>` | Launch manual review in a separate session | Optional quality check (brainstorm or implementation) |
 | `specdev review <phase> --discussion=<id>` | Launch manual review for a discussion | Optional review of discussion output |
+| `specdev reviewloop <phase>` | Automated review loop for assignment | Automated review of brainstorm or implementation |
 | `specdev reviewloop <phase> --discussion=<id>` | Automated review loop for a discussion | Automated review of discussion output |
 | `specdev check-review` | Read review feedback and address findings | After a review session has been run |
-| `specdev skills` | List all installed skills with descriptions | During breakdown to declare task skills |
+
+### Knowledge & Maintenance Commands
+
+| Command | Purpose | When to use |
+|---------|---------|-------------|
 | `specdev distill --assignment=<name>` | Aggregate knowledge from assignment captures | Knowledge distillation (`--assignment` flag required) |
+| `specdev distill done <name>` | Validate and mark assignment as distilled | Final step of knowledge capture phase |
 | `specdev knowledge index` | Build/rebuild SQLite FTS index of `.specdev/` knowledge | After adding new content (search auto-builds on first use) |
 | `specdev knowledge search "<query>"` | Search indexed knowledge (BM25-ranked) | Finding relevant project context |
+| `specdev memory refresh` | Regenerate bounded working memory for agents | After completing assignments or adding knowledge |
 | `specdev migrate` | Guided layout migration for non-conforming `.specdev/` | When `.specdev/` structure doesn't match current layout |
 | `specdev migrate legacy-assignments [--assignment=<id>]` | Deterministic V3-to-V4 assignment file moves | When old root-level phase files exist in assignments |
+
+### Setup & Utility Commands
+
+| Command | Purpose | When to use |
+|---------|---------|-------------|
+| `specdev init` | Initialize `.specdev/` folder in current directory | Setting up SpecDev for the first time |
+| `specdev update` | Update system files while preserving project files | After installing a new specdev version |
+| `specdev start` | Check/fill project context (`big_picture.md`) | After init, or when updating project context |
+| `specdev status [--json]` | Emit workflow state for humans or automation | Checking current assignment state |
+| `specdev skills` | List all installed skills with descriptions | During breakdown to declare task skills |
+| `specdev skills install <name>` | Install tool skills with coding agent wrappers | Adding project-specific tool skills |
+| `specdev skills remove <name>` | Remove an installed tool skill | Removing a tool skill |
+| `specdev skills sync` | Reconcile active tools with available skills | After manually editing skill files |
+| `specdev help` | Show CLI usage and command list | Quick reference |
+| `specdev --version` | Show version number | Checking installed version |
