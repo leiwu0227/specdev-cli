@@ -49,6 +49,8 @@ assert(!afterUpdate.includes('tampered'), 'tampered content replaced')
 const codexAfterUpdate = readFileSync(codexAssignmentPath, 'utf-8')
 assert(codexAfterUpdate.includes('specdev assignment'), 'codex skill file restored after update')
 assert(!codexAfterUpdate.includes('tampered'), 'codex tampered content replaced')
+assert(existsSync(join(TEST_DIR, '.claude', 'skills', 'specdev-layout-migration', 'SKILL.md')), 'layout migration command skill installed by update')
+assert(existsSync(join(TEST_DIR, '.codex', 'skills', 'specdev-layout-migration', 'SKILL.md')), 'codex layout migration command skill installed by update')
 
 console.log('\nupdate backfills Codex command skills:')
 cleanup()

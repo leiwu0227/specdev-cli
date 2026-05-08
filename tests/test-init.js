@@ -96,6 +96,7 @@ for (const [agentName, skillsDir] of [['Claude', claudeSkillsDir], ['Codex', cod
   assert(!existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), `${agentName} specdev-brainstorm removed (redundant with assignment)`)
   assert(existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')), `${agentName} specdev-continue/SKILL.md installed`)
   assert(existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')), `${agentName} specdev-review/SKILL.md installed`)
+  assert(existsSync(join(skillsDir, 'specdev-layout-migration', 'SKILL.md')), `${agentName} specdev-layout-migration/SKILL.md installed`)
 }
 
 const startSkill = readFileSync(join(claudeSkillsDir, 'specdev-start', 'SKILL.md'), 'utf-8')
@@ -114,6 +115,10 @@ assert(continueSkill.includes('specdev continue'), 'continue skill references sp
 
 const reviewSkill = readFileSync(join(codexSkillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
 assert(reviewSkill.includes('specdev review'), 'review skill references specdev review command')
+
+const layoutMigrationSkill = readFileSync(join(codexSkillsDir, 'specdev-layout-migration', 'SKILL.md'), 'utf-8')
+assert(layoutMigrationSkill.includes('.specdev/_guides/migration_guide.md'), 'layout migration skill references migration guide')
+assert(layoutMigrationSkill.includes('layout-plan.md'), 'layout migration skill requires a layout plan')
 
 console.log('\nhook installation:')
 const hookScript = join(TEST_DIR, '.claude', 'hooks', 'specdev-session-start.sh')

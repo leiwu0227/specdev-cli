@@ -11,9 +11,10 @@
     },
     {
       "number": 2,
-      "status": "pending",
-      "started_at": null,
-      "completed_at": null
+      "status": "completed",
+      "started_at": "2026-05-08T02:44:50Z",
+      "completed_at": "2026-05-08T02:47:39Z",
+      "summary": "Added combined migration guide and installed specdev-layout-migration command skill through init/update."
     },
     {
       "number": 3,
