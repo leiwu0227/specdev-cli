@@ -10,6 +10,7 @@ import { checkpointCommand } from './checkpoint.js'
 import { approveCommand } from './approve.js'
 import { reviewCommand } from './review.js'
 import { migrateCommand } from './migrate.js'
+import { migrateLegacyAssignmentsCommand } from './migrate-legacy-assignments.js'
 import { continueCommand } from './continue.js'
 import { reviseCommand } from './revise.js'
 import { checkReviewCommand } from './check-review.js'
@@ -30,7 +31,6 @@ const commandHandlers = {
   checkpoint: ({ positionalArgs, flags }) => checkpointCommand(positionalArgs, flags),
   approve: ({ positionalArgs, flags }) => approveCommand(positionalArgs, flags),
   review: ({ positionalArgs, flags }) => reviewCommand(positionalArgs, flags),
-  migrate: ({ flags }) => migrateCommand(flags),
   continue: ({ flags }) => continueCommand(flags),
   status: ({ flags }) => statusCommand(flags),
   revise: ({ flags }) => reviseCommand(flags),
@@ -50,6 +50,20 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     } else {
       // No subcommand = combined distill
       await distillCommand(flags)
+    }
+    return
+  }
+
+  if (command === 'migrate') {
+    const subcommand = positionalArgs[0]
+    if (subcommand === 'legacy-assignments') {
+      await migrateLegacyAssignmentsCommand(flags)
+    } else if (subcommand) {
+      console.error(`Unknown migrate subcommand: ${subcommand}`)
+      console.log('Run "specdev migrate" for guided migration instructions')
+      process.exitCode = 1
+    } else {
+      await migrateCommand(flags)
     }
     return
   }

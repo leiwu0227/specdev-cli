@@ -1,0 +1,5 @@
+# Proposal: Guided Layout Migration
+
+`specdev migrate` currently performs a narrow automatic V3-to-V4 assignment-file migration. That behavior is useful for one legacy shape, but it is the wrong default for broader `.specdev/` layout cleanup because older projects may contain project-specific notes, docs, scaffolding, editor metadata, and ad hoc folders that require semantic judgment. The command should become a non-destructive guided entrypoint for coding agents: explain the target structure, point to a detailed guide, and require an inventory plus user-approved migration plan before any file moves.
+
+To preserve compatibility for the old mechanical assignment migration, keep it behind an explicit legacy subcommand such as `specdev migrate legacy-assignments`, with dry-run/apply semantics made clear. Add a first-class layout migration guide and command skill so `specdev update` can distribute the workflow. The intended user flow becomes: update SpecDev, invoke the migration skill or `specdev migrate`, let the agent inspect `.specdev/`, write a layout plan, confirm decisions with the user, then apply scoped moves.

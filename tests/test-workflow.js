@@ -553,16 +553,26 @@ async function runTests() {
     return assignment
   }
 
-  console.log('\nmigrate dry-run:')
+  console.log('\nmigrate guided default:')
   const migA1 = setupLegacyAssignment('00001_feature_legacy')
-  const dryRun = runCmd(['migrate', `--target=${TEST_DIR}`, '--dry-run'])
-  assert(dryRun.status === 0, 'dry-run exits 0', dryRun.stderr)
-  assert(existsSync(join(migA1, 'proposal.md')), 'dry-run keeps legacy proposal.md')
-  assert(!existsSync(join(migA1, 'brainstorm', 'proposal.md')), 'dry-run does not move files')
+  const guided = runCmd(['migrate', `--target=${TEST_DIR}`])
+  assert(guided.status === 0, 'guided migrate exits 0', guided.stderr)
+  assert(guided.stdout.includes('Guided SpecDev migration'), 'guided migrate prints guided heading')
+  assert(guided.stdout.includes('.specdev/_guides/migration_guide.md'), 'guided migrate points to migration guide')
+  assert(guided.stdout.includes('specdev-layout-migration'), 'guided migrate points to agent skill')
+  assert(existsSync(join(migA1, 'proposal.md')), 'guided migrate keeps legacy proposal.md')
+  assert(!existsSync(join(migA1, 'brainstorm', 'proposal.md')), 'guided migrate does not move files')
 
-  console.log('\nmigrate apply:')
-  const apply = runCmd(['migrate', `--target=${TEST_DIR}`])
-  assert(apply.status === 0, 'migrate exits 0', apply.stderr)
+  console.log('\nmigrate legacy dry-run:')
+  const dryRun = runCmd(['migrate', 'legacy-assignments', `--target=${TEST_DIR}`, '--dry-run'])
+  assert(dryRun.status === 0, 'legacy dry-run exits 0', dryRun.stderr)
+  assert(dryRun.stdout.includes('Migrating'), 'legacy dry-run uses assignment migrator')
+  assert(existsSync(join(migA1, 'proposal.md')), 'legacy dry-run keeps legacy proposal.md')
+  assert(!existsSync(join(migA1, 'brainstorm', 'proposal.md')), 'legacy dry-run does not move files')
+
+  console.log('\nmigrate legacy apply:')
+  const apply = runCmd(['migrate', 'legacy-assignments', `--target=${TEST_DIR}`])
+  assert(apply.status === 0, 'legacy migrate exits 0', apply.stderr)
   assert(!existsSync(join(migA1, 'proposal.md')), 'moves proposal.md from legacy root')
   assert(existsSync(join(migA1, 'brainstorm', 'proposal.md')), 'creates brainstorm/proposal.md')
   assert(!existsSync(join(migA1, 'plan.md')), 'moves plan.md from legacy root')
@@ -575,14 +585,14 @@ async function runTests() {
   console.log('\nmigrate assignment filter:')
   const migA2 = setupLegacyAssignment('00002_feature_filtered')
   const onlyA1 = runCmd([
-    'migrate', `--target=${TEST_DIR}`, '--assignment=00001_feature_legacy',
+    'migrate', 'legacy-assignments', `--target=${TEST_DIR}`, '--assignment=00001_feature_legacy',
   ])
   assert(onlyA1.status === 0, 'filtered migrate exits 0')
   assert(existsSync(join(migA2, 'proposal.md')), 'does not touch other assignments')
 
   console.log('\nmissing assignment:')
   const migrMissing = runCmd([
-    'migrate', `--target=${TEST_DIR}`, '--assignment=99999_feature_missing',
+    'migrate', 'legacy-assignments', `--target=${TEST_DIR}`, '--assignment=99999_feature_missing',
   ])
   assert(migrMissing.status === 1, 'missing assignment exits non-zero')
 
