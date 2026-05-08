@@ -71,9 +71,7 @@ export async function buildKnowledgeIndex(specdevPath) {
 export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
   const dbPath = join(specdevPath, 'cache', 'knowledge.sqlite')
   if (!(await fse.pathExists(dbPath))) {
-    const error = new Error('Knowledge index not found. Run: specdev knowledge index')
-    error.code = 'KNOWLEDGE_INDEX_MISSING'
-    throw error
+    await buildKnowledgeIndex(specdevPath)
   }
 
   const sqlite = await loadSqlite()

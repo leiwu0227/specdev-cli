@@ -87,7 +87,7 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 | `specdev check-review` | Read review feedback and address findings | After a review session has been run |
 | `specdev skills` | List all installed skills with descriptions | During breakdown to declare task skills |
 | `specdev distill --assignment=<name>` | Aggregate knowledge from assignment captures | Knowledge distillation (`--assignment` flag required) |
-| `specdev knowledge index` | Build/rebuild SQLite FTS index of `.specdev/` knowledge | Before searching, or after adding new content |
+| `specdev knowledge index` | Build/rebuild SQLite FTS index of `.specdev/` knowledge | After adding new content (search auto-builds on first use) |
 | `specdev knowledge search "<query>"` | Search indexed knowledge (BM25-ranked) | Finding relevant project context |
 | `specdev migrate` | Guided layout migration for non-conforming `.specdev/` | When `.specdev/` structure doesn't match current layout |
 | `specdev migrate legacy-assignments [--assignment=<id>]` | Deterministic V3-to-V4 assignment file moves | When old root-level phase files exist in assignments |
