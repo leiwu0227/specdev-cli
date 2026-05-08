@@ -560,8 +560,13 @@ async function runTests() {
   assert(guided.stdout.includes('Guided SpecDev migration'), 'guided migrate prints guided heading')
   assert(guided.stdout.includes('.specdev/_guides/migration_guide.md'), 'guided migrate points to migration guide')
   assert(guided.stdout.includes('specdev-layout-migration'), 'guided migrate points to agent skill')
+  assert(guided.stdout.includes('specdev migrate legacy-assignments --dry-run'), 'guided migrate points to legacy dry run')
   assert(existsSync(join(migA1, 'proposal.md')), 'guided migrate keeps legacy proposal.md')
   assert(!existsSync(join(migA1, 'brainstorm', 'proposal.md')), 'guided migrate does not move files')
+
+  const help = runCmd(['help'])
+  assert(help.status === 0, 'help exits 0')
+  assert(help.stdout.includes('migrate legacy-assignments'), 'help lists legacy migration subcommand')
 
   console.log('\nmigrate legacy dry-run:')
   const dryRun = runCmd(['migrate', 'legacy-assignments', `--target=${TEST_DIR}`, '--dry-run'])

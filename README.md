@@ -25,7 +25,8 @@ Command skills are installed to `.claude/skills/` and `.codex/skills/`. Use `spe
 ```bash
 specdev init                           # Initialize .specdev in current directory
 specdev update                         # Update core skills, preserve project files
-specdev migrate [--dry-run]            # Migrate legacy assignments to V4 layout
+specdev migrate                         # Guided .specdev layout migration workflow
+specdev migrate legacy-assignments --dry-run
 specdev skills                         # List available skills
 specdev skills --json                  # Machine-readable skill inventory
 specdev skills view <name> [path]      # Print a skill file or support file
