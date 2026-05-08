@@ -35,6 +35,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00010 | structured-skill-inspection | Done | 2026-05-07 | Added skills --json and guarded skills view for progressive skill loading |
 | 00011 | bounded-working-memory | Done | 2026-05-07 | Added memory refresh command and bounded working_memory.md generation |
 | 00012 | guided-layout-migration | Done | 2026-05-08 | Made migrate guide-based by default; moved old automatic assignment migration to legacy-assignments |
+| 00013 | sqlite-knowledge-retrieval | Done | 2026-05-08 | Added SQLite FTS knowledge index/search commands with generated cache |
 
 ---
 

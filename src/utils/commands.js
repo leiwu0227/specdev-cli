@@ -6,6 +6,8 @@ export const COMMANDS = [
   { name: 'skills remove', usage: 'skills remove <n>', description: 'Remove an installed tool skill' },
   { name: 'skills sync', usage: 'skills sync', description: 'Reconcile active tools with available skills' },
   { name: 'memory refresh', usage: 'memory refresh', description: 'Regenerate bounded working memory for agents' },
+  { name: 'knowledge index', usage: 'knowledge index', description: 'Rebuild SQLite knowledge retrieval cache' },
+  { name: 'knowledge search', usage: 'knowledge search <query>', description: 'Search indexed SpecDev knowledge' },
   { name: 'start', usage: 'start', description: 'Check/fill project context (big_picture.md)' },
   { name: 'migrate', usage: 'migrate', description: 'Show guided .specdev layout migration workflow' },
   { name: 'migrate legacy-assignments', usage: 'migrate legacy-assignments', description: 'Move legacy root assignment files into phase folders' },

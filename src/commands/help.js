@@ -47,6 +47,10 @@ export function helpCommand() {
     '  # Knowledge distillation',
     '  specdev distill --assignment=<name>',
     '  specdev distill done <name>',
+    '',
+    '  # Knowledge retrieval',
+    '  specdev knowledge index',
+    '  specdev knowledge search "bounded memory"',
   ])
   blankLine()
   printSection('For more information, visit: https://github.com/leiwu0227/specdev-cli')

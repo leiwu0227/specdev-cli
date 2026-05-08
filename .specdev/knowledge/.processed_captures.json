@@ -11,7 +11,8 @@
     "00009_feature_reviewer-preflight-checks",
     "00010_feature_structured-skill-inspection",
     "00011_feature_bounded-working-memory",
-    "00012_feature_guided-layout-migration"
+    "00012_feature_guided-layout-migration",
+    "00013_feature_sqlite-knowledge-retrieval"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -25,6 +26,7 @@
     "00009_feature_reviewer-preflight-checks",
     "00010_feature_structured-skill-inspection",
     "00011_feature_bounded-working-memory",
-    "00012_feature_guided-layout-migration"
+    "00012_feature_guided-layout-migration",
+    "00013_feature_sqlite-knowledge-retrieval"
   ]
 }

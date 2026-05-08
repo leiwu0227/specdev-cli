@@ -60,6 +60,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Made bare `specdev migrate` a non-destructive guided migration entrypoint and moved the old deterministic assignment-file mover to `specdev migrate legacy-assignments`. Added a combined migration guide and `specdev-layout-migration` command skill.
 **Key files:** `src/commands/migrate.js`, `src/commands/migrate-legacy-assignments.js`, `src/commands/dispatch.js`, `.specdev/_guides/migration_guide.md`, `templates/.specdev/_guides/migration_guide.md`, `src/commands/init.js`
 
+### SQLite Knowledge Retrieval
+**Assignment:** 00013_feature_sqlite-knowledge-retrieval
+**Completed:** 2026-05-08
+**Description:** Added `specdev knowledge index` and `specdev knowledge search <query>` for local SQLite FTS retrieval over SpecDev markdown artifacts. The database is generated under `.specdev/cache/knowledge.sqlite`, ignored by git, and rebuildable from markdown sources.
+**Key files:** `src/commands/knowledge.js`, `src/utils/knowledge.js`, `tests/test-knowledge.js`, `templates/.specdev/.gitignore`
+
 ---
 
 ## Architecture & Structure

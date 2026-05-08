@@ -37,6 +37,7 @@ let result = runCmd(['init', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'init succeeds')
 
 const essentialFiles = [
+  '.specdev/.gitignore',
   '.specdev/_main.md',
   '.specdev/_index.md',
   '.specdev/_guides/workflow.md',
@@ -60,6 +61,9 @@ if (missing.length > 0) {
   console.error('Missing files:', missing.join(', '))
 }
 assert(missing.length === 0, `all ${essentialFiles.length} essential files present`)
+
+const specdevGitignore = readFileSync(join(TEST_DIR, '.specdev', '.gitignore'), 'utf-8')
+assert(specdevGitignore.includes('cache/'), '.specdev/.gitignore ignores generated cache')
 
 const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
 assert(mainMd.includes('SpecDev'), '_main.md contains SpecDev reference')

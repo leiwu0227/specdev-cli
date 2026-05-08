@@ -8,19 +8,20 @@ Refresh with: `specdev memory refresh`
 specdev-cli is a CLI tool that enforces a spec-driven development workflow for AI coding agents (Claude Code, Codex, Cursor, etc.). It provides structured phases — brainstorm, breakdown, implementation, review — with hard gates between them. Agents must produce artifacts (proposal, design, plan, code) and get approval at each gate before proceeding.
 
 ## Current Workflow
-00012_feature_guided-layout-migration: completed. Next: Assignment appears complete. Start a new assignment or capture additional learnings
+00013_feature_sqlite-knowledge-retrieval: completed. Next: Assignment appears complete. Start a new assignment or capture additional learnings
 
 ## Recent Completed Assignments
+- 00013_feature_sqlite-knowledge-retrieval
 - 00012_feature_guided-layout-migration
 - 00011_feature_bounded-working-memory
 - 00010_feature_structured-skill-inspection
 - 00009_feature_reviewer-preflight-checks
-- 00008_feature_workflow-status-json
 
 ## Durable Knowledge
 - architecture/flat-skill-view-scope.md: Assignment 00010 added `specdev skills view <name> [relative-path]`. Folder skills are scoped to their own directory, but flat markdown skills use the parent category directory as their base because they do not have a dedicated skill folder.
 - architecture/generated-working-memory.md: Assignment 00011 added `.specdev/project_notes/working_memory.md` as a generated, bounded agent context file. It is derived from existing SpecDev artifacts rather than edited directly.
 - architecture/guided-migration-command-split.md: Assignment 00012 changed migration into two explicit paths:
+- architecture/sqlite-knowledge-retrieval.md: Assignment 00013 added `specdev knowledge index` and `specdev knowledge search <query>` as the first retrieval layer for SpecDev knowledge.
 - _workflow_feedback/breakdown-checkpoint-mismatch.md: Assignment 00010 showed that the breakdown skill refers to plan review/checkpoint behavior, but the CLI only supports `brainstorm`, `implementation`, and `discussion` checkpoint phases.
 - _workflow_feedback/codex-reviewer-recurring-false-positives.md: The codex reviewer may repeat the same findings across rounds even after they've been addressed or disputed in changelogs. Observed in assignment 00003 where two findings persisted across all 3 rounds despite detailed changelog responses each time.
 - _workflow_feedback/codex-sandbox-test-limitations.md: Codex's sandboxed environment cannot capture `spawnSync` stdout/stderr when running specdev CLI tests. This causes `test-reviewloop-command.js` (and likely other test files using the same pattern) to report false failures during `specdev reviewloop implementation --reviewer=codex`.
