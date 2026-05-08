@@ -14,7 +14,7 @@ Reference dictionary for all SpecDev resources. Consult when you need to find a 
 
 - **`_guides/codestyle_guide.md`** — Project coding standards. Covers module independence, pure functions, single-responsibility, explicit signatures, documentation expectations, and import rules. Must read before writing any code.
 
-- **`_guides/migration_guide.md`** — Migrating legacy (V3) assignment layouts to V4 subfolder structure. Only needed when `specdev update` detects old root-level phase files. Covers the `specdev migrate` command and file move mappings.
+- **`_guides/migration_guide.md`** — Migrating `.specdev/` layouts to the current structure. Covers guided layout migration (`specdev migrate`) for any non-conforming layout, and `specdev migrate legacy-assignments` for deterministic V3-to-V4 assignment file moves.
 
 - **`_guides/update_guide.md`** — Manual patches to apply after running `specdev update`. Covers changes to CLAUDE.md and other files that `specdev update` does not overwrite automatically.
 
@@ -87,4 +87,7 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 | `specdev check-review` | Read review feedback and address findings | After a review session has been run |
 | `specdev skills` | List all installed skills with descriptions | During breakdown to declare task skills |
 | `specdev distill --assignment=<name>` | Aggregate knowledge from assignment captures | Knowledge distillation (`--assignment` flag required) |
-| `specdev migrate --assignment=<name>` | Migrate a legacy assignment to V4 layout | Legacy migration (`--assignment` flag required) |
+| `specdev knowledge index` | Build/rebuild SQLite FTS index of `.specdev/` knowledge | Before searching, or after adding new content |
+| `specdev knowledge search "<query>"` | Search indexed knowledge (BM25-ranked) | Finding relevant project context |
+| `specdev migrate` | Guided layout migration for non-conforming `.specdev/` | When `.specdev/` structure doesn't match current layout |
+| `specdev migrate legacy-assignments [--assignment=<id>]` | Deterministic V3-to-V4 assignment file moves | When old root-level phase files exist in assignments |

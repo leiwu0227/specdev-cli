@@ -57,7 +57,8 @@ export async function updateCommand(flags = {}) {
 
     const updatedPaths = await updateSpecdevSystem(templatePath, specdevPath)
 
-    console.log('✅ SpecDev system files updated successfully!')
+    const pkg = await import('../../package.json', { with: { type: 'json' } })
+    console.log(`✅ SpecDev updated to v${pkg.default.version}`)
     blankLine()
     printSection('📝 Updated:')
     updatedPaths.forEach(path => {

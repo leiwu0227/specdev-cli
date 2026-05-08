@@ -113,6 +113,7 @@ Create `.specdev/migration/layout-plan.md`:
 - Prefer `git mv` for tracked files.
 - Keep project-specific content out of managed system folders unless it belongs there.
 - Do not edit `_main.md`, `_index.md`, `_guides/`, `_templates/`, or `skills/` for project notes.
+- Ensure `.specdev/.gitignore` includes `cache/` so generated files (e.g. `knowledge.sqlite`) are not committed.
 
 ## Legacy Assignment-File Migration
 
