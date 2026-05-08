@@ -30,7 +30,7 @@ next: breakdown (if follow-up work needed) or knowledge-capture (if research-onl
 
 ### Step 2: Investigate
 
-1. Search for prior knowledge: run `specdev knowledge search "<topic keywords>"` with 1-2 queries related to the investigation topic. Look for prior decisions, architecture notes, and relevant context. Use `rg` for current implementation facts.
+1. Search for prior knowledge: run `specdev knowledge search "<topic keywords>"` (auto-indexes on first use) with 1-2 queries related to the investigation topic. Look for prior decisions, architecture notes, and relevant context. Use `rg` for current implementation facts.
 2. Find entry points (main files, API endpoints, test files)
 3. Read code and follow function calls
 4. Run code with different inputs to verify understanding

@@ -72,7 +72,7 @@ next: null
 
 ### Step 5: Run Distill (hard requirement)
 
-1. Search existing knowledge before writing: run `specdev knowledge search "<assignment topic>"` to find related notes in `knowledge/`. Avoid duplicating or contradicting existing entries — update them instead if needed.
+1. Search existing knowledge before writing: run `specdev knowledge search "<assignment topic>"` (auto-indexes on first use) to find related notes in `knowledge/`. Avoid duplicating or contradicting existing entries — update them instead if needed.
 2. Run `specdev distill --assignment=<name>`
 3. Read the JSON output — it contains:
    - Your capture diffs (for reference)

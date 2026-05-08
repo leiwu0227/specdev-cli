@@ -33,6 +33,7 @@
     "test:cleanup": "rm -rf ./tests/test-init-output ./test-scan-output ./test-assignment-output ./tests/test-assignment-schema-output ./tests/test-utils-output ./tests/test-scripts-output ./tests/test-scripts-output-worktrees ./test-workflow-output ./tests/test-skills-output ./tests/test-update-output ./tests/test-memory-output ./tests/test-knowledge-output ./tests/test-distill-output ./tests/test-reviewloop-output ./tests/test-reviewloop-command-output ./tests/test-checkpoints-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
+    "preversion": "sed -i \"s/\\\"releaseDate\\\": \\\"[0-9-]*\\\"/\\\"releaseDate\\\": \\\"$(date +%Y-%m-%d)\\\"/\" package.json",
     "release": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
     "release:major": "npm version major && npm publish"
