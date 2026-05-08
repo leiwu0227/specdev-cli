@@ -11,7 +11,11 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
 
   if (flags.clear) {
     await clearCurrent(specdevPath)
-    console.log('Cleared active assignment.')
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'focus', version: 1, status: 'ok', cleared: true }))
+    } else {
+      console.log('Cleared active assignment.')
+    }
     return
   }
 
@@ -46,5 +50,10 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
   }
 
   await writeCurrent(specdevPath, resolved.name)
-  console.log(`Focused on: ${resolved.name}`)
+  if (flags.json) {
+    const id = resolved.name.split('_')[0]
+    console.log(JSON.stringify({ command: 'focus', version: 1, status: 'ok', assignment_id: id, assignment_name: resolved.name, path: `.specdev/assignments/${resolved.name}` }))
+  } else {
+    console.log(`Focused on: ${resolved.name}`)
+  }
 }

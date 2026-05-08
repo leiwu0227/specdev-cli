@@ -10,6 +10,11 @@ export async function migrateCommand(flags = {}) {
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
 
+  if (flags.json) {
+    console.log(JSON.stringify({ command: 'migrate', version: 1, status: 'ok', message: 'Read .specdev/_guides/migration_guide.md for guided migration workflow' }))
+    return
+  }
+
   blankLine()
   printSection('Guided SpecDev migration')
   printBullets([

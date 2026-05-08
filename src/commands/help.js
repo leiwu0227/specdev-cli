@@ -1,7 +1,11 @@
 import { blankLine, printLines, printSection } from '../utils/output.js'
 import { COMMANDS, formatCommandLine } from '../utils/commands.js'
 
-export function helpCommand() {
+export function helpCommand(flags = {}) {
+  if (flags.json) {
+    console.log(JSON.stringify({ command: 'help', version: 1, commands: COMMANDS }))
+    return
+  }
   blankLine()
   printSection('📋 SpecDev CLI - Spec-Driven Workflow for Coding Agents')
   blankLine()

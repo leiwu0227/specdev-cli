@@ -12,8 +12,12 @@ export async function reviseCommand(flags = {}) {
   const designPath = join(assignmentPath, 'brainstorm', 'design.md')
 
   if (!(await fse.pathExists(designPath))) {
-    console.error('\u274C No brainstorm/design.md found — nothing to revise')
-    console.log('   Complete the brainstorm phase first with: specdev assignment')
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'revise', version: 1, status: 'error', assignment: name, message: 'No brainstorm/design.md found' }))
+    } else {
+      console.error('❌ No brainstorm/design.md found — nothing to revise')
+      console.log('   Complete the brainstorm phase first with: specdev assignment')
+    }
     process.exitCode = 1
     return
   }
@@ -34,13 +38,17 @@ export async function reviseCommand(flags = {}) {
     { spaces: 2 }
   )
 
-  console.log(`\uD83D\uDD04 Revise: ${name}`)
-  blankLine()
-  console.log(`Recorded brainstorm revision: v${nextRevision}`)
-  console.log('Existing breakdown/implementation artifacts were preserved.')
+  if (flags.json) {
+    console.log(JSON.stringify({ command: 'revise', version: 1, status: 'ok', assignment: name, revision: nextRevision, revision_recorded: true, phase: 'brainstorm' }))
+  } else {
+    console.log(`🔄 Revise: ${name}`)
+    blankLine()
+    console.log(`Recorded brainstorm revision: v${nextRevision}`)
+    console.log('Existing breakdown/implementation artifacts were preserved.')
 
-  blankLine()
-  console.log('Re-entering brainstorm phase.')
-  console.log(`Read the existing design first: ${name}/brainstorm/design.md`)
-  console.log('Then follow .specdev/skills/core/brainstorming/SKILL.md — revise, don\'t start from scratch.')
+    blankLine()
+    console.log('Re-entering brainstorm phase.')
+    console.log(`Read the existing design first: ${name}/brainstorm/design.md`)
+    console.log('Then follow .specdev/skills/core/brainstorming/SKILL.md — revise, don\'t start from scratch.')
+  }
 }

@@ -27,7 +27,9 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
   const result = await approvePhase(assignmentPath, phase)
 
   if (!result.approved) {
-    if (phase === 'brainstorm') {
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'approve', version: 1, status: 'error', phase, assignment: name, approved: false, errors: result.errors }))
+    } else if (phase === 'brainstorm') {
       console.error(`❌ Cannot approve brainstorm — checkpoint not met`)
       for (const item of result.errors) {
         console.log(`   Issue: ${item}`)
@@ -48,7 +50,9 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     return
   }
 
-  if (phase === 'brainstorm') {
+  if (flags.json) {
+    console.log(JSON.stringify({ command: 'approve', version: 1, status: 'ok', phase, assignment: name, approved: true }))
+  } else if (phase === 'brainstorm') {
     console.log(`✅ Brainstorm approved for ${name}`)
     blankLine()
     console.log('Proceed to breakdown:')

@@ -73,7 +73,7 @@ export async function dispatchCommand(command, positionalArgs, flags) {
   }
 
   if (command === 'help' || command === '--help' || command === '-h') {
-    helpCommand()
+    helpCommand(flags)
     return
   }
 
@@ -84,7 +84,7 @@ export async function dispatchCommand(command, positionalArgs, flags) {
   }
 
   if (!command) {
-    helpCommand()
+    helpCommand(flags)
     return
   }
 
