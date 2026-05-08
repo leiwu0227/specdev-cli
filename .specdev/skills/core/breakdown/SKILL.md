@@ -41,7 +41,8 @@ This is a lightweight sanity check — the design was already validated section-
 ### Phase 2: Read Design and Decompose
 
 1. Read `brainstorm/design.md` — understand the architecture, components, and success criteria
-2. Break the design into ordered tasks. Each task should be:
+2. Search for prior implementation patterns: run `specdev knowledge search "<feature-related keywords>"` to find how similar features were structured. Use prior patterns to inform task sizing and structure.
+3. Break the design into ordered tasks. Each task should be:
 
 - **A coherent implementation slice** — usually one component, behavior, or integration point
 - **Sized for reviewable progress** — typically 20-60 minutes, smaller for risky changes

@@ -72,19 +72,20 @@ next: null
 
 ### Step 5: Run Distill (hard requirement)
 
-1. Run `specdev distill --assignment=<name>`
-2. Read the JSON output — it contains:
+1. Search existing knowledge before writing: run `specdev knowledge search "<assignment topic>"` to find related notes in `knowledge/`. Avoid duplicating or contradicting existing entries — update them instead if needed.
+2. Run `specdev distill --assignment=<name>`
+3. Read the JSON output — it contains:
    - Your capture diffs (for reference)
    - Existing knowledge file listings per branch
    - `big_picture_word_count` and `big_picture_word_limit` (verify you're under limit)
    - Heuristic suggestions (cross-assignment patterns)
-3. Write synthesized observations to `knowledge/` branches as appropriate:
+4. Write synthesized observations to `knowledge/` branches as appropriate:
    - `knowledge/codestyle/` — naming conventions, formatting patterns, code style decisions
    - `knowledge/architecture/` — system design, component relationships, key decisions
    - `knowledge/domain/` — domain concepts, business logic patterns
    - `knowledge/workflow/` — process patterns, tool usage observations
-4. Write workflow observations to `knowledge/_workflow_feedback/` as appropriate
-5. If no new observations to write, that's OK — not every assignment produces reusable knowledge
+5. Write workflow observations to `knowledge/_workflow_feedback/` as appropriate
+6. If no new observations to write, that's OK — not every assignment produces reusable knowledge
 
 ### Step 6: Finalize (hard requirement)
 
