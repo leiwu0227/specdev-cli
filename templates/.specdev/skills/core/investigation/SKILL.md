@@ -30,11 +30,12 @@ next: breakdown (if follow-up work needed) or knowledge-capture (if research-onl
 
 ### Step 2: Investigate
 
-1. Find entry points (main files, API endpoints, test files)
-2. Read code and follow function calls
-3. Run code with different inputs to verify understanding
-4. Write spike code to test hypotheses
-5. Document findings as you go — don't wait until the end
+1. Search for prior knowledge: run `specdev knowledge search "<topic keywords>"` with 1-2 queries related to the investigation topic. Look for prior decisions, architecture notes, and relevant context. Use `rg` for current implementation facts.
+2. Find entry points (main files, API endpoints, test files)
+3. Read code and follow function calls
+4. Run code with different inputs to verify understanding
+5. Write spike code to test hypotheses
+6. Document findings as you go — don't wait until the end
 
 **Investigation checklist:**
 - How it works (components, data flow, key abstractions)

@@ -31,6 +31,8 @@ next: breakdown
 
 ### Step 2: Reproduce and Find Root Cause
 
+Search for prior context: run `specdev knowledge search "<bug-related keywords>"` to check for prior decisions, known issues, or architecture notes related to the affected area. Use `rg` for current implementation facts.
+
 Follow `skills/core/systematic-debugging/SKILL.md` Steps 1-5 (Reproduce → Gather Evidence → Hypothesize → Experiment → Confirm).
 
 Record all evidence and experiment results — you'll need them for the design output.

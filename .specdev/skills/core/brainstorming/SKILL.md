@@ -29,11 +29,12 @@ next: breakdown
 
 1. Run `.specdev/skills/core/brainstorming/scripts/get-project-context.sh <project-root>` to get current state
 2. Read the output — repo structure, recent work, existing knowledge
-3. Ask the user 1-3 tightly related questions per message to understand their goal
+3. Search for prior decisions: run `specdev knowledge search "<topic keywords>"` with 1-2 queries related to the assignment topic. Look for prior design decisions, rejected approaches, and relevant architecture notes. Use `rg` for current implementation facts.
+4. Ask the user 1-3 tightly related questions per message to understand their goal
    - Prefer multiple-choice over open-ended
    - Acknowledge each answer before asking the next question
-4. Continue until you understand: purpose, constraints, success criteria
-5. Do not proceed until you understand what you are building
+5. Continue until you understand: purpose, constraints, success criteria
+6. Do not proceed until you understand what you are building
 
 **Question categories to cover** (not a rigid script — guide the conversation through these topics as relevant):
 
