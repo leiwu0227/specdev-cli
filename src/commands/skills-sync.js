@@ -16,6 +16,8 @@ export async function skillsSyncCommand(flags = {}) {
   const availableNames = new Set(available.map(s => s.name))
 
   let changed = false
+  const removedNames = []
+  const regeneratedNames = []
 
   // 1. Remove stale entries (in active-tools but no longer in tools/)
   for (const name of Object.keys(activeTools.tools)) {
@@ -23,7 +25,8 @@ export async function skillsSyncCommand(flags = {}) {
       const wrapperPaths = activeTools.tools[name].wrappers || []
       removeWrappers(targetDir, wrapperPaths)
       delete activeTools.tools[name]
-      console.log(`  Removed stale: ${name}`)
+      if (!flags.json) console.log(`  Removed stale: ${name}`)
+      removedNames.push(name)
       changed = true
     }
   }
@@ -47,7 +50,8 @@ export async function skillsSyncCommand(flags = {}) {
         const agents = activeTools.agents || []
         const newPaths = writeWrappers(targetDir, name, wrapperContent, agents)
         entry.wrappers = newPaths
-        console.log(`  Regenerated wrappers: ${name}`)
+        if (!flags.json) console.log(`  Regenerated wrappers: ${name}`)
+        regeneratedNames.push(name)
         changed = true
       }
     }
@@ -56,6 +60,23 @@ export async function skillsSyncCommand(flags = {}) {
   // 3. Warn about available but inactive tools
   const activeNames = new Set(Object.keys(activeTools.tools))
   const inactive = available.filter(s => !activeNames.has(s.name))
+
+  if (changed) {
+    await writeActiveTools(specdevPath, activeTools)
+  }
+
+  if (flags.json) {
+    console.log(JSON.stringify({
+      command: 'skills sync',
+      version: 1,
+      status: 'ok',
+      removed: removedNames,
+      regenerated: regeneratedNames,
+      inactive: inactive.map(s => s.name),
+    }, null, 2))
+    return
+  }
+
   if (inactive.length > 0) {
     blankLine()
     console.log('Available but not installed:')
@@ -64,10 +85,6 @@ export async function skillsSyncCommand(flags = {}) {
       console.log(`  ${s.name}${desc}`)
     }
     console.log('\nRun: specdev skills install --skills=<name>')
-  }
-
-  if (changed) {
-    await writeActiveTools(specdevPath, activeTools)
   }
 
   if (!changed && inactive.length === 0) {

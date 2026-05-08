@@ -38,19 +38,29 @@ export async function migrateLegacyAssignmentsCommand(flags = {}) {
     : allAssignments
 
   if (assignmentFilter && assignments.length === 0) {
-    console.error(`❌ Assignment not found: ${assignmentFilter}`)
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'migrate legacy-assignments', version: 1, status: 'error', error: `Assignment not found: ${assignmentFilter}` }, null, 2))
+    } else {
+      console.error(`❌ Assignment not found: ${assignmentFilter}`)
+    }
     process.exitCode = 1
     return
   }
 
   if (assignments.length === 0) {
-    console.log('No assignments found to migrate.')
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'migrate legacy-assignments', version: 1, status: 'ok', dry_run: dryRun, assignments_scanned: 0, files_moved: 0, paths_created: 0, moves_skipped: 0, assignments_unchanged: 0 }, null, 2))
+    } else {
+      console.log('No assignments found to migrate.')
+    }
     return
   }
 
-  console.log(
-    `🔄 Migrating ${assignments.length} assignment(s) to V4 structure${dryRun ? ' (dry run)' : ''}`
-  )
+  if (!flags.json) {
+    console.log(
+      `🔄 Migrating ${assignments.length} assignment(s) to V4 structure${dryRun ? ' (dry run)' : ''}`
+    )
+  }
 
   let movedCount = 0
   let skippedCount = 0
@@ -66,13 +76,30 @@ export async function migrateLegacyAssignmentsCommand(flags = {}) {
     createdCount += changes.created
     unchangedCount += changes.unchanged ? 1 : 0
 
-    blankLine()
-    printSection(`Assignment: ${assignment.name}`)
-    if (changes.lines.length === 0) {
-      console.log('  · no changes')
-    } else {
-      printBullets(changes.lines, '  - ')
+    if (!flags.json) {
+      blankLine()
+      printSection(`Assignment: ${assignment.name}`)
+      if (changes.lines.length === 0) {
+        console.log('  · no changes')
+      } else {
+        printBullets(changes.lines, '  - ')
+      }
     }
+  }
+
+  if (flags.json) {
+    console.log(JSON.stringify({
+      command: 'migrate legacy-assignments',
+      version: 1,
+      status: 'ok',
+      dry_run: dryRun,
+      assignments_scanned: assignments.length,
+      files_moved: movedCount,
+      paths_created: createdCount,
+      moves_skipped: skippedCount,
+      assignments_unchanged: unchangedCount,
+    }, null, 2))
+    return
   }
 
   blankLine()

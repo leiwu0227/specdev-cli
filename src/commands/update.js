@@ -52,12 +52,51 @@ export async function updateCommand(flags = {}) {
 
   // Update system files
   try {
-    console.log('🔄 Updating SpecDev system files...')
-    blankLine()
+    if (!flags.json) {
+      console.log('🔄 Updating SpecDev system files...')
+      blankLine()
+    }
 
     const updatedPaths = await updateSpecdevSystem(templatePath, specdevPath)
-
     const pkg = await import('../../package.json', { with: { type: 'json' } })
+
+    // Update skill files if installed
+    const skillUpdates = updateSkillFiles(targetDir, SKILL_FILES, COMMAND_SKILL_DIRS)
+
+    // Update hook script if installed
+    const hookSrcDir = join(__dirname, '../../hooks')
+    const hookUpdated = updateHookScript(targetDir, hookSrcDir)
+
+    // Backfill missing platform adapters
+    const createdAdapters = backfillAdapters(targetDir, ALL_ADAPTERS, adapterContent)
+
+    // Sync tool skill wrappers (suppress JSON from sync when we handle our own)
+    const { skillsSyncCommand } = await import('./skills-sync.js')
+    if (flags.json) {
+      // Suppress sync output when update handles its own JSON
+      const origLog = console.log
+      console.log = () => {}
+      try { await skillsSyncCommand({ ...flags, json: undefined }) } finally { console.log = origLog }
+    } else {
+      await skillsSyncCommand(flags)
+    }
+
+    if (flags.json) {
+      console.log(JSON.stringify({
+        command: 'update',
+        version: 1,
+        status: 'ok',
+        cli_version: pkg.default.version,
+        release_date: pkg.default.releaseDate || null,
+        updated: updatedPaths,
+        skill_updates: skillUpdates.map(u => ({ path: u.path, count: u.count })),
+        hook_updated: hookUpdated > 0,
+        adapters_created: createdAdapters,
+        preserved: ['project_notes/', 'assignments/', 'skills/tools/', 'project_scaffolding/'],
+      }, null, 2))
+      return
+    }
+
     const dateSuffix = pkg.default.releaseDate ? ` (${pkg.default.releaseDate})` : ''
     console.log(`✅ SpecDev updated to v${pkg.default.version}${dateSuffix}`)
     blankLine()
@@ -66,30 +105,19 @@ export async function updateCommand(flags = {}) {
       console.log(`   ✓ ${path}`)
     })
 
-    // Update skill files if installed
-    const skillUpdates = updateSkillFiles(targetDir, SKILL_FILES, COMMAND_SKILL_DIRS)
     for (const update of skillUpdates) {
       console.log(`   ✓ ${update.path}/ (${update.count} skill files)`)
     }
 
-    // Update hook script if installed
-    const hookSrcDir = join(__dirname, '../../hooks')
-    const hookUpdated = updateHookScript(targetDir, hookSrcDir)
     if (hookUpdated > 0) {
       console.log('   ✓ .claude/hooks/specdev-session-start.sh')
     }
 
-    // Backfill missing platform adapters
-    const createdAdapters = backfillAdapters(targetDir, ALL_ADAPTERS, adapterContent)
     if (createdAdapters.length > 0) {
       for (const path of createdAdapters) {
         console.log(`   + ${path} (created — was missing)`)
       }
     }
-
-    // Sync tool skill wrappers
-    const { skillsSyncCommand } = await import('./skills-sync.js')
-    await skillsSyncCommand(flags)
 
     blankLine()
     printSection('📌 Preserved:')
@@ -115,7 +143,11 @@ export async function updateCommand(flags = {}) {
     console.log('💡 For old assignment root files only, run: specdev migrate legacy-assignments --dry-run')
     console.log('💡 Check _guides/update_guide.md for manual patches to CLAUDE.md and other unmanaged files')
   } catch (error) {
-    console.error('❌ Failed to update SpecDev:', error.message)
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'update', version: 1, status: 'error', error: error.message }, null, 2))
+    } else {
+      console.error('❌ Failed to update SpecDev:', error.message)
+    }
     process.exitCode = 1
   }
 }

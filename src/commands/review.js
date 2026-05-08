@@ -85,8 +85,12 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   const phase = positionalArgs[0]
 
   if (!phase) {
-    console.error('Missing required phase argument')
-    console.log(`   Usage: specdev review <${VALID_PHASES.join(' | ')}>`)
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'review', version: 1, status: 'error', error: 'Missing required phase argument' }, null, 2))
+    } else {
+      console.error('Missing required phase argument')
+      console.log(`   Usage: specdev review <${VALID_PHASES.join(' | ')}>`)
+    }
     process.exitCode = 1
     return
   }
@@ -141,6 +145,24 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   }
 
   const displayPhase = phase === 'discussion' ? 'discussion (brainstorm)' : phase
+
+  if (flags.json) {
+    const reviewDir = join(assignmentPath, 'review')
+    await fse.ensureDir(reviewDir)
+    const feedbackFilename = `${feedbackPhase}-feedback.md`
+    const nextRound = await detectRound(reviewDir, feedbackFilename, flags)
+    console.log(JSON.stringify({
+      command: 'review',
+      version: 1,
+      status: 'ok',
+      phase: displayPhase,
+      assignment: name,
+      feedback_file: `${name}/review/${feedbackFilename}`,
+      round: nextRound,
+    }, null, 2))
+    return
+  }
+
   console.log(`Manual Review: ${name}`)
   console.log(`   Phase: ${displayPhase}`)
   blankLine()

@@ -19,8 +19,12 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   // Verify plan exists
   const planPath = join(assignmentPath, 'breakdown', 'plan.md')
   if (!await fse.pathExists(planPath)) {
-    console.error('❌ breakdown/plan.md not found')
-    console.log('   Complete breakdown before starting implementation.')
+    if (flags.json) {
+      console.log(JSON.stringify({ command: 'implement', version: 1, status: 'error', assignment: name, error: 'breakdown/plan.md not found' }, null, 2))
+    } else {
+      console.error('❌ breakdown/plan.md not found')
+      console.log('   Complete breakdown before starting implementation.')
+    }
     process.exitCode = 1
     return
   }
@@ -33,6 +37,20 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   await fse.ensureDir(implDir)
   const planContent = await fse.readFile(planPath, 'utf8')
   const executionMode = parseExecutionMode(planContent)
+
+  if (flags.json) {
+    const taskMatches = planContent.match(/^### Task \d+/gm) || []
+    console.log(JSON.stringify({
+      command: 'implement',
+      version: 1,
+      status: 'ok',
+      assignment: name,
+      plan_path: planPath,
+      execution_mode: executionMode,
+      task_count: taskMatches.length,
+    }, null, 2))
+    return
+  }
 
   console.log(`🚀 Implementation ready: ${name}`)
   blankLine()

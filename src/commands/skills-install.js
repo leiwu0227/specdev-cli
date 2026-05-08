@@ -95,9 +95,11 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
       ...(triggers ? { triggers } : {}),
     }
 
-    console.log(`Installed ${skillName}`)
-    for (const p of wrapperPaths) {
-      console.log(`   -> ${p}`)
+    if (!flags.json) {
+      console.log(`Installed ${skillName}`)
+      for (const p of wrapperPaths) {
+        console.log(`   -> ${p}`)
+      }
     }
   }
 
@@ -106,6 +108,19 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
   activeTools.agents = [...agentSet]
 
   await writeActiveTools(specdevPath, activeTools)
+
+  if (flags.json) {
+    console.log(JSON.stringify({
+      command: 'skills install',
+      version: 1,
+      status: 'ok',
+      skills_installed: selectedSkills,
+      agents: [...agentSet],
+      total_tools: Object.keys(activeTools.tools).length,
+    }, null, 2))
+    return
+  }
+
   blankLine()
   console.log(`Active tools updated (${Object.keys(activeTools.tools).length} tools, ${activeTools.agents.length} agents)`)
 }
