@@ -7,7 +7,7 @@ import { resolveCurrentAssignment } from './current.js'
 export const MAX_WORKING_MEMORY_WORDS = 800
 export const MAX_RECENT_ASSIGNMENTS = 5
 
-const KNOWLEDGE_BRANCHES = ['architecture', 'workflow', '_workflow_feedback']
+const KNOWLEDGE_BRANCHES = ['architecture', 'workflow', 'workflow_feedback']
 
 export async function buildWorkingMemory(specdevPath) {
   const projectSummary = await readProjectSummary(specdevPath)

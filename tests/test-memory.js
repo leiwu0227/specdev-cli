@@ -50,8 +50,8 @@ for (const id of ['00001_feature_alpha', '00002_feature_beta', '00003_feature_ga
 }
 mkdirSync(join(specdev, 'knowledge', 'architecture'), { recursive: true })
 writeFileSync(join(specdev, 'knowledge', 'architecture', 'alpha-note.md'), '# Alpha Note\n\nUseful architecture fact.\n')
-mkdirSync(join(specdev, 'knowledge', '_workflow_feedback'), { recursive: true })
-writeFileSync(join(specdev, 'knowledge', '_workflow_feedback', 'beta-note.md'), '# Beta Note\n\nUseful workflow fact.\n')
+mkdirSync(join(specdev, 'knowledge', 'workflow_feedback'), { recursive: true })
+writeFileSync(join(specdev, 'knowledge', 'workflow_feedback', 'beta-note.md'), '# Beta Note\n\nUseful workflow fact.\n')
 
 console.log('\nmemory refresh skeleton:')
 let result = runCmd(['memory', 'refresh', `--target=${TEST_DIR}`])

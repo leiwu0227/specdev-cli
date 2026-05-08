@@ -72,13 +72,13 @@ export async function distillCommand(flags = {}) {
   }
 
   // Workflow feedback files
-  const feedbackDir = join(knowledgePath, '_workflow_feedback')
+  const feedbackDir = join(knowledgePath, 'workflow_feedback')
   let feedbackFiles = []
   if (await fse.pathExists(feedbackDir)) {
     feedbackFiles = (await fse.readdir(feedbackDir))
       .filter(f => f.endsWith('.md') && !f.startsWith('.'))
   }
-  knowledgeFiles._workflow_feedback = feedbackFiles
+  knowledgeFiles.workflow_feedback = feedbackFiles
 
   // Read big_picture word count
   const bigPicturePath = join(specdevPath, 'project_notes', 'big_picture.md')

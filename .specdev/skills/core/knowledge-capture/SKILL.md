@@ -84,7 +84,7 @@ next: null
    - `knowledge/architecture/` — system design, component relationships, key decisions
    - `knowledge/domain/` — domain concepts, business logic patterns
    - `knowledge/workflow/` — process patterns, tool usage observations
-5. Write workflow observations to `knowledge/_workflow_feedback/` as appropriate
+5. Write workflow observations to `knowledge/workflow_feedback/` as appropriate
 6. If no new observations to write, that's OK — not every assignment produces reusable knowledge
 
 ### Step 6: Finalize (hard requirement)

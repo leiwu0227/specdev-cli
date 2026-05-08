@@ -201,7 +201,7 @@ function classifyDocument(relPath) {
   }
   if (parts[0] === 'knowledge') {
     return {
-      kind: parts[1] === '_workflow_feedback' ? 'workflow_feedback' : 'knowledge_note',
+      kind: parts[1] === 'workflow_feedback' ? 'workflow_feedback' : 'knowledge_note',
       assignmentId: null,
       phase: parts[1] || null,
     }

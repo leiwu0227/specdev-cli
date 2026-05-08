@@ -66,7 +66,7 @@ if (json) {
   assert(json.capture.workflow_diff.includes('TDD approach'), 'capture includes workflow diff')
   assert(typeof json.knowledge_files === 'object', 'has knowledge_files')
   assert(Array.isArray(json.knowledge_files.codestyle), 'has codestyle branch')
-  assert(Array.isArray(json.knowledge_files._workflow_feedback), 'has _workflow_feedback branch')
+  assert(Array.isArray(json.knowledge_files.workflow_feedback), 'has workflow_feedback branch')
   assert(typeof json.big_picture_word_count === 'number', 'has big_picture_word_count')
   assert(json.big_picture_word_limit === 2000, 'big_picture_word_limit is 2000')
   assert(Array.isArray(json.heuristics), 'has heuristics array')

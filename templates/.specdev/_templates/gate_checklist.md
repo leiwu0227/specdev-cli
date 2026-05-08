@@ -73,7 +73,7 @@ Per-task checks:
 ## Knowledge Capture
 
 - [ ] Learnings distilled into relevant `knowledge/` branches
-- [ ] Workflow observations noted in `knowledge/_workflow_feedback/` (if applicable)
+- [ ] Workflow observations noted in `knowledge/workflow_feedback/` (if applicable)
 
 ---
 

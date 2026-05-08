@@ -89,7 +89,7 @@ export async function updateSpecdevSystem(source, destination) {
     // Ensure new project directories exist (create if missing, never overwrite)
     const ensurePaths = [
       'knowledge/_index.md',
-      'knowledge/_workflow_feedback',
+      'knowledge/workflow_feedback',
       'knowledge/codestyle',
       'knowledge/architecture',
       'knowledge/domain',

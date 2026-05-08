@@ -13,7 +13,7 @@ This directory contains accumulated project knowledge, organized by topic. Agent
 
 ## Workflow Feedback
 
-`_workflow_feedback/` contains observations about the SpecDev workflow itself (not project-specific). These are collected by the maintainer to improve the workflow guides across all projects.
+`workflow_feedback/` contains observations about the SpecDev workflow itself (not project-specific). These are collected by the maintainer to improve the workflow guides across all projects.
 
 ## How This Grows
 
