@@ -16,7 +16,7 @@ export function helpCommand() {
     '  --force, -f       Overwrite existing .specdev folder',
     '  --dry-run         Show what would be copied without copying',
     '  --target=<path>   Specify target directory (default: current directory)',
-    '  --assignment=<id> Specify assignment (distill and migrate only)',
+    '  --assignment=<id> Specify assignment (distill and migrate legacy-assignments only)',
     '  --discussion=<id> Target a discussion instead of an assignment',
     '  --type=<type>     Assignment type for folder creation (assignment command)',
     '  --slug=<slug>     Assignment slug for folder creation (assignment command)',

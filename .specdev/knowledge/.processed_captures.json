@@ -10,7 +10,8 @@
     "00008_feature_workflow-status-json",
     "00009_feature_reviewer-preflight-checks",
     "00010_feature_structured-skill-inspection",
-    "00011_feature_bounded-working-memory"
+    "00011_feature_bounded-working-memory",
+    "00012_feature_guided-layout-migration"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -23,6 +24,7 @@
     "00008_feature_workflow-status-json",
     "00009_feature_reviewer-preflight-checks",
     "00010_feature_structured-skill-inspection",
-    "00011_feature_bounded-working-memory"
+    "00011_feature_bounded-working-memory",
+    "00012_feature_guided-layout-migration"
   ]
 }

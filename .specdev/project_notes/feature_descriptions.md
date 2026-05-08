@@ -54,6 +54,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added `specdev memory refresh` to generate a bounded `.specdev/project_notes/working_memory.md` file for agents. `specdev distill done` now returns a JSON `memory_hint` prompting refresh after captures are finalized.
 **Key files:** `src/commands/memory.js`, `src/utils/working-memory.js`, `src/commands/distill-done.js`, `tests/test-memory.js`
 
+### Guided Layout Migration
+**Assignment:** 00012_feature_guided-layout-migration
+**Completed:** 2026-05-08
+**Description:** Made bare `specdev migrate` a non-destructive guided migration entrypoint and moved the old deterministic assignment-file mover to `specdev migrate legacy-assignments`. Added a combined migration guide and `specdev-layout-migration` command skill.
+**Key files:** `src/commands/migrate.js`, `src/commands/migrate-legacy-assignments.js`, `src/commands/dispatch.js`, `.specdev/_guides/migration_guide.md`, `templates/.specdev/_guides/migration_guide.md`, `src/commands/init.js`
+
 ---
 
 ## Architecture & Structure
