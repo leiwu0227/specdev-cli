@@ -157,6 +157,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
       status: 'ok',
       phase: displayPhase,
       assignment: name,
+      review_session_started: true,
       feedback_file: `${name}/review/${feedbackFilename}`,
       round: nextRound,
     }, null, 2))

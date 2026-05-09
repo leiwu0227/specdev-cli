@@ -63,7 +63,8 @@ assert(json?.command === 'implement', 'json command is implement')
 assert(json?.status === 'ok', 'json status is ok')
 assert(typeof json?.plan_path === 'string', 'json has plan_path')
 assert(json?.execution_mode === 'inline', 'json has execution_mode')
-assert(json?.task_count === 2, 'json reports 2 tasks')
+assert(Array.isArray(json?.tasks), 'json has tasks array')
+assert(json?.tasks?.length === 2, 'json reports 2 tasks')
 
 console.log('\nimplement --json error:')
 initProject()
@@ -174,8 +175,9 @@ try {
 }
 assert(json?.command === 'skills install', 'json command is skills install')
 assert(json?.status === 'ok', 'json status is ok')
-assert(Array.isArray(json?.skills_installed), 'json has skills_installed array')
-assert(json?.skills_installed?.includes('test-tool'), 'json includes test-tool in installed')
+assert(Array.isArray(json?.skills), 'json has skills array')
+assert(json?.skills?.includes('test-tool'), 'json includes test-tool in installed')
+assert(json?.installed === true, 'json has installed flag')
 assert(typeof json?.total_tools === 'number', 'json has total_tools')
 
 cleanup()

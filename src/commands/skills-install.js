@@ -114,7 +114,8 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
       command: 'skills install',
       version: 1,
       status: 'ok',
-      skills_installed: selectedSkills,
+      skills: selectedSkills,
+      installed: true,
       agents: [...agentSet],
       total_tools: Object.keys(activeTools.tools).length,
     }, null, 2))

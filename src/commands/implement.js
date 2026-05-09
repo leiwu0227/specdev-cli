@@ -39,7 +39,12 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   const executionMode = parseExecutionMode(planContent)
 
   if (flags.json) {
-    const taskMatches = planContent.match(/^### Task \d+/gm) || []
+    const taskRegex = /^### Task (\d+):\s*(.+)$/gm
+    const tasks = []
+    let m
+    while ((m = taskRegex.exec(planContent)) !== null) {
+      tasks.push({ number: parseInt(m[1], 10), name: m[2].trim() })
+    }
     console.log(JSON.stringify({
       command: 'implement',
       version: 1,
@@ -47,7 +52,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       assignment: name,
       plan_path: planPath,
       execution_mode: executionMode,
-      task_count: taskMatches.length,
+      tasks,
     }, null, 2))
     return
   }
