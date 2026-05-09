@@ -36,6 +36,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00011 | bounded-working-memory | Done | 2026-05-07 | Added memory refresh command and bounded working_memory.md generation |
 | 00012 | guided-layout-migration | Done | 2026-05-08 | Made migrate guide-based by default; moved old automatic assignment migration to legacy-assignments |
 | 00013 | sqlite-knowledge-retrieval | Done | 2026-05-08 | Added SQLite FTS knowledge index/search commands with generated cache |
+| 00016 | distill-workflow | Done | 2026-05-10 | Added structured workflow feedback note template and accumulation guidance |
 
 ---
 

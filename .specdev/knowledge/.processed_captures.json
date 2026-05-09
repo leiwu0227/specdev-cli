@@ -12,7 +12,8 @@
     "00010_feature_structured-skill-inspection",
     "00011_feature_bounded-working-memory",
     "00012_feature_guided-layout-migration",
-    "00013_feature_sqlite-knowledge-retrieval"
+    "00013_feature_sqlite-knowledge-retrieval",
+    "00016_refactor_distill-workflow"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -27,6 +28,7 @@
     "00010_feature_structured-skill-inspection",
     "00011_feature_bounded-working-memory",
     "00012_feature_guided-layout-migration",
-    "00013_feature_sqlite-knowledge-retrieval"
+    "00013_feature_sqlite-knowledge-retrieval",
+    "00016_refactor_distill-workflow"
   ]
 }

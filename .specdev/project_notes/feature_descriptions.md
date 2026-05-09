@@ -66,6 +66,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added `specdev knowledge index` and `specdev knowledge search <query>` for local SQLite FTS retrieval over SpecDev markdown artifacts. The database is generated under `.specdev/cache/knowledge.sqlite`, ignored by git, and rebuildable from markdown sources.
 **Key files:** `src/commands/knowledge.js`, `src/utils/knowledge.js`, `tests/test-knowledge.js`, `templates/.specdev/.gitignore`
 
+### Structured Workflow Feedback Notes
+**Assignment:** 00016_refactor_distill-workflow
+**Completed:** 2026-05-10
+**Description:** Added a reusable workflow feedback note template and updated Knowledge Capture guidance so SpecDev workflow issues accumulate with status, severity, observed assignments, mitigation, and proposed action.
+**Key files:** `templates/.specdev/_templates/workflow_feedback_note.md`, `templates/.specdev/skills/core/knowledge-capture/SKILL.md`, `templates/.specdev/knowledge/_index.md`, `tests/test-init.js`
+
 ---
 
 ## Architecture & Structure
