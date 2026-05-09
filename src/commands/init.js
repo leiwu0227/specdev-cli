@@ -251,6 +251,8 @@ export async function initCommand(flags = {}) {
   }
 
   // Copy the template
+  const origLog = flags.json ? console.log : null
+  if (flags.json) console.log = () => {}
   try {
     if (force) {
       await fse.remove(specdevPath)
@@ -345,7 +347,8 @@ export async function initCommand(flags = {}) {
       }
     }
 
-    if (flags.json) {
+    if (origLog) {
+      console.log = origLog
       console.log(JSON.stringify({
         command: 'init',
         version: 1,
@@ -394,6 +397,7 @@ export async function initCommand(flags = {}) {
       console.log('   (no reviewer configs found)')
     }
   } catch (error) {
+    if (origLog) console.log = origLog
     console.error('❌ Failed to initialize SpecDev:', error.message)
     process.exitCode = 1
   }

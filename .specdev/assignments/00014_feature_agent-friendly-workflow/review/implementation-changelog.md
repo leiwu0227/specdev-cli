@@ -15,3 +15,8 @@
 ## Round 3
 
 - [F3.1] Partially fixed: Added `--json` to `init` (returns `{ command, version, status, path }`) and `reviewloop` without `--reviewer` (returns reviewer list). [REJECTED] for `start` (interactive command, not useful for agents) and `--version` (trivial — agents should use `specdev context --json` for version info).
+
+## Round 4
+
+- [F4.1] Fixed: `init --json` now suppresses prose output during setup. Only clean JSON is emitted.
+- [F4.2] Fixed: Updated design/success criteria to explicitly exclude `start` (interactive) and `--version` (trivial) from the `--json` contract. Agents use `specdev context --json` for version info.
