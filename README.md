@@ -1,6 +1,6 @@
 # SpecDev CLI
 
-Spec-driven workflow guidance for coding agents. 4-phase CLI-driven workflow: TDD enforcement, subagent dispatch, and phase-aware review coordination.
+Spec-driven workflow guidance for coding agents. SpecDev installs a local `.specdev/` workflow, agent command skills, and a CLI that keeps assignments moving through brainstorm, breakdown, implementation, review, and knowledge capture.
 
 ```mermaid
 graph LR
@@ -16,7 +16,7 @@ npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
 
-Command skills are installed to `.claude/skills/` and `.codex/skills/`. Use `specdev-start` to fill in your project context interactively, then `specdev-assignment` to begin your first feature. You can also run the CLI commands directly from Claude Code or Codex.
+Command skills are installed to `.claude/skills/` and `.codex/skills/`. Platform adapters are also written for Claude Code, Codex, and Cursor. Use `specdev-start` to fill in your project context interactively, then `specdev-assignment` to begin your first feature. You can also run the CLI commands directly from a terminal or coding agent.
 
 ## Commands
 
@@ -30,7 +30,13 @@ specdev migrate legacy-assignments --dry-run
 specdev skills                         # List available skills
 specdev skills --json                  # Machine-readable skill inventory
 specdev skills view <name> [path]      # Print a skill file or support file
+specdev skills install                 # Install tool skills with agent wrappers
+specdev skills remove <name>           # Remove an installed tool skill
+specdev skills sync                    # Reconcile active tools with available skills
 specdev memory refresh                 # Regenerate bounded working memory
+specdev knowledge index                # Rebuild SQLite knowledge retrieval cache
+specdev knowledge search <query>       # Search indexed SpecDev knowledge
+specdev knowledge list                 # List knowledge files
 specdev help                           # Show usage information
 ```
 
@@ -38,11 +44,14 @@ specdev help                           # Show usage information
 
 ```bash
 specdev assignment [name]              # Create assignment, route agent to brainstorming skill
+specdev focus <id>                     # Set the active assignment
+specdev discussion [name]              # Start a parallel brainstorming discussion
 specdev checkpoint <phase>             # Validate phase artifacts (brainstorm | implementation)
 specdev approve <phase>                # Hard gate: approve phase and proceed
 specdev reviewloop <phase>             # Automated external review loop (brainstorm | implementation)
 specdev reviewloop <phase> --reviewer=<name> --autocontinue
                                         # Review, approve on pass, then continue to the next phase
+specdev implement                      # Set up and kick off implementation after breakdown
 specdev revise                         # Archive downstream artifacts, re-enter brainstorm
 specdev check-review                   # Read and address review feedback
 ```
@@ -54,6 +63,7 @@ specdev start                          # Check/fill project context
 specdev continue [--json]              # Detect current state, blockers, and next action
 specdev status [--json]                # Show workflow state for humans or automation
 specdev review <phase>                 # Manual review in a separate session
+specdev context [--json]               # Dump project state, commands, knowledge, and skills
 ```
 
 ### Knowledge distillation
@@ -77,7 +87,8 @@ specdev distill done <name>            # Mark capture processed and show memory 
 ├── knowledge/                # Long-term project knowledge
 ├── project_notes/            # Project context and progress
 ├── project_scaffolding/      # Source mirror metadata
-└── assignments/              # Active work
+├── assignments/              # Active work
+└── discussions/              # Parallel brainstorm threads
 ```
 
 ## Workflow Architecture
@@ -112,9 +123,9 @@ Runs automatically after brainstorm approval. Decomposes the design into a plan 
 
 Skill: `skills/core/implementing/SKILL.md`
 
-Tasks run in batches using the plan's execution mode. The default is inline execution by the current agent; plans can opt into fresh subagents per task or parallel worktrees when task boundaries are clean. Each task follows TDD (Red-Green-Refactor) with mode-based review.
+Tasks run using the plan's execution mode. The default is inline execution by the current agent; plans can opt into fresh subagents per task or parallel worktrees when task boundaries are clean. Each task follows TDD (Red-Green-Refactor) with mode-based review.
 
-**Produces:** committed code per task, `implementation/progress.json`
+**Produces:** code changes, `implementation/progress.json`
 
 **Gate:** `specdev approve implementation` — summary runs automatically after approval.
 
@@ -122,7 +133,7 @@ Tasks run in batches using the plan's execution mode. The default is inline exec
 
 Skill: `skills/core/knowledge-capture/SKILL.md`
 
-Runs automatically after implementation approval. Distills learnings into workflow observations and documentation gaps.
+Runs automatically after implementation approval. Distills learnings into workflow observations and documentation gaps. Later, `specdev distill --assignment=<name>` aggregates capture files as JSON and `specdev distill done <name>` marks them processed.
 
 **Produces:** `capture/project-notes-diff.md` + `capture/workflow-diff.md`
 
