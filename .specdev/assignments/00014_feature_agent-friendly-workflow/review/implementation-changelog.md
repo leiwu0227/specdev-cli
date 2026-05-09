@@ -11,3 +11,7 @@
 
 - [F2.1] Fixed: `update --dry-run --json` now returns structured JSON with `would_update` and `preserved` arrays instead of prose.
 - [F2.2] Fixed: `skills install --json` now returns `installed` as array of `{ skill, path, wrappers }` objects. `skills sync --json` renamed `regenerated` → `synced` and `inactive` → `available_not_installed` to align with design contract.
+
+## Round 3
+
+- [F3.1] Partially fixed: Added `--json` to `init` (returns `{ command, version, status, path }`) and `reviewloop` without `--reviewer` (returns reviewer list). [REJECTED] for `start` (interactive command, not useful for agents) and `--version` (trivial — agents should use `specdev context --json` for version info).

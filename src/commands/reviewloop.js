@@ -457,6 +457,18 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
       return
     }
 
+    if (flags.json) {
+      console.log(JSON.stringify({
+        command: 'reviewloop',
+        version: 1,
+        status: 'ok',
+        phase,
+        assignment: name,
+        reviewers,
+      }, null, 2))
+      return
+    }
+
     printSection('Available reviewers:')
     for (const r of reviewers) {
       console.log(`   - ${r}`)

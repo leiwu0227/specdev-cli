@@ -345,6 +345,16 @@ export async function initCommand(flags = {}) {
       }
     }
 
+    if (flags.json) {
+      console.log(JSON.stringify({
+        command: 'init',
+        version: 1,
+        status: 'ok',
+        path: specdevPath,
+      }, null, 2))
+      return
+    }
+
     console.log('✅ SpecDev initialized successfully!')
     blankLine()
     printSection('📖 Next steps:')
