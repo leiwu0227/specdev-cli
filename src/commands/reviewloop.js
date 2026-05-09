@@ -392,7 +392,8 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
         console.log(`   - ${r}`)
       }
       blankLine()
-      console.log('Present these multiple-choice reviewer options to the user:')
+      console.log('Ask reviewer type as a multiple-choice question:')
+      console.log('   Use one choice per reviewer config; do not ask for free-form reviewer text.')
       reviewers.forEach((reviewer, index) => {
         console.log(`   ${index + 1}. ${reviewer} — run specdev reviewloop discussion --discussion=${flags.discussion} --reviewer=${reviewer}`)
       })
@@ -507,7 +508,8 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
       console.log(`   - ${r}`)
     }
     blankLine()
-    console.log('Present these multiple-choice reviewer options to the user:')
+    console.log('Ask reviewer type as a multiple-choice question:')
+    console.log('   Use one choice per reviewer config; do not ask for free-form reviewer text.')
     reviewers.forEach((reviewer, index) => {
       console.log(`   ${index + 1}. ${reviewer}`)
     })

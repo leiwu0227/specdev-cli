@@ -119,11 +119,12 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
     '      2. Automated review only — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name>',
     '      3. Manual review — run specdev review implementation in a separate session',
     '      4. Skip review and approve — run specdev approve implementation',
-    '   5. If the user chooses automated review, present these reviewer choices:',
+    '   5. If the user chooses automated review, ask reviewer type as a second multiple-choice question:',
   ]
   if (reviewers.length === 0) {
     finalChoiceLines.push('      - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
   } else {
+    finalChoiceLines.push('      Use one choice per reviewer config; do not ask for free-form reviewer text.')
     reviewers.forEach((reviewer, index) => {
       finalChoiceLines.push(`      ${index + 1}. ${reviewer}`)
     })

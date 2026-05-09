@@ -185,8 +185,12 @@ assert(
 assert(listOutput.includes('codex'), 'lists codex reviewer')
 assert(listOutput.includes('local'), 'lists local reviewer')
 assert(
-  listOutput.includes('Present these multiple-choice reviewer options to the user:'),
+  listOutput.includes('Ask reviewer type as a multiple-choice question:'),
   'prints multiple-choice prompt',
+)
+assert(
+  listOutput.includes('Use one choice per reviewer config; do not ask for free-form reviewer text.'),
+  'tells agent not to ask free-form reviewer text',
 )
 assert(
   listOutput.includes('1. codex'),

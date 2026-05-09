@@ -135,10 +135,11 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
     console.log('   4. Skip review and approve — run specdev approve brainstorm')
   }
   blankLine()
-  console.log('If the user chooses automated review, present these reviewer choices:')
+  console.log('If the user chooses automated review, ask reviewer type as a second multiple-choice question:')
   if (reviewers.length === 0) {
     console.log('   - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
   } else {
+    console.log('   Use one choice per reviewer config; do not ask for free-form reviewer text.')
     reviewers.forEach((reviewer, index) => {
       console.log(`   ${index + 1}. ${reviewer}`)
     })
@@ -256,10 +257,11 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
   console.log('   3. Manual review — run specdev review implementation in a separate session')
   console.log('   4. Skip review and approve — run specdev approve implementation')
   blankLine()
-  console.log('If the user chooses automated review, present these reviewer choices:')
+  console.log('If the user chooses automated review, ask reviewer type as a second multiple-choice question:')
   if (reviewers.length === 0) {
     console.log('   - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
   } else {
+    console.log('   Use one choice per reviewer config; do not ask for free-form reviewer text.')
     reviewers.forEach((reviewer, index) => {
       console.log(`   ${index + 1}. ${reviewer}`)
     })
