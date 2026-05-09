@@ -5,6 +5,7 @@ Reviewer configs run external agent CLIs from `specdev reviewloop`. Each reviewe
 ## Claude
 
 - Uses Claude Code print mode (`claude --print`) so it runs non-interactively and exits.
+- Defaults to `claude-opus-4-6[1m]` with `--effort high` for deeper review.
 - Uses `--no-session-persistence` to avoid accidentally resuming prior review context.
 - Uses permission bypass flags because reviewloop is an automated reviewer path.
 - Has a shorter timeout (`timeout_seconds: 300`) because common failures are hangs or stdout-only summaries.

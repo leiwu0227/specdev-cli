@@ -52,6 +52,8 @@ if (existsSync(claudeConfig)) {
   const claudeContent = JSON.parse(readFileSync(claudeConfig, 'utf-8'))
   assert(claudeContent.name === 'claude', 'claude.json has name=claude')
   assert(claudeContent.command && claudeContent.command.includes('claude'), 'claude.json command includes claude')
+  assert(claudeContent.command && claudeContent.command.includes("--model 'claude-opus-4-6[1m]'"), 'claude.json command includes opus model')
+  assert(claudeContent.command && claudeContent.command.includes('--effort high'), 'claude.json command includes high effort')
   assert(claudeContent.command && claudeContent.command.includes('--print'), 'claude.json command includes --print')
   assert(claudeContent.command && claudeContent.command.includes('--no-session-persistence'), 'claude.json command includes --no-session-persistence')
   assert(claudeContent.command && claudeContent.command.includes('--dangerously-skip-permissions'), 'claude.json command includes --dangerously-skip-permissions')
