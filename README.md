@@ -41,6 +41,8 @@ specdev assignment [name]              # Create assignment, route agent to brain
 specdev checkpoint <phase>             # Validate phase artifacts (brainstorm | implementation)
 specdev approve <phase>                # Hard gate: approve phase and proceed
 specdev reviewloop <phase>             # Automated external review loop (brainstorm | implementation)
+specdev reviewloop <phase> --reviewer=<name> --autocontinue
+                                        # Review, approve on pass, then continue to the next phase
 specdev revise                         # Archive downstream artifacts, re-enter brainstorm
 specdev check-review                   # Read and address review feedback
 ```
@@ -133,6 +135,7 @@ Before either approval gate, users can optionally review:
 | `specdev checkpoint <phase>` | Validate required artifacts exist |
 | `specdev review <phase>` | Manual review in a separate session |
 | `specdev reviewloop <phase>` | Automated external review via CLI (e.g., Codex) |
+| `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Automated review, then continue after approval |
 | `specdev reviewloop <phase> --preflight --reviewer=<name> --json` | Check reviewer readiness without launching the reviewer |
 
 ## Assignment Folder Structure

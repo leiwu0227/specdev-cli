@@ -185,8 +185,24 @@ assert(
 assert(listOutput.includes('codex'), 'lists codex reviewer')
 assert(listOutput.includes('local'), 'lists local reviewer')
 assert(
-  listOutput.includes('specdev reviewloop brainstorm --reviewer=<name>'),
-  'prints next command hint',
+  listOutput.includes('Present these multiple-choice reviewer options to the user:'),
+  'prints multiple-choice prompt',
+)
+assert(
+  listOutput.includes('1. codex'),
+  'prints first reviewer as numbered choice',
+)
+assert(
+  listOutput.includes('2. local'),
+  'prints second reviewer as numbered choice',
+)
+assert(
+  listOutput.includes('Review, then continue if approved: specdev reviewloop brainstorm --reviewer=<name> --autocontinue'),
+  'prints autocontinue command template',
+)
+assert(
+  listOutput.includes('Review only: specdev reviewloop brainstorm --reviewer=<name>'),
+  'prints review-only command template',
 )
 
 console.log('\nreviewloop listing --json:')

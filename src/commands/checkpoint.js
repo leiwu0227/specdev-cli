@@ -44,7 +44,7 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
     }
     // Run brainstorm validation against the discussion path
     // Discussion names parse as type null, so type defaults to 'feature' (intentional)
-    await checkpointBrainstorm(resolved.path, resolved.name)
+    await checkpointBrainstorm(resolved.path, resolved.name, flags)
     return
   }
 
@@ -52,7 +52,7 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   const name = assignmentName(assignmentPath)
 
   if (phase === 'brainstorm') {
-    await checkpointBrainstorm(assignmentPath, name)
+    await checkpointBrainstorm(assignmentPath, name, flags)
   } else if (phase === 'implementation') {
     await checkpointImplementation(assignmentPath, name, flags)
   }
@@ -65,7 +65,7 @@ const REQUIRED_SECTIONS = {
   familiarization: ['Overview'],
 }
 
-async function checkpointBrainstorm(assignmentPath, name) {
+async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
   const missing = []
 
   const proposalPath = join(assignmentPath, 'brainstorm', 'proposal.md')
@@ -121,10 +121,38 @@ async function checkpointBrainstorm(assignmentPath, name) {
   console.log('   brainstorm/proposal.md ✓')
   console.log('   brainstorm/design.md ✓')
   blankLine()
-  console.log('Ready for review. User may run:')
-  console.log('   specdev reviewloop brainstorm — automated external review (e.g., Codex)')
-  console.log('   specdev review brainstorm — manual review in a separate session')
-  console.log('   specdev approve brainstorm — skip review and proceed to breakdown')
+  const specdevPath = join(assignmentPath, '..', '..')
+  const reviewers = await listReviewers(specdevPath)
+  const isDiscussion = Boolean(flags.discussion)
+  const reviewPhase = isDiscussion ? 'discussion' : 'brainstorm'
+  const discussionArg = isDiscussion ? ` --discussion=${flags.discussion}` : ''
+
+  console.log('Ready for user decision. Present these multiple-choice options:')
+  console.log(`   1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name> --autocontinue`)
+  console.log(`   2. Automated review only — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name>`)
+  console.log(`   3. Manual review — run specdev review ${reviewPhase}${discussionArg} in a separate session`)
+  if (!isDiscussion) {
+    console.log('   4. Skip review and approve — run specdev approve brainstorm')
+  }
+  blankLine()
+  console.log('If the user chooses automated review, present these reviewer choices:')
+  if (reviewers.length === 0) {
+    console.log('   - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
+  } else {
+    reviewers.forEach((reviewer, index) => {
+      console.log(`   ${index + 1}. ${reviewer}`)
+    })
+  }
+}
+
+async function listReviewers(specdevPath) {
+  const reviewersDir = join(specdevPath, 'skills', 'core', 'reviewloop', 'reviewers')
+  if (!(await fse.pathExists(reviewersDir))) return []
+  const files = await fse.readdir(reviewersDir)
+  return files
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => file.replace('.json', ''))
+    .sort()
 }
 
 async function checkpointImplementation(assignmentPath, name, flags = {}) {
@@ -221,8 +249,19 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
   }
 
   blankLine()
-  console.log('Ready for review. User may run:')
-  console.log('   specdev reviewloop implementation — automated external review (e.g., Codex)')
-  console.log('   specdev review implementation — manual review in a separate session')
-  console.log('   specdev approve implementation — skip review and proceed to summary')
+  const reviewers = await listReviewers(specdevPath)
+  console.log('Ready for user decision. Present these multiple-choice options:')
+  console.log('   1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name> --autocontinue')
+  console.log('   2. Automated review only — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name>')
+  console.log('   3. Manual review — run specdev review implementation in a separate session')
+  console.log('   4. Skip review and approve — run specdev approve implementation')
+  blankLine()
+  console.log('If the user chooses automated review, present these reviewer choices:')
+  if (reviewers.length === 0) {
+    console.log('   - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
+  } else {
+    reviewers.forEach((reviewer, index) => {
+      console.log(`   ${index + 1}. ${reviewer}`)
+    })
+  }
 }

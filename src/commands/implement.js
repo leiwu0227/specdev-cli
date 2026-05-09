@@ -69,6 +69,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   const trackScript = join(skillBase, 'scripts', 'track-progress.sh')
   const implementerPrompt = join(skillBase, 'prompts', 'implementer.md')
   const reviewerPrompt = join(skillBase, 'prompts', 'code-reviewer.md')
+  const reviewers = await listReviewers(specdevPath)
 
   printSection('Setup complete:')
   console.log(`   ✓ ${name}/implementation/ created`)
@@ -109,17 +110,28 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   ])
   blankLine()
 
-  printSection('When all tasks are done:')
-  printLines([
+  const finalChoiceLines = [
     '   1. Run full test suite one final time',
     `   2. Run: bash ${trackScript} ${planPath} summary`,
     '   3. Present summary to the user: what was built, tests passing, notable decisions',
-    '   4. Tell the user their options:',
-    '      - specdev reviewloop implementation — automated external review',
-    '      - specdev review implementation — manual review in a separate session',
-    '      - specdev approve implementation — proceed to knowledge capture',
-    '   5. Stop and wait for user approval',
-  ])
+    '   4. Present these multiple-choice options to the user:',
+    '      1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name> --autocontinue',
+    '      2. Automated review only — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name>',
+    '      3. Manual review — run specdev review implementation in a separate session',
+    '      4. Skip review and approve — run specdev approve implementation',
+    '   5. If the user chooses automated review, present these reviewer choices:',
+  ]
+  if (reviewers.length === 0) {
+    finalChoiceLines.push('      - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
+  } else {
+    reviewers.forEach((reviewer, index) => {
+      finalChoiceLines.push(`      ${index + 1}. ${reviewer}`)
+    })
+  }
+  finalChoiceLines.push('   6. Stop and wait for user approval')
+
+  printSection('When all tasks are done:')
+  printLines(finalChoiceLines)
   blankLine()
 
   printSection('Begin now — extract tasks and start the first batch.')
@@ -128,4 +140,14 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
 function parseExecutionMode(planContent) {
   const match = planContent.match(/^\*\*Execution Mode:\*\*\s*(inline|subagent|parallel)\s*$/im)
   return match ? match[1].toLowerCase() : 'inline'
+}
+
+async function listReviewers(specdevPath) {
+  const reviewersDir = join(specdevPath, 'skills', 'core', 'reviewloop', 'reviewers')
+  if (!(await fse.pathExists(reviewersDir))) return []
+  const files = await fse.readdir(reviewersDir)
+  return files
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => file.replace('.json', ''))
+    .sort()
 }

@@ -44,6 +44,8 @@ export function helpCommand(flags = {}) {
     '  # Optional: review before approving',
     '  specdev review brainstorm         # Manual review (separate session)',
     '  specdev reviewloop brainstorm     # Automated review via external CLI',
+    '  specdev reviewloop brainstorm --reviewer=<name> --autocontinue',
+    '                                    # Review, approve on pass, then continue',
     '  specdev review implementation     # Manual review (separate session)',
     '  specdev reviewloop implementation # Automated review via external CLI',
     '  specdev check-review              # Read feedback in main session',

@@ -41,6 +41,19 @@ function printSimplificationPrompt() {
   blankLine()
 }
 
+function printAutocontinuePrompt(phase, reviewerNames) {
+  const reviewerArg = reviewerNames.join(',')
+  blankLine()
+  printSection('Autocontinue requested:')
+  if (phase === 'brainstorm') {
+    console.log('   The brainstorm gate is approved. Continue immediately to breakdown and implementation.')
+    console.log(`   Reuse the selected reviewer for implementation review: specdev reviewloop implementation --reviewer=${reviewerArg} --autocontinue`)
+  } else if (phase === 'implementation') {
+    console.log('   The implementation gate is approved. Continue immediately to summary and knowledge capture.')
+  }
+  blankLine()
+}
+
 function reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round) {
   const safeReviewerName = reviewerName.replace(SAFE_LOG_NAME_PATTERN, '-')
   return join(reviewDir, `${feedbackPhase}-reviewer-${safeReviewerName}-round-${round}.log`)
@@ -368,6 +381,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
           if (f.endsWith('.json')) reviewers.push(f.replace('.json', ''))
         }
       }
+      reviewers.sort()
       if (reviewers.length === 0) {
         console.error('No reviewer configs found')
         process.exitCode = 1
@@ -378,8 +392,10 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
         console.log(`   - ${r}`)
       }
       blankLine()
-      console.log('Ask the user which reviewer to use, then run:')
-      console.log(`   specdev reviewloop discussion --discussion=${flags.discussion} --reviewer=<name>`)
+      console.log('Present these multiple-choice reviewer options to the user:')
+      reviewers.forEach((reviewer, index) => {
+        console.log(`   ${index + 1}. ${reviewer} — run specdev reviewloop discussion --discussion=${flags.discussion} --reviewer=${reviewer}`)
+      })
       return
     }
 
@@ -418,6 +434,9 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
     if (allApproved) {
       printSection('Discussion review approved!')
+      if (flags.autocontinue) {
+        console.log('   Autocontinue is not supported for discussions; discussions remain standalone.')
+      }
     }
     return
   }
@@ -443,6 +462,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
         if (f.endsWith('.json')) reviewers.push(f.replace('.json', ''))
       }
     }
+    reviewers.sort()
 
     if (reviewers.length === 0) {
       if (flags.json) {
@@ -487,8 +507,14 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
       console.log(`   - ${r}`)
     }
     blankLine()
-    console.log('Ask the user which reviewer to use, then run:')
-    console.log(`   specdev reviewloop ${phase} --reviewer=<name>`)
+    console.log('Present these multiple-choice reviewer options to the user:')
+    reviewers.forEach((reviewer, index) => {
+      console.log(`   ${index + 1}. ${reviewer}`)
+    })
+    blankLine()
+    console.log('Then run one of:')
+    console.log(`   Review, then continue if approved: specdev reviewloop ${phase} --reviewer=<name> --autocontinue`)
+    console.log(`   Review only: specdev reviewloop ${phase} --reviewer=<name>`)
     return
   }
 
@@ -534,6 +560,9 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     const approveResult = await approvePhase(assignmentPath, phase)
     if (approveResult.approved) {
       printSection(`Review approved! Phase '${phase}' has been approved.`)
+      if (flags.autocontinue) {
+        printAutocontinuePrompt(phase, reviewerNames)
+      }
     } else {
       printSection('Review approved, but phase approval had errors:')
       for (const err of approveResult.errors) {

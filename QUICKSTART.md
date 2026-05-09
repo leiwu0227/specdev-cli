@@ -60,6 +60,7 @@ Interactive Q&A with you to nail down scope and design. The agent asks questions
 - `specdev checkpoint brainstorm` — validate required design sections exist
 - `specdev review brainstorm` — manual review in a separate session
 - `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex)
+- `specdev reviewloop brainstorm --reviewer=<name> --autocontinue` — review, then continue after approval
 
 **Need to revise?** If a later phase reveals a design problem, run `specdev revise` to archive downstream artifacts and re-enter brainstorming with your existing design loaded as context.
 
@@ -88,6 +89,7 @@ After all tasks complete, the agent runs the full test suite and presents a summ
 - `specdev checkpoint implementation` — validate implementation artifacts
 - `specdev review implementation` — manual review in a separate session
 - `specdev reviewloop implementation` — automated review via external CLI (e.g., Codex)
+- `specdev reviewloop implementation --reviewer=<name> --autocontinue` — review, then continue to summary after approval
 
 ```bash
 specdev approve implementation        # Gate: proceed to summary
@@ -131,6 +133,7 @@ This tells you exactly where you are, what's blocking you, and what to do next. 
 | `specdev approve <phase>` | Either | Hard gate: approve phase and proceed |
 | `specdev review <phase>` | Separate session | Manual review (`brainstorm` or `implementation`) |
 | `specdev reviewloop <phase>` | Coding agent | Automated external review loop |
+| `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Coding agent | Automated review and continue after approval |
 | `specdev revise` | Coding agent | Archive downstream artifacts, re-enter brainstorm |
 | `specdev check-review` | Coding agent | Read and address review feedback |
 | `specdev distill workflow` | Terminal | Aggregate workflow observations |

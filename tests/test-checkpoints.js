@@ -57,6 +57,10 @@ writeFileSync(join(featureDir, 'brainstorm', 'design.md'), `## Overview\nAdd JWT
 setCurrent('001_feature_auth')
 let result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'feature with all required sections passes')
+assert(result.stdout.includes('Automated review, then continue if approved'), 'brainstorm checkpoint offers autocontinue review choice')
+assert(result.stdout.includes('--autocontinue'), 'brainstorm checkpoint includes autocontinue command')
+assert(result.stdout.includes('Automated review only'), 'brainstorm checkpoint offers review-only choice')
+assert(result.stdout.includes('If the user chooses automated review, present these reviewer choices:'), 'brainstorm checkpoint uses second-tier reviewer choices')
 
 console.log('\nbrainstorm checkpoint — feature missing Non-Goals:')
 const featureDir2 = join(TEST_DIR, '.specdev', 'assignments', '002_feature_search')
