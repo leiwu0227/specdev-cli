@@ -51,7 +51,8 @@ if [ -n "$CONTEXT_JSON" ]; then
       const state = a?.state || '';
       const knowledgeCount = ctx.knowledge?.files?.length || 0;
       const toolSkills = (ctx.skills?.tools || []).join(', ');
-      console.log(JSON.stringify({ assignmentLine, phase, state, knowledgeCount, toolSkills }));
+      const lastCompleted = ctx.recent_history?.last_completed_assignment || '';
+      console.log(JSON.stringify({ assignmentLine, phase, state, knowledgeCount, toolSkills, lastCompleted }));
     } catch {
       console.log('{}');
     }
@@ -61,6 +62,7 @@ if [ -n "$CONTEXT_JSON" ]; then
   PHASE=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.phase||'')")
   KNOWLEDGE_COUNT=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(String(d.knowledgeCount||0))")
   TOOL_SKILLS=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.toolSkills||'')")
+  LAST_COMPLETED=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.lastCompleted||'')")
 else
   # Fallback: filesystem detection (for older specdev versions)
   ASSIGNMENTS_DIR="$SPECDEV_DIR/assignments"
@@ -87,6 +89,7 @@ else
 
   KNOWLEDGE_COUNT=0
   TOOL_SKILLS=""
+  LAST_COMPLETED=""
   TOOLS_DIR="$SPECDEV_DIR/skills/tools"
   if [ -d "$TOOLS_DIR" ]; then
     for skill_dir in "$TOOLS_DIR"/*/; do
@@ -97,6 +100,18 @@ else
       TOOL_SKILLS="${TOOL_SKILLS}${TOOL_SKILLS:+, }${skill_name}"
     done
   fi
+fi
+
+# Recent completed assignment fallback for older `specdev context --json` output
+if [ -z "${LAST_COMPLETED:-}" ] && [ -d "$SPECDEV_DIR/assignments" ]; then
+  LAST_COMPLETED=$(find "$SPECDEV_DIR/assignments" -mindepth 1 -maxdepth 1 -type d 2>/dev/null \
+    | while read -r assignment_dir; do
+        [ -f "$assignment_dir/capture/project-notes-diff.md" ] || continue
+        [ -f "$assignment_dir/capture/workflow-diff.md" ] || continue
+        basename "$assignment_dir"
+      done \
+    | sort \
+    | tail -1)
 fi
 
 # Build context message
@@ -121,6 +136,11 @@ esac
 # Knowledge availability
 if [ "$KNOWLEDGE_COUNT" -gt 0 ] 2>/dev/null; then
   CONTEXT="${CONTEXT}\n\nKnowledge: $KNOWLEDGE_COUNT files available. Run \`specdev knowledge search \"<query>\"\` for prior decisions."
+fi
+
+# Recent history
+if [ -n "$LAST_COMPLETED" ]; then
+  CONTEXT="${CONTEXT}\n\nRecent history: last completed assignment was ${LAST_COMPLETED}."
 fi
 
 # Tool skills

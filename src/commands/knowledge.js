@@ -1,11 +1,11 @@
 import { join } from 'node:path'
-import fse from 'fs-extra'
 import {
   resolveTargetDir,
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
 import {
   buildKnowledgeIndex,
+  collectKnowledgeDocuments,
   searchKnowledgeIndex,
 } from '../utils/knowledge.js'
 
@@ -95,26 +95,24 @@ async function knowledgeListCommand(flags = {}) {
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
 
-  const knowledgePath = join(specdevPath, 'knowledge')
-  const files = []
-  const branches = {}
-
-  for (const branch of KNOWLEDGE_BRANCHES) {
-    const branchDir = join(knowledgePath, branch)
-    let count = 0
-    if (await fse.pathExists(branchDir)) {
-      const entries = await fse.readdir(branchDir)
-      for (const entry of entries) {
-        if (!entry.endsWith('.md') || entry.startsWith('.') || entry === '_index.md') continue
-        const filePath = join(branchDir, entry)
-        const content = await fse.readFile(filePath, 'utf-8')
-        const h1Match = content.match(/^# (.+)$/m)
-        const title = h1Match ? h1Match[1].trim() : entry.replace(/\.md$/, '')
-        files.push({ path: `knowledge/${branch}/${entry}`, branch, title })
-        count++
+  const branches = Object.fromEntries(KNOWLEDGE_BRANCHES.map((branch) => [branch, 0]))
+  const documents = await collectKnowledgeDocuments(specdevPath)
+  const files = documents
+    .filter((doc) => doc.path.startsWith('knowledge/'))
+    .map((doc) => {
+      const [, branch] = doc.path.split('/')
+      if (!KNOWLEDGE_BRANCHES.includes(branch)) return null
+      return {
+        path: doc.path,
+        branch,
+        title: doc.title,
       }
-    }
-    branches[branch] = count
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.path.localeCompare(b.path))
+
+  for (const file of files) {
+    branches[file.branch] += 1
   }
 
   if (flags.json) {
@@ -132,8 +130,7 @@ async function knowledgeListCommand(flags = {}) {
     const branchFiles = files.filter(f => f.branch === branch)
     console.log(`\n${branch}/ (${branchFiles.length} file${branchFiles.length === 1 ? '' : 's'})`)
     for (const f of branchFiles) {
-      const filename = f.path.split('/').pop()
-      console.log(`  ${filename} — ${f.title}`)
+      console.log(`  ${f.path.replace(`knowledge/${branch}/`, '')} — ${f.title}`)
     }
   }
   console.log(`\nTotal: ${files.length} file${files.length === 1 ? '' : 's'} across ${activeBranches.length} branch${activeBranches.length === 1 ? '' : 'es'}`)

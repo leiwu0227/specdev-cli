@@ -189,6 +189,26 @@ assert(
   'prints next command hint',
 )
 
+console.log('\nreviewloop listing --json:')
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--json',
+])
+assert(result.status === 0, 'json listing exits 0 when reviewers exist')
+let reviewerListJson = null
+try {
+  reviewerListJson = JSON.parse(result.stdout)
+  assert(true, 'json listing stdout is valid JSON')
+} catch {
+  assert(false, 'json listing stdout is valid JSON', result.stdout)
+}
+assert(reviewerListJson?.command === 'reviewloop', 'json listing command is reviewloop')
+assert(reviewerListJson?.status === 'ok', 'json listing status is ok')
+assert(reviewerListJson?.phase === 'brainstorm', 'json listing includes phase')
+assert(reviewerListJson?.reviewers?.includes('codex'), 'json listing includes codex reviewer')
+
 // =====================================================================
 // Cursor in default reviewer listing after init
 // =====================================================================

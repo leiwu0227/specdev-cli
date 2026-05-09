@@ -2,10 +2,13 @@ import { join } from 'path'
 import fse from 'fs-extra'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { resolveCurrentAssignment } from '../utils/current.js'
-import { scanSingleAssignment } from '../utils/scan.js'
+import { scanAssignments, scanSingleAssignment } from '../utils/scan.js'
 import { detectAssignmentState } from '../utils/state.js'
 import { COMMANDS } from '../utils/commands.js'
 import { scanSkillsDir } from '../utils/skills.js'
+import { collectKnowledgeDocuments } from '../utils/knowledge.js'
+
+const KNOWLEDGE_BRANCHES = ['architecture', 'codestyle', 'domain', 'workflow', 'workflow_feedback']
 
 export async function contextCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -21,6 +24,7 @@ export async function contextCommand(flags = {}) {
   const knowledge = await buildKnowledgeInfo(specdevPath)
   const projectNotes = await buildProjectNotesInfo(specdevPath)
   const skills = await buildSkillsInfo(specdevPath)
+  const recentHistory = await buildRecentHistory(specdevPath)
 
   if (json) {
     const output = {
@@ -33,6 +37,7 @@ export async function contextCommand(flags = {}) {
       knowledge,
       project_notes: projectNotes,
       skills,
+      recent_history: recentHistory,
     }
     console.log(JSON.stringify(output, null, 2))
     return
@@ -75,6 +80,10 @@ export async function contextCommand(flags = {}) {
   console.log('')
 
   console.log(`Skills: ${skills.core.length} core, ${skills.tools.length} tools`)
+  if (recentHistory.last_completed_assignment) {
+    console.log('')
+    console.log(`Recent: last completed assignment ${recentHistory.last_completed_assignment}`)
+  }
 }
 
 async function buildAssignmentInfo(specdevPath) {
@@ -102,28 +111,20 @@ async function buildAssignmentInfo(specdevPath) {
 }
 
 async function buildKnowledgeInfo(specdevPath) {
-  const knowledgeDir = join(specdevPath, 'knowledge')
-  const files = []
-
-  if (await fse.pathExists(knowledgeDir)) {
-    const branches = await fse.readdir(knowledgeDir, { withFileTypes: true })
-    for (const branch of branches) {
-      if (!branch.isDirectory() || branch.name.startsWith('.')) continue
-      if (branch.name === '_index.md') continue
-      const branchDir = join(knowledgeDir, branch.name)
-      const entries = await fse.readdir(branchDir)
-      for (const entry of entries) {
-        if (!entry.endsWith('.md') || entry.startsWith('.')) continue
-        const filePath = join(branchDir, entry)
-        const title = await extractTitle(filePath, entry)
-        files.push({
-          path: `knowledge/${branch.name}/${entry}`,
-          branch: branch.name,
-          title,
-        })
+  const documents = await collectKnowledgeDocuments(specdevPath)
+  const files = documents
+    .filter((doc) => doc.path.startsWith('knowledge/'))
+    .map((doc) => {
+      const [, branch] = doc.path.split('/')
+      if (!KNOWLEDGE_BRANCHES.includes(branch)) return null
+      return {
+        path: doc.path,
+        branch,
+        title: doc.title,
       }
-    }
-  }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.path.localeCompare(b.path))
 
   const dbPath = join(specdevPath, 'cache', 'knowledge.sqlite')
   const indexExists = await fse.pathExists(dbPath)
@@ -148,20 +149,6 @@ async function buildKnowledgeInfo(specdevPath) {
   }
 }
 
-async function extractTitle(filePath, fallbackName) {
-  try {
-    const content = await fse.readFile(filePath, 'utf-8')
-    const lines = content.split('\n')
-    for (const line of lines) {
-      const match = line.match(/^#\s+(.+)/)
-      if (match) return match[1].trim()
-    }
-  } catch {
-    // fall through
-  }
-  return fallbackName.replace('.md', '')
-}
-
 async function buildProjectNotesInfo(specdevPath) {
   const notesDir = join(specdevPath, 'project_notes')
   if (!(await fse.pathExists(notesDir))) return []
@@ -182,5 +169,23 @@ async function buildSkillsInfo(specdevPath) {
   return {
     core: coreSkills.map(s => s.name),
     tools: toolSkills.map(s => s.name),
+  }
+}
+
+async function buildRecentHistory(specdevPath) {
+  const assignments = await scanAssignments(specdevPath)
+  const completed = []
+
+  for (const assignment of assignments) {
+    const detected = await detectAssignmentState(assignment, assignment.path)
+    if (detected.state === 'completed') {
+      completed.push(assignment.name)
+    }
+  }
+
+  completed.sort((a, b) => b.localeCompare(a))
+
+  return {
+    last_completed_assignment: completed[0] || null,
   }
 }

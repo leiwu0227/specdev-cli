@@ -59,6 +59,9 @@ Single command that dumps everything an agent needs on cold start. Replaces agen
   "skills": {
     "core": ["brainstorming", "breakdown", "implementing", "knowledge-capture", "diagnosis", "investigation"],
     "tools": ["reviewloop-codex", "verify-tests"]
+  },
+  "recent_history": {
+    "last_completed_assignment": "00013_feature_sqlite-knowledge-retrieval"
   }
 }
 ```
@@ -144,7 +147,7 @@ Replace bash state detection in `hooks/session-start.sh` with `specdev context -
 
 ## Success Criteria
 
-1. Every specdev command accepts `--json` and returns structured output
+1. Every workflow and utility command accepts `--json` and returns structured output, except `start` (interactive) and `--version` (covered by `context --json`)
 2. `specdev context --json` gives an agent everything it needs to start working in one call
 3. `specdev knowledge list --json` shows all accumulated knowledge without a search query
 4. Session hook injects phase-relevant commands and knowledge availability

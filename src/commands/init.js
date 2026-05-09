@@ -16,6 +16,8 @@ export function adapterContent(heading) {
 
 Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
 
+If this repository develops SpecDev itself, treat \`.specdev/\` as the installed workflow/runtime state, not as product source. When changing SpecDev behavior, edit source files such as \`src/\`, \`templates/.specdev/\`, tests, and docs. Do not edit or commit \`.specdev\` workflow files unless the user explicitly runs or asks for \`specdev update\`.
+
 IMPORTANT: Before starting any subtask, announce "Specdev: <what you're doing>".
 If you stop announcing subtasks, the user will assume you've stopped following the workflow.
 `
@@ -228,7 +230,7 @@ export async function initCommand(flags = {}) {
   const force = flags.force || flags.f
   const dryRun = flags['dry-run']
 
-  if (flags.platform) {
+  if (flags.platform && !flags.json) {
     console.log('ℹ️  --platform is deprecated and ignored; all adapters are now created automatically')
   }
 
@@ -237,6 +239,17 @@ export async function initCommand(flags = {}) {
 
   // Check if .specdev already exists
   if (existsSync(specdevPath) && !force) {
+    if (flags.json) {
+      console.log(JSON.stringify({
+        command: 'init',
+        version: 1,
+        status: 'error',
+        error: '.specdev folder already exists in this directory',
+        path: specdevPath,
+      }, null, 2))
+      process.exitCode = 1
+      return
+    }
     console.error('❌ .specdev folder already exists in this directory')
     console.log('   Use --force to overwrite, or remove the existing folder first')
     process.exitCode = 1
@@ -244,6 +257,17 @@ export async function initCommand(flags = {}) {
   }
 
   if (dryRun) {
+    if (flags.json) {
+      console.log(JSON.stringify({
+        command: 'init',
+        version: 1,
+        status: 'ok',
+        dry_run: true,
+        from: templatePath,
+        to: specdevPath,
+      }, null, 2))
+      return
+    }
     console.log('🔍 Dry run mode - would copy:')
     console.log(`   From: ${templatePath}`)
     console.log(`   To: ${specdevPath}`)
@@ -398,6 +422,16 @@ export async function initCommand(flags = {}) {
     }
   } catch (error) {
     if (origLog) console.log = origLog
+    if (flags.json) {
+      console.log(JSON.stringify({
+        command: 'init',
+        version: 1,
+        status: 'error',
+        error: error.message,
+      }, null, 2))
+      process.exitCode = 1
+      return
+    }
     console.error('❌ Failed to initialize SpecDev:', error.message)
     process.exitCode = 1
   }

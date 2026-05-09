@@ -37,6 +37,13 @@ function writeFixture() {
     'Some architecture knowledge.',
     '',
   ].join('\n'), 'utf-8')
+  mkdirSync(join(specdev, 'knowledge', 'architecture', 'nested'), { recursive: true })
+  writeFileSync(join(specdev, 'knowledge', 'architecture', 'nested', 'deep-note.md'), [
+    '# Deep Architecture Note',
+    '',
+    'Nested architecture knowledge.',
+    '',
+  ].join('\n'), 'utf-8')
 
   mkdirSync(join(specdev, 'knowledge', 'workflow_feedback'), { recursive: true })
   writeFileSync(join(specdev, 'knowledge', 'workflow_feedback', 'feedback-note.md'), [
@@ -51,6 +58,19 @@ function writeFixture() {
   writeFileSync(join(assignmentPath, 'brainstorm', 'proposal.md'), '# Proposal\n\nTest proposal.\n')
   writeFileSync(join(assignmentPath, 'brainstorm', 'design.md'), '# Design\n\nTest design.\n')
   writeFileSync(join(specdev, '.current'), '00001_feature_test-feature')
+
+  const completedPath = join(specdev, 'assignments', '00000_feature_completed')
+  mkdirSync(join(completedPath, 'brainstorm'), { recursive: true })
+  mkdirSync(join(completedPath, 'breakdown'), { recursive: true })
+  mkdirSync(join(completedPath, 'implementation'), { recursive: true })
+  mkdirSync(join(completedPath, 'capture'), { recursive: true })
+  writeFileSync(join(completedPath, 'brainstorm', 'proposal.md'), '# Proposal\n')
+  writeFileSync(join(completedPath, 'brainstorm', 'design.md'), '# Design\n')
+  writeFileSync(join(completedPath, 'breakdown', 'plan.md'), '# Plan\n')
+  writeFileSync(join(completedPath, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ status: 'completed' }] }))
+  writeFileSync(join(completedPath, 'capture', 'project-notes-diff.md'), '# Diff\n')
+  writeFileSync(join(completedPath, 'capture', 'workflow-diff.md'), '# Diff\n')
+  writeFileSync(join(completedPath, 'status.json'), JSON.stringify({ brainstorm_approved: true, implementation_approved: true }))
 
   createMockToolSkill(TEST_DIR, 'mock-tool')
 }
@@ -93,6 +113,7 @@ const archFile = json?.knowledge?.files?.find(f => f.branch === 'architecture')
 assert(archFile !== undefined, 'knowledge includes architecture file')
 assert(typeof archFile?.title === 'string', 'knowledge file has title')
 assert(typeof archFile?.path === 'string', 'knowledge file has path')
+assert(json?.knowledge?.files?.some(f => f.path === 'knowledge/architecture/nested/deep-note.md'), 'knowledge includes nested architecture file')
 assert(typeof json?.knowledge?.index_exists === 'boolean', 'knowledge has index_exists boolean')
 
 // project_notes
@@ -105,6 +126,7 @@ assert(Array.isArray(json?.skills?.core), 'skills has core array')
 assert(json?.skills?.core?.length > 0, 'core skills is non-empty')
 assert(Array.isArray(json?.skills?.tools), 'skills has tools array')
 assert(json?.skills?.tools?.some(s => s === 'mock-tool'), 'tools includes mock-tool')
+assert(json?.recent_history?.last_completed_assignment === '00000_feature_completed', 'recent history includes last completed assignment')
 
 // --- context human output ---
 console.log('\ncontext human output:')

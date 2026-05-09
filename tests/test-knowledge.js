@@ -36,6 +36,13 @@ function writeFixture() {
     'Generated working memory gives agents a compact context layer derived from markdown.',
     '',
   ].join('\n'), 'utf-8')
+  mkdirSync(join(specdev, 'knowledge', 'architecture', 'nested'), { recursive: true })
+  writeFileSync(join(specdev, 'knowledge', 'architecture', 'nested', 'deep.md'), [
+    '# Deep Knowledge',
+    '',
+    'Nested knowledge should be listed.',
+    '',
+  ].join('\n'), 'utf-8')
 
   const assignmentPath = join(specdev, 'assignments', '00001_feature_retrieval-cache')
   mkdirSync(join(assignmentPath, 'brainstorm'), { recursive: true })
@@ -107,12 +114,14 @@ assert(typeof firstFile?.branch === 'string', 'file entry has branch')
 assert(typeof firstFile?.title === 'string', 'file entry has title')
 assert(typeof json?.branches === 'object' && json.branches !== null, 'list json has branches object')
 assert(typeof json.branches.architecture === 'number', 'branches has architecture count')
-assert(json.branches.architecture >= 1, 'architecture branch has files')
+assert(json.branches.architecture >= 2, 'architecture branch counts nested files')
+assert(json.files.some(f => f.path === 'knowledge/architecture/nested/deep.md'), 'list json includes nested knowledge file')
 
 console.log('\nknowledge list human:')
 result = runCmd(['knowledge', 'list', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'knowledge list human exits 0', result.stderr || result.stdout)
 assert(result.stdout.includes('architecture'), 'human list includes architecture branch')
+assert(result.stdout.includes('nested/deep.md'), 'human list includes nested knowledge path')
 
 console.log('\nknowledge search auto-builds index:')
 writeFixture()

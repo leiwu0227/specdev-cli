@@ -69,6 +69,21 @@ const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
 assert(mainMd.includes('SpecDev'), '_main.md contains SpecDev reference')
 assert(mainMd.includes('Specdev:'), '_main.md contains "Specdev:" announcement rule')
 
+console.log('\ninit dry-run --json:')
+cleanup()
+result = runCmd(['init', '--dry-run', '--json', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'init dry-run --json succeeds')
+let initDryRunJson = null
+try {
+  initDryRunJson = JSON.parse(result.stdout)
+  assert(true, 'init dry-run --json outputs valid JSON')
+} catch {
+  assert(false, 'init dry-run --json outputs valid JSON')
+}
+assert(initDryRunJson?.command === 'init', 'dry-run json command is init')
+assert(initDryRunJson?.dry_run === true, 'dry-run json reports dry_run true')
+assert(initDryRunJson?.to?.endsWith('.specdev'), 'dry-run json reports target .specdev path')
+
 // =====================================================================
 // Init Platform Tests
 // =====================================================================
@@ -84,10 +99,13 @@ assert(existsSync(join(TEST_DIR, '.cursor', 'rules')), 'creates .cursor/rules')
 
 const claudeMd = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
 assert(claudeMd.includes('.specdev/_main.md'), 'CLAUDE.md points to _main.md')
+assert(claudeMd.includes('templates/.specdev'), 'CLAUDE.md includes SpecDev source-of-truth rule')
 const agentsMd = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8')
 assert(agentsMd.includes('.specdev/_main.md'), 'AGENTS.md points to _main.md')
+assert(agentsMd.includes('templates/.specdev'), 'AGENTS.md includes SpecDev source-of-truth rule')
 const cursorRules = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
 assert(cursorRules.includes('.specdev/_main.md'), '.cursor/rules points to _main.md')
+assert(cursorRules.includes('templates/.specdev'), '.cursor/rules includes SpecDev source-of-truth rule')
 
 console.log('\ndefault init installs command skills:')
 const claudeSkillsDir = join(TEST_DIR, '.claude', 'skills')

@@ -1,0 +1,41 @@
+{
+  "plan_file": ".specdev/assignments/00014_feature_agent-friendly-workflow/breakdown/plan.md",
+  "total_tasks": 5,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-08T15:48:12Z",
+      "completed_at": "2026-05-08T15:52:34Z",
+      "summary": "Created specdev context command with JSON and human output. Composes existing utilities for assignment state, commands, knowledge files, project notes, and skills. 35 tests passing."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-05-08T15:52:39Z",
+      "completed_at": "2026-05-08T15:55:28Z",
+      "summary": "Added knowledge list subcommand with JSON and human output. Scans knowledge branches, extracts titles, reports file counts. 33 tests passing."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-05-08T15:53:00Z",
+      "completed_at": "2026-05-08T16:03:01Z",
+      "summary": "Added --json to approve, focus, revise, help, skills-remove, migrate. 46 new tests passing."
+    },
+    {
+      "number": 4,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-08T16:20:49Z",
+      "summary": "Added --json to implement, migrate-legacy, review, skills-install, skills-sync, update. 45 new tests. Suppressed sync output during update --json."
+    },
+    {
+      "number": 5,
+      "status": "completed",
+      "started_at": "2026-05-08T16:20:56Z",
+      "completed_at": "2026-05-08T16:25:22Z",
+      "summary": "Rewrote session hook to use specdev context --json. Adds phase-relevant commands and knowledge availability. Fallback to filesystem detection if context fails. 14 tests."
+    }
+  ]
+}

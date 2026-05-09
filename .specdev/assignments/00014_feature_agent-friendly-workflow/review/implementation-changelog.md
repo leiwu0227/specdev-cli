@@ -20,3 +20,14 @@
 
 - [F4.1] Fixed: `init --json` now suppresses prose output during setup. Only clean JSON is emitted.
 - [F4.2] Fixed: Updated design/success criteria to explicitly exclude `start` (interactive) and `--version` (trivial) from the `--json` contract. Agents use `specdev context --json` for version info.
+
+## Round 5
+
+- [F5.1] Fixed: `reviewloop <phase> --json` without `--reviewer` now emits only JSON. The human listing header is printed only after the JSON branch returns. Added regression coverage that parses the full stdout.
+- [F5.2] Fixed: `init --dry-run --json` now emits structured JSON with `dry_run`, `from`, and `to` fields instead of human dry-run prose. Added regression coverage in `test-init`.
+
+## Round 6
+
+- [F6.1] Fixed: `knowledge list` and `context` now use recursive knowledge document collection and include nested knowledge files in JSON and human output. Added nested-file regression coverage.
+- [F6.2] Fixed: `context --json` now includes `recent_history.last_completed_assignment`, and the session hook injects it. The hook also has a filesystem fallback for older `specdev context --json` output.
+- [F6.3] Fixed: Updated the design success criterion to match the narrowed JSON scope, excluding interactive `start` and `--version`.

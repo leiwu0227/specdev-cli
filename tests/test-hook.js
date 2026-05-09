@@ -50,6 +50,19 @@ function writeFixture() {
   writeFileSync(join(assignmentPath, 'brainstorm', 'proposal.md'), '# Proposal\n\nTest proposal.\n')
   writeFileSync(join(assignmentPath, 'brainstorm', 'design.md'), '# Design\n\nTest design.\n')
 
+  const completedPath = join(specdev, 'assignments', '00000_feature_completed-hook')
+  mkdirSync(join(completedPath, 'brainstorm'), { recursive: true })
+  mkdirSync(join(completedPath, 'breakdown'), { recursive: true })
+  mkdirSync(join(completedPath, 'implementation'), { recursive: true })
+  mkdirSync(join(completedPath, 'capture'), { recursive: true })
+  writeFileSync(join(completedPath, 'brainstorm', 'proposal.md'), '# Proposal\n')
+  writeFileSync(join(completedPath, 'brainstorm', 'design.md'), '# Design\n')
+  writeFileSync(join(completedPath, 'breakdown', 'plan.md'), '# Plan\n')
+  writeFileSync(join(completedPath, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ status: 'completed' }] }))
+  writeFileSync(join(completedPath, 'capture', 'project-notes-diff.md'), '# Diff\n')
+  writeFileSync(join(completedPath, 'capture', 'workflow-diff.md'), '# Diff\n')
+  writeFileSync(join(completedPath, 'status.json'), JSON.stringify({ brainstorm_approved: true, implementation_approved: true }))
+
   // Set current assignment
   writeFileSync(join(specdev, '.current'), '00001_feature_test-hook')
 }
@@ -72,6 +85,7 @@ assert(context.includes('00001_feature_test-hook'), 'context includes assignment
 assert(context.includes('brainstorm'), 'context includes phase')
 assert(context.includes('specdev checkpoint brainstorm') || context.includes('specdev approve brainstorm'), 'context includes phase-relevant commands')
 assert(context.includes('knowledge') || context.includes('Knowledge'), 'context includes knowledge note')
+assert(context.includes('00000_feature_completed-hook'), 'context includes recent completed assignment')
 assert(context.includes('Announce every subtask'), 'context includes announce reminder')
 
 console.log('\nhook with implementation phase:')

@@ -20,6 +20,7 @@ Below is a list of discussions and their status.
 
 | # | Discussion Name | Status | Created Date | Promoted To | Notes |
 |---|----------------|--------|--------------|-------------|-------|
+| D00002 | Autocontinue after reviewloop approval | Complete | 2026-05-08 | - | Proposes `specdev reviewloop <phase> --reviewer=<name> --autocontinue` to carry reviewed brainstorms through implementation and capture. |
 
 ---
 

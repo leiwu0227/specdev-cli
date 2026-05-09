@@ -428,10 +428,6 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   // ── Without --reviewer: list available reviewers and exit ──
 
   if (!flags.reviewer) {
-    console.log(`Reviewloop: ${name}`)
-    console.log(`   Phase: ${phase}`)
-    blankLine()
-
     const reviewersDir = join(
       targetDir,
       '.specdev',
@@ -449,6 +445,19 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     }
 
     if (reviewers.length === 0) {
+      if (flags.json) {
+        console.log(JSON.stringify({
+          command: 'reviewloop',
+          version: 1,
+          status: 'error',
+          phase,
+          assignment: name,
+          reviewers,
+          error: 'No reviewer configs found',
+        }, null, 2))
+        process.exitCode = 1
+        return
+      }
       console.error('No reviewer configs found')
       console.log(
         '   Add reviewer JSON configs to .specdev/skills/core/reviewloop/reviewers/',
@@ -468,6 +477,10 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
       }, null, 2))
       return
     }
+
+    console.log(`Reviewloop: ${name}`)
+    console.log(`   Phase: ${phase}`)
+    blankLine()
 
     printSection('Available reviewers:')
     for (const r of reviewers) {
