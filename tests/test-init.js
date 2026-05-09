@@ -74,6 +74,15 @@ const workflowFeedbackTemplate = readFileSync(join(TEST_DIR, '.specdev', '_templ
 assert(workflowFeedbackTemplate.includes('Status: open | mitigated | resolved'), 'workflow feedback template includes status field')
 assert(workflowFeedbackTemplate.includes('Proposed Action'), 'workflow feedback template includes proposed action section')
 
+const knowledgeCaptureSkill = readFileSync(join(TEST_DIR, '.specdev', 'skills', 'core', 'knowledge-capture', 'SKILL.md'), 'utf-8')
+assert(knowledgeCaptureSkill.includes('Classify workflow observations'), 'knowledge-capture explains workflow observation classification')
+assert(knowledgeCaptureSkill.includes('workflow_feedback_note.md'), 'knowledge-capture references workflow feedback template')
+assert(knowledgeCaptureSkill.includes('update it instead of creating a duplicate'), 'knowledge-capture explains feedback accumulation')
+
+const knowledgeIndex = readFileSync(join(TEST_DIR, '.specdev', 'knowledge', '_index.md'), 'utf-8')
+assert(knowledgeIndex.includes('project-specific process knowledge'), 'knowledge index distinguishes project workflow knowledge')
+assert(knowledgeIndex.includes('SpecDev workflow itself'), 'knowledge index distinguishes SpecDev workflow feedback')
+
 console.log('\ninit dry-run --json:')
 cleanup()
 result = runCmd(['init', '--dry-run', '--json', `--target=${TEST_DIR}`])

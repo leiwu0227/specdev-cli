@@ -79,13 +79,18 @@ next: null
    - Existing knowledge file listings per branch
    - `big_picture_word_count` and `big_picture_word_limit` (verify you're under limit)
    - Heuristic suggestions (cross-assignment patterns)
-4. Write synthesized observations to `knowledge/` branches as appropriate:
+4. Write synthesized project observations to `knowledge/` branches as appropriate:
    - `knowledge/codestyle/` — naming conventions, formatting patterns, code style decisions
    - `knowledge/architecture/` — system design, component relationships, key decisions
    - `knowledge/domain/` — domain concepts, business logic patterns
-   - `knowledge/workflow/` — process patterns, tool usage observations
-5. Write workflow observations to `knowledge/workflow_feedback/` as appropriate
-6. If no new observations to write, that's OK — not every assignment produces reusable knowledge
+   - `knowledge/workflow/` — project-specific process knowledge and tool usage observations
+5. Classify workflow observations before writing durable notes:
+   - Project-local process patterns go to `knowledge/workflow/`
+   - SpecDev workflow/product issues or improvement ideas go to `knowledge/workflow_feedback/`
+   - One-off low-value reflections stay only in `capture/workflow-diff.md`
+6. Before creating a workflow feedback note, search existing feedback with `specdev knowledge search "<workflow issue keywords>"` or inspect `knowledge/workflow_feedback/` directly. If a related note exists, update it instead of creating a duplicate by refreshing `Last seen`, `Assignments observed`, `Current Mitigation`, and `Proposed Action`.
+7. For new SpecDev workflow feedback, copy `_templates/workflow_feedback_note.md` into `knowledge/workflow_feedback/<short-slug>.md` and fill every field. Use `Proposed Action: create-assignment` for severe or recurring issues; otherwise use `monitor`, `update-guidance`, or `none`.
+8. If no new observations to write, that's OK — not every assignment produces reusable knowledge
 
 ### Step 6: Finalize (hard requirement)
 

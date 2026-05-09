@@ -9,11 +9,11 @@ This directory contains accumulated project knowledge, organized by topic. Agent
 | `codestyle/` | Naming conventions, error handling patterns, test structure |
 | `architecture/` | Design patterns, dependencies, module boundaries |
 | `domain/` | Business domain concepts and terminology |
-| `workflow/` | What worked/didn't in past assignments for this project |
+| `workflow/` | project-specific process knowledge and tool usage patterns |
 
 ## Workflow Feedback
 
-`workflow_feedback/` contains observations about the SpecDev workflow itself (not project-specific). These are collected by the maintainer to improve the workflow guides across all projects.
+`workflow_feedback/` contains structured observations about the SpecDev workflow itself (not project-specific process preferences). These notes track issues, improvements, recurring patterns, mitigations, and proposed actions that can improve SpecDev templates, skills, CLI behavior, or review flow across projects.
 
 ## How This Grows
 
