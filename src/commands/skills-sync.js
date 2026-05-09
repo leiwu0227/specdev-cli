@@ -71,8 +71,8 @@ export async function skillsSyncCommand(flags = {}) {
       version: 1,
       status: 'ok',
       removed: removedNames,
-      regenerated: regeneratedNames,
-      inactive: inactive.map(s => s.name),
+      synced: regeneratedNames,
+      available_not_installed: inactive.map(s => s.name),
     }, null, 2))
     return
   }

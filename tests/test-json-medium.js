@@ -156,8 +156,8 @@ try {
 assert(json?.command === 'skills sync', 'json command is skills sync')
 assert(json?.status === 'ok', 'json status is ok')
 assert(Array.isArray(json?.removed), 'json has removed array')
-assert(Array.isArray(json?.regenerated), 'json has regenerated array')
-assert(Array.isArray(json?.inactive), 'json has inactive array')
+assert(Array.isArray(json?.synced), 'json has synced array')
+assert(Array.isArray(json?.available_not_installed), 'json has available_not_installed array')
 
 // --- skills-install --json ---
 
@@ -175,9 +175,9 @@ try {
 }
 assert(json?.command === 'skills install', 'json command is skills install')
 assert(json?.status === 'ok', 'json status is ok')
-assert(Array.isArray(json?.skills), 'json has skills array')
-assert(json?.skills?.includes('test-tool'), 'json includes test-tool in installed')
-assert(json?.installed === true, 'json has installed flag')
+assert(Array.isArray(json?.installed), 'json has installed array')
+assert(json?.installed?.some(s => s.skill === 'test-tool'), 'json includes test-tool in installed')
+assert(json?.installed?.[0]?.path, 'json installed entry has path')
 assert(typeof json?.total_tools === 'number', 'json has total_tools')
 
 cleanup()

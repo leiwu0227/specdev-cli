@@ -25,28 +25,38 @@ export async function updateCommand(flags = {}) {
     return
   }
 
+  const wouldUpdate = [
+    '_main.md', '_index.md', '_guides/', '_templates/',
+    'skills/core/', 'skills/tools/ (official built-in only)',
+    'skills/README.md', 'project_scaffolding/_README.md',
+    'Platform adapters (if missing)',
+  ]
+  const preserved = [
+    'project_notes/', 'assignments/', 'skills/tools/ (custom)',
+    'project_scaffolding/ (except _README.md)',
+    'Existing platform adapters',
+  ]
+
   if (dryRun) {
+    if (flags.json) {
+      const pkg = await import('../../package.json', { with: { type: 'json' } })
+      console.log(JSON.stringify({
+        command: 'update',
+        version: 1,
+        status: 'ok',
+        dry_run: true,
+        cli_version: pkg.default.version,
+        release_date: pkg.default.releaseDate || null,
+        would_update: wouldUpdate,
+        preserved,
+      }, null, 2))
+      return
+    }
     printSection('🔍 Dry run mode - would update:')
-    printBullets([
-      '_main.md',
-      '_index.md',
-      '_guides/ (workflow guide and reference guides)',
-      '_templates/ (scaffolding templates and examples)',
-      'skills/core/ (all core workflow skills, fully overwritten)',
-      'skills/tools/ (official built-in tool skills only)',
-      'skills/README.md',
-      'project_scaffolding/_README.md',
-      'Platform adapters (CLAUDE.md, AGENTS.md, .cursor/rules) — only if missing',
-    ], '   - ')
+    printBullets(wouldUpdate, '   - ')
     blankLine()
     printSection('📌 Preserved (not updated):')
-    printBullets([
-      'project_notes/ (your project documentation)',
-      'assignments/ (your active work)',
-      'skills/tools/ (your custom tool skills)',
-      'project_scaffolding/ (except _README.md)',
-      'Existing platform adapters (never overwritten)',
-    ], '   - ')
+    printBullets(preserved, '   - ')
     return
   }
 

@@ -66,6 +66,8 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
   const activeTools = await readActiveTools(specdevPath)
   const today = new Date().toISOString().slice(0, 10)
 
+  const installedDetails = []
+
   for (const skillName of selectedSkills) {
     // Read the skill's SKILL.md for frontmatter
     const skillMdPath = join(toolsDir, skillName, 'SKILL.md')
@@ -95,6 +97,8 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
       ...(triggers ? { triggers } : {}),
     }
 
+    installedDetails.push({ skill: skillName, path: `skills/tools/${skillName}`, wrappers: wrapperPaths })
+
     if (!flags.json) {
       console.log(`Installed ${skillName}`)
       for (const p of wrapperPaths) {
@@ -114,8 +118,7 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
       command: 'skills install',
       version: 1,
       status: 'ok',
-      skills: selectedSkills,
-      installed: true,
+      installed: installedDetails,
       agents: [...agentSet],
       total_tools: Object.keys(activeTools.tools).length,
     }, null, 2))
