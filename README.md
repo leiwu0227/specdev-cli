@@ -150,8 +150,10 @@ Before either approval gate, users can optionally review:
 ├── implementation/
 │   └── progress.json            # Task completion tracking
 └── review/
-    ├── review-feedback.md       # Review findings
-    └── feedback-round-N.md      # Archived round feedback
+    ├── brainstorm-feedback.md   # Append-only brainstorm review findings
+    ├── brainstorm-changelog.md  # Fix summary for brainstorm re-review
+    ├── implementation-feedback.md
+    └── implementation-changelog.md
 ```
 
 ## Skills Model

@@ -79,9 +79,9 @@ Use `.specdev/skills/core/review-agent/prompts/implementation-reviewer.md`. Chec
 
 When `check-review` processes feedback with a `needs-changes` verdict:
 1. Main agent addresses findings in the phase artifacts
-2. Main agent writes `review/update-round-N.md` summarizing what changed
-3. On subsequent `specdev review <phase>` runs, the reviewer sees the update file to focus on what changed
-4. Round number increments automatically from archived `feedback-round-N.md` files
+2. Main agent appends changes to `review/{phase}-changelog.md` under `## Round N`
+3. On subsequent `specdev review <phase>` runs, the reviewer reads the previous feedback and changelog
+4. Round number increments from appended rounds in `review/{phase}-feedback.md`
 5. Loop continues until verdict is `approved`
 
 ## Integration
