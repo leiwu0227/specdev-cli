@@ -42,6 +42,7 @@ const essentialFiles = [
   '.specdev/_index.md',
   '.specdev/_guides/workflow.md',
   '.specdev/_templates/gate_checklist.md',
+  '.specdev/_templates/workflow_feedback_note.md',
   '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/brainstorm/proposal.md',
   '.specdev/project_notes/big_picture.md',
   '.specdev/assignments/.gitkeep',
@@ -68,6 +69,10 @@ assert(specdevGitignore.includes('cache/'), '.specdev/.gitignore ignores generat
 const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
 assert(mainMd.includes('SpecDev'), '_main.md contains SpecDev reference')
 assert(mainMd.includes('Specdev:'), '_main.md contains "Specdev:" announcement rule')
+
+const workflowFeedbackTemplate = readFileSync(join(TEST_DIR, '.specdev', '_templates', 'workflow_feedback_note.md'), 'utf-8')
+assert(workflowFeedbackTemplate.includes('Status: open | mitigated | resolved'), 'workflow feedback template includes status field')
+assert(workflowFeedbackTemplate.includes('Proposed Action'), 'workflow feedback template includes proposed action section')
 
 console.log('\ninit dry-run --json:')
 cleanup()
