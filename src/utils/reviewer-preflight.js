@@ -3,6 +3,7 @@ import { join } from 'path'
 import fse from 'fs-extra'
 
 export const DEFAULT_REVIEWER_TIMEOUT_SECONDS = 900
+export const VALID_REVIEWER_NAME_PATTERN = /^[A-Za-z0-9._-]+$/
 
 export function reviewerTimeoutSeconds(config = {}) {
   const value = Number(config.timeout_seconds)
@@ -10,6 +11,40 @@ export function reviewerTimeoutSeconds(config = {}) {
     return DEFAULT_REVIEWER_TIMEOUT_SECONDS
   }
   return value
+}
+
+export async function availableReviewerNames(specdevPath) {
+  const reviewersDir = join(specdevPath, 'skills', 'core', 'reviewloop', 'reviewers')
+  if (!(await fse.pathExists(reviewersDir))) return []
+  const files = await fse.readdir(reviewersDir)
+  return files
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => file.replace(/\.json$/, ''))
+    .sort()
+}
+
+export async function resolveReviewerNames(specdevPath, rawList) {
+  const names = rawList.map((name) => name.trim())
+  for (const name of names) {
+    if (!VALID_REVIEWER_NAME_PATTERN.test(name)) {
+      throw new Error(
+        `Invalid reviewer name: "${name}" (allowed: A-Z, a-z, 0-9, dot, underscore, hyphen)`,
+      )
+    }
+  }
+
+  const available = await availableReviewerNames(specdevPath)
+  const availableSet = new Set(available)
+  for (const name of names) {
+    if (!availableSet.has(name)) {
+      const suffix = available.length > 0
+        ? `\nAvailable reviewers: ${available.join(', ')}`
+        : '\nAvailable reviewers: none'
+      throw new Error(`Reviewer config not found: ${name}${suffix}`)
+    }
+  }
+
+  return names
 }
 
 export async function preflightReviewers({ specdevPath, assignmentPath, reviewerNames }) {

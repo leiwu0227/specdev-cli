@@ -268,6 +268,50 @@ assert(
   'error mentions config not found',
 )
 
+console.log('\nreviewloop (invalid reviewer names):')
+cleanup()
+initProject()
+fillBigPicture()
+const invalidNameAssignment = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+for (const invalidName of ['../foo', 'foo/bar', 'foo bar', ',claude']) {
+  result = runCmd([
+    'reviewloop',
+    'brainstorm',
+    `--target=${TEST_DIR}`,
+    `--reviewer=${invalidName}`,
+  ])
+  const invalidOutput = `${result.stdout}\n${result.stderr}`
+  assert(result.status === 1, `exits 1 for invalid reviewer ${invalidName}`)
+  assert(
+    invalidOutput.includes('Invalid reviewer name'),
+    `invalid reviewer ${invalidName} reports validation error`,
+    invalidOutput,
+  )
+}
+assert(
+  !existsSync(join(invalidNameAssignment, 'review')),
+  'invalid reviewer names do not create review artifacts',
+)
+
+console.log('\nreviewloop (valid reviewer name passes validation):')
+setupReviewer('claude', {
+  name: 'claude',
+  command: 'echo "mock reviewer"',
+  max_rounds: 3,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=claude',
+  '--preflight',
+  '--json',
+])
+assert(result.status === 0, 'valid claude reviewer name passes validation', result.stderr)
+const validReviewerPreflight = JSON.parse(result.stdout)
+assert(validReviewerPreflight.reviewers[0].name === 'claude', 'valid reviewer name is preserved')
+
 console.log('\nreviewloop (missing command field):')
 setupReviewer('no-cmd', { name: 'no-cmd', max_rounds: 3 })
 result = runCmd([

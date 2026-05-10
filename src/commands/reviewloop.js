@@ -17,10 +17,10 @@ import { resolveRoundFocus } from '../utils/review-focus.js'
 import {
   preflightReviewers,
   reviewerTimeoutSeconds,
+  resolveReviewerNames,
 } from '../utils/reviewer-preflight.js'
 
 const REVIEWER_TERMINATION_GRACE_MS = 5000
-const SAFE_LOG_NAME_PATTERN = /[^a-zA-Z0-9._-]/g
 
 function printDesignDigressionPrompt(name) {
   blankLine()
@@ -55,8 +55,7 @@ function printAutocontinuePrompt(phase, reviewerNames) {
 }
 
 function reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round) {
-  const safeReviewerName = reviewerName.replace(SAFE_LOG_NAME_PATTERN, '-')
-  return join(reviewDir, `${feedbackPhase}-reviewer-${safeReviewerName}-round-${round}.log`)
+  return join(reviewDir, `${feedbackPhase}-reviewer-${reviewerName}-round-${round}.log`)
 }
 
 function emitPreflightResult(result, asJson) {
@@ -402,7 +401,14 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
     // With --reviewer: run the review loop for discussion
     const discussionId = discussionName.match(/^(D\d{4,5})/)?.[1] || discussionName
-    const reviewerNames = flags.reviewer.split(',').map(r => r.trim()).filter(Boolean)
+    let reviewerNames
+    try {
+      reviewerNames = await resolveReviewerNames(specdevPath, flags.reviewer.split(','))
+    } catch (error) {
+      console.error(error.message)
+      process.exitCode = 1
+      return
+    }
     const isMulti = reviewerNames.length > 1
     const preflight = await preflightReviewers({
       specdevPath,
@@ -522,9 +528,16 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
   // ── With --reviewer: run the review loop ──
 
-  const reviewerNames = flags.reviewer.split(',').map(r => r.trim()).filter(Boolean)
-  const isMulti = reviewerNames.length > 1
   const specdevPath = join(targetDir, '.specdev')
+  let reviewerNames
+  try {
+    reviewerNames = await resolveReviewerNames(specdevPath, flags.reviewer.split(','))
+  } catch (error) {
+    console.error(error.message)
+    process.exitCode = 1
+    return
+  }
+  const isMulti = reviewerNames.length > 1
   const preflight = await preflightReviewers({
     specdevPath,
     assignmentPath,
