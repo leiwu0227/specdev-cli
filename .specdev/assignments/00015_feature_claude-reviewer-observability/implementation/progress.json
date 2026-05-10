@@ -1,0 +1,48 @@
+{
+  "plan_file": ".specdev/assignments/00015_feature_claude-reviewer-observability/breakdown/plan.md",
+  "total_tasks": 6,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-10T01:38:51Z",
+      "completed_at": "2026-05-10T01:40:57Z",
+      "summary": "Added reviewer runner with injected fake-clock tests for heartbeat rearm, invisible chunks, and timeout process-group termination."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-05-10T01:41:00Z",
+      "completed_at": "2026-05-10T01:49:01Z",
+      "summary": "Added stream-json translator with unit coverage for rendering, raw sidecar teeing, buffering, flush, and activity marking."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-05-10T01:42:13Z",
+      "completed_at": "2026-05-10T01:48:47Z",
+      "summary": "Validated reviewer names before config lookup or path construction for assignment and discussion reviewloop paths, with CLI coverage for invalid, empty, unknown, and valid reviewer names."
+    },
+    {
+      "number": 4,
+      "status": "completed",
+      "started_at": "2026-05-10T02:03:12Z",
+      "completed_at": "2026-05-10T02:09:42Z",
+      "summary": "Wired reviewloop through the runner, added log header/footer metadata, strict stdout salvage, and SPECDEV_REVIEWER_TIMEOUT coverage."
+    },
+    {
+      "number": 5,
+      "status": "completed",
+      "started_at": "2026-05-10T02:09:49Z",
+      "completed_at": "2026-05-10T02:14:22Z",
+      "summary": "Enabled stream-json detection, rendered progress logging, raw JSONL sidecar capture, salvage suppression for stream-json, and Claude config/docs coverage."
+    },
+    {
+      "number": 6,
+      "status": "completed",
+      "started_at": "2026-05-10T02:15:14Z",
+      "completed_at": "2026-05-10T02:24:22Z",
+      "summary": "Added real process-group timeout coverage and captured final verification evidence in review/validation_checklist.md after a passing full suite."
+    }
+  ]
+}

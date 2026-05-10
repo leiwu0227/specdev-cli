@@ -812,6 +812,48 @@ if (existsSync(salvageLogPath)) {
   assert(false, 'salvage log file exists')
 }
 
+console.log('\nreviewloop (stdout salvage success after prior round):')
+cleanup()
+initProject()
+fillBigPicture()
+const aSalvageRound2 = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+mkdirSync(join(aSalvageRound2, 'review'), { recursive: true })
+writeFeedback(
+  aSalvageRound2,
+  'brainstorm',
+  '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] First issue\n',
+)
+writeChangelog(aSalvageRound2, 'brainstorm', '## Round 1\n\n- Fixed first issue\n')
+setupReviewer('salvage-round2-mock', {
+  name: 'salvage-round2-mock',
+  command: `printf 'preface\\n## Round 2\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n'`,
+  max_rounds: 3,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=salvage-round2-mock',
+])
+const salvageRound2FeedbackPath = join(aSalvageRound2, 'review', 'brainstorm-feedback.md')
+const salvageRound2LogPath = join(aSalvageRound2, 'review', 'brainstorm-reviewer-salvage-round2-mock-round-2.log')
+assert(result.status === 0, 'exits 0 when stdout feedback is salvaged after prior round', result.stderr)
+if (existsSync(salvageRound2FeedbackPath)) {
+  const salvageRound2Feedback = readFileSync(salvageRound2FeedbackPath, 'utf-8')
+  assert(salvageRound2Feedback.includes('## Round 1'), 'round 2 salvage preserves prior round')
+  assert(salvageRound2Feedback.includes('## Round 2'), 'round 2 salvage appends expected round')
+  assert(salvageRound2Feedback.includes('salvaged from stdout'), 'round 2 salvage marker is written')
+} else {
+  assert(false, 'round 2 salvage feedback file exists')
+}
+if (existsSync(salvageRound2LogPath)) {
+  const salvageRound2Log = readFileSync(salvageRound2LogPath, 'utf-8')
+  assert(salvageRound2Log.includes('Verdict:    salvaged:approved'), 'round 2 salvage footer records salvaged verdict')
+} else {
+  assert(false, 'round 2 salvage log file exists')
+}
+
 console.log('\nreviewloop (stdout salvage failure):')
 cleanup()
 initProject()

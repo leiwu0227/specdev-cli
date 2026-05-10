@@ -21,9 +21,16 @@ function createFakeClock() {
   const timers = new Map()
 
   function setTimeoutFake(fn, delay) {
-    const id = nextId++
-    timers.set(id, { fn, at: nowMs + delay })
-    return id
+    const timer = {
+      id: nextId++,
+      delay,
+      unrefCalled: false,
+      unref() {
+        this.unrefCalled = true
+      },
+    }
+    timers.set(timer, { fn, at: nowMs + delay })
+    return timer
   }
 
   function clearTimeoutFake(id) {
@@ -52,6 +59,7 @@ function createFakeClock() {
     setTimeout: setTimeoutFake,
     clearTimeout: clearTimeoutFake,
     tick,
+    timers,
   }
 }
 
@@ -172,6 +180,8 @@ console.log('\nreviewer runner timeout:')
   assert(killCalls.length === 1, 'timeout sends SIGTERM immediately')
   assert(killCalls[0].pid === -4321, 'timeout kills process group')
   assert(killCalls[0].signal === 'SIGTERM', 'timeout uses SIGTERM first')
+  const graceTimer = [...clock.timers.keys()].find((timer) => timer.delay === 5000)
+  assert(graceTimer?.unrefCalled === true, 'grace SIGKILL timer is unrefed')
   clock.tick(5000)
   assert(killCalls.length === 2, 'grace timer sends SIGKILL')
   assert(killCalls[1].signal === 'SIGKILL', 'grace timer uses SIGKILL')

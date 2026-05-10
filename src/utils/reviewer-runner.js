@@ -104,6 +104,7 @@ export function runReviewerProcess({
           // Process may already have exited.
         }
       }, REVIEWER_TERMINATION_GRACE_MS)
+      killTimer?.unref?.()
       finish({ exitCode: null, timedOut: true })
     }, timeoutMs)
 

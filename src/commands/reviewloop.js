@@ -104,6 +104,10 @@ function parseStrictSalvage(stdoutBuffer, expectedRound) {
   return null
 }
 
+function findRound(content, expectedRound) {
+  return parseReviewFeedback(content).rounds.find((entry) => entry.round === expectedRound) || null
+}
+
 async function appendSalvagedFeedback(feedbackPath, salvage) {
   await fse.ensureDir(join(feedbackPath, '..'))
   await fse.appendFile(
@@ -331,26 +335,27 @@ async function runSingleReviewer({
     ? await fse.readFile(feedbackPath, 'utf-8')
     : ''
 
-  let latestRound = getLatestRound(updatedFeedback)
+  let expectedRound = findRound(updatedFeedback, round)
 
-  if (!latestRound) {
+  if (!expectedRound) {
     const salvage = streamJson ? null : parseStrictSalvage(stdoutBuffer, round)
     if (salvage) {
       await appendSalvagedFeedback(feedbackPath, salvage)
       updatedFeedback = await fse.readFile(feedbackPath, 'utf-8')
-      latestRound = getLatestRound(updatedFeedback)
+      expectedRound = findRound(updatedFeedback, round)
       verdictForFooter = `salvaged:${salvage.verdict}`
     }
   }
 
-  if (!latestRound) {
+  if (!expectedRound) {
     writeFooter(verdictForFooter)
-    console.error(`Reviewer finished but did not append ## Round ${round} to ${feedbackPath}`)
+    console.error(`Reviewer finished but did not append expected ## Round ${round} to ${feedbackPath}`)
     console.error('Reviewer may have written only to stdout. Read the reviewer log, then either append the missing feedback round manually or re-run reviewloop.')
     console.error(`Reviewer log: ${logPath}`)
     return { approved: false, error: true, message: 'missing verdict' }
   }
 
+  const latestRound = getLatestRound(updatedFeedback)
   if (latestRound.round !== round) {
     writeFooter(verdictForFooter)
     console.error(`Reviewer finished but ${feedbackPath} contains round ${latestRound.round}, expected ## Round ${round}`)
