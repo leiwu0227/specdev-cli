@@ -6,10 +6,13 @@ Reviewer configs run external agent CLIs from `specdev reviewloop`. Each reviewe
 
 - Uses Claude Code print mode (`claude --print`) so it runs non-interactively and exits.
 - Defaults to `claude-opus-4-6[1m]` with `--effort high` for deeper review.
+- Uses `--fallback-model sonnet` so transient Opus overloads can still produce a review in print mode.
+- Uses `--output-format stream-json --verbose` so reviewloop can render live stream-json progress and preserve raw JSONL in a sidecar file.
 - Uses `--no-session-persistence` to avoid accidentally resuming prior review context.
 - Uses permission bypass flags because reviewloop is an automated reviewer path.
-- Has a shorter timeout (`timeout_seconds: 300`) because common failures are hangs or stdout-only summaries.
-- The prompt must explicitly say to write the feedback artifact, not just summarize to stdout.
+- Has a longer timeout (`timeout_seconds: 1200`) because Opus high-effort reviews can exceed five minutes on real repositories.
+- The prompt must explicitly include the feedback and changelog artifact paths and say to write the feedback artifact, not just summarize to stdout.
+- Reviewloop prints heartbeat lines for silent reviewers and writes a `review/{phase}-reviewer-{name}-round-N.jsonl` sidecar for stream-json reviewers.
 
 ## Codex
 
@@ -30,3 +33,7 @@ For every reviewer round, reviewloop writes:
 `review/{phase}-reviewer-{name}-round-N.log`
 
 Use this log when the reviewer exits non-zero, times out, writes the wrong round, or fails to write a verdict.
+
+If a plain-text reviewer exits cleanly but only printed a strict `## Round N` block to stdout, reviewloop appends it to the feedback file with a `salvaged from stdout` marker. Stream-json reviewers do not use stdout salvage; inspect the `.jsonl` sidecar instead.
+
+Set `SPECDEV_REVIEWER_TIMEOUT=<seconds>` to override a reviewer config timeout for one run.

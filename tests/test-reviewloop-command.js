@@ -840,6 +840,41 @@ if (existsSync(noSalvageLogPath)) {
   assert(false, 'failed salvage log file exists')
 }
 
+console.log('\nreviewloop (stream-json sidecar and no salvage):')
+cleanup()
+initProject()
+fillBigPicture()
+const aStreamJson = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+setupReviewer('stream-mock', {
+  name: 'stream-mock',
+  command: `printf '%s\\n' '{"type":"system","subtype":"init","model":"mock-model"}' '{"type":"assistant","message":{"content":[{"type":"text","text":"## Round 1\\\\n\\\\n**Verdict:** approved\\\\n"}]}}'`,
+  max_rounds: 3,
+  stream_json: true,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=stream-mock',
+])
+const streamFeedbackPath = join(aStreamJson, 'review', 'brainstorm-feedback.md')
+const streamLogPath = join(aStreamJson, 'review', 'brainstorm-reviewer-stream-mock-round-1.log')
+const streamSidecarPath = join(aStreamJson, 'review', 'brainstorm-reviewer-stream-mock-round-1.jsonl')
+assert(result.status === 1, 'stream-json stdout feedback is not salvaged')
+assert(!existsSync(streamFeedbackPath), 'stream-json mode does not create salvaged feedback file')
+assert(existsSync(streamSidecarPath), 'stream-json sidecar file exists')
+if (existsSync(streamSidecarPath)) {
+  const sidecar = readFileSync(streamSidecarPath, 'utf-8')
+  assert(sidecar.includes('"type":"system"'), 'stream-json sidecar captures raw JSONL')
+}
+if (existsSync(streamLogPath)) {
+  const streamLog = readFileSync(streamLogPath, 'utf-8')
+  assert(streamLog.includes('> session start (model=mock-model)'), 'stream-json log includes rendered init')
+  assert(streamLog.includes('## Round 1'), 'stream-json log includes rendered assistant text')
+  assert(streamLog.includes('Verdict:    missing'), 'stream-json footer records missing verdict')
+}
+
 // =====================================================================
 // Mock reviewer: missing expected round in feedback
 // =====================================================================

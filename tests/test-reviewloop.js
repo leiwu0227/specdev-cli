@@ -53,13 +53,19 @@ if (existsSync(claudeConfig)) {
   assert(claudeContent.name === 'claude', 'claude.json has name=claude')
   assert(claudeContent.command && claudeContent.command.includes('claude'), 'claude.json command includes claude')
   assert(claudeContent.command && claudeContent.command.includes("--model 'claude-opus-4-6[1m]'"), 'claude.json command includes opus model')
+  assert(claudeContent.command && claudeContent.command.includes('--fallback-model sonnet'), 'claude.json command includes fallback model')
   assert(claudeContent.command && claudeContent.command.includes('--effort high'), 'claude.json command includes high effort')
+  assert(claudeContent.command && claudeContent.command.includes('--output-format stream-json'), 'claude.json command includes stream-json output')
+  assert(claudeContent.command && claudeContent.command.includes('--verbose'), 'claude.json command includes verbose stream output')
+  assert(claudeContent.command && claudeContent.command.includes('$SPECDEV_FEEDBACK_FILE'), 'claude.json command includes feedback file env var')
+  assert(claudeContent.command && claudeContent.command.includes('$SPECDEV_CHANGELOG_FILE'), 'claude.json command includes changelog file env var')
   assert(claudeContent.command && claudeContent.command.includes('--print'), 'claude.json command includes --print')
   assert(claudeContent.command && claudeContent.command.includes('--no-session-persistence'), 'claude.json command includes --no-session-persistence')
   assert(claudeContent.command && claudeContent.command.includes('--dangerously-skip-permissions'), 'claude.json command includes --dangerously-skip-permissions')
+  assert(claudeContent.stream_json === true, 'claude.json declares stream_json=true')
   assert(typeof claudeContent.max_rounds === 'number', 'claude.json has numeric max_rounds')
   assert(typeof claudeContent.timeout_seconds === 'number', 'claude.json has numeric timeout_seconds')
-  assert(claudeContent.timeout_seconds === 300, 'claude.json has timeout_seconds=300')
+  assert(claudeContent.timeout_seconds === 1200, 'claude.json has timeout_seconds=1200')
 }
 
 const reviewersReadme = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'README.md')
@@ -69,6 +75,10 @@ if (existsSync(reviewersReadme)) {
   assert(reviewersReadmeContent.includes('Claude'), 'reviewers README documents Claude')
   assert(reviewersReadmeContent.includes('Codex'), 'reviewers README documents Codex')
   assert(reviewersReadmeContent.includes('reviewer log'), 'reviewers README documents reviewer logs')
+  assert(reviewersReadmeContent.includes('heartbeat'), 'reviewers README documents heartbeat')
+  assert(reviewersReadmeContent.includes('stream-json'), 'reviewers README documents stream-json')
+  assert(reviewersReadmeContent.includes('salvaged from stdout'), 'reviewers README documents strict salvage marker')
+  assert(reviewersReadmeContent.includes('SPECDEV_REVIEWER_TIMEOUT'), 'reviewers README documents timeout override')
 }
 
 const focusConfig = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'review-focus.json')

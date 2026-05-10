@@ -19,6 +19,7 @@ import {
   resolveReviewerNames,
 } from '../utils/reviewer-preflight.js'
 import { runReviewerProcess } from '../utils/reviewer-runner.js'
+import { createReviewerStreamJsonTranslator } from '../utils/reviewer-stream-json.js'
 
 const REVIEWER_HEARTBEAT_MS = 30000
 
@@ -56,6 +57,14 @@ function printAutocontinuePrompt(phase, reviewerNames) {
 
 function reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round) {
   return join(reviewDir, `${feedbackPhase}-reviewer-${reviewerName}-round-${round}.log`)
+}
+
+function reviewerJsonlPath(reviewDir, feedbackPhase, reviewerName, round) {
+  return join(reviewDir, `${feedbackPhase}-reviewer-${reviewerName}-round-${round}.jsonl`)
+}
+
+function usesStreamJson(config) {
+  return config.stream_json === true || /\b--output-format\s+stream-json\b/.test(config.command || '')
 }
 
 function formatLogEnv(env) {
@@ -213,7 +222,10 @@ async function runSingleReviewer({
 
   const feedbackPhase = feedbackFilename.replace(/-feedback(?:-[^.]+)?\.md$/, '')
   const logPath = reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round)
+  const streamJson = usesStreamJson(config)
+  const jsonlPath = streamJson ? reviewerJsonlPath(reviewDir, feedbackPhase, reviewerName, round) : null
   console.log(`   Reviewer log: ${logPath}`)
+  if (jsonlPath) console.log(`   Reviewer JSONL: ${jsonlPath}`)
   blankLine()
 
   const logStream = createWriteStream(logPath, { flags: 'a' })
@@ -226,6 +238,25 @@ async function runSingleReviewer({
     logClosed = true
     logStream.end()
   }
+  const jsonlStream = jsonlPath ? createWriteStream(jsonlPath, { flags: 'a' }) : null
+  let jsonlClosed = false
+  const writeJsonl = (chunk) => {
+    if (jsonlStream && !jsonlClosed) jsonlStream.write(chunk)
+  }
+  const closeJsonl = () => {
+    if (!jsonlStream || jsonlClosed) return
+    jsonlClosed = true
+    jsonlStream.end()
+  }
+  const translator = streamJson
+    ? createReviewerStreamJsonTranslator({
+        writeRendered(line) {
+          process.stdout.write(line)
+          writeLog(line)
+        },
+        writeRaw: writeJsonl,
+      })
+    : null
   writeLog([
     'Reviewloop reviewer log',
     `Reviewer:   ${reviewerName}`,
@@ -248,9 +279,13 @@ async function runSingleReviewer({
     timeoutMs: timeoutSeconds * 1000,
     heartbeatMs: REVIEWER_HEARTBEAT_MS,
     onStdout(chunk, ctx) {
-      process.stdout.write(chunk)
-      writeLog(chunk)
-      if (chunk.length > 0) ctx.markActivity()
+      if (translator) {
+        translator.onStdout(chunk, ctx)
+      } else {
+        process.stdout.write(chunk)
+        writeLog(chunk)
+        if (chunk.length > 0) ctx.markActivity()
+      }
     },
     onStderr(chunk, ctx) {
       process.stderr.write(chunk)
@@ -259,6 +294,7 @@ async function runSingleReviewer({
     },
   })
   const { exitCode, timedOut, stdoutBuffer, endedAt, elapsedMs } = runResult
+  if (translator) translator.flush({ markActivity() {} })
 
   let verdictForFooter = 'missing'
   const writeFooter = (verdict) => {
@@ -273,6 +309,7 @@ async function runSingleReviewer({
       '',
     ].join('\n'))
     closeLog()
+    closeJsonl()
   }
 
   if (timedOut) {
@@ -297,7 +334,7 @@ async function runSingleReviewer({
   let latestRound = getLatestRound(updatedFeedback)
 
   if (!latestRound) {
-    const salvage = parseStrictSalvage(stdoutBuffer, round)
+    const salvage = streamJson ? null : parseStrictSalvage(stdoutBuffer, round)
     if (salvage) {
       await appendSalvagedFeedback(feedbackPath, salvage)
       updatedFeedback = await fse.readFile(feedbackPath, 'utf-8')
