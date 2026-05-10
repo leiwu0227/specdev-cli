@@ -32,6 +32,14 @@ function runCmd(args) {
   })
 }
 
+function runCmdWithEnv(args, env) {
+  return spawnSync('node', [CLI, ...args], {
+    encoding: 'utf-8',
+    timeout: 30000,
+    env: { ...process.env, ...env },
+  })
+}
+
 function initProject() {
   runCmd(['init', `--target=${TEST_DIR}`])
 }
@@ -691,6 +699,34 @@ assert(
   'timeout prints reviewer log path',
 )
 
+console.log('\nreviewloop (timeout env override):')
+cleanup()
+initProject()
+fillBigPicture()
+const aTimeoutOverride = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+setupReviewer('timeout-env', {
+  name: 'timeout-env',
+  command: 'sleep 5',
+  max_rounds: 3,
+  timeout_seconds: 30,
+})
+result = runCmdWithEnv([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=timeout-env',
+], { SPECDEV_REVIEWER_TIMEOUT: '1' })
+const timeoutOverrideLogPath = join(aTimeoutOverride, 'review', 'brainstorm-reviewer-timeout-env-round-1.log')
+assert(result.status === 1, 'timeout override exits 1 after env timeout')
+assert(result.stderr.includes('Reviewer timed out after 1s'), 'timeout override uses env seconds')
+if (existsSync(timeoutOverrideLogPath)) {
+  const timeoutOverrideLog = readFileSync(timeoutOverrideLogPath, 'utf-8')
+  assert(timeoutOverrideLog.includes('Timed out:  true'), 'timeout footer records timed out true')
+} else {
+  assert(false, 'timeout override log file exists')
+}
+
 // =====================================================================
 // Mock reviewer: stdout/stderr log capture
 // =====================================================================
@@ -717,11 +753,91 @@ result = runCmd([
 ])
 assert(result.status === 0, 'exits 0 for log-mock reviewer', result.stderr)
 const reviewerLogPath = join(aLog, 'review', 'brainstorm-reviewer-log-mock-round-1.log')
+assert(
+  result.stdout.includes(`Reviewer log: ${reviewerLogPath}`),
+  'prints reviewer log path before reviewer finishes',
+)
 assert(existsSync(reviewerLogPath), 'reviewer log file exists')
 if (existsSync(reviewerLogPath)) {
   const reviewerLog = readFileSync(reviewerLogPath, 'utf-8')
   assert(reviewerLog.includes('stdout-line'), 'reviewer log captures stdout')
   assert(reviewerLog.includes('stderr-line'), 'reviewer log captures stderr')
+  assert(reviewerLog.includes('Started:'), 'reviewer log includes started timestamp')
+  assert(reviewerLog.includes('Timeout:'), 'reviewer log includes timeout')
+  assert(reviewerLog.includes('Command:'), 'reviewer log includes command')
+  assert(reviewerLog.includes('SPECDEV_PHASE=brainstorm'), 'reviewer log includes SPECDEV_PHASE')
+  assert(reviewerLog.includes('SPECDEV_FEEDBACK_FILE='), 'reviewer log includes feedback env')
+  assert(reviewerLog.includes('Ended:'), 'reviewer log includes ended timestamp')
+  assert(reviewerLog.includes('Elapsed:'), 'reviewer log includes elapsed time')
+  assert(reviewerLog.includes('Exit code:'), 'reviewer log includes exit code')
+  assert(reviewerLog.includes('Timed out:  false'), 'reviewer log includes timed out false')
+  assert(reviewerLog.includes('Verdict:    approved'), 'reviewer log includes approved verdict')
+}
+
+// =====================================================================
+// Mock reviewer: stdout salvage
+// =====================================================================
+
+console.log('\nreviewloop (stdout salvage success):')
+cleanup()
+initProject()
+fillBigPicture()
+const aSalvage = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+setupReviewer('salvage-mock', {
+  name: 'salvage-mock',
+  command: `printf 'preface\\n## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n'`,
+  max_rounds: 3,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=salvage-mock',
+])
+const salvageFeedbackPath = join(aSalvage, 'review', 'brainstorm-feedback.md')
+const salvageLogPath = join(aSalvage, 'review', 'brainstorm-reviewer-salvage-mock-round-1.log')
+assert(result.status === 0, 'exits 0 when stdout feedback is salvaged', result.stderr)
+if (existsSync(salvageFeedbackPath)) {
+  const salvageFeedback = readFileSync(salvageFeedbackPath, 'utf-8')
+  assert(salvageFeedback.includes('salvaged from stdout'), 'salvage marker is written')
+  assert(salvageFeedback.includes('## Round 1'), 'salvaged feedback includes expected round')
+} else {
+  assert(false, 'salvage feedback file exists')
+}
+if (existsSync(salvageLogPath)) {
+  const salvageLog = readFileSync(salvageLogPath, 'utf-8')
+  assert(salvageLog.includes('Verdict:    salvaged:approved'), 'salvage footer records salvaged verdict')
+} else {
+  assert(false, 'salvage log file exists')
+}
+
+console.log('\nreviewloop (stdout salvage failure):')
+cleanup()
+initProject()
+fillBigPicture()
+const aNoSalvage = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+setupReviewer('no-salvage-mock', {
+  name: 'no-salvage-mock',
+  command: `printf '## Round 2\\n\\n**Verdict:** approved\\n'`,
+  max_rounds: 3,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=no-salvage-mock',
+])
+const noSalvageFeedbackPath = join(aNoSalvage, 'review', 'brainstorm-feedback.md')
+const noSalvageLogPath = join(aNoSalvage, 'review', 'brainstorm-reviewer-no-salvage-mock-round-1.log')
+assert(result.status === 1, 'exits 1 when stdout salvage pattern is wrong')
+assert(!existsSync(noSalvageFeedbackPath), 'failed salvage does not create feedback file')
+if (existsSync(noSalvageLogPath)) {
+  const noSalvageLog = readFileSync(noSalvageLogPath, 'utf-8')
+  assert(noSalvageLog.includes('Verdict:    missing'), 'failed salvage footer records missing verdict')
+} else {
+  assert(false, 'failed salvage log file exists')
 }
 
 // =====================================================================

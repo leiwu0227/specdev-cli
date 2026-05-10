@@ -1,6 +1,5 @@
 import { createWriteStream } from 'fs'
 import { join } from 'path'
-import { spawn } from 'child_process'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { resolveDiscussionSelector } from '../utils/discussion.js'
@@ -19,8 +18,9 @@ import {
   reviewerTimeoutSeconds,
   resolveReviewerNames,
 } from '../utils/reviewer-preflight.js'
+import { runReviewerProcess } from '../utils/reviewer-runner.js'
 
-const REVIEWER_TERMINATION_GRACE_MS = 5000
+const REVIEWER_HEARTBEAT_MS = 30000
 
 function printDesignDigressionPrompt(name) {
   blankLine()
@@ -56,6 +56,52 @@ function printAutocontinuePrompt(phase, reviewerNames) {
 
 function reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round) {
   return join(reviewDir, `${feedbackPhase}-reviewer-${reviewerName}-round-${round}.log`)
+}
+
+function formatLogEnv(env) {
+  const keys = [
+    'SPECDEV_PHASE',
+    'SPECDEV_ASSIGNMENT',
+    'SPECDEV_ROUND',
+    'SPECDEV_FEEDBACK_FILE',
+    'SPECDEV_CHANGELOG_FILE',
+    'SPECDEV_FOCUS',
+    'SPECDEV_DISCUSSION',
+  ]
+  return keys
+    .filter((key) => env[key])
+    .map((key) => {
+      const value = key === 'SPECDEV_FOCUS'
+        ? env[key].replace(/\s+/g, ' ').slice(0, 160)
+        : env[key]
+      return `  ${key}=${value}`
+    })
+    .join('\n')
+}
+
+function parseStrictSalvage(stdoutBuffer, expectedRound) {
+  const stdout = Buffer.isBuffer(stdoutBuffer)
+    ? stdoutBuffer.toString('utf-8')
+    : String(stdoutBuffer || '')
+  const roundPattern = /^## Round (\d+)\b/mg
+  let match
+  while ((match = roundPattern.exec(stdout)) !== null) {
+    if (Number(match[1]) !== expectedRound) continue
+    const slice = stdout.slice(match.index)
+    const verdictMatch = slice.match(/^\*\*Verdict:\*\*\s+(approved|needs-changes)\b/m)
+    if (!verdictMatch) return null
+    return { text: slice, verdict: verdictMatch[1] }
+  }
+  return null
+}
+
+async function appendSalvagedFeedback(feedbackPath, salvage) {
+  await fse.ensureDir(join(feedbackPath, '..'))
+  await fse.appendFile(
+    feedbackPath,
+    `\n<!-- salvaged from stdout (reviewer exited cleanly without writing) -->\n${salvage.text}`,
+    'utf-8',
+  )
 }
 
 function emitPreflightResult(result, asJson) {
@@ -160,11 +206,16 @@ async function runSingleReviewer({
     SPECDEV_ASSIGNMENT: name,
     SPECDEV_ROUND: String(round),
     SPECDEV_FOCUS: focusText,
+    SPECDEV_FEEDBACK_FILE: feedbackPath,
+    SPECDEV_CHANGELOG_FILE: changelogPath,
     ...extraEnv,
   }
 
   const feedbackPhase = feedbackFilename.replace(/-feedback(?:-[^.]+)?\.md$/, '')
   const logPath = reviewerLogPath(reviewDir, feedbackPhase, reviewerName, round)
+  console.log(`   Reviewer log: ${logPath}`)
+  blankLine()
+
   const logStream = createWriteStream(logPath, { flags: 'a' })
   let logClosed = false
   const writeLog = (chunk) => {
@@ -175,86 +226,105 @@ async function runSingleReviewer({
     logClosed = true
     logStream.end()
   }
-  writeLog(`Reviewloop reviewer log\nReviewer: ${reviewerName}\nPhase: ${phase}\nRound: ${round}\nCommand: ${config.command}\n\n`)
+  writeLog([
+    'Reviewloop reviewer log',
+    `Reviewer:   ${reviewerName}`,
+    `Phase:      ${phase}`,
+    `Round:      ${round}`,
+    `Started:    ${new Date().toISOString()}`,
+    `Timeout:    ${timeoutSeconds}s`,
+    `Command:    ${config.command}`,
+    'Env:',
+    formatLogEnv(childEnv),
+    '',
+    '----- reviewer output -----',
+    '',
+  ].join('\n'))
 
-  const { exitCode, timedOut } = await new Promise((resolve, reject) => {
-    let settled = false
-    let killTimer = null
-    const child = spawn('bash', ['-c', config.command], {
-      cwd: targetDir,
-      env: childEnv,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      detached: true,
-    })
-
-    const timeoutTimer = setTimeout(() => {
-      if (settled) return
-      settled = true
-      console.error(`Reviewer timed out after ${timeoutSeconds}s: ${reviewerName}`)
-      try {
-        process.kill(-child.pid, 'SIGTERM')
-      } catch { /* process may already have exited */ }
-      killTimer = setTimeout(() => {
-        try {
-          process.kill(-child.pid, 'SIGKILL')
-        } catch { /* process may already have exited */ }
-      }, REVIEWER_TERMINATION_GRACE_MS)
-      resolve({ exitCode: null, timedOut: true })
-    }, timeoutSeconds * 1000)
-
-    child.stdout.on('data', (chunk) => {
+  const runResult = await runReviewerProcess({
+    command: config.command,
+    cwd: targetDir,
+    env: childEnv,
+    timeoutMs: timeoutSeconds * 1000,
+    heartbeatMs: REVIEWER_HEARTBEAT_MS,
+    onStdout(chunk, ctx) {
       process.stdout.write(chunk)
       writeLog(chunk)
-    })
-    child.stderr.on('data', (chunk) => {
+      if (chunk.length > 0) ctx.markActivity()
+    },
+    onStderr(chunk, ctx) {
       process.stderr.write(chunk)
       writeLog(chunk)
-    })
-    child.on('error', (error) => {
-      clearTimeout(timeoutTimer)
-      if (killTimer) clearTimeout(killTimer)
-      closeLog()
-      reject(error)
-    })
-    child.on('close', (code) => {
-      if (settled) return
-      settled = true
-      clearTimeout(timeoutTimer)
-      if (killTimer) clearTimeout(killTimer)
-      closeLog()
-      resolve({ exitCode: code, timedOut: false })
-    })
+      if (chunk.length > 0) ctx.markActivity()
+    },
   })
+  const { exitCode, timedOut, stdoutBuffer, endedAt, elapsedMs } = runResult
+
+  let verdictForFooter = 'missing'
+  const writeFooter = (verdict) => {
+    writeLog([
+      '',
+      '----- end of reviewer output -----',
+      `Ended:      ${endedAt}`,
+      `Elapsed:    ${Math.ceil(elapsedMs / 1000)}s`,
+      `Exit code:  ${exitCode}`,
+      `Timed out:  ${timedOut}`,
+      `Verdict:    ${verdict}`,
+      '',
+    ].join('\n'))
+    closeLog()
+  }
 
   if (timedOut) {
-    closeLog()
+    verdictForFooter = 'missing'
+    writeFooter(verdictForFooter)
+    console.error(`Reviewer timed out after ${timeoutSeconds}s: ${reviewerName}`)
     console.error(`Reviewer log: ${logPath}`)
     return { approved: false, error: true, message: 'reviewer timed out' }
   }
 
   if (exitCode !== 0) {
+    writeFooter(verdictForFooter)
     console.error(`Reviewer exited with code ${exitCode}`)
     console.error(`Reviewer log: ${logPath}`)
     return { approved: false, error: true, message: 'reviewer failed' }
   }
 
-  const updatedFeedback = (await fse.pathExists(feedbackPath))
+  let updatedFeedback = (await fse.pathExists(feedbackPath))
     ? await fse.readFile(feedbackPath, 'utf-8')
     : ''
 
-  const latestRound = getLatestRound(updatedFeedback)
+  let latestRound = getLatestRound(updatedFeedback)
 
   if (!latestRound) {
+    const salvage = parseStrictSalvage(stdoutBuffer, round)
+    if (salvage) {
+      await appendSalvagedFeedback(feedbackPath, salvage)
+      updatedFeedback = await fse.readFile(feedbackPath, 'utf-8')
+      latestRound = getLatestRound(updatedFeedback)
+      verdictForFooter = `salvaged:${salvage.verdict}`
+    }
+  }
+
+  if (!latestRound) {
+    writeFooter(verdictForFooter)
     console.error(`Reviewer finished but did not append ## Round ${round} to ${feedbackPath}`)
+    console.error('Reviewer may have written only to stdout. Read the reviewer log, then either append the missing feedback round manually or re-run reviewloop.')
     console.error(`Reviewer log: ${logPath}`)
     return { approved: false, error: true, message: 'missing verdict' }
   }
 
   if (latestRound.round !== round) {
+    writeFooter(verdictForFooter)
     console.error(`Reviewer finished but ${feedbackPath} contains round ${latestRound.round}, expected ## Round ${round}`)
     console.error(`Reviewer log: ${logPath}`)
     return { approved: false, error: true, message: 'wrong round' }
   }
+
+  if (!verdictForFooter.startsWith('salvaged:')) {
+    verdictForFooter = latestRound.verdict || 'missing'
+  }
+  writeFooter(verdictForFooter)
 
   blankLine()
 

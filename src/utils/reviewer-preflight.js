@@ -6,6 +6,11 @@ export const DEFAULT_REVIEWER_TIMEOUT_SECONDS = 900
 export const VALID_REVIEWER_NAME_PATTERN = /^[A-Za-z0-9._-]+$/
 
 export function reviewerTimeoutSeconds(config = {}) {
+  const override = Number(process.env.SPECDEV_REVIEWER_TIMEOUT)
+  if (Number.isInteger(override) && override > 0) {
+    return override
+  }
+
   const value = Number(config.timeout_seconds)
   if (!Number.isFinite(value) || value <= 0) {
     return DEFAULT_REVIEWER_TIMEOUT_SECONDS
