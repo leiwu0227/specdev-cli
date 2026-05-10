@@ -47,22 +47,29 @@ if [ -n "$CONTEXT_JSON" ]; then
       const ctx = JSON.parse(process.argv[1]);
       const a = ctx.assignment;
       const assignmentLine = a ? a.name : 'none';
+      const assignmentPath = a?.path || '';
       const phase = a?.phase || '';
       const state = a?.state || '';
       const knowledgeCount = ctx.knowledge?.files?.length || 0;
       const toolSkills = (ctx.skills?.tools || []).join(', ');
       const lastCompleted = ctx.recent_history?.last_completed_assignment || '';
-      console.log(JSON.stringify({ assignmentLine, phase, state, knowledgeCount, toolSkills, lastCompleted }));
+      console.log(JSON.stringify({ assignmentLine, assignmentPath, phase, state, knowledgeCount, toolSkills, lastCompleted }));
     } catch {
       console.log('{}');
     }
   " "$CONTEXT_JSON" 2>/dev/null) || PARSED="{}"
 
   ASSIGNMENT_LINE=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.assignmentLine||'none')")
+  ASSIGNMENT_PATH=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.assignmentPath||'')")
   PHASE=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.phase||'')")
   KNOWLEDGE_COUNT=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(String(d.knowledgeCount||0))")
   TOOL_SKILLS=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.toolSkills||'')")
   LAST_COMPLETED=$(echo "$PARSED" | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8')); process.stdout.write(d.lastCompleted||'')")
+  if [ -n "$ASSIGNMENT_PATH" ] && [ -d "$SPECDEV_DIR/$ASSIGNMENT_PATH/implementation" ]; then
+    PHASE="implementation"
+  elif [ -n "$ASSIGNMENT_PATH" ] && [ -f "$SPECDEV_DIR/$ASSIGNMENT_PATH/breakdown/plan.md" ]; then
+    PHASE="breakdown"
+  fi
 else
   # Fallback: filesystem detection (for older specdev versions)
   ASSIGNMENTS_DIR="$SPECDEV_DIR/assignments"
