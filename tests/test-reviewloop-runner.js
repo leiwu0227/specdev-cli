@@ -177,5 +177,34 @@ console.log('\nreviewer runner timeout:')
   assert(killCalls[1].signal === 'SIGKILL', 'grace timer uses SIGKILL')
 }
 
+console.log('\nreviewer runner kills process group:')
+{
+  let stdout = ''
+  const result = await runReviewerProcess({
+    command: `bash -c 'sleep 30 & echo "grandchild_pid=$!"; wait'`,
+    cwd: process.cwd(),
+    env: process.env,
+    timeoutMs: 1000,
+    heartbeatMs: 30000,
+    onStdout(chunk, ctx) {
+      stdout += String(chunk)
+      ctx.markActivity()
+    },
+    onStderr() {},
+  })
+  const grandchildPid = Number(stdout.match(/grandchild_pid=(\d+)/)?.[1])
+  assert(result.timedOut === true, 'real timeout is marked timed out')
+  assert(Number.isInteger(grandchildPid), 'captures grandchild pid')
+  await new Promise((resolve) => setTimeout(resolve, 5400))
+  let childStillExists = false
+  try {
+    process.kill(grandchildPid, 0)
+    childStillExists = true
+  } catch (error) {
+    childStillExists = error.code !== 'ESRCH'
+  }
+  assert(childStillExists === false, 'timeout kills reviewer grandchild process')
+}
+
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)
