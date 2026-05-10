@@ -8,3 +8,14 @@
 
 ### Addressed from changelog
 - (none -- first round)
+
+## Round 2
+
+**Verdict:** approved
+
+### Findings
+- (none)
+
+### Addressed from changelog
+- Addressed [F1.1] by changing stdout salvage to check for the expected round directly and adding regression coverage for salvaging round 2 when round 1 already exists.
+- Addressed [F1.2] by unrefing the grace-period SIGKILL timer and adding runner coverage for the unref behavior.

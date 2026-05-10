@@ -13,7 +13,8 @@
     "00011_feature_bounded-working-memory",
     "00012_feature_guided-layout-migration",
     "00013_feature_sqlite-knowledge-retrieval",
-    "00016_refactor_distill-workflow"
+    "00016_refactor_distill-workflow",
+    "00015_feature_claude-reviewer-observability"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -29,6 +30,7 @@
     "00011_feature_bounded-working-memory",
     "00012_feature_guided-layout-migration",
     "00013_feature_sqlite-knowledge-retrieval",
-    "00016_refactor_distill-workflow"
+    "00016_refactor_distill-workflow",
+    "00015_feature_claude-reviewer-observability"
   ]
 }

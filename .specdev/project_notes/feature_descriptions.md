@@ -66,6 +66,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added `specdev knowledge index` and `specdev knowledge search <query>` for local SQLite FTS retrieval over SpecDev markdown artifacts. The database is generated under `.specdev/cache/knowledge.sqlite`, ignored by git, and rebuildable from markdown sources.
 **Key files:** `src/commands/knowledge.js`, `src/utils/knowledge.js`, `tests/test-knowledge.js`, `templates/.specdev/.gitignore`
 
+### Claude Reviewer Observability
+**Assignment:** 00015_feature_claude-reviewer-observability
+**Completed:** 2026-05-10
+**Description:** Made automated reviewloop runs more observable and recoverable with parent-side heartbeats, richer reviewer logs, timeout process-group cleanup, strict stdout salvage for plain-text reviewers, and Claude stream-json progress rendering with JSONL sidecars.
+**Key files:** `src/commands/reviewloop.js`, `src/utils/reviewer-runner.js`, `src/utils/reviewer-stream-json.js`, `templates/.specdev/skills/core/reviewloop/reviewers/claude.json`, `tests/test-reviewloop-command.js`
+
 ### Structured Workflow Feedback Notes
 **Assignment:** 00016_refactor_distill-workflow
 **Completed:** 2026-05-10
