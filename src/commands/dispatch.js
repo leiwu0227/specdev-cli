@@ -23,6 +23,7 @@ import { memoryCommand } from './memory.js'
 import { knowledgeCommand } from './knowledge.js'
 import { contextCommand } from './context.js'
 import { researchCommand } from './research.js'
+import { agentsInspectCommand } from './agents-inspect.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -71,6 +72,11 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     } else {
       await migrateCommand(flags)
     }
+    return
+  }
+
+  if (command === 'agents') {
+    await agentsInspectCommand(positionalArgs, flags)
     return
   }
 
