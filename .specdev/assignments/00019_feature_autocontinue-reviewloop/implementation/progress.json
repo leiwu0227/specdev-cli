@@ -1,0 +1,27 @@
+{
+  "plan_file": ".specdev/assignments/00019_feature_autocontinue-reviewloop/breakdown/plan.md",
+  "total_tasks": 3,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-11T12:11:33Z",
+      "completed_at": "2026-05-11T12:31:52Z",
+      "summary": "Added autocontinue contract output and reviewloop command assertions; new assertions pass before existing suite timeout."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-05-11T12:20:45Z",
+      "completed_at": "2026-05-11T12:31:59Z",
+      "summary": "Updated source-of-truth reviewloop and implementing instructions plus generated wrapper tests."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-05-11T12:25:23Z",
+      "completed_at": "2026-05-11T12:31:40Z",
+      "summary": "Added checkpoint guidance coverage and minimal checkpoint wording updates; releaseDate already current."
+    }
+  ]
+}

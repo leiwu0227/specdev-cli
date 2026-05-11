@@ -107,6 +107,8 @@ for (const file of reviewerFiles) {
 const skillContent = readFileSync(skillMd, 'utf-8')
 assert(skillContent.includes('type: core'), 'SKILL.md has type: core')
 assert(skillContent.includes('name: reviewloop'), 'SKILL.md has name: reviewloop')
+assert(skillContent.includes('Do not stop after an approved autocontinue review'), 'core reviewloop skill forbids stopping after autocontinue approval')
+assert(skillContent.includes('implementation --reviewer=<name> --autocontinue'), 'core reviewloop skill carries reviewer to implementation review')
 
 const activeToolsPath = join(TEST_DIR, '.specdev', 'skills', 'active-tools.json')
 if (existsSync(activeToolsPath)) {

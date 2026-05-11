@@ -57,6 +57,16 @@ Each agent only writes to its own file and reads the other's.
 8. **Fail** → run `specdev check-review` to read findings, fix issues, write `{phase}-changelog.md`
 9. Re-run `specdev reviewloop` for next round
 
+## Autocontinue Contract
+
+When `--autocontinue` is present and the review is approved:
+
+- Do not stop after an approved autocontinue review.
+- For brainstorm approval, continue immediately to breakdown and implementation.
+- Reuse the same reviewer for implementation review with `specdev reviewloop implementation --reviewer=<name> --autocontinue`.
+- For implementation approval, continue immediately to summary and knowledge capture.
+- If a reviewer returns `needs-changes`, run `specdev check-review`, address findings, write the changelog, and rerun reviewloop within max rounds.
+
 ## Hard Rules
 
 1. **Never skip check-review** — always read findings before the next round

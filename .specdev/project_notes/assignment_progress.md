@@ -40,6 +40,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00016 | distill-workflow | Done | 2026-05-10 | Added structured workflow feedback note template and accumulation guidance |
 | 00017 | workflow-architecture | Done | 2026-05-11 | Centralized workflow facts in a contract module and added drift coverage |
 | 00018 | workflow-agents | Done | 2026-05-11 | Added first-class workflow agents, researcher command, agent-runner, and agent inspect |
+| 00019 | autocontinue-reviewloop | Done | 2026-05-11 | Added reviewloop autocontinue contract/guidance and kept discussions standalone |
 
 ---
 

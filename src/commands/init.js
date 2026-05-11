@@ -209,6 +209,16 @@ Flow:
 5. On pass → auto-approves the phase. **The gate is satisfied — proceed immediately to the next phase.** Do NOT ask the user to run \`specdev approve\` separately.
 6. On fail → run \`specdev check-review <phase>\` to address findings, then re-run reviewloop
 
+Autocontinue contract:
+
+When \`--autocontinue\` is present and the review is approved:
+
+- Do not stop after an approved autocontinue review.
+- For brainstorm approval, continue immediately to breakdown and implementation.
+- Reuse the same reviewer for implementation review with \`specdev reviewloop implementation --reviewer=<name> --autocontinue\`.
+- For implementation approval, continue immediately to summary and knowledge capture.
+- If a reviewer returns \`needs-changes\`, run \`specdev check-review\`, address findings, write the changelog, and rerun reviewloop within max rounds.
+
 ## For discussions
 
 Run \`specdev reviewloop discussion --discussion=<ID>\` where ID is the discussion ID (e.g. D00001).

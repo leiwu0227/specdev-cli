@@ -114,12 +114,13 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
     '   1. Run full test suite one final time',
     `   2. Run: bash ${trackScript} ${planPath} summary`,
     '   3. Present summary to the user: what was built, tests passing, notable decisions',
-    '   4. Present these multiple-choice options to the user:',
+    '   4. If this implementation was reached from reviewloop brainstorm --autocontinue, run specdev checkpoint implementation, then run specdev reviewloop implementation --reviewer=<same-reviewer> --autocontinue without asking the user for another decision.',
+    '   5. Otherwise, present these multiple-choice options to the user:',
     '      1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name> --autocontinue',
     '      2. Automated review only — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name>',
     '      3. Manual review — run specdev review implementation in a separate session',
     '      4. Skip review and approve — run specdev approve implementation',
-    '   5. If the user chooses automated review, ask reviewer type as a second multiple-choice question:',
+    '   6. If the user chooses automated review, ask reviewer type as a second multiple-choice question:',
   ]
   if (reviewers.length === 0) {
     finalChoiceLines.push('      - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
@@ -129,7 +130,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       finalChoiceLines.push(`      ${index + 1}. ${reviewer}`)
     })
   }
-  finalChoiceLines.push('   6. Stop and wait for user approval')
+  finalChoiceLines.push('   7. Stop and wait for user approval only in the non-autocontinue path')
 
   printSection('When all tasks are done:')
   printLines(finalChoiceLines)

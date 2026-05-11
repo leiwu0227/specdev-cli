@@ -545,6 +545,7 @@ assert(
   'prints phase approved',
   passOutput,
 )
+assert(!passOutput.includes('Autocontinue requested'), 'reviewloop without autocontinue does not print autocontinue section')
 
 // Verify status.json was updated
 const statusPath = join(a4, 'status.json')
@@ -557,6 +558,64 @@ if (existsSync(statusPath)) {
 } else {
   assert(false, 'status.json was created by approvePhase')
 }
+
+console.log('\nreviewloop (brainstorm autocontinue approved):')
+cleanup()
+initProject()
+fillBigPicture()
+const aAutocontinueBrainstorm = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+mkdirSync(join(aAutocontinueBrainstorm, 'review'), { recursive: true })
+const feedbackRelPathAutoBrainstorm = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
+setupReviewer('autocontinue-brainstorm-mock', {
+  name: 'autocontinue-brainstorm-mock',
+  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPathAutoBrainstorm}"`,
+  max_rounds: 3,
+})
+result = runCmd([
+  'reviewloop',
+  'brainstorm',
+  `--target=${TEST_DIR}`,
+  '--reviewer=autocontinue-brainstorm-mock',
+  '--autocontinue',
+])
+const autocontinueBrainstormOutput = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'brainstorm autocontinue exits 0 for approved verdict', result.stderr)
+assert(autocontinueBrainstormOutput.includes('Autocontinue requested'), 'brainstorm autocontinue prints autocontinue section')
+assert(autocontinueBrainstormOutput.includes('Continue immediately to breakdown and implementation'), 'brainstorm autocontinue tells agent to continue to breakdown and implementation')
+assert(autocontinueBrainstormOutput.includes('specdev reviewloop implementation --reviewer=autocontinue-brainstorm-mock --autocontinue'), 'brainstorm autocontinue preserves reviewer for implementation review')
+assert(autocontinueBrainstormOutput.includes('"mode": "autocontinue"'), 'brainstorm autocontinue prints a JSON continuation contract')
+assert(autocontinueBrainstormOutput.includes('"next_phase": "breakdown"'), 'brainstorm autocontinue contract names breakdown as next phase')
+assert(autocontinueBrainstormOutput.includes('"implementation_reviewer": "autocontinue-brainstorm-mock"'), 'brainstorm autocontinue contract stores reviewer')
+
+console.log('\nreviewloop (implementation autocontinue approved):')
+cleanup()
+initProject()
+fillBigPicture()
+const aAutocontinueImplementation = createAssignment(ASSIGNMENT_NAME)
+setCurrent(ASSIGNMENT_NAME)
+mkdirSync(join(aAutocontinueImplementation, 'implementation'), { recursive: true })
+mkdirSync(join(aAutocontinueImplementation, 'review'), { recursive: true })
+writeFileSync(join(aAutocontinueImplementation, 'status.json'), JSON.stringify({ brainstorm_approved: true }), 'utf-8')
+writeFileSync(join(aAutocontinueImplementation, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ status: 'completed' }] }), 'utf-8')
+const feedbackRelPathAutoImplementation = `.specdev/assignments/${ASSIGNMENT_NAME}/review/implementation-feedback.md`
+setupReviewer('autocontinue-implementation-mock', {
+  name: 'autocontinue-implementation-mock',
+  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPathAutoImplementation}"`,
+  max_rounds: 3,
+})
+result = runCmd([
+  'reviewloop',
+  'implementation',
+  `--target=${TEST_DIR}`,
+  '--reviewer=autocontinue-implementation-mock',
+  '--autocontinue',
+])
+const autocontinueImplementationOutput = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'implementation autocontinue exits 0 for approved verdict', result.stderr)
+assert(autocontinueImplementationOutput.includes('Autocontinue requested'), 'implementation autocontinue prints autocontinue section')
+assert(autocontinueImplementationOutput.includes('Continue immediately to summary and knowledge capture'), 'implementation autocontinue tells agent to continue to capture')
+assert(autocontinueImplementationOutput.includes('"next_phase": "capture"'), 'implementation autocontinue contract names capture as next phase')
 
 // =====================================================================
 // Mock reviewer: needs-changes verdict (not at max rounds)

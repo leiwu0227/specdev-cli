@@ -43,6 +43,27 @@ function printSimplificationPrompt() {
   blankLine()
 }
 
+function autocontinueContract(phase, reviewerNames) {
+  const reviewerArg = reviewerNames.join(',')
+  if (phase === 'brainstorm') {
+    return {
+      mode: 'autocontinue',
+      next_phase: 'breakdown',
+      continue: ['breakdown', 'implementation'],
+      implementation_reviewer: reviewerArg,
+      implementation_review_command: `specdev reviewloop implementation --reviewer=${reviewerArg} --autocontinue`,
+    }
+  }
+  if (phase === 'implementation') {
+    return {
+      mode: 'autocontinue',
+      next_phase: 'capture',
+      continue: ['knowledge-capture'],
+    }
+  }
+  return { mode: 'autocontinue', next_phase: null, continue: [] }
+}
+
 function printAutocontinuePrompt(phase, reviewerNames) {
   const reviewerArg = reviewerNames.join(',')
   blankLine()
@@ -53,6 +74,8 @@ function printAutocontinuePrompt(phase, reviewerNames) {
   } else if (phase === 'implementation') {
     console.log('   The implementation gate is approved. Continue immediately to summary and knowledge capture.')
   }
+  console.log('   Contract:')
+  console.log(JSON.stringify(autocontinueContract(phase, reviewerNames), null, 2).split('\n').map(line => `   ${line}`).join('\n'))
   blankLine()
 }
 

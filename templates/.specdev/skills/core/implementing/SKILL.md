@@ -80,11 +80,12 @@ The last batch may have fewer than 3 tasks.
 1. Run full test suite one final time
 2. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> summary`
 3. Present a summary to the user inline: what was built, tests passing, any notable decisions
-4. Tell the user their options:
+4. If this implementation was reached from `reviewloop brainstorm --autocontinue`, run `specdev checkpoint implementation`, then run `specdev reviewloop implementation --reviewer=<same-reviewer> --autocontinue` without asking the user for another decision.
+5. Otherwise, tell the user their options:
    - `specdev reviewloop implementation` — automated external review (e.g., Codex)
    - `specdev review implementation` — manual review in a separate session
    - `specdev approve implementation` — skip review and proceed to knowledge capture
-5. Stop and wait — do NOT proceed until the user has approved
+6. Stop and wait only in the non-autocontinue path.
 
 ## Red Flags
 

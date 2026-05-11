@@ -124,11 +124,15 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
   const discussionArg = isDiscussion ? ` --discussion=${flags.discussion}` : ''
 
   console.log('Ready for user decision. Present these multiple-choice options:')
-  console.log(`   1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name> --autocontinue`)
-  console.log(`   2. Automated review only — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name>`)
-  console.log(`   3. Manual review — run specdev review ${reviewPhase}${discussionArg} in a separate session`)
-  if (!isDiscussion) {
+  if (isDiscussion) {
+    console.log(`   1. Automated review — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name>`)
+    console.log(`   2. Manual review — run specdev review ${reviewPhase}${discussionArg} in a separate session`)
+  } else {
+    console.log(`   1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name> --autocontinue`)
+    console.log(`   2. Automated review only — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name>`)
+    console.log(`   3. Manual review — run specdev review ${reviewPhase}${discussionArg} in a separate session`)
     console.log('   4. Skip review and approve — run specdev approve brainstorm')
+    console.log('   Review, then continue if approved keeps the workflow moving after approval.')
   }
   blankLine()
   console.log('If the user chooses automated review, ask reviewer type as a second multiple-choice question:')
@@ -136,6 +140,7 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
     console.log('   - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
   } else {
     console.log('   Use one choice per reviewer config; do not ask for free-form reviewer text.')
+    console.log('   Do not ask for free-form reviewer text.')
     reviewers.forEach((reviewer, index) => {
       console.log(`   ${index + 1}. ${reviewer}`)
     })

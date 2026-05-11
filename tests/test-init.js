@@ -164,6 +164,9 @@ assert(checkReviewSkill.includes(checkReviewPhasesText), 'check-review skill use
 const reviewloopSkill = readFileSync(join(codexSkillsDir, 'specdev-reviewloop', 'SKILL.md'), 'utf-8')
 const reviewloopPhasesText = commandPhases.reviewloop.filter(p => p !== 'discussion').join('` or `')
 assert(reviewloopSkill.includes(reviewloopPhasesText), 'reviewloop skill uses contract reviewloop phases')
+assert(reviewloopSkill.includes('With `--autocontinue`: after approval, continue to the next workflow phase without another user prompt.'), 'reviewloop skill documents autocontinue')
+assert(reviewloopSkill.includes('Do not stop after an approved autocontinue review'), 'reviewloop skill forbids stopping after autocontinue approval')
+assert(reviewloopSkill.includes('implementation --reviewer=<name> --autocontinue'), 'reviewloop skill carries reviewer to implementation review')
 
 const layoutMigrationSkill = readFileSync(join(codexSkillsDir, 'specdev-layout-migration', 'SKILL.md'), 'utf-8')
 assert(layoutMigrationSkill.includes('.specdev/_guides/migration_guide.md'), 'layout migration skill references migration guide')

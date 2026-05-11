@@ -2,48 +2,47 @@
 
 ## Inventory Summary
 
-- Current shape: Very close to modern target structure
-- Non-conforming top-level paths: `cache/` (gitignored runtime data)
-- Assignment folders checked: 13 assignments (00001–00013), all using modern phase folders (brainstorm/, breakdown/, capture/, implementation/, review/, context/)
-- All standard top-level directories present: `_guides/`, `_templates/`, `assignments/`, `discussions/`, `knowledge/`, `project_notes/`, `project_scaffolding/`, `skills/`
+- Current shape: Conforms to the modern target layout.
+- Top-level dirs present: `_guides/`, `_templates/`, `agents/`, `assignments/`, `discussions/`, `knowledge/`, `project_notes/`, `project_scaffolding/`, `skills/`, plus runtime `cache/` (gitignored) and `migration/` (this folder).
+- Assignment folders checked: 19 assignments (00001–00019), all using modern assignment folders. Completed/older assignments use the standard phase folders (`brainstorm/`, `breakdown/`, `capture/`, `context/`, `implementation/`, `review/`) where applicable. The active 00019 assignment is still in brainstorm and therefore currently has only `brainstorm/` and `context/`, which is not non-conforming.
+- Discussion folders checked: 3 discussions (D00001–D00003), all using `brainstorm/proposal.md` and `brainstorm/design.md`.
+- `cache/` is in `.specdev/.gitignore`.
 
 ## Proposed Moves
 
 | From | To | Reason |
 | --- | --- | --- |
-| (none) | — | No moves required — assignment and top-level structure already conforms |
+| (none) | — | Structure already conforms. No moves required. |
 
 ## Leave In Place
 
 | Path | Reason |
 | --- | --- |
-| `.current` | Standard current-assignment pointer |
-| `.gitignore` | Standard; already excludes `cache/` |
+| `.current`, `.gitignore` | Standard runtime/system files |
 | `_main.md`, `_index.md` | Core system files |
-| `_guides/*` | System-managed guides |
-| `_templates/*` | System-managed templates |
-| `assignments/00001–00013/*` | All 13 assignments already use modern phase folders |
-| `discussions/D00001_*` | Correct structure |
-| `knowledge/_index.md` | Standard index |
-| `knowledge/.processed_captures.json` | Internal state tracking |
-| `knowledge/architecture/*`, `codestyle/*`, `domain/*`, `workflow/*` | Standard knowledge branches |
-| `project_notes/big_picture.md`, `working_memory.md`, etc. | Standard project notes |
+| `_guides/*`, `_templates/*` | System-managed guides and templates |
+| `agents/researcher/*` | Documented in `_index.md`; used by `specdev research` |
+| `assignments/00001–00019/*` | Assignments already use modern folders for their current phase/state |
+| `discussions/D00001_*`, `D00002_*`, `D00003_*` | Conforming discussion folders |
+| `knowledge/_index.md`, `knowledge/.processed_captures.json` | Standard knowledge index and capture state |
+| `knowledge/architecture/`, `codestyle/`, `domain/`, `workflow/` | Standard knowledge branches |
+| `knowledge/workflow_feedback/` | Documented in `knowledge/_index.md` as an intentional branch for SpecDev-workflow feedback (not project-specific). Treat as part of the project structure. |
+| `project_notes/*` | Standard project notes; `thoughts/` is a freeform subdir under `project_notes/` |
 | `project_scaffolding/_README.md` | Standard scaffolding |
-| `skills/core/*`, `skills/tools/*` | Standard skill directories |
-| `cache/knowledge.sqlite` | Runtime cache, already gitignored — not version-controlled |
+| `skills/core/*`, `skills/tools/*`, `skills/README.md`, `skills/active-tools.json` | Standard skill directories and metadata |
+| `cache/knowledge.sqlite` | Runtime cache, gitignored, not version-controlled |
 
 ## Needs User Decision
 
 | Path | Question |
 | --- | --- |
-| `knowledge/_workflow_feedback/` (7 files) | This is an extra knowledge branch not in the standard set (architecture, codestyle, domain, workflow). Should it be: (a) kept as-is (it's a valid custom branch), (b) merged into `knowledge/workflow/`, or (c) renamed to drop the underscore prefix → `knowledge/workflow_feedback/`? |
-| `project_notes/thoughts/2026-03-04 distillation.txt` | Informal note in a `thoughts/` subdirectory under project_notes. Should it be: (a) kept as-is, (b) moved to `project_notes/` root, or (c) deleted if no longer needed? |
+| `.specdev/migration/layout-plan.md` | After verification, do you want to delete this scratch file or keep it for the record? |
 
 ## Risks
 
-- Existing destination conflicts: None — no proposed moves
-- Ambiguous ownership: `knowledge/_workflow_feedback/` could belong under `workflow/` but may be intentionally separate
-- Files that may belong outside `.specdev/`: None identified
+- Existing destination conflicts: None — no moves proposed.
+- Ambiguous ownership: None observed.
+- Files that may belong outside `.specdev/`: None identified.
 
 ## Verification
 
@@ -52,5 +51,5 @@
   - `find .specdev -maxdepth 2 -type d | sort`
 - Expected final checks:
   - All assignment phase folders intact
-  - Knowledge branches consistent
+  - Knowledge branches consistent (including documented `workflow_feedback/`)
   - No orphaned files at `.specdev/` root

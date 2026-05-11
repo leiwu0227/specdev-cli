@@ -114,9 +114,13 @@ The smallest implementation path is mostly orchestration and instruction updates
 
 - Add `--autocontinue` flag handling to `src/commands/reviewloop.js`.
 - After approved brainstorm review, emit an explicit autocontinue instruction instead of a user handoff.
-- Add an agent-facing workflow contract that says the main agent must continue to breakdown/implementation when `--autocontinue` was used.
-- Update `.specdev/skills/core/reviewloop/SKILL.md` and generated `.codex/skills/specdev-reviewloop/SKILL.md` text.
-- Update implementing skill final-review behavior so autonomous mode runs implementation checkpoint and reviewloop instead of stopping for user options.
+- Add an agent-facing workflow contract that says the main agent must continue to breakdown/implementation when `--autocontinue` was used. In this repo, implement that in source-of-truth files, not installed runtime files:
+  - `templates/.specdev/skills/core/reviewloop/SKILL.md` for the core reviewloop skill installed by `specdev init` and restored by `specdev update`.
+  - `src/commands/init.js` for generated agent wrappers such as `.codex/skills/specdev-reviewloop/SKILL.md` and `.claude/skills/specdev-reviewloop/SKILL.md`.
+  - `templates/.specdev/skills/core/implementing/SKILL.md` for implementation-phase agent behavior after final tests/checkpoint.
+  - `src/commands/implement.js` and `src/commands/checkpoint.js` for CLI output that offers final review options.
+  - Tests covering those generated/templated instructions so new installs and updates keep the autocontinue contract.
+- Do not treat `.specdev/skills/*`, `.codex/skills/*`, or `.claude/skills/*` in this working tree as product source for the behavior change. They may be updated only as installed/generated artifacts when the user explicitly runs `specdev update` or when tests create fixture outputs.
 - Consider persisting lightweight automation metadata in the assignment, for example `status.json`:
 
 ```json

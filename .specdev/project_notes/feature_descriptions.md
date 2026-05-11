@@ -84,6 +84,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added agents as a first-class workflow primitive and shipped the researcher agent end-to-end through `specdev research`, a generic path-based `agent-runner`, and `specdev agents inspect`.
 **Key files:** `src/utils/agent-runner.js`, `src/commands/research.js`, `src/commands/agents-inspect.js`, `templates/.specdev/agents/researcher/agent.md`, `tests/test-agent-runner.js`, `tests/test-research.js`
 
+### Reviewloop Autocontinue
+**Assignment:** 00019_feature_autocontinue-reviewloop
+**Completed:** 2026-05-11
+**Description:** Added explicit `--autocontinue` guidance and contract output for approved assignment reviewloop runs, carrying brainstorm approval into breakdown/implementation and implementation approval into capture while keeping discussions standalone.
+**Key files:** `src/commands/reviewloop.js`, `src/commands/checkpoint.js`, `src/commands/implement.js`, `src/commands/init.js`, `templates/.specdev/skills/core/reviewloop/SKILL.md`, `tests/test-reviewloop-command.js`, `tests/test-checkpoints.js`
+
 ---
 
 ## Architecture & Structure

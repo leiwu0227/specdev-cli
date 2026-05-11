@@ -16,7 +16,8 @@
     "00016_refactor_distill-workflow",
     "00015_feature_claude-reviewer-observability",
     "00017_refactor_workflow-architecture",
-    "00018_feature_workflow-agents"
+    "00018_feature_workflow-agents",
+    "00019_feature_autocontinue-reviewloop"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -35,6 +36,7 @@
     "00016_refactor_distill-workflow",
     "00015_feature_claude-reviewer-observability",
     "00017_refactor_workflow-architecture",
-    "00018_feature_workflow-agents"
+    "00018_feature_workflow-agents",
+    "00019_feature_autocontinue-reviewloop"
   ]
 }
