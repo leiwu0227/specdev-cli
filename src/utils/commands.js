@@ -9,6 +9,7 @@ export const COMMANDS = [
   { name: 'knowledge index', usage: 'knowledge index', description: 'Rebuild SQLite knowledge retrieval cache' },
   { name: 'knowledge search', usage: 'knowledge search <query>', description: 'Search indexed SpecDev knowledge' },
   { name: 'knowledge list', usage: 'knowledge list', description: 'List all knowledge files with metadata' },
+  { name: 'research', usage: 'research <topic>', description: 'Run the researcher agent for the active assignment' },
   { name: 'start', usage: 'start', description: 'Check/fill project context (big_picture.md)' },
   { name: 'migrate', usage: 'migrate', description: 'Show guided .specdev layout migration workflow' },
   { name: 'migrate legacy-assignments', usage: 'migrate legacy-assignments', description: 'Move legacy root assignment files into phase folders' },

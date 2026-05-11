@@ -22,6 +22,7 @@ import { statusCommand } from './status.js'
 import { memoryCommand } from './memory.js'
 import { knowledgeCommand } from './knowledge.js'
 import { contextCommand } from './context.js'
+import { researchCommand } from './research.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -43,6 +44,7 @@ const commandHandlers = {
   focus: ({ positionalArgs, flags }) => focusCommand(positionalArgs, flags),
   discussion: ({ positionalArgs, flags }) => discussCommand(positionalArgs, flags),
   context: ({ flags }) => contextCommand(flags),
+  research: ({ positionalArgs, flags }) => researchCommand(positionalArgs, flags),
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
