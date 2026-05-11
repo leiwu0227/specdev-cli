@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   ASSIGNMENT_TYPES,
+  AGENT_SPEC_PATHS,
   REQUIRED_BRAINSTORM_SECTIONS,
   artifactPaths,
   commandPhases,
@@ -45,6 +46,13 @@ for (const phase of commandPhases.review.filter(p => p !== 'discussion')) {
 
 assert(workflow.includes(artifactPaths.brainstorm.proposal), 'workflow guide mentions brainstorm proposal path')
 assert(workflow.includes(artifactPaths.brainstorm.design), 'workflow guide mentions brainstorm design path')
+
+assert(AGENT_SPEC_PATHS.researcher === '.specdev/agents/researcher/agent.md', 'researcher runtime agent path is exported')
+assert(read('templates/.specdev/agents/researcher/agent.md').includes('name: researcher'), 'researcher agent template exists')
+assert(read('templates/.specdev/agents/researcher/output-schema.json').includes('"scope_used"'), 'researcher output schema exists')
+assert(read('templates/.specdev/_templates/agent-spec.schema.json').includes('"runners"'), 'agent spec meta-schema exists')
+assert(read('templates/.specdev/_index.md').includes('Agents'), '_index.md documents agents')
+assert(read('templates/.specdev/skills/core/brainstorming/SKILL.md').includes('specdev research'), 'brainstorming skill hints at researcher')
 
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)

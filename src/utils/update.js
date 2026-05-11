@@ -61,6 +61,7 @@ export async function updateSpecdevSystem(source, destination) {
       '_index.md',
       '_guides',
       '_templates',
+      'agents',
       'project_scaffolding/_README.md',
       'skills/core',
       'skills/README.md',

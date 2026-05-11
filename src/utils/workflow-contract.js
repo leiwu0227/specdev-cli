@@ -40,6 +40,10 @@ export const artifactPaths = {
   },
 }
 
+export const AGENT_SPEC_PATHS = {
+  researcher: '.specdev/agents/researcher/agent.md',
+}
+
 export const gateFields = {
   brainstorm: 'brainstorm_approved',
   implementation: 'implementation_approved',

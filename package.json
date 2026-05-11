@@ -57,7 +57,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "fs-extra": "^11.2.0"
+    "ajv": "^8.20.0",
+    "fs-extra": "^11.2.0",
+    "yaml": "^2.8.4"
   },
   "devDependencies": {
     "prettier": "^3.2.4"
