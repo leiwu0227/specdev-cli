@@ -1,0 +1,41 @@
+{
+  "plan_file": ".specdev/assignments/00017_refactor_workflow-architecture/breakdown/plan.md",
+  "total_tasks": 5,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-11T06:12:39Z",
+      "completed_at": "2026-05-11T06:13:19Z",
+      "summary": "Added workflow contract module and focused contract test"
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-05-11T06:13:26Z",
+      "completed_at": "2026-05-11T06:24:58Z",
+      "summary": "Wired workflow contract into assignment, checkpoint, approve, review, reviewloop, state, continue, and approval helpers"
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-05-11T06:25:02Z",
+      "completed_at": "2026-05-11T06:29:07Z",
+      "summary": "Rendered generated command-skill prose from workflow contract values"
+    },
+    {
+      "number": 4,
+      "status": "completed",
+      "started_at": "2026-05-11T06:42:11Z",
+      "completed_at": "2026-05-11T06:46:45Z",
+      "summary": "Added contract drift test and workflow FAQ guide/capture guidance"
+    },
+    {
+      "number": 5,
+      "status": "completed",
+      "started_at": "2026-05-11T06:46:45Z",
+      "completed_at": "2026-05-11T07:00:03Z",
+      "summary": "Updated releaseDate to 2026-05-11 and verified full test suite, diff check, and status"
+    }
+  ]
+}

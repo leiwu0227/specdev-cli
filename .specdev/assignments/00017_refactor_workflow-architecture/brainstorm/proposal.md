@@ -1,0 +1,7 @@
+# Workflow Architecture Refactor — Proposal
+
+SpecDev's workflow definition is currently spread across skill prose, `_main.md`, `_index.md`, guides, templates, and Node commands. The same small set of structured facts appears in several places: phase names, valid CLI phase arguments, assignment types, required design sections, artifact paths, and gate/status field names. A downstream brainstorm surfaced multiple bugs whose common root cause is drift between these duplicated copies.
+
+This refactor introduces a small workflow contract for only those structured facts and updates the CLI validators to read from it. The goal is not to redesign the workflow or add a new orchestration layer. It is to make common drift mechanically harder by centralizing the facts that the CLI already enforces today.
+
+The deliverable is deliberately narrow: a contract module or JSON file, CLI integration for the existing checkpoint/approve/status flows, tests that catch drift between contract, templates, and command help, and 2-3 representative bug fixes that prove the contract is actually used. The master guide also gains explicit guidance for agents to search `knowledge/workflow/` when they encounter workflow issues, confusion, contradictions, or command gotchas, and phase-end/capture guidance explains how to record reusable workflow FAQ notes there. Heavier ideas such as phase-entry guard scripts, always-load session injection, knowledge directory migration, sub-phase gates, and documentation collapse are deferred.

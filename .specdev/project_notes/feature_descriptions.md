@@ -94,6 +94,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Renamed `specdev discuss` CLI command to `specdev discussion` and created `.claude/skills/specdev-discussion/SKILL.md` agent skill mirroring the assignment skill pattern. Added `discussion_progress.md` to project_notes for tracking discussions.
 **Key files:** `src/commands/discussion.js`, `src/commands/dispatch.js`, `.claude/skills/specdev-discussion/SKILL.md`, `.specdev/project_notes/discussion_progress.md`
 
+### Workflow Contract Facts
+**Assignment:** 00017_refactor_workflow-architecture
+**Completed:** 2026-05-11
+**Description:** Centralized structured workflow facts in a small contract module and wired assignment, phase, status, review, and generated command-skill surfaces to consume or validate against it.
+**Key files:** `src/utils/workflow-contract.js`, `src/commands/checkpoint.js`, `src/commands/init.js`, `src/commands/check-review.js`, `tests/test-workflow-contract-drift.js`
+
 ---
 
 ## System Documentation
