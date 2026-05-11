@@ -34,6 +34,7 @@ function writeFixture() {
     '# Bounded Memory',
     '',
     'Generated working memory gives agents a compact context layer derived from markdown.',
+    'Hyphenated terms like stream-json and agent-runner should be searchable.',
     '',
   ].join('\n'), 'utf-8')
   mkdirSync(join(specdev, 'knowledge', 'architecture', 'nested'), { recursive: true })
@@ -82,6 +83,18 @@ assert(result.status === 0, 'knowledge search exits 0', result.stderr || result.
 assert(result.stdout.includes('Knowledge Search: bounded memory'), 'human search prints heading')
 assert(result.stdout.includes('knowledge/architecture/bounded-memory.md'), 'human search prints matching path')
 assert(result.stdout.includes('Generated working [memory]'), 'human search prints highlighted snippet')
+
+console.log('\nknowledge search hyphenated terms:')
+result = runCmd(['knowledge', 'search', 'stream-json', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'hyphenated knowledge search exits 0', result.stderr || result.stdout)
+assert(result.stdout.includes('bounded-memory.md'), 'hyphenated search returns matching document')
+
+result = runCmd(['knowledge', 'search', 'agent-runner', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'second hyphenated knowledge search exits 0', result.stderr || result.stdout)
+assert(result.stdout.includes('bounded-memory.md'), 'second hyphenated search returns matching document')
+
+result = runCmd(['knowledge', 'search', 'workflow agent-runner', `--target=${TEST_DIR}`])
+assert(result.status === 0, 'mixed hyphenated knowledge search exits 0', result.stderr || result.stdout)
 
 console.log('\nknowledge search --json:')
 result = runCmd(['knowledge', 'search', 'bounded memory', `--target=${TEST_DIR}`, '--json'])

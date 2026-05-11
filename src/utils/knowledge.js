@@ -13,6 +13,13 @@ const INDEXED_MARKDOWN_ROOTS = [
   'skills',
 ]
 
+export function normalizeFtsQuery(query) {
+  return String(query || '')
+    .match(/\S+/g)
+    ?.map(term => `"${term.replace(/"/g, '""')}"`)
+    .join(' ') || ''
+}
+
 export async function buildKnowledgeIndex(specdevPath) {
   const sqlite = await loadSqlite()
   const dbPath = join(specdevPath, 'cache', 'knowledge.sqlite')
@@ -92,7 +99,7 @@ export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
       WHERE documents_fts MATCH ?
       ORDER BY score
       LIMIT ?
-    `).all(query, limit)
+    `).all(normalizeFtsQuery(query), limit)
 
     return rows.map((row) => ({
       path: row.path,
