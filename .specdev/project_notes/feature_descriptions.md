@@ -78,6 +78,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added a reusable workflow feedback note template and updated Knowledge Capture guidance so SpecDev workflow issues accumulate with status, severity, observed assignments, mitigation, and proposed action.
 **Key files:** `templates/.specdev/_templates/workflow_feedback_note.md`, `templates/.specdev/skills/core/knowledge-capture/SKILL.md`, `templates/.specdev/knowledge/_index.md`, `tests/test-init.js`
 
+### Workflow Agents
+**Assignment:** 00018_feature_workflow-agents
+**Completed:** 2026-05-11
+**Description:** Added agents as a first-class workflow primitive and shipped the researcher agent end-to-end through `specdev research`, a generic path-based `agent-runner`, and `specdev agents inspect`.
+**Key files:** `src/utils/agent-runner.js`, `src/commands/research.js`, `src/commands/agents-inspect.js`, `templates/.specdev/agents/researcher/agent.md`, `tests/test-agent-runner.js`, `tests/test-research.js`
+
 ---
 
 ## Architecture & Structure

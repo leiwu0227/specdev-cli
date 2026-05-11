@@ -1,0 +1,5 @@
+# Autocontinue After Reviewloop Approval
+
+SpecDev currently reduces some gate friction by letting `specdev reviewloop <phase> --reviewer=<name>` auto-approve a phase when the external reviewer passes. The remaining friction is that agents still frequently stop after each phase and ask the user to type follow-up commands such as `specdev continue`, `specdev implement`, or another reviewloop command. This breaks the desired interaction model: the user should be deeply involved during brainstorm, then be able to authorize an automated carry-through path once the brainstorm is reviewed.
+
+This discussion proposes adding an explicit `--autocontinue` mode to `specdev reviewloop`. The flagship flow is `specdev reviewloop brainstorm --reviewer=codex --autocontinue`: run brainstorm review, auto-approve on pass, then continue through breakdown, implementation, implementation reviewloop with the same reviewer, knowledge capture, and finalization. The mode should preserve hard gates and pause only when genuine user input is needed.

@@ -1,0 +1,48 @@
+{
+  "plan_file": ".specdev/assignments/00018_feature_workflow-agents/breakdown/plan.md",
+  "total_tasks": 6,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-11T09:06:11Z",
+      "completed_at": "2026-05-11T09:13:05Z",
+      "summary": "Added agent template source, workflow contract path, managed update backfill, dependencies, and focused drift/update tests."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-05-11T09:13:09Z",
+      "completed_at": "2026-05-11T09:18:33Z",
+      "summary": "Added path-based agent runner with YAML/AJV spec validation, prompt transports, subprocess execution, artifact validation, retries, and stream-json sidecar rendering."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-05-11T09:18:49Z",
+      "completed_at": "2026-05-11T09:26:46Z",
+      "summary": "Added host detection, research command, context safety, target-anchored spec resolution, CLI wiring, and research command coverage."
+    },
+    {
+      "number": 4,
+      "status": "completed",
+      "started_at": "2026-05-11T09:56:27Z",
+      "completed_at": "2026-05-11T09:58:40Z",
+      "summary": "Added agents inspect command, dispatcher/help listing, and CLI tests for human/JSON output plus invalid specs."
+    },
+    {
+      "number": 5,
+      "status": "completed",
+      "started_at": "2026-05-11T09:58:44Z",
+      "completed_at": "2026-05-11T10:05:19Z",
+      "summary": "Added agent-runner subsumption pin and wired new agent tests into package scripts; focused checks passed."
+    },
+    {
+      "number": 6,
+      "status": "completed",
+      "started_at": "2026-05-11T10:05:39Z",
+      "completed_at": "2026-05-11T10:33:44Z",
+      "summary": "Ran final status, full npm test, command wiring checks, researcher spec inspection, and reviewloop untouched check; no final product-source fixes needed."
+    }
+  ]
+}

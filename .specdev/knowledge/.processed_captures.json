@@ -15,7 +15,8 @@
     "00013_feature_sqlite-knowledge-retrieval",
     "00016_refactor_distill-workflow",
     "00015_feature_claude-reviewer-observability",
-    "00017_refactor_workflow-architecture"
+    "00017_refactor_workflow-architecture",
+    "00018_feature_workflow-agents"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -33,6 +34,7 @@
     "00013_feature_sqlite-knowledge-retrieval",
     "00016_refactor_distill-workflow",
     "00015_feature_claude-reviewer-observability",
-    "00017_refactor_workflow-architecture"
+    "00017_refactor_workflow-architecture",
+    "00018_feature_workflow-agents"
   ]
 }

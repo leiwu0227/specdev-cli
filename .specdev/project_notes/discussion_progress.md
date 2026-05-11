@@ -20,7 +20,8 @@ Below is a list of discussions and their status.
 
 | # | Discussion Name | Status | Created Date | Promoted To | Notes |
 |---|----------------|--------|--------------|-------------|-------|
-| D00002 | Autocontinue after reviewloop approval | Complete | 2026-05-08 | - | Proposes `specdev reviewloop <phase> --reviewer=<name> --autocontinue` to carry reviewed brainstorms through implementation and capture. |
+| D00002 | Autocontinue after reviewloop approval | Promoted | 2026-05-08 | 00019_feature_autocontinue-reviewloop | Proposes `specdev reviewloop <phase> --reviewer=<name> --autocontinue` to carry reviewed brainstorms through implementation and capture. |
+| D00003 | Workflow bugs | Complete | 2026-05-11 | - | Six bugs: (1) `--autocontinue` punts on needs-changes instead of auto-revising; (2) end-of-phase multiple-choice presentation inconsistent — two sources of truth; (3) `knowledge search` AND-default fails on natural-language queries, plus `_main.md`/`_index.md` and three folders unindexed; (4) `KNOWLEDGE_BRANCHES` constant duplicated in 4 files with divergent values; (5) `--autocontinue` on discussion review silently ignored on needs-changes; (6) `state.js` "Invoke X skill" wording misleads agent into looking for a slash-skill that doesn't exist. |
 
 ---
 

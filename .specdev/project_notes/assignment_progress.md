@@ -39,6 +39,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00015 | claude-reviewer-observability | Done | 2026-05-10 | Added reviewloop heartbeats, richer reviewer logs, timeout cleanup, strict stdout salvage, and Claude stream-json progress |
 | 00016 | distill-workflow | Done | 2026-05-10 | Added structured workflow feedback note template and accumulation guidance |
 | 00017 | workflow-architecture | Done | 2026-05-11 | Centralized workflow facts in a contract module and added drift coverage |
+| 00018 | workflow-agents | Done | 2026-05-11 | Added first-class workflow agents, researcher command, agent-runner, and agent inspect |
 
 ---
 
