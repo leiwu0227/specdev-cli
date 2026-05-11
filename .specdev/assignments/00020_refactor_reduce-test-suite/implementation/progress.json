@@ -1,0 +1,27 @@
+{
+  "plan_file": ".specdev/assignments/00020_refactor_reduce-test-suite/breakdown/plan.md",
+  "total_tasks": 3,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-11T14:36:06Z",
+      "completed_at": "2026-05-11T14:36:47Z",
+      "summary": "Reduced package test scripts and deleted redundant top-level test files."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-05-11T14:36:56Z",
+      "completed_at": "2026-05-11T14:40:47Z",
+      "summary": "Created merged workflow-agent smoke coverage and added memory/distill basics to knowledge test."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-05-11T14:41:00Z",
+      "completed_at": "2026-05-11T14:53:55Z",
+      "summary": "Trimmed reviewloop command coverage, verified reduced npm test, and confirmed 9 top-level test files remain."
+    }
+  ]
+}

@@ -57,7 +57,7 @@ hooks/                  Platform hooks (SessionStart for Claude Code)
 
 ## Conventions and constraints
 
-- **Testing:** Plain Node.js test files (no test framework). Each test file uses a simple `assert(condition, msg)` pattern with pass/fail counters. Tests create isolated directories, run CLI commands via `spawnSync`, and clean up.
+- **Testing:** Plain Node.js test files (no test framework). The maintained suite is a compact command-level smoke/regression suite, not one file per source module. It focuses on user-blocking workflows such as init/update, assignment state, gates, reviewloop, workflow agents, and knowledge capture. Tests create isolated directories, run CLI commands via `spawnSync`, and clean up.
 - **No TypeScript, no transpilation** — pure ESM JavaScript
 - **Skills have YAML frontmatter** with `name`, `type`, `phase`, `triggers` fields
 - **Phase gates are hard** — `specdev approve <phase>` is required to proceed; agents cannot skip

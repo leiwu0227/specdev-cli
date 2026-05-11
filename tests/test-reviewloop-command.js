@@ -1,4 +1,4 @@
-import { existsSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
 const TEST_DIR = join(__dirname, 'test-reviewloop-command-output')
+const ASSIGNMENT = '00001_feature_test'
 
 let failures = 0
 let passes = 0
@@ -22,17 +23,10 @@ function assert(condition, msg, detail = '') {
 }
 
 function cleanup() {
-  if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true })
+  rmSync(TEST_DIR, { recursive: true, force: true })
 }
 
-function runCmd(args) {
-  return spawnSync('node', [CLI, ...args], {
-    encoding: 'utf-8',
-    timeout: 30000,
-  })
-}
-
-function runCmdWithEnv(args, env) {
+function runCmd(args, env = {}) {
   return spawnSync('node', [CLI, ...args], {
     encoding: 'utf-8',
     timeout: 30000,
@@ -41,13 +35,13 @@ function runCmdWithEnv(args, env) {
 }
 
 function initProject() {
-  runCmd(['init', `--target=${TEST_DIR}`])
+  const result = runCmd(['init', `--target=${TEST_DIR}`])
+  assert(result.status === 0, 'init succeeds', result.stderr || result.stdout)
 }
 
 function fillBigPicture() {
-  const path = join(TEST_DIR, '.specdev', 'project_notes', 'big_picture.md')
   writeFileSync(
-    path,
+    join(TEST_DIR, '.specdev', 'project_notes', 'big_picture.md'),
     [
       '# Project Big Picture',
       '',
@@ -67,1230 +61,211 @@ function fillBigPicture() {
       'No completion claims without evidence.',
       '',
     ].join('\n'),
-    'utf-8',
   )
 }
 
-function createAssignment(name) {
+function createAssignment(name = ASSIGNMENT) {
   const root = join(TEST_DIR, '.specdev', 'assignments', name)
-  mkdirSync(root, { recursive: true })
   mkdirSync(join(root, 'brainstorm'), { recursive: true })
-  writeFileSync(
-    join(root, 'brainstorm', 'proposal.md'),
-    '# Proposal\n\nA sufficiently long proposal text for validation.',
-  )
-  writeFileSync(
-    join(root, 'brainstorm', 'design.md'),
-    '# Design\n\nA sufficiently long design text for validation purposes.',
-  )
+  writeFileSync(join(root, 'brainstorm', 'proposal.md'), '# Proposal\n\nA valid proposal.\n')
+  writeFileSync(join(root, 'brainstorm', 'design.md'), '# Design\n\nA valid design.\n')
+  writeFileSync(join(TEST_DIR, '.specdev', '.current'), `${name}\n`)
   return root
 }
 
+function setupProject() {
+  cleanup()
+  initProject()
+  fillBigPicture()
+  return createAssignment()
+}
+
+function reviewerPath(name) {
+  return join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', `${name}.json`)
+}
+
 function setupReviewer(name, config) {
-  const dir = join(
-    TEST_DIR,
-    '.specdev',
-    'skills',
-    'core',
-    'reviewloop',
-    'reviewers',
-  )
+  const dir = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers')
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, `${name}.json`), JSON.stringify(config, null, 2))
+  writeFileSync(reviewerPath(name), JSON.stringify({ name, ...config }, null, 2))
 }
 
-function writeFeedback(assignmentRoot, phase, content) {
+function feedbackRel(phase, reviewer = null) {
+  const suffix = reviewer ? `-${reviewer}` : ''
+  return `.specdev/assignments/${ASSIGNMENT}/review/${phase}-feedback${suffix}.md`
+}
+
+function writeFeedback(assignmentRoot, phase, content, reviewer = null) {
+  const suffix = reviewer ? `-${reviewer}` : ''
   const dir = join(assignmentRoot, 'review')
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, `${phase}-feedback.md`), content, 'utf-8')
+  writeFileSync(join(dir, `${phase}-feedback${suffix}.md`), content)
 }
 
-function writeChangelog(assignmentRoot, phase, content) {
+function writeChangelog(assignmentRoot, phase, content, reviewer = null) {
+  const suffix = reviewer ? `-${reviewer}` : ''
   const dir = join(assignmentRoot, 'review')
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, `${phase}-changelog.md`), content, 'utf-8')
+  writeFileSync(join(dir, `${phase}-changelog${suffix}.md`), content)
 }
 
-const ASSIGNMENT_NAME = '00001_feature_test'
-
-function setCurrent(assignmentName) {
-  const currentPath = join(TEST_DIR, '.specdev', '.current')
-  writeFileSync(currentPath, assignmentName, 'utf-8')
+function approvedCommand(path, round = 1) {
+  return `printf '## Round ${round}\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${path}"`
 }
 
-// =====================================================================
-// Arg handling tests
-// =====================================================================
+function needsChangesCommand(path, round = 1) {
+  return `printf '## Round ${round}\\n\\n**Verdict:** needs-changes\\n\\n### Findings\\n1. [F${round}.1] Fix this\\n' >> "${path}"`
+}
 
-cleanup()
-initProject()
-fillBigPicture()
-
-console.log('\nreviewloop (no phase):')
+console.log('\nreviewloop argument handling:')
+setupProject()
 let result = runCmd(['reviewloop', `--target=${TEST_DIR}`])
-assert(result.status === 1, 'exits 1 without phase arg')
-assert(
-  result.stderr.includes('Missing required phase argument'),
-  'error mentions missing phase',
-)
-
-console.log('\nreviewloop (invalid phase):')
+assert(result.status === 1, 'missing phase exits 1')
+assert(result.stderr.includes('Missing required phase argument'), 'missing phase error is clear')
 result = runCmd(['reviewloop', 'bogus', `--target=${TEST_DIR}`])
-assert(result.status === 1, 'exits 1 for invalid phase')
-assert(
-  result.stderr.includes('Unknown reviewloop phase'),
-  'error mentions unknown phase',
-)
+assert(result.status === 1, 'invalid phase exits 1')
+assert(result.stderr.includes('Unknown reviewloop phase'), 'invalid phase error is clear')
 
-// =====================================================================
-// Reviewer listing (no --reviewer flag)
-// =====================================================================
+console.log('\nreviewloop reviewer listing:')
+setupProject()
+setupReviewer('codex', { command: 'echo ok', max_rounds: 3 })
+setupReviewer('local', { command: 'echo ok', max_rounds: 2 })
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`])
+let output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'listing exits 0')
+assert(output.includes('Available reviewers:'), 'listing prints header')
+assert(output.includes('codex') && output.includes('local'), 'listing prints configured reviewers')
+assert(output.includes('--autocontinue'), 'listing prints autocontinue command')
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--json'])
+const listing = JSON.parse(result.stdout)
+assert(listing.status === 'ok', 'json listing status is ok')
+assert(listing.reviewers.includes('codex'), 'json listing includes reviewer')
 
-cleanup()
-initProject()
-fillBigPicture()
-const a1 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-
-console.log('\nreviewloop listing (no reviewers):')
-// Remove default reviewers
-const reviewersDir = join(
-  TEST_DIR,
-  '.specdev',
-  'skills',
-  'core',
-  'reviewloop',
-  'reviewers',
-)
-if (existsSync(reviewersDir)) rmSync(reviewersDir, { recursive: true, force: true })
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-])
-assert(result.status === 1, 'exits 1 when no reviewers found')
-assert(
-  result.stderr.includes('No reviewer configs found'),
-  'error mentions no reviewer configs',
-)
-
-console.log('\nreviewloop listing (with reviewers):')
-setupReviewer('codex', { name: 'codex', command: 'echo hello', max_rounds: 3 })
-setupReviewer('local', { name: 'local', command: 'echo hi', max_rounds: 2 })
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-])
-const listOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'exits 0 when listing reviewers')
-assert(
-  listOutput.includes('Available reviewers:'),
-  'prints available reviewers header',
-)
-assert(listOutput.includes('codex'), 'lists codex reviewer')
-assert(listOutput.includes('local'), 'lists local reviewer')
-assert(
-  listOutput.includes('Ask reviewer type as a multiple-choice question:'),
-  'prints multiple-choice prompt',
-)
-assert(
-  listOutput.includes('Use one choice per reviewer config; do not ask for free-form reviewer text.'),
-  'tells agent not to ask free-form reviewer text',
-)
-assert(
-  listOutput.includes('1. codex'),
-  'prints first reviewer as numbered choice',
-)
-assert(
-  listOutput.includes('2. local'),
-  'prints second reviewer as numbered choice',
-)
-assert(
-  listOutput.includes('Review, then continue if approved: specdev reviewloop brainstorm --reviewer=<name> --autocontinue'),
-  'prints autocontinue command template',
-)
-assert(
-  listOutput.includes('Review only: specdev reviewloop brainstorm --reviewer=<name>'),
-  'prints review-only command template',
-)
-
-console.log('\nreviewloop listing --json:')
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--json',
-])
-assert(result.status === 0, 'json listing exits 0 when reviewers exist')
-let reviewerListJson = null
-try {
-  reviewerListJson = JSON.parse(result.stdout)
-  assert(true, 'json listing stdout is valid JSON')
-} catch {
-  assert(false, 'json listing stdout is valid JSON', result.stdout)
-}
-assert(reviewerListJson?.command === 'reviewloop', 'json listing command is reviewloop')
-assert(reviewerListJson?.status === 'ok', 'json listing status is ok')
-assert(reviewerListJson?.phase === 'brainstorm', 'json listing includes phase')
-assert(reviewerListJson?.reviewers?.includes('codex'), 'json listing includes codex reviewer')
-
-// =====================================================================
-// Cursor in default reviewer listing after init
-// =====================================================================
-
-console.log('\nreviewloop listing (cursor in defaults after init):')
-cleanup()
-initProject()
-fillBigPicture()
-createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-])
-const cursorListOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'exits 0 when listing default reviewers')
-assert(cursorListOutput.includes('cursor'), 'cursor appears in default reviewer list')
-assert(cursorListOutput.includes('codex'), 'codex still appears in default reviewer list')
-
-// =====================================================================
-// Reviewer config validation
-// =====================================================================
-
-console.log('\nreviewloop (unknown reviewer):')
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=nonexistent',
-])
-assert(result.status === 1, 'exits 1 for unknown reviewer')
-assert(
-  result.stderr.includes('Reviewer config not found'),
-  'error mentions config not found',
-)
-
-console.log('\nreviewloop (invalid reviewer names):')
-cleanup()
-initProject()
-fillBigPicture()
-const invalidNameAssignment = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-for (const invalidName of ['../foo', 'foo/bar', 'foo bar', ',claude']) {
-  result = runCmd([
-    'reviewloop',
-    'brainstorm',
-    `--target=${TEST_DIR}`,
-    `--reviewer=${invalidName}`,
-  ])
-  const invalidOutput = `${result.stdout}\n${result.stderr}`
-  assert(result.status === 1, `exits 1 for invalid reviewer ${invalidName}`)
-  assert(
-    invalidOutput.includes('Invalid reviewer name'),
-    `invalid reviewer ${invalidName} reports validation error`,
-    invalidOutput,
-  )
-}
-assert(
-  !existsSync(join(invalidNameAssignment, 'review')),
-  'invalid reviewer names do not create review artifacts',
-)
-
-console.log('\nreviewloop (valid reviewer name passes validation):')
-setupReviewer('claude', {
-  name: 'claude',
-  command: 'echo "mock reviewer"',
-  max_rounds: 3,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=claude',
-  '--preflight',
-  '--json',
-])
-assert(result.status === 0, 'valid claude reviewer name passes validation', result.stderr)
-const validReviewerPreflight = JSON.parse(result.stdout)
-assert(validReviewerPreflight.reviewers[0].name === 'claude', 'valid reviewer name is preserved')
-
-console.log('\nreviewloop (missing command field):')
-setupReviewer('no-cmd', { name: 'no-cmd', max_rounds: 3 })
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=no-cmd',
-])
-assert(result.status === 1, 'exits 1 when command field missing')
-assert(
-  result.stderr.includes("missing required field 'command'"),
-  'error mentions missing command field',
-)
-
-console.log('\nreviewloop preflight (valid reviewer):')
-cleanup()
-initProject()
-fillBigPicture()
-const pfAssignment = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('preflight-ok', {
-  name: 'preflight-ok',
-  command: 'node --version',
-  max_rounds: 3,
-  timeout_seconds: 30,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=preflight-ok',
-  '--preflight',
-  '--json',
-])
-assert(result.status === 0, 'preflight exits 0 for valid reviewer', result.stderr)
-let preflight = JSON.parse(result.stdout)
-assert(preflight.status === 'pass', 'preflight JSON status is pass')
-assert(preflight.reviewers[0].name === 'preflight-ok', 'preflight names reviewer')
-assert(preflight.reviewers[0].command.status === 'pass', 'preflight command passes')
-assert(preflight.reviewers[0].binary.found === true, 'preflight finds node binary')
-assert(!existsSync(join(pfAssignment, 'review', 'brainstorm-feedback.md')), 'preflight does not run reviewer command')
-
-console.log('\nreviewloop preflight (missing command):')
-setupReviewer('preflight-missing-command', { name: 'preflight-missing-command' })
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=preflight-missing-command',
-  '--preflight',
-  '--json',
-])
+console.log('\nreviewloop preflight blocks invalid reviewer:')
+const preflightAssignment = setupProject()
+setupReviewer('missing-command', { max_rounds: 3 })
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=missing-command', '--preflight', '--json'])
+const preflight = JSON.parse(result.stdout)
 assert(result.status === 1, 'preflight exits 1 for missing command')
-preflight = JSON.parse(result.stdout)
-assert(preflight.status === 'fail', 'preflight JSON status is fail')
-assert(preflight.reviewers[0].issues.some((i) => i.code === 'missing_command'), 'preflight reports missing_command')
+assert(preflight.reviewers[0].issues.some((issue) => issue.code === 'missing_command'), 'preflight reports missing command')
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=missing-command'])
+output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 1, 'normal run exits 1 when preflight blocks')
+assert(output.includes('Reviewer preflight failed'), 'normal run prints preflight failure')
+assert(!existsSync(join(preflightAssignment, 'review', 'brainstorm-feedback.md')), 'blocked preflight does not run reviewer')
 
-console.log('\nreviewloop preflight blocks normal execution:')
-cleanup()
-initProject()
-fillBigPicture()
-const pfBlockAssignment = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('preflight-block', { name: 'preflight-block' })
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=preflight-block',
-])
-assert(result.status === 1, 'normal reviewloop exits 1 when preflight blocks')
-const pfBlockOutput = `${result.stdout}\n${result.stderr}`
-assert(pfBlockOutput.includes('Reviewer preflight failed'), 'normal reviewloop prints preflight failure')
-assert(!existsSync(join(pfBlockAssignment, 'review', 'brainstorm-feedback.md')), 'blocked preflight does not run reviewer')
+console.log('\nreviewloop stale feedback guard:')
+const staleAssignment = setupProject()
+setupReviewer('mock', { command: 'echo mock', max_rounds: 3 })
+writeFeedback(staleAssignment, 'brainstorm', '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix X\n')
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=mock'])
+assert(result.status === 1, 'unaddressed findings exit 1')
+assert(result.stderr.includes('Previous review findings have not been addressed'), 'stale guard message is clear')
+writeChangelog(staleAssignment, 'brainstorm', '## Round 1\n\n- Fixed X\n')
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=mock'])
+output = `${result.stdout}\n${result.stderr}`
+assert(!output.includes('Previous review findings have not been addressed'), 'changelog bypasses stale guard')
+assert(output.includes('expected ## Round 2'), 'next missing round error remains explicit')
 
-// =====================================================================
-// Stale feedback guard
-// =====================================================================
+console.log('\nreviewloop approved verdict and autocontinue:')
+const approvedAssignment = setupProject()
+setupReviewer('pass-mock', { command: approvedCommand(feedbackRel('brainstorm')), max_rounds: 3 })
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=pass-mock', '--autocontinue'])
+output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'approved review exits 0', result.stderr)
+assert(output.includes("Phase 'brainstorm' has been approved"), 'brainstorm gate is approved')
+assert(output.includes('Autocontinue requested'), 'autocontinue section is printed')
+assert(output.includes('"mode": "autocontinue"'), 'autocontinue contract is printed')
+const approvedStatus = JSON.parse(readFileSync(join(approvedAssignment, 'status.json'), 'utf-8'))
+assert(approvedStatus.brainstorm_approved === true, 'status marks brainstorm approved')
 
-console.log('\nreviewloop (stale feedback guard):')
-cleanup()
-initProject()
-fillBigPicture()
-const a2 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('mock', {
-  name: 'mock',
-  command: 'echo "mock reviewer"',
-  max_rounds: 3,
-})
-// Write feedback with needs-changes but no matching changelog
-writeFeedback(
-  a2,
-  'brainstorm',
-  '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix X\n',
-)
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
+console.log('\nreviewloop needs-changes verdict:')
+setupProject()
+setupReviewer('needs-work', { command: needsChangesCommand(feedbackRel('brainstorm')), max_rounds: 3 })
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=needs-work'])
+output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'needs-changes exits 0 before max rounds')
+assert(output.includes('Run specdev check-review to address findings'), 'needs-changes prints check-review instruction')
 
-  '--reviewer=mock',
-])
-assert(result.status === 1, 'exits 1 when findings unaddressed')
-assert(
-  result.stderr.includes(
-    'Previous review findings have not been addressed',
-  ),
-  'error mentions unaddressed findings',
-)
-
-console.log('\nreviewloop (stale guard passes with changelog):')
-writeChangelog(a2, 'brainstorm', '## Round 1\n\n### Changes\n- Fixed X\n')
-// Now it should not hit the stale guard (but will run the reviewer)
-// The mock reviewer won't write feedback, so it will fail at the round validation step
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=mock',
-])
-// Should NOT fail with the stale guard message
-const staleOutput = `${result.stdout}\n${result.stderr}`
-assert(
-  !staleOutput.includes('Previous review findings have not been addressed'),
-  'stale guard passes when changelog matches',
-)
-assert(
-  staleOutput.includes('expected ## Round 2'),
-  'missing next-round verdict error is explicit',
-  staleOutput,
-)
-
-// =====================================================================
-// Max rounds enforcement
-// =====================================================================
-
-console.log('\nreviewloop (max rounds):')
-cleanup()
-initProject()
-fillBigPicture()
-const a3 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('mock', {
-  name: 'mock',
-  command: 'echo "mock reviewer"',
-  max_rounds: 2,
-})
-// Write 2 rounds of feedback (both addressed)
-writeFeedback(
-  a3,
-  'brainstorm',
-  [
-    '## Round 1',
-    '',
-    '**Verdict:** needs-changes',
-    '',
-    '### Findings',
-    '1. [F1.1] Fix X',
-    '',
-    '## Round 2',
-    '',
-    '**Verdict:** needs-changes',
-    '',
-    '### Findings',
-    '1. [F2.1] Fix Y',
-  ].join('\n'),
-)
-writeChangelog(a3, 'brainstorm', '## Round 1\n\n- Fixed X\n\n## Round 2\n\n- Fixed Y\n')
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=mock',
-])
-assert(result.status === 1, 'exits 1 when max rounds reached')
-assert(
-  result.stderr.includes('Max rounds reached'),
-  'error mentions max rounds',
-)
-
-// =====================================================================
-// Mock reviewer: pass verdict with auto-approve
-// =====================================================================
-
-console.log('\nreviewloop (pass verdict with mock reviewer):')
-cleanup()
-initProject()
-fillBigPicture()
-const a4 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-const reviewDirPath = join(a4, 'review')
-mkdirSync(reviewDirPath, { recursive: true })
-
-// Create a mock reviewer that writes an approved round to review-feedback.md
-// The reviewer command will be run with cwd=targetDir
-const feedbackRelPath = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
-setupReviewer('pass-mock', {
-  name: 'pass-mock',
-  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPath}"`,
-  max_rounds: 3,
-})
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=pass-mock',
-])
-const passOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'exits 0 for approved verdict', result.stderr)
-assert(
-  passOutput.includes('Review approved'),
-  'prints approval message',
-  passOutput,
-)
-assert(
-  passOutput.includes("Phase 'brainstorm' has been approved"),
-  'prints phase approved',
-  passOutput,
-)
-assert(!passOutput.includes('Autocontinue requested'), 'reviewloop without autocontinue does not print autocontinue section')
-
-// Verify status.json was updated
-const statusPath = join(a4, 'status.json')
-if (existsSync(statusPath)) {
-  const status = JSON.parse(readFileSync(statusPath, 'utf-8'))
-  assert(
-    status.brainstorm_approved === true,
-    'status.json has brainstorm_approved=true',
-  )
-} else {
-  assert(false, 'status.json was created by approvePhase')
+console.log('\nreviewloop timeout and log capture:')
+const timeoutAssignment = setupProject()
+setupReviewer('slow', { command: 'sleep 5', max_rounds: 3, timeout_seconds: 30 })
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=slow'], { SPECDEV_REVIEWER_TIMEOUT: '1' })
+output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 1, 'timeout exits 1')
+assert(output.includes('Reviewer timed out after 1s'), 'timeout uses env override')
+const timeoutLog = join(timeoutAssignment, 'review', 'brainstorm-reviewer-slow-round-1.log')
+assert(existsSync(timeoutLog), 'timeout log is written')
+if (existsSync(timeoutLog)) {
+  assert(readFileSync(timeoutLog, 'utf-8').includes('Timed out:  true'), 'timeout log records timeout')
 }
 
-console.log('\nreviewloop (brainstorm autocontinue approved):')
-cleanup()
-initProject()
-fillBigPicture()
-const aAutocontinueBrainstorm = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(aAutocontinueBrainstorm, 'review'), { recursive: true })
-const feedbackRelPathAutoBrainstorm = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
-setupReviewer('autocontinue-brainstorm-mock', {
-  name: 'autocontinue-brainstorm-mock',
-  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPathAutoBrainstorm}"`,
-  max_rounds: 3,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=autocontinue-brainstorm-mock',
-  '--autocontinue',
-])
-const autocontinueBrainstormOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'brainstorm autocontinue exits 0 for approved verdict', result.stderr)
-assert(autocontinueBrainstormOutput.includes('Autocontinue requested'), 'brainstorm autocontinue prints autocontinue section')
-assert(autocontinueBrainstormOutput.includes('Continue immediately to breakdown and implementation'), 'brainstorm autocontinue tells agent to continue to breakdown and implementation')
-assert(autocontinueBrainstormOutput.includes('specdev reviewloop implementation --reviewer=autocontinue-brainstorm-mock --autocontinue'), 'brainstorm autocontinue preserves reviewer for implementation review')
-assert(autocontinueBrainstormOutput.includes('"mode": "autocontinue"'), 'brainstorm autocontinue prints a JSON continuation contract')
-assert(autocontinueBrainstormOutput.includes('"next_phase": "breakdown"'), 'brainstorm autocontinue contract names breakdown as next phase')
-assert(autocontinueBrainstormOutput.includes('"implementation_reviewer": "autocontinue-brainstorm-mock"'), 'brainstorm autocontinue contract stores reviewer')
-
-console.log('\nreviewloop (implementation autocontinue approved):')
-cleanup()
-initProject()
-fillBigPicture()
-const aAutocontinueImplementation = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(aAutocontinueImplementation, 'implementation'), { recursive: true })
-mkdirSync(join(aAutocontinueImplementation, 'review'), { recursive: true })
-writeFileSync(join(aAutocontinueImplementation, 'status.json'), JSON.stringify({ brainstorm_approved: true }), 'utf-8')
-writeFileSync(join(aAutocontinueImplementation, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ status: 'completed' }] }), 'utf-8')
-const feedbackRelPathAutoImplementation = `.specdev/assignments/${ASSIGNMENT_NAME}/review/implementation-feedback.md`
-setupReviewer('autocontinue-implementation-mock', {
-  name: 'autocontinue-implementation-mock',
-  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPathAutoImplementation}"`,
-  max_rounds: 3,
-})
-result = runCmd([
-  'reviewloop',
-  'implementation',
-  `--target=${TEST_DIR}`,
-  '--reviewer=autocontinue-implementation-mock',
-  '--autocontinue',
-])
-const autocontinueImplementationOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'implementation autocontinue exits 0 for approved verdict', result.stderr)
-assert(autocontinueImplementationOutput.includes('Autocontinue requested'), 'implementation autocontinue prints autocontinue section')
-assert(autocontinueImplementationOutput.includes('Continue immediately to summary and knowledge capture'), 'implementation autocontinue tells agent to continue to capture')
-assert(autocontinueImplementationOutput.includes('"next_phase": "capture"'), 'implementation autocontinue contract names capture as next phase')
-
-// =====================================================================
-// Mock reviewer: needs-changes verdict (not at max rounds)
-// =====================================================================
-
-console.log('\nreviewloop (needs-changes verdict):')
-cleanup()
-initProject()
-fillBigPicture()
-const a5 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(a5, 'review'), { recursive: true })
-
-const feedbackRelPath2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
-setupReviewer('fail-mock', {
-  name: 'fail-mock',
-  command: `printf '## Round 1\\n\\n**Verdict:** needs-changes\\n\\n### Findings\\n1. [F1.1] Missing tests\\n' >> "${feedbackRelPath2}"`,
-  max_rounds: 3,
-})
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=fail-mock',
-])
-const failOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'exits 0 for needs-changes (not at max)', result.stderr)
-assert(
-  failOutput.includes('Run specdev check-review to address findings'),
-  'prints check-review instruction',
-  failOutput,
-)
-
-// =====================================================================
-// Mock reviewer: needs-changes at max rounds
-// =====================================================================
-
-console.log('\nreviewloop (needs-changes at max rounds):')
-cleanup()
-initProject()
-fillBigPicture()
-const a6 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(a6, 'review'), { recursive: true })
-
-// Pre-populate with round 1 that was addressed
-writeFeedback(
-  a6,
-  'brainstorm',
-  '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix X\n',
-)
-writeChangelog(a6, 'brainstorm', '## Round 1\n\n- Fixed X\n')
-
-const feedbackRelPath3 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
-setupReviewer('fail-mock-2', {
-  name: 'fail-mock-2',
-  command: `printf '\\n## Round 2\\n\\n**Verdict:** needs-changes\\n\\n### Findings\\n1. [F2.1] Still broken\\n' >> "${feedbackRelPath3}"`,
-  max_rounds: 2,
-})
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=fail-mock-2',
-])
-const maxOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'exits 0 for needs-changes at max rounds', result.stderr)
-assert(
-  maxOutput.includes('Max rounds reached. Escalating to user.'),
-  'prints escalation message',
-  maxOutput,
-)
-
-// =====================================================================
-// Mock reviewer: command failure
-// =====================================================================
-
-console.log('\nreviewloop (reviewer command failure):')
-cleanup()
-initProject()
-fillBigPicture()
-const a7 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('bad-cmd', {
-  name: 'bad-cmd',
-  command: 'exit 1',
-  max_rounds: 3,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=bad-cmd',
-])
-assert(result.status === 1, 'exits 1 when reviewer command fails')
-assert(
-  result.stderr.includes('Reviewer exited with code'),
-  'error mentions reviewer exit code',
-)
-assert(
-  result.stderr.includes('Reviewer log:'),
-  'command failure prints reviewer log path',
-)
-
-// =====================================================================
-// Mock reviewer: timeout
-// =====================================================================
-
-console.log('\nreviewloop (reviewer timeout):')
-cleanup()
-initProject()
-fillBigPicture()
-createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('slow-cmd', {
-  name: 'slow-cmd',
-  command: 'sleep 5',
-  max_rounds: 3,
-  timeout_seconds: 0.01,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=slow-cmd',
-])
-assert(result.status === 1, 'exits 1 when reviewer times out')
-assert(
-  result.stderr.includes('Reviewer timed out after'),
-  'error mentions reviewer timeout',
-)
-assert(
-  result.stderr.includes('Reviewer log:'),
-  'timeout prints reviewer log path',
-)
-
-console.log('\nreviewloop (timeout env override):')
-cleanup()
-initProject()
-fillBigPicture()
-const aTimeoutOverride = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('timeout-env', {
-  name: 'timeout-env',
-  command: 'sleep 5',
-  max_rounds: 3,
-  timeout_seconds: 30,
-})
-result = runCmdWithEnv([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=timeout-env',
-], { SPECDEV_REVIEWER_TIMEOUT: '1' })
-const timeoutOverrideLogPath = join(aTimeoutOverride, 'review', 'brainstorm-reviewer-timeout-env-round-1.log')
-assert(result.status === 1, 'timeout override exits 1 after env timeout')
-assert(result.stderr.includes('Reviewer timed out after 1s'), 'timeout override uses env seconds')
-if (existsSync(timeoutOverrideLogPath)) {
-  const timeoutOverrideLog = readFileSync(timeoutOverrideLogPath, 'utf-8')
-  assert(timeoutOverrideLog.includes('Timed out:  true'), 'timeout footer records timed out true')
-} else {
-  assert(false, 'timeout override log file exists')
-}
-
-// =====================================================================
-// Mock reviewer: stdout/stderr log capture
-// =====================================================================
-
-console.log('\nreviewloop (reviewer log capture):')
-cleanup()
-initProject()
-fillBigPicture()
-const aLog = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(aLog, 'review'), { recursive: true })
-const feedbackRelLog = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
+console.log('\nreviewloop reviewer log capture:')
+const logAssignment = setupProject()
 setupReviewer('log-mock', {
-  name: 'log-mock',
-  command: `echo stdout-line && echo stderr-line >&2 && printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelLog}"`,
+  command: `echo stdout-line && echo stderr-line >&2 && ${approvedCommand(feedbackRel('brainstorm'))}`,
   max_rounds: 3,
 })
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=log-mock'])
+assert(result.status === 0, 'log mock exits 0', result.stderr)
+const logPath = join(logAssignment, 'review', 'brainstorm-reviewer-log-mock-round-1.log')
+assert(result.stdout.includes(`Reviewer log: ${logPath}`), 'reviewer log path is printed')
+const logText = existsSync(logPath) ? readFileSync(logPath, 'utf-8') : ''
+assert(logText.includes('stdout-line'), 'reviewer log captures stdout')
+assert(logText.includes('stderr-line'), 'reviewer log captures stderr')
+assert(logText.includes('Verdict:    approved'), 'reviewer log records verdict')
 
-  '--reviewer=log-mock',
-])
-assert(result.status === 0, 'exits 0 for log-mock reviewer', result.stderr)
-const reviewerLogPath = join(aLog, 'review', 'brainstorm-reviewer-log-mock-round-1.log')
-assert(
-  result.stdout.includes(`Reviewer log: ${reviewerLogPath}`),
-  'prints reviewer log path before reviewer finishes',
-)
-assert(existsSync(reviewerLogPath), 'reviewer log file exists')
-if (existsSync(reviewerLogPath)) {
-  const reviewerLog = readFileSync(reviewerLogPath, 'utf-8')
-  assert(reviewerLog.includes('stdout-line'), 'reviewer log captures stdout')
-  assert(reviewerLog.includes('stderr-line'), 'reviewer log captures stderr')
-  assert(reviewerLog.includes('Started:'), 'reviewer log includes started timestamp')
-  assert(reviewerLog.includes('Timeout:'), 'reviewer log includes timeout')
-  assert(reviewerLog.includes('Command:'), 'reviewer log includes command')
-  assert(reviewerLog.includes('SPECDEV_PHASE=brainstorm'), 'reviewer log includes SPECDEV_PHASE')
-  assert(reviewerLog.includes('SPECDEV_FEEDBACK_FILE='), 'reviewer log includes feedback env')
-  assert(reviewerLog.includes('Ended:'), 'reviewer log includes ended timestamp')
-  assert(reviewerLog.includes('Elapsed:'), 'reviewer log includes elapsed time')
-  assert(reviewerLog.includes('Exit code:'), 'reviewer log includes exit code')
-  assert(reviewerLog.includes('Timed out:  false'), 'reviewer log includes timed out false')
-  assert(reviewerLog.includes('Verdict:    approved'), 'reviewer log includes approved verdict')
-}
-
-// =====================================================================
-// Mock reviewer: stdout salvage
-// =====================================================================
-
-console.log('\nreviewloop (stdout salvage success):')
-cleanup()
-initProject()
-fillBigPicture()
-const aSalvage = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('salvage-mock', {
-  name: 'salvage-mock',
-  command: `printf 'preface\\n## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n'`,
+console.log('\nreviewloop stdout salvage:')
+const salvageAssignment = setupProject()
+setupReviewer('salvage', {
+  command: "printf 'preface\\n## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n'",
   max_rounds: 3,
 })
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=salvage-mock',
-])
-const salvageFeedbackPath = join(aSalvage, 'review', 'brainstorm-feedback.md')
-const salvageLogPath = join(aSalvage, 'review', 'brainstorm-reviewer-salvage-mock-round-1.log')
-assert(result.status === 0, 'exits 0 when stdout feedback is salvaged', result.stderr)
-if (existsSync(salvageFeedbackPath)) {
-  const salvageFeedback = readFileSync(salvageFeedbackPath, 'utf-8')
-  assert(salvageFeedback.includes('salvaged from stdout'), 'salvage marker is written')
-  assert(salvageFeedback.includes('## Round 1'), 'salvaged feedback includes expected round')
-} else {
-  assert(false, 'salvage feedback file exists')
-}
-if (existsSync(salvageLogPath)) {
-  const salvageLog = readFileSync(salvageLogPath, 'utf-8')
-  assert(salvageLog.includes('Verdict:    salvaged:approved'), 'salvage footer records salvaged verdict')
-} else {
-  assert(false, 'salvage log file exists')
-}
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=salvage'])
+assert(result.status === 0, 'stdout feedback is salvaged', result.stderr)
+const salvageFeedback = join(salvageAssignment, 'review', 'brainstorm-feedback.md')
+const salvageText = existsSync(salvageFeedback) ? readFileSync(salvageFeedback, 'utf-8') : ''
+assert(salvageText.includes('salvaged from stdout'), 'salvage marker is written')
+assert(salvageText.includes('## Round 1'), 'salvaged feedback contains round')
 
-console.log('\nreviewloop (stdout salvage success after prior round):')
-cleanup()
-initProject()
-fillBigPicture()
-const aSalvageRound2 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(aSalvageRound2, 'review'), { recursive: true })
-writeFeedback(
-  aSalvageRound2,
-  'brainstorm',
-  '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] First issue\n',
-)
-writeChangelog(aSalvageRound2, 'brainstorm', '## Round 1\n\n- Fixed first issue\n')
-setupReviewer('salvage-round2-mock', {
-  name: 'salvage-round2-mock',
-  command: `printf 'preface\\n## Round 2\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n'`,
-  max_rounds: 3,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=salvage-round2-mock',
-])
-const salvageRound2FeedbackPath = join(aSalvageRound2, 'review', 'brainstorm-feedback.md')
-const salvageRound2LogPath = join(aSalvageRound2, 'review', 'brainstorm-reviewer-salvage-round2-mock-round-2.log')
-assert(result.status === 0, 'exits 0 when stdout feedback is salvaged after prior round', result.stderr)
-if (existsSync(salvageRound2FeedbackPath)) {
-  const salvageRound2Feedback = readFileSync(salvageRound2FeedbackPath, 'utf-8')
-  assert(salvageRound2Feedback.includes('## Round 1'), 'round 2 salvage preserves prior round')
-  assert(salvageRound2Feedback.includes('## Round 2'), 'round 2 salvage appends expected round')
-  assert(salvageRound2Feedback.includes('salvaged from stdout'), 'round 2 salvage marker is written')
-} else {
-  assert(false, 'round 2 salvage feedback file exists')
-}
-if (existsSync(salvageRound2LogPath)) {
-  const salvageRound2Log = readFileSync(salvageRound2LogPath, 'utf-8')
-  assert(salvageRound2Log.includes('Verdict:    salvaged:approved'), 'round 2 salvage footer records salvaged verdict')
-} else {
-  assert(false, 'round 2 salvage log file exists')
-}
+console.log('\nreviewloop implementation approval:')
+const implementationAssignment = setupProject()
+mkdirSync(join(implementationAssignment, 'implementation'), { recursive: true })
+writeFileSync(join(implementationAssignment, 'implementation', 'progress.json'), JSON.stringify({ tasks: [{ status: 'completed' }] }))
+setupReviewer('impl-pass', { command: approvedCommand(feedbackRel('implementation')), max_rounds: 3 })
+result = runCmd(['reviewloop', 'implementation', `--target=${TEST_DIR}`, '--reviewer=impl-pass'])
+output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'implementation approved review exits 0', result.stderr)
+assert(output.includes("Phase 'implementation' has been approved"), 'implementation gate is approved')
+const implementationStatus = JSON.parse(readFileSync(join(implementationAssignment, 'status.json'), 'utf-8'))
+assert(implementationStatus.implementation_approved === true, 'status marks implementation approved')
 
-console.log('\nreviewloop (stdout salvage failure):')
-cleanup()
-initProject()
-fillBigPicture()
-const aNoSalvage = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('no-salvage-mock', {
-  name: 'no-salvage-mock',
-  command: `printf '## Round 2\\n\\n**Verdict:** approved\\n'`,
-  max_rounds: 3,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=no-salvage-mock',
-])
-const noSalvageFeedbackPath = join(aNoSalvage, 'review', 'brainstorm-feedback.md')
-const noSalvageLogPath = join(aNoSalvage, 'review', 'brainstorm-reviewer-no-salvage-mock-round-1.log')
-assert(result.status === 1, 'exits 1 when stdout salvage pattern is wrong')
-assert(!existsSync(noSalvageFeedbackPath), 'failed salvage does not create feedback file')
-if (existsSync(noSalvageLogPath)) {
-  const noSalvageLog = readFileSync(noSalvageLogPath, 'utf-8')
-  assert(noSalvageLog.includes('Verdict:    missing'), 'failed salvage footer records missing verdict')
-} else {
-  assert(false, 'failed salvage log file exists')
-}
+console.log('\nreviewloop multi-reviewer stop and resume:')
+const multiAssignment = setupProject()
+setupReviewer('pass-a', { command: approvedCommand(feedbackRel('brainstorm', 'pass-a')), max_rounds: 5 })
+setupReviewer('fail-b', { command: needsChangesCommand(feedbackRel('brainstorm', 'fail-b')), max_rounds: 5 })
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=pass-a,fail-b'])
+output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'multi-reviewer needs-changes exits 0')
+assert(output.includes('pass-a') && output.includes('fail-b'), 'both reviewers run')
+assert(!output.includes("Phase 'brainstorm' has been approved"), 'phase is not approved when second reviewer fails')
+writeChangelog(multiAssignment, 'brainstorm', '## Round 1\n\n- Fixed issue\n', 'fail-b')
+setupReviewer('fail-b', { command: approvedCommand(feedbackRel('brainstorm', 'fail-b'), 2), max_rounds: 5 })
+result = runCmd(['reviewloop', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=pass-a,fail-b'])
+output = `${result.stdout}\n${result.stderr}`
+assert(output.includes('already approved, skipping'), 'already approved reviewer is skipped')
+assert(output.includes("Phase 'brainstorm' has been approved"), 'phase is approved after resumed reviewer passes')
 
-console.log('\nreviewloop (stream-json sidecar and no salvage):')
-cleanup()
-initProject()
-fillBigPicture()
-const aStreamJson = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-setupReviewer('stream-mock', {
-  name: 'stream-mock',
-  command: `printf '%s\\n' '{"type":"system","subtype":"init","model":"mock-model"}' '{"type":"assistant","message":{"content":[{"type":"text","text":"## Round 1\\\\n\\\\n**Verdict:** approved\\\\n"}]}}'`,
-  max_rounds: 3,
-  stream_json: true,
-})
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=stream-mock',
-])
-const streamFeedbackPath = join(aStreamJson, 'review', 'brainstorm-feedback.md')
-const streamLogPath = join(aStreamJson, 'review', 'brainstorm-reviewer-stream-mock-round-1.log')
-const streamSidecarPath = join(aStreamJson, 'review', 'brainstorm-reviewer-stream-mock-round-1.jsonl')
-assert(result.status === 1, 'stream-json stdout feedback is not salvaged')
-assert(!existsSync(streamFeedbackPath), 'stream-json mode does not create salvaged feedback file')
-assert(existsSync(streamSidecarPath), 'stream-json sidecar file exists')
-if (existsSync(streamSidecarPath)) {
-  const sidecar = readFileSync(streamSidecarPath, 'utf-8')
-  assert(sidecar.includes('"type":"system"'), 'stream-json sidecar captures raw JSONL')
-}
-if (existsSync(streamLogPath)) {
-  const streamLog = readFileSync(streamLogPath, 'utf-8')
-  assert(streamLog.includes('> session start (model=mock-model)'), 'stream-json log includes rendered init')
-  assert(streamLog.includes('## Round 1'), 'stream-json log includes rendered assistant text')
-  assert(streamLog.includes('Verdict:    missing'), 'stream-json footer records missing verdict')
-}
-
-// =====================================================================
-// Mock reviewer: missing expected round in feedback
-// =====================================================================
-
-console.log('\nreviewloop (reviewer writes wrong round):')
-cleanup()
-initProject()
-fillBigPicture()
-const a8 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(a8, 'review'), { recursive: true })
-
-const feedbackRelPath4 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
-// Reviewer writes round 5 but we expect round 1
-setupReviewer('wrong-round', {
-  name: 'wrong-round',
-  command: `printf '## Round 5\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPath4}"`,
-  max_rounds: 3,
-})
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=wrong-round',
-])
-assert(result.status === 1, 'exits 1 when wrong round written')
-assert(
-  result.stderr.includes('expected ## Round 1') && result.stderr.includes('brainstorm-feedback.md'),
-  'error mentions expected round and feedback filename',
-)
-
-// =====================================================================
-// Environment variables are passed to reviewer
-// =====================================================================
-
-console.log('\nreviewloop (env vars passed to reviewer):')
-cleanup()
-initProject()
-fillBigPicture()
-const a9 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(a9, 'review'), { recursive: true })
-
-const envLogPath = join(TEST_DIR, 'env-log.txt')
-const feedbackRelPath5 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback.md`
-setupReviewer('env-check', {
-  name: 'env-check',
-  command: `echo "PHASE=$SPECDEV_PHASE ASSIGNMENT=$SPECDEV_ASSIGNMENT ROUND=$SPECDEV_ROUND" > "${join(TEST_DIR, 'env-log.txt').replace(/\\/g, '/')}" && printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPath5}"`,
-  max_rounds: 3,
-})
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=env-check',
-])
-assert(result.status === 0, 'exits 0 with env-check reviewer', result.stderr)
-if (existsSync(envLogPath)) {
-  const envLog = readFileSync(envLogPath, 'utf-8').trim()
-  assert(
-    envLog.includes('PHASE=brainstorm'),
-    'SPECDEV_PHASE env var is set',
-    envLog,
-  )
-  assert(
-    envLog.includes(`ASSIGNMENT=${ASSIGNMENT_NAME}`),
-    'SPECDEV_ASSIGNMENT env var is set',
-    envLog,
-  )
-  assert(envLog.includes('ROUND=1'), 'SPECDEV_ROUND env var is set', envLog)
-} else {
-  assert(false, 'env-log.txt was written by reviewer command')
-}
-
-// =====================================================================
-// Implementation phase: pass with auto-approve
-// =====================================================================
-
-console.log('\nreviewloop implementation (pass):')
-cleanup()
-initProject()
-fillBigPicture()
-const a10 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-// Setup implementation artifacts for approvePhase to succeed
-mkdirSync(join(a10, 'implementation'), { recursive: true })
-writeFileSync(
-  join(a10, 'implementation', 'progress.json'),
-  JSON.stringify(
-    { tasks: [{ number: 1, status: 'completed' }] },
-    null,
-    2,
-  ),
-)
-mkdirSync(join(a10, 'review'), { recursive: true })
-
-const feedbackRelPath6 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/implementation-feedback.md`
-setupReviewer('impl-pass', {
-  name: 'impl-pass',
-  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelPath6}"`,
-  max_rounds: 3,
-})
-
-result = runCmd([
-  'reviewloop',
-  'implementation',
-  `--target=${TEST_DIR}`,
-
-  '--reviewer=impl-pass',
-])
-const implOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'exits 0 for implementation pass', result.stderr)
-assert(
-  implOutput.includes("Phase 'implementation' has been approved"),
-  'prints implementation approved',
-  implOutput,
-)
-if (existsSync(join(a10, 'status.json'))) {
-  const status = JSON.parse(readFileSync(join(a10, 'status.json'), 'utf-8'))
-  assert(
-    status.implementation_approved === true,
-    'status.json has implementation_approved=true',
-  )
-} else {
-  assert(false, 'status.json created for implementation approval')
-}
-
-// =====================================================================
-// Multi-reviewer: comma-separated
-// =====================================================================
-
-console.log('\nreviewloop multi-reviewer (comma-separated):')
-cleanup()
-initProject()
-fillBigPicture()
-const aMulti1 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(aMulti1, 'review'), { recursive: true })
-
-const feedbackRelMulti1 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-pass-a.md`
-const feedbackRelMulti2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-pass-b.md`
-setupReviewer('pass-a', {
-  name: 'pass-a',
-  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelMulti1}"`,
-  max_rounds: 5,
-})
-setupReviewer('pass-b', {
-  name: 'pass-b',
-  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelMulti2}"`,
-  max_rounds: 5,
-})
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=pass-a,pass-b',
-])
-const multiOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'multi-reviewer exits 0 when all approve', result.stderr)
-assert(multiOutput.includes('pass-a'), 'output mentions first reviewer')
-assert(multiOutput.includes('pass-b'), 'output mentions second reviewer')
-assert(
-  multiOutput.includes("Phase 'brainstorm' has been approved"),
-  'phase approved after all reviewers pass',
-  multiOutput,
-)
-
-// Verify separate feedback files exist
-const feedbackA = join(aMulti1, 'review', 'brainstorm-feedback-pass-a.md')
-const feedbackB = join(aMulti1, 'review', 'brainstorm-feedback-pass-b.md')
-assert(existsSync(feedbackA), 'reviewer A feedback file exists')
-assert(existsSync(feedbackB), 'reviewer B feedback file exists')
-
-// =====================================================================
-// Multi-reviewer: second reviewer needs-changes stops chain
-// =====================================================================
-
-console.log('\nreviewloop multi-reviewer (chain stops on needs-changes):')
-cleanup()
-initProject()
-fillBigPicture()
-const aMulti2 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-mkdirSync(join(aMulti2, 'review'), { recursive: true })
-
-const feedbackRelStop1 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-pass-c.md`
-const feedbackRelStop2 = `.specdev/assignments/${ASSIGNMENT_NAME}/review/brainstorm-feedback-fail-c.md`
-setupReviewer('pass-c', {
-  name: 'pass-c',
-  command: `printf '## Round 1\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelStop1}"`,
-  max_rounds: 5,
-})
-setupReviewer('fail-c', {
-  name: 'fail-c',
-  command: `printf '## Round 1\\n\\n**Verdict:** needs-changes\\n\\n### Findings\\n1. [F1.1] Fix X\\n' >> "${feedbackRelStop2}"`,
-  max_rounds: 5,
-})
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=pass-c,fail-c',
-])
-const stopOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'chain-stop exits 0', result.stderr)
-assert(stopOutput.includes('pass-c'), 'first reviewer ran')
-assert(stopOutput.includes('fail-c'), 'second reviewer ran')
-assert(
-  !stopOutput.includes("Phase 'brainstorm' has been approved"),
-  'phase NOT approved when second reviewer needs changes',
-  stopOutput,
-)
-
-// =====================================================================
-// Multi-reviewer: skip already-approved reviewer on re-run
-// =====================================================================
-
-console.log('\nreviewloop multi-reviewer (skip approved on re-run):')
-// Re-run same chain — pass-c should be skipped (already approved)
-// fail-c has needs-changes from round 1, so we need a changelog first
-const changelogFailC = join(aMulti2, 'review', 'brainstorm-changelog-fail-c.md')
-writeFileSync(changelogFailC, '## Round 1\n\n- Fixed X\n')
-
-// Replace fail-c to now approve on round 2
-const failCPath = join(TEST_DIR, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers', 'fail-c.json')
-const failCApprove = {
-  name: 'fail-c',
-  command: `printf '\\n## Round 2\\n\\n**Verdict:** approved\\n\\n### Findings\\n- (none)\\n' >> "${feedbackRelStop2}"`,
-  max_rounds: 5,
-}
-writeFileSync(failCPath, JSON.stringify(failCApprove))
-
-result = runCmd([
-  'reviewloop',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=pass-c,fail-c',
-])
-const resumeOutput = `${result.stdout}\n${result.stderr}`
-assert(resumeOutput.includes('already approved, skipping'), 'pass-c skipped as already approved')
-assert(
-  resumeOutput.includes("Phase 'brainstorm' has been approved"),
-  'phase approved after resumed reviewer passes',
-  resumeOutput,
-)
-
-// =====================================================================
-// check-review with --reviewer flag (multi-reviewer)
-// =====================================================================
-
-console.log('\ncheck-review with --reviewer flag:')
-cleanup()
-initProject()
-fillBigPicture()
-const aCheck1 = createAssignment(ASSIGNMENT_NAME)
-setCurrent(ASSIGNMENT_NAME)
-const checkReviewDir = join(aCheck1, 'review')
-mkdirSync(checkReviewDir, { recursive: true })
-
-// Write reviewer-specific feedback file
-writeFileSync(
-  join(checkReviewDir, 'brainstorm-feedback-test-rev.md'),
-  '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix ABC\n',
-)
-
-result = runCmd([
-  'check-review',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-  '--reviewer=test-rev',
-])
-const checkRevOutput = `${result.stdout}\n${result.stderr}`
-assert(result.status === 0, 'check-review with --reviewer exits 0', result.stderr)
-assert(checkRevOutput.includes('Fix ABC'), 'shows reviewer-specific findings')
-
-// Test auto-detect: no --reviewer, no default feedback, scan for suffixed files
-console.log('\ncheck-review auto-detect multi-reviewer:')
-result = runCmd([
-  'check-review',
-  'brainstorm',
-  `--target=${TEST_DIR}`,
-])
-const autoDetectOutput = `${result.stdout}\n${result.stderr}`
-assert(autoDetectOutput.includes('Fix ABC'), 'auto-detect finds reviewer-specific feedback')
-
-// =====================================================================
-// checkReviewerCLIs returns cursor-agent binary for cursor config
-// =====================================================================
-
-console.log('\ncheckReviewerCLIs (cursor config detection):')
-cleanup()
-initProject()
-fillBigPicture()
-
-const { checkReviewerCLIs } = await import('../src/utils/reviewers.js')
-const specdevPath = join(TEST_DIR, '.specdev')
-const cliResults = await checkReviewerCLIs(specdevPath)
-
-const cursorResult = cliResults.find(r => r.name === 'cursor')
-assert(cursorResult !== undefined, 'checkReviewerCLIs returns cursor entry')
-assert(cursorResult.binary === 'cursor-agent', 'cursor entry has binary=cursor-agent')
-assert(typeof cursorResult.found === 'boolean', 'cursor entry has boolean found field')
-
-const codexResult = cliResults.find(r => r.name === 'codex')
-assert(codexResult !== undefined, 'checkReviewerCLIs still returns codex entry')
-
-// =====================================================================
-// Done
-// =====================================================================
+console.log('\ncheck-review reviewer selection:')
+const checkAssignment = setupProject()
+writeFeedback(checkAssignment, 'brainstorm', '## Round 1\n\n**Verdict:** needs-changes\n\n### Findings\n1. [F1.1] Fix ABC\n', 'test-rev')
+result = runCmd(['check-review', 'brainstorm', `--target=${TEST_DIR}`, '--reviewer=test-rev'])
+output = `${result.stdout}\n${result.stderr}`
+assert(result.status === 0, 'check-review with reviewer exits 0')
+assert(output.includes('Fix ABC'), 'check-review reads reviewer-specific feedback')
+result = runCmd(['check-review', 'brainstorm', `--target=${TEST_DIR}`])
+output = `${result.stdout}\n${result.stderr}`
+assert(output.includes('Fix ABC'), 'check-review auto-detects reviewer-specific feedback')
 
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)

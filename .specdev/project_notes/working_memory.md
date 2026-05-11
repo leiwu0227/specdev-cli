@@ -8,19 +8,20 @@ Refresh with: `specdev memory refresh`
 specdev-cli is a CLI tool that enforces a spec-driven development workflow for AI coding agents (Claude Code, Codex, Cursor, etc.). It provides structured phases — brainstorm, breakdown, implementation, review — with hard gates between them. Agents must produce artifacts (proposal, design, plan, code) and get approval at each gate before proceeding.
 
 ## Current Workflow
-00019_feature_autocontinue-reviewloop: completed. Next: Assignment appears complete. Start a new assignment or capture additional learnings
+00020_refactor_reduce-test-suite: completed. Next: Assignment appears complete. Start a new assignment or capture additional learnings
 
 ## Recent Completed Assignments
+- 00020_refactor_reduce-test-suite
 - 00019_feature_autocontinue-reviewloop
 - 00018_feature_workflow-agents
 - 00017_refactor_workflow-architecture
 - 00016_refactor_distill-workflow
-- 00015_feature_claude-reviewer-observability
 
 ## Durable Knowledge
 - architecture/flat-skill-view-scope.md: Assignment 00010 added `specdev skills view <name> [relative-path]`. Folder skills are scoped to their own directory, but flat markdown skills use the parent category directory as their base because they do not have a dedicated skill folder.
 - architecture/generated-working-memory.md: Assignment 00011 added `.specdev/project_notes/working_memory.md` as a generated, bounded agent context file. It is derived from existing SpecDev artifacts rather than edited directly.
 - architecture/guided-migration-command-split.md: Assignment 00012 changed migration into two explicit paths:
+- architecture/reduced-test-suite.md: SpecDev CLI intentionally keeps a compact command-level smoke/regression suite instead of one test file per source module.
 - architecture/reviewloop-autocontinue.md: `specdev reviewloop <phase> --reviewer=<name> --autocontinue` keeps reviewloop as the owner of review execution and phase approval, but adds an explicit post-approval continuation contract for agents.
 - architecture/reviewloop-observability.md: Assignment `00015_feature_claude-reviewer-observability` split reviewloop subprocess mechanics from reviewloop policy.
 - architecture/sqlite-knowledge-retrieval.md: Assignment 00013 added `specdev knowledge index` and `specdev knowledge search <query>` as the first retrieval layer for SpecDev knowledge.

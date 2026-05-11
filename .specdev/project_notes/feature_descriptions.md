@@ -90,6 +90,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Added explicit `--autocontinue` guidance and contract output for approved assignment reviewloop runs, carrying brainstorm approval into breakdown/implementation and implementation approval into capture while keeping discussions standalone.
 **Key files:** `src/commands/reviewloop.js`, `src/commands/checkpoint.js`, `src/commands/implement.js`, `src/commands/init.js`, `templates/.specdev/skills/core/reviewloop/SKILL.md`, `tests/test-reviewloop-command.js`, `tests/test-checkpoints.js`
 
+### Reduced Test Suite
+**Assignment:** 00020_refactor_reduce-test-suite
+**Completed:** 2026-05-11
+**Description:** Reduced the maintained test suite from 35 top-level test files to 9 command-level smoke/regression files, merging workflow-agent and knowledge/distill basics while trimming reviewloop command coverage to high-risk paths.
+**Key files:** `package.json`, `tests/test-knowledge.js`, `tests/test-workflow-agent.js`, `tests/test-reviewloop-command.js`
+
 ---
 
 ## Architecture & Structure

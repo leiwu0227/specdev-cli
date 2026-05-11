@@ -17,7 +17,8 @@
     "00015_feature_claude-reviewer-observability",
     "00017_refactor_workflow-architecture",
     "00018_feature_workflow-agents",
-    "00019_feature_autocontinue-reviewloop"
+    "00019_feature_autocontinue-reviewloop",
+    "00020_refactor_reduce-test-suite"
   ],
   "workflow": [
     "00001_familiarization_distill-improvement",
@@ -37,6 +38,7 @@
     "00015_feature_claude-reviewer-observability",
     "00017_refactor_workflow-architecture",
     "00018_feature_workflow-agents",
-    "00019_feature_autocontinue-reviewloop"
+    "00019_feature_autocontinue-reviewloop",
+    "00020_refactor_reduce-test-suite"
   ]
 }
