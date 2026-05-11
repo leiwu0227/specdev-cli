@@ -21,6 +21,7 @@ export const COMMANDS = [
   { name: 'approve', usage: 'approve <phase>', description: 'Hard gate: approve phase and proceed' },
   { name: 'continue', usage: 'continue', description: 'Detect current state and suggest next action' },
   { name: 'status', usage: 'status', description: 'Emit workflow state for humans or JSON automation' },
+  { name: 'next', usage: 'next', description: 'Emit the canonical next workflow action' },
   { name: 'revise', usage: 'revise', description: 'Record design revision, re-enter brainstorm' },
   { name: 'review', usage: 'review <phase>', description: 'Manual review (brainstorm | implementation)' },
   { name: 'check-review', usage: 'check-review', description: 'Read and address review feedback' },

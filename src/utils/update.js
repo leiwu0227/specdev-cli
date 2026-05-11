@@ -59,6 +59,7 @@ export async function updateSpecdevSystem(source, destination) {
     const systemPaths = [
       '_main.md',
       '_index.md',
+      'workflow.yaml',
       '_guides',
       '_templates',
       'agents',

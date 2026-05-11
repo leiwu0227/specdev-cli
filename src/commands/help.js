@@ -40,6 +40,7 @@ export function helpCommand(flags = {}) {
     '  specdev approve implementation    # Hard gate: proceed to summary',
     '  specdev continue                  # Diagnose state and next action',
     '  specdev status --json             # Machine-readable workflow state',
+    '  specdev next --json               # Canonical next action contract',
     '',
     '  # Optional: review before approving',
     '  specdev review brainstorm         # Manual review (separate session)',

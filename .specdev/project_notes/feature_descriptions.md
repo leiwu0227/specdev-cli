@@ -96,6 +96,12 @@ Running catalog of completed assignments. See `.specdev/_guides/task/validation_
 **Description:** Reduced the maintained test suite from 35 top-level test files to 9 command-level smoke/regression files, merging workflow-agent and knowledge/distill basics while trimming reviewloop command coverage to high-risk paths.
 **Key files:** `package.json`, `tests/test-knowledge.js`, `tests/test-workflow-agent.js`, `tests/test-reviewloop-command.js`
 
+### Workflow Runtime Overlay
+**Assignment:** 00021_familiarization_workflow-review
+**Completed:** 2026-05-12
+**Description:** Added an installed workflow manifest and `specdev next --json` runtime overlay that computes canonical next actions, validates manifest contracts, emits structured gate choices, and surfaces advisory hook outcomes while preserving the existing `.specdev` assignment layout.
+**Key files:** `templates/.specdev/workflow.yaml`, `src/utils/workflow-runtime.js`, `src/commands/next.js`, `src/commands/checkpoint.js`, `tests/test-checkpoints.js`
+
 ---
 
 ## Architecture & Structure

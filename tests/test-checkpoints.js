@@ -65,6 +65,159 @@ assert(result.stdout.includes('If the user chooses automated review, ask reviewe
 assert(result.stdout.includes('Use one choice per reviewer config; do not ask for free-form reviewer text.'), 'brainstorm checkpoint forbids free-form reviewer choice')
 assert(result.stdout.includes('Do not ask for free-form reviewer text'), 'brainstorm checkpoint reinforces bounded reviewer choices')
 
+result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 0, 'brainstorm checkpoint --json passes')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.interaction?.type === 'choice', 'brainstorm json includes choice interaction')
+  assert(json.interaction.choices.some(c => c.id === 'reviewloop_autocontinue'), 'brainstorm json includes autocontinue choice id')
+  assert(json.interaction.choices.some(c => c.command.includes('specdev approve brainstorm')), 'brainstorm json includes approve command')
+} catch {
+  assert(false, 'brainstorm checkpoint --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 0, 'next --json passes for brainstorm checkpoint-ready assignment')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.next_action?.id === 'brainstorm.checkpoint', 'next action is brainstorm checkpoint')
+  assert(json.workflow?.contract_version === 1, 'next action reports workflow contract version')
+  assert(json.interaction?.type === 'choice', 'next action includes structured choice interaction')
+  assert(json.interaction.choices.some(c => c.id === 'reviewloop_autocontinue'), 'next action includes autocontinue choice')
+  assert(Array.isArray(json.trace) && json.trace.length > 0, 'next action includes trace')
+} catch {
+  assert(false, 'next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+
+const manifestPath = join(TEST_DIR, '.specdev', 'workflow.yaml')
+const manifest = readFileSync(manifestPath, 'utf-8')
+writeFileSync(manifestPath, manifest.replace(
+  'run: specdev checkpoint brainstorm',
+  'run: specdev custom-checkpoint brainstorm'
+))
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 0, 'next --json passes with customized manifest command')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.next_action?.command_line === 'specdev custom-checkpoint brainstorm', 'next action uses manifest command')
+} catch {
+  assert(false, 'custom manifest next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+writeFileSync(manifestPath, manifest)
+
+writeFileSync(manifestPath, manifest.replace('workflow_contract_version: 1\n\n', ''))
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 1, 'next exits non-zero for missing workflow contract version')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'workflow_manifest_invalid', 'missing workflow contract version reports workflow_manifest_invalid')
+  assert(json.blockers?.some(blocker => blocker.detail.includes('workflow_contract_version must be 1')), 'missing workflow contract version reports supported version')
+} catch {
+  assert(false, 'missing contract version next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+writeFileSync(manifestPath, manifest)
+
+console.log('\nnext --json — malformed manifest returns blocker JSON:')
+writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), 'hooks:\n  - id: [')
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 1, 'next exits non-zero for malformed manifest')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'workflow_manifest_invalid', 'malformed manifest reports workflow_manifest_invalid')
+  assert(json.blockers?.[0]?.detail.includes('parse error'), 'malformed manifest reports parse error detail')
+} catch {
+  assert(false, 'malformed manifest next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+rmSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), { force: true })
+
+console.log('\nnext --json — type-invalid manifest returns blocker JSON:')
+writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), 'hooks: 123\n')
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 1, 'next exits non-zero for type-invalid manifest')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'workflow_manifest_invalid', 'type-invalid manifest reports workflow_manifest_invalid')
+  assert(json.blockers?.some(blocker => blocker.detail.includes('hooks must be an array')), 'type-invalid manifest reports hooks type error')
+} catch {
+  assert(false, 'type-invalid manifest next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+rmSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), { force: true })
+
+console.log('\nnext --json — null hook entry returns blocker JSON:')
+writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), 'hooks:\n  -\n')
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 1, 'next exits non-zero for null hook entry')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'workflow_manifest_invalid', 'null hook entry reports workflow_manifest_invalid')
+  assert(json.blockers?.some(blocker => blocker.detail.includes('hooks entries must be mappings/objects')), 'null hook entry reports hook object error')
+} catch {
+  assert(false, 'null hook entry next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+rmSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), { force: true })
+
+console.log('\nnext --json — invalid phases manifest returns blocker JSON:')
+writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), 'workflow_contract_version: 1\nphases: 123\nhooks: []\n')
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 1, 'next exits non-zero for invalid phases manifest')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'workflow_manifest_invalid', 'invalid phases manifest reports workflow_manifest_invalid')
+  assert(json.blockers?.[0]?.detail.includes('phases must be a mapping/object'), 'invalid phases manifest reports phases type error')
+} catch {
+  assert(false, 'invalid phases manifest next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+rmSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), { force: true })
+
+console.log('\nnext --json — scalar manifest returns blocker JSON:')
+writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), '42\n')
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 1, 'next exits non-zero for scalar manifest')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'workflow_manifest_invalid', 'scalar manifest reports workflow_manifest_invalid')
+  assert(json.blockers?.some(blocker => blocker.detail.includes('workflow.yaml must contain a mapping/object')), 'scalar manifest reports object requirement')
+} catch {
+  assert(false, 'scalar manifest next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+rmSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), { force: true })
+
+console.log('\nnext --json — empty manifest returns blocker JSON:')
+writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), '')
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 1, 'next exits non-zero for empty manifest')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'workflow_manifest_invalid', 'empty manifest reports workflow_manifest_invalid')
+  assert(json.blockers?.some(blocker => blocker.detail.includes('workflow.yaml must contain a mapping/object')), 'empty manifest reports object requirement')
+} catch {
+  assert(false, 'empty manifest next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+}
+rmSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), { force: true })
+
+mkdirSync(join(featureDir, 'breakdown'), { recursive: true })
+mkdirSync(join(featureDir, 'implementation'), { recursive: true })
+writeFileSync(join(featureDir, 'breakdown', 'plan.md'), '# Plan\n')
+writeFileSync(join(featureDir, 'implementation', 'progress.json'), JSON.stringify({
+  tasks: [{ status: 'completed' }]
+}))
+writeFileSync(join(featureDir, 'status.json'), JSON.stringify({
+  brainstorm_approved: true,
+  implementation_approved: true,
+}))
+result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
+assert(result.status === 0, 'next --json passes at implementation-to-capture boundary')
+try {
+  const json = JSON.parse(result.stdout.trim())
+  assert(json.state === 'summary_in_progress', 'next action enters capture after implementation approval')
+  assert(json.hook_outcomes?.some(hook => hook.id === 'repo_knowledge_prompt' && hook.outcome === 'skipped'), 'next action surfaces advisory repo knowledge hook')
+} catch {
+  assert(false, 'next --json hook output is valid JSON: ' + result.stdout.slice(0, 120))
+}
+rmSync(join(featureDir, 'breakdown'), { recursive: true, force: true })
+rmSync(join(featureDir, 'implementation'), { recursive: true, force: true })
+rmSync(join(featureDir, 'status.json'), { force: true })
+
 console.log('\nbrainstorm checkpoint — feature missing Non-Goals:')
 const featureDir2 = join(TEST_DIR, '.specdev', 'assignments', '002_feature_search')
 mkdirSync(join(featureDir2, 'brainstorm'), { recursive: true })
@@ -210,6 +363,8 @@ try {
   const json = JSON.parse(output)
   assert(json.status === 'pass', 'json status is pass')
   assert(Array.isArray(json.warnings), 'json has warnings array')
+  assert(json.interaction?.type === 'choice', 'implementation json includes choice interaction')
+  assert(json.interaction.choices.some(c => c.id === 'reviewloop_autocontinue'), 'implementation json includes autocontinue choice id')
 } catch {
   assert(false, 'json output is valid JSON: ' + output.slice(0, 100))
 }

@@ -1,0 +1,57 @@
+workflow_contract_version: 1
+
+phases:
+  brainstorm:
+    steps:
+      - id: create_artifacts
+        kind: guide
+        guide: .specdev/skills/core/brainstorming/SKILL.md
+        produces:
+          - brainstorm/proposal.md
+          - brainstorm/design.md
+      - id: checkpoint
+        kind: command
+        run: specdev checkpoint brainstorm
+      - id: approval
+        kind: gate
+        gate: brainstorm_approved
+
+  breakdown:
+    steps:
+      - id: create_plan
+        kind: guide
+        guide: .specdev/skills/core/breakdown/SKILL.md
+        produces:
+          - breakdown/plan.md
+
+  implementation:
+    steps:
+      - id: execute_plan
+        kind: guide
+        guide: .specdev/skills/core/implementing/SKILL.md
+        produces:
+          - implementation/progress.json
+      - id: checkpoint
+        kind: command
+        run: specdev checkpoint implementation
+      - id: approval
+        kind: gate
+        gate: implementation_approved
+
+  capture:
+    steps:
+      - id: capture_knowledge
+        kind: guide
+        guide: .specdev/skills/core/knowledge-capture/SKILL.md
+        produces:
+          - capture/project-notes-diff.md
+          - capture/workflow-diff.md
+
+hooks:
+  - id: repo_knowledge_prompt
+    slot: phase:end
+    phase: implementation
+    order: 50
+    kind: guide
+    guide: .specdev/skills/core/knowledge-capture/SKILL.md
+    blocking: false

@@ -6,6 +6,7 @@ import { resolveTargetDir } from '../utils/command-context.js'
 import { readActiveTools } from '../utils/active-tools.js'
 import { blankLine } from '../utils/output.js'
 import { commandPhases, REQUIRED_BRAINSTORM_SECTIONS, artifactPaths } from '../utils/workflow-contract.js'
+import { buildReviewChoices } from '../utils/workflow-runtime.js'
 
 const VALID_PHASES = commandPhases.checkpoint
 
@@ -113,15 +114,37 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
     return
   }
 
-  console.log(`✅ Brainstorm checkpoint passed for ${name}`)
-  console.log(`   ${proposalArtifact} ✓`)
-  console.log(`   ${designArtifact} ✓`)
-  blankLine()
   const specdevPath = join(assignmentPath, '..', '..')
   const reviewers = await listReviewers(specdevPath)
   const isDiscussion = Boolean(flags.discussion)
   const reviewPhase = isDiscussion ? 'discussion' : 'brainstorm'
   const discussionArg = isDiscussion ? ` --discussion=${flags.discussion}` : ''
+
+  if (flags.json) {
+    console.log(JSON.stringify({
+      status: 'pass',
+      phase: reviewPhase,
+      assignment: isDiscussion ? null : name,
+      discussion: isDiscussion ? flags.discussion : null,
+      artifacts: [proposalArtifact, designArtifact],
+      interaction: {
+        type: 'choice',
+        prompt: isDiscussion
+          ? 'How do you want to review this discussion?'
+          : 'How do you want to proceed from brainstorm?',
+        choices: buildReviewChoices('brainstorm', {
+          discussion: isDiscussion ? flags.discussion : null,
+          reviewers,
+        }),
+      },
+    }, null, 2))
+    return
+  }
+
+  console.log(`✅ Brainstorm checkpoint passed for ${name}`)
+  console.log(`   ${proposalArtifact} ✓`)
+  console.log(`   ${designArtifact} ✓`)
+  blankLine()
 
   console.log('Ready for user decision. Present these multiple-choice options:')
   if (isDiscussion) {
@@ -231,7 +254,18 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
 
   // JSON output mode
   if (flags.json) {
-    console.log(JSON.stringify({ status: 'pass', warnings: toolWarnings }, null, 2))
+    const reviewers = await listReviewers(specdevPath)
+    console.log(JSON.stringify({
+      status: 'pass',
+      phase: 'implementation',
+      assignment: name,
+      warnings: toolWarnings,
+      interaction: {
+        type: 'choice',
+        prompt: 'How do you want to proceed from implementation?',
+        choices: buildReviewChoices('implementation', { reviewers }),
+      },
+    }, null, 2))
     return
   }
 

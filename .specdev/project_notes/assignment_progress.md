@@ -42,6 +42,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00018 | workflow-agents | Done | 2026-05-11 | Added first-class workflow agents, researcher command, agent-runner, and agent inspect |
 | 00019 | autocontinue-reviewloop | Done | 2026-05-11 | Added reviewloop autocontinue contract/guidance and kept discussions standalone |
 | 00020 | reduce-test-suite | Done | 2026-05-11 | Reduced maintained tests to 9 command-level smoke/regression files |
+| 00021 | workflow-review | Done | 2026-05-12 | Added workflow manifest, next-action runtime, structured choices, and advisory hook outcomes |
 
 ---
 

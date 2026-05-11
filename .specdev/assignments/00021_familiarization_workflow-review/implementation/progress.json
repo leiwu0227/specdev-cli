@@ -1,0 +1,27 @@
+{
+  "plan_file": ".specdev/assignments/00021_familiarization_workflow-review/breakdown/plan.md",
+  "total_tasks": 3,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-11T15:53:17Z",
+      "completed_at": "2026-05-11T15:53:17Z",
+      "summary": "Added workflow manifest, runtime loader/default workflow, and specdev next command."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-11T15:53:17Z",
+      "summary": "Added structured checkpoint choice JSON and command-created assignment guidance."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": "2026-05-11T15:53:17Z",
+      "completed_at": "2026-05-11T15:53:17Z",
+      "summary": "Pinned runtime manifest and gate fields in workflow contract drift coverage."
+    }
+  ]
+}

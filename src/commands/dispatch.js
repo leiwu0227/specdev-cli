@@ -19,6 +19,7 @@ import { implementCommand } from './implement.js'
 import { focusCommand } from './focus.js'
 import { discussCommand } from './discussion.js'
 import { statusCommand } from './status.js'
+import { nextCommand } from './next.js'
 import { memoryCommand } from './memory.js'
 import { knowledgeCommand } from './knowledge.js'
 import { contextCommand } from './context.js'
@@ -38,6 +39,7 @@ const commandHandlers = {
   review: ({ positionalArgs, flags }) => reviewCommand(positionalArgs, flags),
   continue: ({ flags }) => continueCommand(flags),
   status: ({ flags }) => statusCommand(flags),
+  next: ({ flags }) => nextCommand(flags),
   revise: ({ flags }) => reviseCommand(flags),
   'check-review': ({ positionalArgs, flags }) => checkReviewCommand(positionalArgs, flags),
   reviewloop: ({ positionalArgs, flags }) => reviewloopCommand(positionalArgs, flags),

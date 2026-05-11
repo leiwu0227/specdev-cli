@@ -26,7 +26,7 @@ export async function updateCommand(flags = {}) {
   }
 
   const wouldUpdate = [
-    '_main.md', '_index.md', '_guides/', '_templates/',
+    '_main.md', '_index.md', 'workflow.yaml', '_guides/', '_templates/',
     'agents/',
     'skills/core/', 'skills/tools/ (official built-in only)',
     'skills/README.md', 'project_scaffolding/_README.md',

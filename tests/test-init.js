@@ -39,6 +39,7 @@ assert(result.status === 0, 'init succeeds')
 
 const essentialFiles = [
   '.specdev/.gitignore',
+  '.specdev/workflow.yaml',
   '.specdev/_main.md',
   '.specdev/_index.md',
   '.specdev/_guides/workflow.md',
@@ -66,6 +67,9 @@ assert(missing.length === 0, `all ${essentialFiles.length} essential files prese
 
 const specdevGitignore = readFileSync(join(TEST_DIR, '.specdev', '.gitignore'), 'utf-8')
 assert(specdevGitignore.includes('cache/'), '.specdev/.gitignore ignores generated cache')
+const workflowManifest = readFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), 'utf-8')
+assert(workflowManifest.includes('workflow_contract_version: 1'), 'workflow manifest declares contract version')
+assert(workflowManifest.includes('repo_knowledge_prompt'), 'workflow manifest includes repo knowledge hook proof')
 
 const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
 assert(mainMd.includes('SpecDev'), '_main.md contains SpecDev reference')
@@ -142,6 +146,8 @@ assert(startSkill.includes('What does this project do'), 'start skill includes Q
 
 const assignmentSkill = readFileSync(join(codexSkillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
 assert(assignmentSkill.includes('specdev assignment'), 'assignment skill references specdev assignment command')
+assert(assignmentSkill.includes('--type=<type> --slug=<slug>'), 'assignment skill prefers command-created folders')
+assert(assignmentSkill.includes('specdev next --json'), 'assignment skill points agents to next action contract')
 assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix instruction')
 const initSource = readFileSync(join(__dirname, '..', 'src', 'commands', 'init.js'), 'utf-8')
 assert(initSource.includes('workflow-contract'), 'init command imports workflow contract for command-skill prose')
