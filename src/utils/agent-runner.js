@@ -84,9 +84,25 @@ export function extractFinalJsonBlock(markdown) {
 }
 
 export function validateRequiredSections(markdown, sections = REQUIRED_MARKDOWN_SECTIONS) {
-  const missing = sections.filter(section => !new RegExp(`^##\\s+${section}\\s*$`, 'm').test(markdown))
+  let lastIndex = -1
+  const missing = []
+  const outOfOrder = []
+  for (const section of sections) {
+    const match = new RegExp(`^##\\s+${section}\\s*$`, 'm').exec(markdown)
+    if (!match) {
+      missing.push(section)
+      continue
+    }
+    if (match.index < lastIndex) {
+      outOfOrder.push(section)
+    }
+    lastIndex = match.index
+  }
   if (missing.length > 0) {
     throw new Error(`Missing required markdown sections: ${missing.join(', ')}`)
+  }
+  if (outOfOrder.length > 0) {
+    throw new Error(`Required markdown sections out of order: ${outOfOrder.join(', ')}`)
   }
 }
 
@@ -174,6 +190,7 @@ function runAgentProcess({
   let stdoutBuffer = Buffer.alloc(0)
   let stderrBuffer = Buffer.alloc(0)
   let settled = false
+  let timedOut = false
   let timeoutTimer = null
   let killTimer = null
 
@@ -189,7 +206,7 @@ function runAgentProcess({
       if (settled) return
       settled = true
       clearTimer(timeoutTimer)
-      if (killTimer && !result.timedOut) clearTimer(killTimer)
+      if (killTimer) clearTimer(killTimer)
       resolvePromise({
         ...result,
         stdoutBuffer,
@@ -199,6 +216,7 @@ function runAgentProcess({
 
     timeoutTimer = setTimer(() => {
       if (settled) return
+      timedOut = true
       try {
         killProcessGroup(-child.pid, 'SIGTERM')
       } catch {
@@ -212,7 +230,6 @@ function runAgentProcess({
         }
       }, AGENT_TERMINATION_GRACE_MS)
       killTimer?.unref?.()
-      finish({ exitCode: null, timedOut: true })
     }, timeoutMs)
 
     if (stdinText !== null) {
@@ -230,7 +247,7 @@ function runAgentProcess({
     })
     child.on('error', reject)
     child.on('close', (code) => {
-      finish({ exitCode: code, timedOut: false })
+      finish({ exitCode: timedOut ? null : code, timedOut })
     })
   })
 }

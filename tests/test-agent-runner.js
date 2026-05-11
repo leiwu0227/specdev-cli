@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { runAgent } from '../src/utils/agent-runner.js'
+import { EventEmitter } from 'node:events'
+import { runAgent, validateRequiredSections } from '../src/utils/agent-runner.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const TEST_DIR = join(__dirname, 'test-agent-runner-output')
@@ -25,7 +26,7 @@ function cleanup() {
   mkdirSync(TEST_DIR, { recursive: true })
 }
 
-function writeAgent({ name = 'agent', prompt = '{ mode: stdin }', stream = '' } = {}) {
+function writeAgent({ name = 'agent', prompt = '{ mode: stdin }', stream = '', timeoutMs = 5000 } = {}) {
   const dir = join(TEST_DIR, name)
   mkdirSync(dir, { recursive: true })
   writeFileSync(join(dir, 'output-schema.json'), JSON.stringify({
@@ -54,7 +55,7 @@ runners:
     args: [${JSON.stringify(join(TEST_DIR, 'stub.js'))}]
     prompt: ${prompt}
 ${stream}
-    timeout_ms: 5000
+    timeout_ms: ${timeoutMs}
 ---
 Topic: {{topic}}
 Scope: {{scope}}
@@ -150,6 +151,24 @@ console.log('\nagent runner validation and retry:')
   assert(calls[1].stdin.includes('Previous response was rejected'), 'retry prompt includes validation error')
 }
 
+console.log('\nagent runner section validation:')
+{
+  const ordered = '## Topic\n\nA\n\n## Scope Used\n\nrepo\n\n## Findings\n\nA\n\n## Sources\n\nA\n\n## Limitations\n\nA\n'
+  const outOfOrder = '## Topic\n\nA\n\n## Findings\n\nA\n\n## Scope Used\n\nrepo\n\n## Sources\n\nA\n\n## Limitations\n\nA\n'
+  try {
+    validateRequiredSections(ordered)
+    assert(true, 'section validation accepts required order')
+  } catch (error) {
+    assert(false, 'section validation accepts required order', error.message)
+  }
+  try {
+    validateRequiredSections(outOfOrder)
+    assert(false, 'section validation rejects out-of-order sections')
+  } catch (error) {
+    assert(/order/i.test(error.message), 'section validation rejects out-of-order sections')
+  }
+}
+
 console.log('\nagent runner stream-json artifact:')
 {
   const invocationPath = join(TEST_DIR, 'stream-invocation.json')
@@ -163,6 +182,60 @@ console.log('\nagent runner stream-json artifact:')
   })
   assert(readFileSync(artifactPath, 'utf-8').includes('## Topic'), 'stream-json artifact contains rendered markdown')
   assert(readFileSync(`${artifactPath}.jsonl`, 'utf-8').includes('"type":"assistant"'), 'stream-json sidecar contains raw events')
+}
+
+console.log('\nagent runner process mechanics:')
+{
+  const specPath = writeAgent({ name: 'timeout', prompt: '{ mode: stdin }', timeoutMs: 10 })
+  const artifactPath = join(TEST_DIR, 'timeout.md')
+  const timers = []
+  const kills = []
+  const child = new EventEmitter()
+  child.stdout = new EventEmitter()
+  child.stderr = new EventEmitter()
+  child.stdin = { write() {}, end() {} }
+  child.pid = 1234
+
+  let settled = false
+  const resultPromise = runAgent(specPath, { topic: 'Agent Runner', scope: 'repo', context: '' }, {
+    artifactPath,
+    platform: 'test',
+    cwd: TEST_DIR,
+    maxRetries: 0,
+    spawn() {
+      return child
+    },
+    setTimeout(fn, ms) {
+      const timer = { fn, ms, cleared: false, unrefCalled: false, unref() { this.unrefCalled = true } }
+      timers.push(timer)
+      return timer
+    },
+    clearTimeout(timer) {
+      if (timer) timer.cleared = true
+    },
+    killProcessGroup(pid, signal) {
+      kills.push({ pid, signal })
+    },
+  }).then(result => {
+    settled = true
+    return result
+  })
+
+  for (let i = 0; i < 50 && timers.length === 0; i++) {
+    await new Promise(resolve => globalThis.setTimeout(resolve, 10))
+  }
+  assert(timers.length > 0, 'timeout timer is registered')
+  timers[0].fn()
+  await new Promise(resolve => setImmediate(resolve))
+  assert(!settled, 'timeout waits for child close before resolving')
+  assert(kills[0]?.pid === -1234 && kills[0]?.signal === 'SIGTERM', 'timeout sends SIGTERM to process group')
+  assert(timers[1]?.ms === 5000 && timers[1]?.unrefCalled, 'timeout schedules unrefed SIGKILL grace timer')
+  timers[1].fn()
+  assert(kills[1]?.pid === -1234 && kills[1]?.signal === 'SIGKILL', 'timeout grace sends SIGKILL to process group')
+  child.emit('close', null)
+  const result = await resultPromise
+  assert(settled, 'timeout resolves after child close')
+  assert(result.timedOut === true && result.exitCode === null, 'timeout result is marked timed out')
 }
 
 console.log(`\n${passes} passed, ${failures} failed`)
