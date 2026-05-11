@@ -6,6 +6,9 @@ import { blankLine, printSection } from '../utils/output.js'
 import { getLatestRound } from '../utils/review-feedback.js'
 import { scanSingleAssignment } from '../utils/scan.js'
 import { detectAssignmentState } from '../utils/state.js'
+import { commandPhases } from '../utils/workflow-contract.js'
+
+const VALID_PHASES = commandPhases.checkReview
 
 /**
  * specdev check-review [phase] — Read and address review feedback
@@ -30,6 +33,24 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
     } else {
       phase = 'implementation'
     }
+  }
+
+  if (!VALID_PHASES.includes(phase)) {
+    const payload = {
+      version: 1,
+      status: 'error',
+      error: 'unknown_phase',
+      phase,
+      valid_phases: VALID_PHASES,
+    }
+    if (json) {
+      writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
+    } else {
+      console.error(`Unknown check-review phase: ${phase}`)
+      console.log(`   Valid phases: ${VALID_PHASES.join(', ')}`)
+    }
+    process.exitCode = 1
+    return
   }
 
   const reviewDir = join(assignmentPath, 'review')

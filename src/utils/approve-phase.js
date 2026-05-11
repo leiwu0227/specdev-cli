@@ -1,5 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
+import { artifactPaths, gateFields } from './workflow-contract.js'
 
 /**
  * Validate artifacts for a phase and update status.json on success.
@@ -21,7 +22,7 @@ export async function approvePhase(assignmentPath, phase) {
 async function approveBrainstorm(assignmentPath) {
   const errors = []
 
-  for (const file of ['brainstorm/proposal.md', 'brainstorm/design.md']) {
+  for (const file of [artifactPaths.brainstorm.proposal, artifactPaths.brainstorm.design]) {
     const filePath = join(assignmentPath, file)
     if (!(await fse.pathExists(filePath))) {
       errors.push(`${file} (missing)`)
@@ -38,14 +39,14 @@ async function approveBrainstorm(assignmentPath) {
   }
 
   const status = await readStatus(assignmentPath)
-  status.brainstorm_approved = true
+  status[gateFields.brainstorm] = true
   await writeStatus(assignmentPath, status)
 
   return { approved: true, errors: [] }
 }
 
 async function approveImplementation(assignmentPath) {
-  const progressPath = join(assignmentPath, 'implementation', 'progress.json')
+  const progressPath = join(assignmentPath, artifactPaths.implementation.progress)
 
   if (!(await fse.pathExists(progressPath))) {
     return { approved: false, errors: ['progress.json missing'] }
@@ -71,7 +72,7 @@ async function approveImplementation(assignmentPath) {
   }
 
   const status = await readStatus(assignmentPath)
-  status.implementation_approved = true
+  status[gateFields.implementation] = true
   await writeStatus(assignmentPath, status)
 
   return { approved: true, errors: [] }

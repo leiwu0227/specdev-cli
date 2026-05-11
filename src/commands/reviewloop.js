@@ -20,6 +20,7 @@ import {
 } from '../utils/reviewer-preflight.js'
 import { runReviewerProcess } from '../utils/reviewer-runner.js'
 import { createReviewerStreamJsonTranslator } from '../utils/reviewer-stream-json.js'
+import { commandPhases } from '../utils/workflow-contract.js'
 
 const REVIEWER_HEARTBEAT_MS = 30000
 
@@ -441,7 +442,7 @@ async function runReviewerChain({
  * {phase}-feedback.md, and auto-approves on pass.
  */
 export async function reviewloopCommand(positionalArgs = [], flags = {}) {
-  const VALID_PHASES = ['brainstorm', 'implementation', 'discussion']
+  const VALID_PHASES = commandPhases.reviewloop
   const phase = positionalArgs[0]
 
   if (!phase) {

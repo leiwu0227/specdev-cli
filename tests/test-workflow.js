@@ -463,6 +463,17 @@ async function runTests() {
     'prints no-feedback error message'
   )
 
+  console.log('\ncheck-review unknown phase:')
+  const unknownCheckReview = runCmd([
+    'check-review', 'bogus', `--target=${TEST_DIR}`,
+  ])
+  const unknownCheckReviewText = `${unknownCheckReview.stdout}\n${unknownCheckReview.stderr}`
+  assert(unknownCheckReview.status === 1, 'check-review unknown phase exits non-zero')
+  assert(
+    unknownCheckReviewText.includes('Unknown check-review phase') || checkReviewSource.includes('Unknown check-review phase'),
+    'check-review prints unknown phase error'
+  )
+
   console.log('\ncheck-review with approved verdict:')
   writeFeedback(checkAssignment, {
     phase: 'brainstorm', verdict: 'approved', round: 1, findings: [],
@@ -536,6 +547,15 @@ async function runTests() {
   let errPayload = null
   try { errPayload = JSON.parse(jsonNoFeedback.stdout) } catch { errPayload = null }
   assert(errPayload && errPayload.error === 'no_feedback', 'json error is no_feedback')
+
+  console.log('\n--json with unknown phase:')
+  const jsonUnknownPhase = runCmd([
+    'check-review', 'bogus', `--target=${TEST_DIR}`, '--json',
+  ])
+  assert(jsonUnknownPhase.status === 1, 'check-review --json exits non-zero for unknown phase')
+  let unknownPayload = null
+  try { unknownPayload = JSON.parse(jsonUnknownPhase.stdout) } catch { unknownPayload = null }
+  assert(unknownPayload && unknownPayload.error === 'unknown_phase', 'json error is unknown_phase')
 
   // =====================================================================
   // Migrate Tests

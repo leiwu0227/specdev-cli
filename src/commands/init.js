@@ -6,6 +6,7 @@ import { blankLine, printLines, printSection } from '../utils/output.js'
 import { skillsInstallCommand } from './skills-install.js'
 import { scanSkillsDir } from '../utils/skills.js'
 import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
+import { ASSIGNMENT_TYPES, commandPhases } from '../utils/workflow-contract.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -29,6 +30,14 @@ export const ADAPTERS = {
   cursor:  { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
   generic: { path: 'AGENTS.md',              heading: 'AGENTS.md' },
 }
+
+const assignmentTypesText = ASSIGNMENT_TYPES.join(' | ')
+const assignmentReviewPhases = commandPhases.review.filter(p => p !== 'discussion')
+const assignmentReviewPhasesText = assignmentReviewPhases.join(' or ')
+const assignmentCheckReviewPhasesText = commandPhases.checkReview.join(' or ')
+const assignmentReviewloopPhasesText = commandPhases.reviewloop
+  .filter(p => p !== 'discussion')
+  .join('` or `')
 
 export const SKILL_FILES = {
   'specdev-start': `---
@@ -85,7 +94,7 @@ description: Create a new assignment and start the brainstorm phase
 Run \`specdev assignment "<user's description>"\` to reserve an assignment ID.
 
 Read the output to get the reserved ID, then:
-1. Pick a type (feature | bugfix | refactor | familiarization) and a short hyphenated slug based on the description
+1. Pick a type (${assignmentTypesText}) and a short hyphenated slug based on the description
 2. Create the assignment folder: \`.specdev/assignments/<ID>_<type>_<slug>/\`
 3. Create brainstorm/ and context/ subdirectories inside it
 4. Read \`.specdev/_guides/workflow.md\` to determine which brainstorm skill to use
@@ -123,7 +132,9 @@ name: specdev-review
 description: Phase-aware manual review of the current assignment
 ---
 
-Run \`specdev review brainstorm\` or \`specdev review implementation\` to see the review context for the given phase.
+Run \`specdev review <phase>\` where phase is ${assignmentReviewPhasesText}.
+
+Examples: \`specdev review brainstorm\`, \`specdev review implementation\`.
 
 Follow the printed instructions to review the appropriate artifacts.
 Discuss findings with the user before concluding.
@@ -153,7 +164,7 @@ name: specdev-check-review
 description: Read and address review feedback from a separate review session
 ---
 
-Run \`specdev check-review <phase>\` to read review findings (phase is brainstorm or implementation).
+Run \`specdev check-review <phase>\` to read review findings (phase is ${assignmentCheckReviewPhasesText}).
 
 Address the findings in the phase artifacts.
 Write a summary of changes to \`review/{phase}-changelog.md\` under \`## Round N\`.
@@ -184,7 +195,7 @@ description: Automated external review loop — spawns an external reviewer CLI,
 
 ## For assignments
 
-Run \`specdev reviewloop <phase>\` where phase is \`brainstorm\` or \`implementation\`.
+Run \`specdev reviewloop <phase>\` where phase is \`${assignmentReviewloopPhasesText}\`.
 
 Without \`--reviewer\`: lists available reviewers. If the user has already chosen automated review mode, ask reviewer type as a second multiple-choice question. Use one choice per reviewer config; do not ask for free-form reviewer text.
 With \`--reviewer=<name>\`: spawns the reviewer and processes results automatically.

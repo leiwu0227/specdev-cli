@@ -5,8 +5,9 @@ import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { parseReviewFeedback } from '../utils/review-feedback.js'
 import { blankLine, printBullets, printLines, printSection } from '../utils/output.js'
+import { commandPhases, artifactPaths } from '../utils/workflow-contract.js'
 
-const VALID_PHASES = ['brainstorm', 'implementation', 'discussion']
+const VALID_PHASES = commandPhases.review
 
 const COST_BENEFIT_LINES = [
   '  Only flag issues worth the cost of fixing. Skip unlikely edge cases,',
@@ -69,11 +70,11 @@ async function detectRound(reviewDir, feedbackFilename, flags) {
 
 async function collectBrainstormArtifacts(assignmentPath, name) {
   const artifacts = []
-  if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))) {
-    artifacts.push(`${name}/brainstorm/proposal.md`)
+  if (await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.proposal))) {
+    artifacts.push(`${name}/${artifactPaths.brainstorm.proposal}`)
   }
-  if (await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))) {
-    artifacts.push(`${name}/brainstorm/design.md`)
+  if (await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.design))) {
+    artifacts.push(`${name}/${artifactPaths.brainstorm.design}`)
   }
   return artifacts
 }

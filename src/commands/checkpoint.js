@@ -5,8 +5,9 @@ import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { readActiveTools } from '../utils/active-tools.js'
 import { blankLine } from '../utils/output.js'
+import { commandPhases, REQUIRED_BRAINSTORM_SECTIONS, artifactPaths } from '../utils/workflow-contract.js'
 
-const VALID_PHASES = ['brainstorm', 'implementation', 'discussion']
+const VALID_PHASES = commandPhases.checkpoint
 
 export async function checkpointCommand(positionalArgs = [], flags = {}) {
   const phase = positionalArgs[0]
@@ -58,35 +59,30 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   }
 }
 
-const REQUIRED_SECTIONS = {
-  feature:         ['Overview', 'Goals', 'Non-Goals', 'Design', 'Success Criteria'],
-  bugfix:          ['Overview', 'Root Cause', 'Fix Design', 'Success Criteria'],
-  refactor:        ['Overview', 'Non-Goals', 'Design', 'Success Criteria'],
-  familiarization: ['Overview'],
-}
-
 async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
   const missing = []
 
-  const proposalPath = join(assignmentPath, 'brainstorm', 'proposal.md')
-  const designPath = join(assignmentPath, 'brainstorm', 'design.md')
+  const proposalArtifact = artifactPaths.brainstorm.proposal
+  const designArtifact = artifactPaths.brainstorm.design
+  const proposalPath = join(assignmentPath, proposalArtifact)
+  const designPath = join(assignmentPath, designArtifact)
 
   if (!(await fse.pathExists(proposalPath))) {
-    missing.push('brainstorm/proposal.md')
+    missing.push(proposalArtifact)
   } else {
     const content = await fse.readFile(proposalPath, 'utf-8')
     if (content.trim().length < 20) {
-      missing.push('brainstorm/proposal.md (empty or too short)')
+      missing.push(`${proposalArtifact} (empty or too short)`)
     }
   }
 
   let designContent = ''
   if (!(await fse.pathExists(designPath))) {
-    missing.push('brainstorm/design.md')
+    missing.push(designArtifact)
   } else {
     designContent = await fse.readFile(designPath, 'utf-8')
     if (designContent.trim().length < 20) {
-      missing.push('brainstorm/design.md (empty or too short)')
+      missing.push(`${designArtifact} (empty or too short)`)
     }
   }
 
@@ -94,14 +90,14 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
   if (designContent && missing.length === 0) {
     const parsed = parseAssignmentId(name)
     const type = parsed.type || 'feature'
-    const required = REQUIRED_SECTIONS[type] || REQUIRED_SECTIONS.feature
+    const required = REQUIRED_BRAINSTORM_SECTIONS[type] || REQUIRED_BRAINSTORM_SECTIONS.feature
 
     for (const section of required) {
       const escaped = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       // Strict heading match: exact section title only (no suffix words).
       const pattern = new RegExp(`^##\\s+${escaped}\\s*$`, 'm')
       if (!pattern.test(designContent)) {
-        missing.push(`brainstorm/design.md missing required section: ## ${section}`)
+        missing.push(`${designArtifact} missing required section: ## ${section}`)
       }
     }
   }
@@ -118,8 +114,8 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
   }
 
   console.log(`✅ Brainstorm checkpoint passed for ${name}`)
-  console.log('   brainstorm/proposal.md ✓')
-  console.log('   brainstorm/design.md ✓')
+  console.log(`   ${proposalArtifact} ✓`)
+  console.log(`   ${designArtifact} ✓`)
   blankLine()
   const specdevPath = join(assignmentPath, '..', '..')
   const reviewers = await listReviewers(specdevPath)
@@ -159,15 +155,16 @@ async function listReviewers(specdevPath) {
 async function checkpointImplementation(assignmentPath, name, flags = {}) {
   const missing = []
 
-  const progressPath = join(assignmentPath, 'implementation', 'progress.json')
+  const progressArtifact = artifactPaths.implementation.progress
+  const progressPath = join(assignmentPath, progressArtifact)
 
   if (!(await fse.pathExists(progressPath))) {
-    missing.push('implementation/progress.json')
+    missing.push(progressArtifact)
   } else {
     try {
       const raw = await fse.readJson(progressPath)
       if (!Array.isArray(raw.tasks) || raw.tasks.length === 0) {
-        missing.push('implementation/progress.json has no tasks array (expected tasks: [{status: "completed"}, ...])')
+        missing.push(`${progressArtifact} has no tasks array (expected tasks: [{status: "completed"}, ...])`)
       } else {
         const incomplete = raw.tasks.filter(t => t.status !== 'completed')
         if (incomplete.length > 0) {
@@ -175,7 +172,7 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
         }
       }
     } catch {
-      missing.push('implementation/progress.json (invalid JSON)')
+      missing.push(`${progressArtifact} (invalid JSON)`)
     }
   }
 

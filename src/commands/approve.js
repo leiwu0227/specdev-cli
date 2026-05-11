@@ -1,8 +1,9 @@
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { approvePhase } from '../utils/approve-phase.js'
 import { blankLine } from '../utils/output.js'
+import { commandPhases } from '../utils/workflow-contract.js'
 
-const VALID_PHASES = ['brainstorm', 'implementation']
+const VALID_PHASES = commandPhases.approve
 
 export async function approveCommand(positionalArgs = [], flags = {}) {
   const phase = positionalArgs[0]

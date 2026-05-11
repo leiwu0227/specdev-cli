@@ -8,6 +8,8 @@ Every assignment follows these 4 phases in order. Do not skip phases.
 
 **Goal:** Understand the problem and produce a validated design or research output.
 
+**Output:** `brainstorm/proposal.md` + `brainstorm/design.md`
+
 **Start:** Run `specdev assignment "<description>"` to reserve an ID. This also sets `.specdev/.current` to the new assignment.
 - To include explicit folder naming: `specdev assignment "<description>" --type=<type> --slug=<slug>`
 - To switch to an existing assignment: `specdev focus <id>` (updates `.specdev/.current`)
@@ -71,6 +73,8 @@ Must pass before requesting review.
 **Skill:** `skills/core/knowledge-capture/SKILL.md`
 
 **Output:** `capture/project-notes-diff.md` + `capture/workflow-diff.md`, assignment marked done.
+
+If the assignment exposed reusable workflow confusion, command gotchas, or contradictions, search first with `specdev knowledge search "<issue>"`. Update an existing `knowledge/workflow/` FAQ note when one applies; otherwise create a concise new note there. Use `knowledge/workflow_feedback/` only for SpecDev product/workflow improvement ideas.
 
 ---
 

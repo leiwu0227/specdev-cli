@@ -11,6 +11,7 @@ import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
 import { getLatestRound } from '../utils/review-feedback.js'
 import { resolveCurrentAssignment } from '../utils/current.js'
+import { artifactPaths as workflowArtifactPaths, gateFields } from '../utils/workflow-contract.js'
 
 export async function continueCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -227,16 +228,16 @@ export function buildStatusPayload(payload) {
 async function collectWorkflowStatus(assignmentPath) {
   const gates = await readGateStatus(assignmentPath)
   const artifacts = {}
-  const artifactPaths = [
-    'brainstorm/proposal.md',
-    'brainstorm/design.md',
-    'breakdown/plan.md',
-    'implementation/progress.json',
-    'capture/project-notes-diff.md',
-    'capture/workflow-diff.md',
+  const trackedArtifacts = [
+    workflowArtifactPaths.brainstorm.proposal,
+    workflowArtifactPaths.brainstorm.design,
+    workflowArtifactPaths.breakdown.plan,
+    workflowArtifactPaths.implementation.progress,
+    workflowArtifactPaths.capture.projectNotesDiff,
+    workflowArtifactPaths.capture.workflowDiff,
   ]
 
-  for (const artifact of artifactPaths) {
+  for (const artifact of trackedArtifacts) {
     artifacts[artifact] = await fse.pathExists(join(assignmentPath, artifact))
       ? 'present'
       : 'missing'
@@ -244,8 +245,8 @@ async function collectWorkflowStatus(assignmentPath) {
 
   return {
     gates: {
-      brainstorm: gates.brainstorm_approved ? 'approved' : 'pending',
-      implementation: gates.implementation_approved ? 'approved' : 'pending',
+      brainstorm: gates[gateFields.brainstorm] ? 'approved' : 'pending',
+      implementation: gates[gateFields.implementation] ? 'approved' : 'pending',
     },
     artifacts,
   }

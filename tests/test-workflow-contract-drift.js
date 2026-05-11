@@ -1,0 +1,50 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import {
+  ASSIGNMENT_TYPES,
+  REQUIRED_BRAINSTORM_SECTIONS,
+  artifactPaths,
+  commandPhases,
+} from '../src/utils/workflow-contract.js'
+
+let failures = 0
+let passes = 0
+
+function assert(condition, msg) {
+  if (!condition) { console.error(`  FAIL ${msg}`); failures++ }
+  else { console.log(`  PASS ${msg}`); passes++ }
+}
+
+const root = new URL('..', import.meta.url).pathname
+const read = (path) => readFileSync(join(root, path), 'utf-8')
+
+console.log('\nworkflow contract drift:')
+const workflow = read('templates/.specdev/_guides/workflow.md')
+assert(workflow.includes(ASSIGNMENT_TYPES.join(' | ')), 'workflow guide uses contract assignment type list')
+
+const main = read('templates/.specdev/_main.md')
+assert(main.includes('specdev knowledge search'), '_main.md tells agents to search knowledge')
+assert(main.includes('knowledge/workflow'), '_main.md mentions workflow FAQ knowledge')
+
+const brainstormTemplate = read('templates/.specdev/_templates/brainstorm-design.md')
+for (const [type, sections] of Object.entries(REQUIRED_BRAINSTORM_SECTIONS)) {
+  assert(brainstormTemplate.includes(type), `brainstorm template documents ${type} sections`)
+  for (const section of sections) {
+    assert(brainstormTemplate.includes(section), `brainstorm template includes ${section}`)
+  }
+}
+
+const knowledgeCapture = read('templates/.specdev/skills/core/knowledge-capture/SKILL.md')
+assert(knowledgeCapture.includes('knowledge/workflow/'), 'knowledge capture explains workflow FAQ notes')
+assert(knowledgeCapture.includes('knowledge/workflow_feedback/'), 'knowledge capture preserves workflow feedback distinction')
+
+const initSource = read('src/commands/init.js')
+for (const phase of commandPhases.review.filter(p => p !== 'discussion')) {
+  assert(initSource.includes(phase), `generated command skills mention review phase ${phase}`)
+}
+
+assert(workflow.includes(artifactPaths.brainstorm.proposal), 'workflow guide mentions brainstorm proposal path')
+assert(workflow.includes(artifactPaths.brainstorm.design), 'workflow guide mentions brainstorm design path')
+
+console.log(`\n${passes} passed, ${failures} failed`)
+process.exit(failures > 0 ? 1 : 0)

@@ -302,6 +302,15 @@ async function runTests() {
     assert(currentContent === '00001_feature_auth', '.current contains folder name', `got: ${currentContent}`)
   }
 
+  console.log('\nassignment with unsupported --type rejects before folder creation:')
+  cleanup()
+  runCmd(['init', `--target=${TEST_DIR}`])
+  writeFileSync(bigPicturePath, '# Project\n\n## Overview\nA real project with enough content to pass the validation check.\n\n## Tech Stack\nNode.js\n')
+  const invalidTypeResult = await runAssignmentDirect(['Bad type'], { target: TEST_DIR, type: 'spike', slug: 'bad', json: true })
+  assert(invalidTypeResult.status === 1, 'exits non-zero for unsupported type')
+  assert(invalidTypeResult.stderr.includes('Unknown assignment type'), 'reports unknown assignment type')
+  assert(!existsSync(join(TEST_DIR, '.specdev/assignments/00001_spike_bad')), 'does not create unsupported type folder')
+
   console.log('\nassignment without --type/--slug still works (just reserves ID):')
   cleanup()
   runCmd(['init', `--target=${TEST_DIR}`])

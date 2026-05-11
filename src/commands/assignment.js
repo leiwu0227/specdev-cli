@@ -10,6 +10,7 @@ import { continueCommand } from './continue.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { writeCurrent } from '../utils/current.js'
 import { resolveDiscussionSelector } from '../utils/discussion.js'
+import { ASSIGNMENT_TYPES, assignmentTypeList } from '../utils/workflow-contract.js'
 
 export async function assignmentCommand(args = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -97,6 +98,22 @@ export async function assignmentCommand(args = [], flags = {}) {
   const slug = flags.slug
 
   if (type && slug) {
+    if (!ASSIGNMENT_TYPES.includes(type)) {
+      const message = `Unknown assignment type: ${type}`
+      if (json) {
+        console.log(JSON.stringify({
+          version: 1,
+          status: 'error',
+          error: message,
+          valid_types: ASSIGNMENT_TYPES,
+        }))
+      }
+      console.error(`❌ ${message}`)
+      console.error(`   Valid types: ${assignmentTypeList(' | ')}`)
+      process.exitCode = 1
+      return
+    }
+
     const folderName = `${paddedId}_${type}_${slug}`
     const assignmentPath = join(assignmentsDir, folderName)
     await fse.ensureDir(join(assignmentPath, 'brainstorm'))
@@ -158,7 +175,7 @@ export async function assignmentCommand(args = [], flags = {}) {
   console.log('Create the assignment folder:')
   console.log(`   ${assignmentsDir}/${paddedId}_<type>_<slug>/`)
   blankLine()
-  console.log('Where <type> is: feature | bugfix | refactor | familiarization')
+  console.log(`Where <type> is: ${assignmentTypeList(' | ')}`)
   console.log('And <slug> is a short hyphenated name derived from the description.')
   blankLine()
   console.log('Then create brainstorm/ and context/ subdirectories inside it.')

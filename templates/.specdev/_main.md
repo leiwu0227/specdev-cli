@@ -20,6 +20,10 @@ All work is organized into **assignments**. An assignment is a self-contained un
 
 **Reference:** `_index.md` is the detailed lookup for all guides, skills, commands, and project context. Consult it when you need to find a specific resource.
 
+## Workflow FAQ
+
+If workflow instructions conflict, a SpecDev command fails unexpectedly, or you are unsure how to proceed, run `specdev knowledge search "<issue>"` and inspect `knowledge/workflow/` before guessing. Capture recurring workflow gotchas there during the capture phase.
+
 ## The Workflow
 
 Every assignment follows the same 4 phases in order:

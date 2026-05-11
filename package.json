@@ -1,7 +1,7 @@
 {
   "name": "@specdev/cli",
   "version": "0.0.4",
-  "releaseDate": "2026-05-10",
+  "releaseDate": "2026-05-11",
   "description": "CLI to initialize SpecDev workflow system",
   "type": "module",
   "bin": {
@@ -15,13 +15,15 @@
     "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:scan && npm run test:assignment && npm run test:utils && npm run test:scripts && npm run test:workflow && npm run test:skills && npm run test:update && npm run test:memory && npm run test:knowledge && npm run test:context && npm run test:json-simple && npm run test:json-medium && npm run test:hook && npm run test:distill && npm run test:reviewloop-runner && npm run test:reviewloop-stream-json && npm run test:reviewloop && npm run test:reviewloop-command && npm run test:checkpoints && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:scan && npm run test:assignment && npm run test:utils && npm run test:scripts && npm run test:workflow && npm run test:workflow-contract && npm run test:workflow-contract-drift && npm run test:skills && npm run test:update && npm run test:memory && npm run test:knowledge && npm run test:context && npm run test:json-simple && npm run test:json-medium && npm run test:hook && npm run test:distill && npm run test:reviewloop-runner && npm run test:reviewloop-stream-json && npm run test:reviewloop && npm run test:reviewloop-command && npm run test:checkpoints && npm run test:cleanup",
     "test:init": "node ./tests/test-init.js",
     "test:scan": "node ./tests/test-scan.js",
     "test:assignment": "node ./tests/test-assignment.js",
     "test:utils": "node ./tests/test-utils.js",
     "test:scripts": "node ./tests/test-scripts.js",
     "test:workflow": "node ./tests/test-workflow.js",
+    "test:workflow-contract": "node ./tests/test-workflow-contract.js",
+    "test:workflow-contract-drift": "node ./tests/test-workflow-contract-drift.js",
     "test:skills": "node ./tests/test-skills.js",
     "test:update": "node ./tests/test-update.js",
     "test:memory": "node ./tests/test-memory.js",

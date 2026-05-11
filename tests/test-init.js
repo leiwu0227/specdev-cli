@@ -2,6 +2,7 @@ import { existsSync, readFileSync, rmSync, mkdirSync, writeFileSync } from 'node
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ASSIGNMENT_TYPES, commandPhases } from '../src/utils/workflow-contract.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
@@ -142,6 +143,10 @@ assert(startSkill.includes('What does this project do'), 'start skill includes Q
 const assignmentSkill = readFileSync(join(codexSkillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
 assert(assignmentSkill.includes('specdev assignment'), 'assignment skill references specdev assignment command')
 assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix instruction')
+const initSource = readFileSync(join(__dirname, '..', 'src', 'commands', 'init.js'), 'utf-8')
+assert(initSource.includes('workflow-contract'), 'init command imports workflow contract for command-skill prose')
+const expectedTypes = ASSIGNMENT_TYPES.join(' | ')
+assert(assignmentSkill.includes(expectedTypes), 'assignment skill uses contract assignment type list')
 
 const rewindSkill = readFileSync(join(codexSkillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
@@ -151,6 +156,14 @@ assert(continueSkill.includes('specdev continue'), 'continue skill references sp
 
 const reviewSkill = readFileSync(join(codexSkillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
 assert(reviewSkill.includes('specdev review'), 'review skill references specdev review command')
+const reviewPhasesText = commandPhases.review.filter(p => p !== 'discussion').join(' or ')
+assert(reviewSkill.includes(reviewPhasesText), 'review skill uses contract review phases')
+const checkReviewSkill = readFileSync(join(codexSkillsDir, 'specdev-check-review', 'SKILL.md'), 'utf-8')
+const checkReviewPhasesText = commandPhases.checkReview.join(' or ')
+assert(checkReviewSkill.includes(checkReviewPhasesText), 'check-review skill uses contract check-review phases')
+const reviewloopSkill = readFileSync(join(codexSkillsDir, 'specdev-reviewloop', 'SKILL.md'), 'utf-8')
+const reviewloopPhasesText = commandPhases.reviewloop.filter(p => p !== 'discussion').join('` or `')
+assert(reviewloopSkill.includes(reviewloopPhasesText), 'reviewloop skill uses contract reviewloop phases')
 
 const layoutMigrationSkill = readFileSync(join(codexSkillsDir, 'specdev-layout-migration', 'SKILL.md'), 'utf-8')
 assert(layoutMigrationSkill.includes('.specdev/_guides/migration_guide.md'), 'layout migration skill references migration guide')

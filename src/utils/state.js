@@ -1,5 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
+import { artifactPaths, gateFields } from './workflow-contract.js'
 
 const LEGACY_ROOT_ARTIFACTS = [
   'proposal.md',
@@ -12,33 +13,33 @@ const LEGACY_ROOT_ARTIFACTS = [
 export async function readGateStatus(assignmentPath) {
   const statusPath = join(assignmentPath, 'status.json')
   if (!(await fse.pathExists(statusPath))) {
-    return { brainstorm_approved: false, implementation_approved: false }
+    return { [gateFields.brainstorm]: false, [gateFields.implementation]: false }
   }
   try {
     const raw = await fse.readJson(statusPath)
     return {
-      brainstorm_approved: Boolean(raw.brainstorm_approved),
-      implementation_approved: Boolean(raw.implementation_approved),
+      [gateFields.brainstorm]: Boolean(raw[gateFields.brainstorm]),
+      [gateFields.implementation]: Boolean(raw[gateFields.implementation]),
     }
   } catch {
-    return { brainstorm_approved: false, implementation_approved: false }
+    return { [gateFields.brainstorm]: false, [gateFields.implementation]: false }
   }
 }
 
 export async function detectAssignmentState(assignmentSummary, assignmentPath) {
   const blockers = []
-  const hasProposal = await fse.pathExists(join(assignmentPath, 'brainstorm', 'proposal.md'))
-  const hasDesign = await fse.pathExists(join(assignmentPath, 'brainstorm', 'design.md'))
-  const hasPlan = await fse.pathExists(join(assignmentPath, 'breakdown', 'plan.md'))
+  const hasProposal = await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.proposal))
+  const hasDesign = await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.design))
+  const hasPlan = await fse.pathExists(join(assignmentPath, artifactPaths.breakdown.plan))
   const hasReviewReport = await fse.pathExists(join(assignmentPath, 'review_report.md'))
   const hasProgressFile = await fse.pathExists(
-    join(assignmentPath, 'implementation', 'progress.json')
+    join(assignmentPath, artifactPaths.implementation.progress)
   )
   const hasCaptureProject = await fse.pathExists(
-    join(assignmentPath, 'capture', 'project-notes-diff.md')
+    join(assignmentPath, artifactPaths.capture.projectNotesDiff)
   )
   const hasCaptureWorkflow = await fse.pathExists(
-    join(assignmentPath, 'capture', 'workflow-diff.md')
+    join(assignmentPath, artifactPaths.capture.workflowDiff)
   )
 
   const gates = await readGateStatus(assignmentPath)
@@ -71,7 +72,7 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     }
   }
 
-  if (!gates.brainstorm_approved) {
+  if (!gates[gateFields.brainstorm]) {
     return {
       state: 'brainstorm_checkpoint_ready',
       next_action: 'Run specdev checkpoint brainstorm, then request user approval with specdev approve brainstorm',
@@ -118,7 +119,7 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
   }
 
   if (progress.totalTasks > 0 && progress.completedTasks >= progress.totalTasks) {
-    if (!gates.implementation_approved) {
+    if (!gates[gateFields.implementation]) {
       return {
         state: 'implementation_checkpoint_ready',
         next_action: 'Run specdev checkpoint implementation, then request user approval with specdev approve implementation',
