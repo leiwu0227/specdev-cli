@@ -19,7 +19,7 @@ export async function knowledgeCommand(positionalArgs = [], flags = {}) {
 
   console.error(`Unknown knowledge subcommand: ${subcommand || '(none)'}`)
   console.log('Usage: specdev knowledge index')
-  console.log('       specdev knowledge search <query>')
+  console.log('       specdev knowledge search <keywords>')
   console.log('       specdev knowledge list')
   process.exitCode = 1
 }
@@ -47,8 +47,8 @@ async function knowledgeIndexCommand(flags = {}) {
 async function knowledgeSearchCommand(positionalArgs = [], flags = {}) {
   const query = positionalArgs.join(' ').trim()
   if (!query) {
-    console.error('Missing search query')
-    console.log('Usage: specdev knowledge search <query>')
+    console.error('Missing search keywords')
+    console.log('Usage: specdev knowledge search <keywords>')
     process.exitCode = 1
     return
   }

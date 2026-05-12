@@ -63,7 +63,7 @@ Running catalog of completed assignments. See `_templates/gate_checklist.md` (Fi
 ### SQLite Knowledge Retrieval
 **Assignment:** 00013_feature_sqlite-knowledge-retrieval
 **Completed:** 2026-05-08
-**Description:** Added `specdev knowledge index` and `specdev knowledge search <query>` for local SQLite FTS retrieval over SpecDev markdown artifacts. The database is generated under `.specdev/cache/knowledge.sqlite`, ignored by git, and rebuildable from markdown sources.
+**Description:** Added `specdev knowledge index` and `specdev knowledge search <keywords>` for local SQLite FTS retrieval over SpecDev markdown artifacts. The database is generated under `.specdev/cache/knowledge.sqlite`, ignored by git, and rebuildable from markdown sources.
 **Key files:** `src/commands/knowledge.js`, `src/utils/knowledge.js`, `tests/test-knowledge.js`, `templates/.specdev/.gitignore`
 
 ### Claude Reviewer Observability

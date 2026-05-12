@@ -100,7 +100,7 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 | Command | Purpose | When to use |
 |---------|---------|-------------|
 | `specdev knowledge index` | Build/rebuild SQLite FTS index of `.specdev/` knowledge | After adding new content (search auto-builds on first use) |
-| `specdev knowledge search "<query>"` | Search indexed knowledge (BM25-ranked) | Finding relevant project context |
+| `specdev knowledge search "<keywords>"` | Search indexed knowledge (BM25-ranked) | Finding relevant project context |
 | `specdev memory refresh` | Regenerate bounded working memory for agents | After completing assignments or adding knowledge |
 | `specdev migrate` | Guided layout migration for non-conforming `.specdev/` | When `.specdev/` structure doesn't match current layout |
 | `specdev migrate legacy-assignments [--assignment=<id>]` | Deterministic V3-to-V4 assignment file moves | When old root-level phase files exist in assignments |

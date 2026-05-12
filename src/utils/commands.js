@@ -7,7 +7,7 @@ export const COMMANDS = [
   { name: 'skills sync', usage: 'skills sync', description: 'Reconcile active tools with available skills' },
   { name: 'memory refresh', usage: 'memory refresh', description: 'Regenerate bounded working memory for agents' },
   { name: 'knowledge index', usage: 'knowledge index', description: 'Rebuild SQLite knowledge retrieval cache' },
-  { name: 'knowledge search', usage: 'knowledge search <query>', description: 'Search indexed SpecDev knowledge' },
+  { name: 'knowledge search', usage: 'knowledge search <keywords>', description: 'Search indexed SpecDev knowledge' },
   { name: 'knowledge list', usage: 'knowledge list', description: 'List all knowledge files with metadata' },
   { name: 'research', usage: 'research <topic>', description: 'Run the researcher agent for the active assignment' },
   { name: 'agents inspect', usage: 'agents inspect <path>', description: 'Validate and inspect an agent spec' },

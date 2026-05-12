@@ -24,7 +24,7 @@ specdev-cli is a CLI tool that enforces a spec-driven development workflow for A
 - architecture/reduced-test-suite.md: SpecDev CLI intentionally keeps a compact command-level smoke/regression suite instead of one test file per source module.
 - architecture/reviewloop-autocontinue.md: `specdev reviewloop <phase> --reviewer=<name> --autocontinue` keeps reviewloop as the owner of review execution and phase approval, but adds an explicit post-approval continuation contract for agents.
 - architecture/reviewloop-observability.md: Assignment `00015_feature_claude-reviewer-observability` split reviewloop subprocess mechanics from reviewloop policy.
-- architecture/sqlite-knowledge-retrieval.md: Assignment 00013 added `specdev knowledge index` and `specdev knowledge search <query>` as the first retrieval layer for SpecDev knowledge.
+- architecture/sqlite-knowledge-retrieval.md: Assignment 00013 added `specdev knowledge index` and `specdev knowledge search <keywords>` as the first retrieval layer for SpecDev knowledge.
 - architecture/workflow-agents.md: Assignment `00018_feature_workflow-agents` introduced agents as a third SpecDev workflow primitive alongside skills and scripts.
 - architecture/workflow-contract-facts.md: Assignment `00017_refactor_workflow-architecture` introduced `src/utils/workflow-contract.js` as the owner for structured workflow facts.
 - architecture/workflow-runtime-overlay.md: SpecDev now installs a declarative `.specdev/workflow.yaml` and exposes `specdev next --json` as the canonical next-action contract for agents.

@@ -103,7 +103,7 @@ After a phase completes, if the agent learned something reusable, it may suggest
 Subsequent assignments find that knowledge via:
 
 ```bash
-specdev knowledge search "<query>"
+specdev knowledge search "<keywords>"
 ```
 
 ## Lost? Check your status
@@ -139,7 +139,7 @@ These tell you exactly where you are, what's blocking you, and what to do next. 
 | `specdev check-review` | Coding agent | Read and address review feedback |
 | `specdev revise` | Coding agent | Archive downstream artifacts, re-enter brainstorm |
 | `specdev knowledge index` | Terminal | Build the SQLite knowledge cache |
-| `specdev knowledge search "<query>"` | Either | Search indexed knowledge notes |
+| `specdev knowledge search "<keywords>"` | Either | Search indexed knowledge notes |
 | `specdev knowledge list` | Either | List all knowledge files with metadata |
 | `specdev memory refresh` | Terminal | Regenerate bounded `working_memory.md` for agents |
 | `specdev migrate` | Coding agent | Guided `.specdev/` layout migration workflow |

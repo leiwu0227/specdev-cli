@@ -38,7 +38,7 @@ specdev skills remove <name>           # Remove an installed tool skill
 specdev skills sync                    # Reconcile active tools with available skills
 specdev memory refresh                 # Regenerate bounded working memory
 specdev knowledge index                # Rebuild SQLite knowledge retrieval cache
-specdev knowledge search <query>       # Search indexed SpecDev knowledge
+specdev knowledge search <keywords>    # Search indexed SpecDev knowledge
 specdev knowledge list                 # List knowledge files
 specdev help                           # Show usage information
 ```

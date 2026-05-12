@@ -142,7 +142,7 @@ esac
 
 # Knowledge availability
 if [ "$KNOWLEDGE_COUNT" -gt 0 ] 2>/dev/null; then
-  CONTEXT="${CONTEXT}\n\nKnowledge: $KNOWLEDGE_COUNT files available. Run \`specdev knowledge search \"<query>\"\` for prior decisions."
+  CONTEXT="${CONTEXT}\n\nKnowledge: $KNOWLEDGE_COUNT files available. Run \`specdev knowledge search \"<keywords>\"\` for prior decisions."
 fi
 
 # Recent history
