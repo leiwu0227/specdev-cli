@@ -25,12 +25,13 @@ Read always-apply skills: `skills/core/verification-before-completion.md` and `s
 
 ## Workflow
 
-All assignments follow the same 4 phases. See `_guides/workflow.md` for the full guide.
+All assignments follow the same 3 required phases. See `_guides/workflow.md` for the full guide.
 
 1. **Brainstorm** — interactive Q&A → validated design
-2. **Breakdown** — design → implementation plan with coherent tasks and bite-sized TDD steps
-3. **Implement** — plan execution mode, TDD, mode-based review, batch execution
-4. **Summary** — capture learnings, update docs
+2. **Breakdown** — design → concise implementation plan with coherent tasks and verification guidance
+3. **Implement** — plan execution mode with task-level verification/review
+
+Optional phase-end knowledge capture records reusable knowledge only when useful.
 
 ## Assignment folder structure
 

@@ -70,9 +70,9 @@ Per-task checks:
 - [ ] `skills_invoked.md` complete
 - [ ] assignment marked DONE in `assignment_progress.md`
 
-## Knowledge Capture
+## Optional Knowledge Capture
 
-- [ ] Learnings distilled into relevant `knowledge/` branches
+- [ ] Reusable learnings searched, pruned/replaced, and recorded only if useful
 - [ ] Workflow observations noted in `knowledge/workflow_feedback/` (if applicable)
 
 ---

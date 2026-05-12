@@ -1,6 +1,14 @@
 # Workflow Guide
 
-Every assignment follows these 4 phases in order. Do not skip phases.
+Every assignment follows these 3 required phases in order. Do not skip phases.
+
+For action selection, use the runtime contract first:
+
+```bash
+specdev next --json
+```
+
+The runtime reads `.specdev/workflow.yaml`, the active assignment, artifact presence, gates, and progress, then returns one canonical next action with evidence, blockers, structured choices, and hook outcomes. This guide is the human-readable reference for the same workflow; it should not be treated as a second state machine.
 
 ---
 
@@ -10,20 +18,18 @@ Every assignment follows these 4 phases in order. Do not skip phases.
 
 **Output:** `brainstorm/proposal.md` + `brainstorm/design.md`
 
-**Start:** Run `specdev assignment "<description>"` to reserve an ID. This also sets `.specdev/.current` to the new assignment.
-- To include explicit folder naming: `specdev assignment "<description>" --type=<type> --slug=<slug>`
+**Start:** Prefer `specdev assignment "<description>" --type=<type> --slug=<slug>`. This creates the assignment folder, creates the phase directories, and sets `.specdev/.current`.
+- Valid assignment types: feature | bugfix | refactor | familiarization
+- Reserve-only mode exists for manual folder creation: `specdev assignment "<description>"`
 - To switch to an existing assignment: `specdev focus <id>` (updates `.specdev/.current`)
 - To explore ideas without committing to a full assignment: `specdev discussion "<description>"` — creates a lightweight discussion folder; promote later with `specdev assignment "<desc>" --discussion=<id> --type=<type> --slug=<slug>`
-
-Create the assignment folder: `assignments/NNNNN_<type>_<slug>/`
-Where type is: feature | bugfix | refactor | familiarization
-And slug is a short hyphenated name derived from the description.
-Create `brainstorm/` and `context/` subdirectories inside it.
 
 **Choose the skill that matches your work:**
 - Building or changing functionality → `skills/core/brainstorming/SKILL.md`
 - Understanding existing code → `skills/core/investigation/SKILL.md`
 - Diagnosing a bug → `skills/core/diagnosis/SKILL.md`
+
+After setup, run `specdev next --json` and follow the returned guide or command.
 
 **Checkpoint:** Run `specdev checkpoint brainstorm`.
 Must pass before requesting review.
@@ -32,14 +38,13 @@ Must pass before requesting review.
 - `specdev review brainstorm` — manual review in a separate session
 - `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex)
 
-**Gate:** `specdev approve brainstorm` must have been run. If you used `specdev reviewloop` and it printed "Phase 'brainstorm' has been approved", the gate is already satisfied — proceed immediately to breakdown. Otherwise, ask the user to run `specdev approve brainstorm`.
-Breakdown runs automatically after approval — no separate command needed.
+**Gate:** `specdev approve brainstorm` must have been run. If `specdev reviewloop --autocontinue` approved the phase, continue with the next action from its contract or from `specdev next --json`.
 
 ---
 
 ## Phase 2: Breakdown
 
-**Goal:** Turn the approved design into an implementation plan with coherent tasks, bite-sized TDD steps, and an execution mode.
+**Goal:** Turn the approved design into an implementation plan with coherent tasks, verification guidance, and an execution mode.
 
 **Skill:** `skills/core/breakdown/SKILL.md`
 
@@ -47,11 +52,13 @@ Breakdown runs automatically after approval — no separate command needed.
 
 **Output:** `breakdown/plan.md`
 
+After writing the plan, run `specdev next --json` for the next implementation action.
+
 ---
 
 ## Phase 3: Implement
 
-**Goal:** Execute tasks in batches of 3 using the plan's execution mode, TDD, and mode-based review.
+**Goal:** Execute tasks using the plan's execution mode and task-level verification/review.
 
 **Skill:** `skills/core/implementing/SKILL.md`
 
@@ -62,19 +69,19 @@ Must pass before requesting review.
 - `specdev review implementation` — manual review in a separate session
 - `specdev reviewloop implementation` — automated review via external CLI (e.g., Codex)
 
-**Gate:** `specdev approve implementation` must have been run. If you used `specdev reviewloop` and it printed "Phase 'implementation' has been approved", the gate is already satisfied — proceed immediately to summary. Otherwise, ask the user to run `specdev approve implementation`.
+**Gate:** `specdev approve implementation` must have been run. If `specdev reviewloop --autocontinue` approved the phase, continue with the next action from its contract or from `specdev next --json`.
 
 ---
 
-## Phase 4: Summary (Capture)
+## Optional Phase-End Knowledge Capture
 
-**Goal:** Capture learnings and update project documentation.
+**Goal:** Capture reusable knowledge only when it helps future assignments.
 
 **Skill:** `skills/core/knowledge-capture/SKILL.md`
 
-**Output:** `capture/project-notes-diff.md` + `capture/workflow-diff.md`, assignment marked done.
+**Output:** Optional direct updates to `knowledge/` or `project_notes/`. This never blocks workflow progress.
 
-If the assignment exposed reusable workflow confusion, command gotchas, or contradictions, search first with `specdev knowledge search "<issue>"`. Update an existing `knowledge/workflow/` FAQ note when one applies; otherwise create a concise new note there. Use `knowledge/workflow_feedback/` only for SpecDev product/workflow improvement ideas.
+At the end of brainstorm, breakdown, or implementation, suggest capture only if the phase produced reusable knowledge. Search first with `specdev knowledge search "<issue>"`. Prefer prune-and-replace: update or replace an existing note when one applies; create a concise new note only when no existing note fits. Ask the user before writing.
 
 ---
 
