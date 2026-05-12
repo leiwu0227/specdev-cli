@@ -15,7 +15,7 @@
     "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:assignment && npm run test:workflow-contract-drift && npm run test:update && npm run test:knowledge && npm run test:workflow-agent && npm run test:approve-phase && npm run test:checkpoints && npm run test:cleanup",
+    "test": "node --test --test-concurrency=4 ./tests/test-*.js && npm run test:cleanup",
     "test:init": "node ./tests/test-init.js",
     "test:assignment": "node ./tests/test-assignment.js",
     "test:workflow-contract-drift": "node ./tests/test-workflow-contract-drift.js",

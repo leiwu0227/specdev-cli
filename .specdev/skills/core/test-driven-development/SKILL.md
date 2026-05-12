@@ -26,7 +26,20 @@ type: core
 
 | Script | Purpose | When to run |
 |--------|---------|-------------|
-| `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh` | Run the project's test suite and return structured results | After writing a test (RED), after writing code (GREEN), after refactoring |
+| `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh` | Run a project test command (scoped or full) and return structured pass/fail JSON | After writing a test (RED), after writing code (GREEN), after refactoring |
+
+The script accepts an optional second argument: `verify-tests.sh <project-root> [test-command]`. **Default to a scoped command that only runs the test files this task touches** — do NOT run the full suite per RED/GREEN/REFACTOR cycle. The full suite runs once at the end of the phase as part of `verification-before-completion`.
+
+Scoping examples:
+
+| Stack | Per-task scoped command | Full-suite command (end of phase only) |
+|-------|------------------------|----------------------------------------|
+| Node (mocha / vitest / node:test) | `node --test tests/test-<feature>.js` or `npx vitest run tests/<feature>.test.ts` | `npm test` |
+| Python (pytest) | `pytest tests/test_<feature>.py::test_<name> -x` | `pytest` |
+| Rust (cargo) | `cargo test <feature>::<name>` | `cargo test` |
+| Go | `go test ./<pkg> -run Test<Name>` | `go test ./...` |
+
+If the plan does not name a scoped command for a task, infer one from the test file(s) created in that task's Step 1.
 
 ## Process
 
@@ -38,7 +51,7 @@ type: core
 
 ### Step 2: Verify RED
 
-1. Run `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh <project-root> [test-command]`
+1. Run `verify-tests.sh <project-root> "<scoped test command for this task's test file>"`
 2. Confirm the output shows `"passed": false`
 3. If the test passes immediately — STOP. Your test is wrong:
    - Either the behavior already exists (check the codebase)
@@ -54,17 +67,16 @@ type: core
 
 ### Step 4: Verify GREEN
 
-1. Run `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh <project-root> [test-command]`
+1. Run `verify-tests.sh <project-root> "<scoped test command>"`
 2. Confirm the output shows `"passed": true`
 3. If tests still fail — fix the implementation, do not modify the test
-4. ALL tests must pass, not just the new one
 
 ### Step 5: REFACTOR
 
 1. Clean up the code you just wrote (if needed)
 2. Remove duplication, improve naming, simplify logic
-3. Run `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh <project-root>` again
-4. Confirm all tests still pass — refactoring must not change behavior
+3. Run `verify-tests.sh <project-root> "<scoped test command>"` again
+4. Confirm the scoped tests still pass — refactoring must not change behavior
 5. If tests fail after refactoring, you changed behavior — undo and try again
 
 ### Step 6: Commit
@@ -72,17 +84,26 @@ type: core
 1. Commit the test + implementation together
 2. The commit message should describe the behavior, not the implementation
 
+### Step 7: End-of-Phase Full Verification
+
+Once **all** tasks in the plan are complete, run `verify-tests.sh` once
+with no scope argument (or with the project's full-suite command). The
+full-suite run belongs to verification-before-completion, not to each
+task. Per-batch full-suite runs are an anti-pattern — they multiply
+suite cost by the task count.
+
 ## Red Flags
 
 - Writing production code before the test — STOP, delete it, write the test first
 - Test passes immediately on first run — the test is wrong or the behavior exists
 - Skipping the verify step — always run verify-tests.sh, never assume
+- Running the **full suite** per RED/GREEN/REFACTOR cycle — scope to the task's test files; the full suite runs at end-of-phase only
 - Writing more code than needed to pass the test — minimal means minimal
 - Modifying the test to make it pass — fix the code, not the test
-- Refactoring without verifying — always run tests after refactoring
+- Refactoring without verifying — always run scoped tests after refactoring
 
 ## Integration
 
 - **Before this skill:** planning or executing (provides the task to implement)
-- **After this skill:** verification (confirms all work is complete)
+- **After this skill:** verification-before-completion (runs the end-of-phase full suite)
 - **Always paired with:** systematic-debugging (when tests fail unexpectedly)
