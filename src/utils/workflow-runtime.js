@@ -844,24 +844,76 @@ function renderInteractionBlock(interaction, runtimeContext) {
 }
 
 function renderContinuationBlock(onSatisfied, runtimeContext) {
-  const { sessionState = {} } = runtimeContext
+  const { sessionState = null, nextPhase = null } = runtimeContext
   const sticky = onSatisfied.sticky || []
-  const expanded = { ...onSatisfied.next }
+  const hasSticky = Boolean(sessionState && sessionState.autocontinue && sessionState.reviewer)
+  // Effective interrupt: manifest says don't interrupt, but if we have no
+  // sticky state we must fall back to user prompt (interrupt:true).
+  // The manifest's `interrupt:false` is the "happy path" assertion; the runtime
+  // downgrades to interrupt:true when sticky is absent.
+  const interruptManifest = onSatisfied.interrupt === true
+  const interrupt = interruptManifest || !hasSticky
 
-  // Sticky-state expansion happens here when callers actually emit the continuation;
-  // for now just pass through the manifest data and let approve.js / reviewloop.js
-  // do the final substitution with sticky state in Task 11.
+  const sticky_resolved = Object.fromEntries(
+    sticky.map((key) => [key, sessionState ? sessionState[key] ?? null : null])
+  )
+
+  // Build the concrete command(s) the agent should run.
+  let command = null
+  let prompt = null
+  if (nextPhase) {
+    if (hasSticky) {
+      command = `specdev reviewloop ${nextPhase} --reviewer=${sessionState.reviewer} --autocontinue`
+    } else {
+      prompt = {
+        pick_reviewer: `specdev reviewloop ${nextPhase} --reviewer=<name> --autocontinue`,
+        skip_review: `specdev approve ${nextPhase}`,
+        message: `Pick a reviewer for ${nextPhase}:`,
+      }
+    }
+  }
+
   return {
-    next: expanded,
+    next: { ...onSatisfied.next },
     sticky,
-    interrupt: onSatisfied.interrupt === true,
-    sticky_resolved: Object.fromEntries(
-      sticky.map((key) => [key, sessionState[key] ?? null])
-    ),
+    interrupt,
+    sticky_resolved,
+    next_phase: nextPhase,
+    command,
+    prompt,
   }
 }
 
 export function findTopLevelInteraction(workflow, id) {
   const list = Array.isArray(workflow?.interactions) ? workflow.interactions : []
   return list.find((entry) => entry && entry.id === id) || null
+}
+
+/**
+ * Resolve the next phase that follows the given completed phase, based on the
+ * canonical phase order declared by the manifest. Returns null when there is
+ * no successor (terminal phase) or when the input is unknown.
+ */
+export function nextPhaseAfter(workflow, completedPhase) {
+  const order = ['brainstorm', 'breakdown', 'implementation']
+  const idx = order.indexOf(completedPhase)
+  if (idx === -1 || idx === order.length - 1) return null
+  // Skip phases that have no gate — agents auto-advance through them.
+  for (let i = idx + 1; i < order.length; i++) {
+    const phase = order[i]
+    const phaseDef = workflow?.phases?.[phase]
+    if (!phaseDef || !Array.isArray(phaseDef.steps)) continue
+    const hasGate = phaseDef.steps.some((s) => s && s.kind === 'gate')
+    if (hasGate) return phase
+  }
+  return null
+}
+
+/**
+ * Find a phase's gate step.
+ */
+export function findGateStep(workflow, phase) {
+  const steps = workflow?.phases?.[phase]?.steps
+  if (!Array.isArray(steps)) return null
+  return steps.find((s) => s && s.kind === 'gate') || null
 }

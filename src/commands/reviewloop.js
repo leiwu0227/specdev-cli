@@ -12,7 +12,13 @@ import {
   hasUnaddressedFindings,
 } from '../utils/review-feedback.js'
 import { approvePhase } from '../utils/approve-phase.js'
-import { loadWorkflowDefinition } from '../utils/workflow-runtime.js'
+import {
+  loadWorkflowDefinition,
+  renderStepOutput,
+  nextPhaseAfter,
+  findGateStep,
+} from '../utils/workflow-runtime.js'
+import { readValidatedSessionState } from '../utils/session-state.js'
 import { resolveRoundFocus } from '../utils/review-focus.js'
 import {
   preflightReviewers,
@@ -46,34 +52,29 @@ function printSimplificationPrompt() {
   blankLine()
 }
 
-function autocontinueContract(phase, reviewerNames) {
-  const reviewerArg = reviewerNames.join(',')
-  const contract = {
-    mode: 'autocontinue',
-    phase,
-    next_action_command: 'specdev next --json',
-    instruction: 'Run specdev next --json and follow the returned action without asking for another user decision.',
-  }
-  if (phase === 'brainstorm') {
-    contract.reviewer_carry_forward = reviewerArg
-  }
-  return contract
-}
+function printAutocontinuePrompt(workflowInfo, phase, sessionState) {
+  const gateStep = findGateStep(workflowInfo.workflow, phase)
+  const nextPhase = nextPhaseAfter(workflowInfo.workflow, phase)
+  const rendered = renderStepOutput(gateStep, { sessionState, nextPhase })
+  const continuation = rendered.continuation || null
 
-function printAutocontinuePrompt(phase, reviewerNames) {
-  const reviewerArg = reviewerNames.join(',')
   blankLine()
-  printSection('Autocontinue requested:')
-  if (phase === 'brainstorm') {
-    console.log('   The brainstorm gate is approved.')
-    console.log('   Run specdev next --json and follow the returned action without another user decision.')
-    console.log(`   Carry forward reviewer selection when the next action asks for implementation review: ${reviewerArg}`)
-  } else if (phase === 'implementation') {
-    console.log('   The implementation gate is approved.')
-    console.log('   Run specdev next --json and follow the returned action without another user decision.')
+  printSection('Autocontinue: phase gate approved')
+  if (!continuation || !nextPhase) {
+    console.log('   Run specdev next --json and follow the returned action.')
+    blankLine()
+    return
   }
-  console.log('   Contract:')
-  console.log(JSON.stringify(autocontinueContract(phase, reviewerNames), null, 2).split('\n').map(line => `   ${line}`).join('\n'))
+  if (!continuation.interrupt && continuation.command) {
+    console.log('   Continuation (no user prompt required):')
+    console.log(`     ${continuation.command}`)
+  } else {
+    console.log('   Continuation (user input required):')
+    console.log(`     Pick a reviewer for ${nextPhase}:`)
+    console.log(`       specdev reviewloop ${nextPhase} --reviewer=<name> --autocontinue`)
+    console.log('     Or skip review:')
+    console.log(`       specdev approve ${nextPhase}`)
+  }
   blankLine()
 }
 
@@ -701,7 +702,8 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     if (approveResult.approved) {
       printSection(`Review approved! Phase '${phase}' has been approved.`)
       if (flags.autocontinue) {
-        printAutocontinuePrompt(phase, reviewerNames)
+        const sessionState = await readValidatedSessionState(specdevPath)
+        printAutocontinuePrompt(workflowInfo, phase, sessionState)
       }
     } else {
       printSection('Review approved, but phase approval had errors:')
