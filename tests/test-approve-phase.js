@@ -5,9 +5,17 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { approvePhase } from '../src/utils/approve-phase.js'
+import { DEFAULT_WORKFLOW } from '../src/utils/workflow-runtime.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const TEST_DIR = join(__dirname, 'test-approve-phase-output')
+
+const WORKFLOW_INFO = {
+  source: 'default',
+  path: null,
+  workflow: DEFAULT_WORKFLOW,
+  validation: { valid: true, errors: [] },
+}
 
 function makeAssignment() {
   const assignmentPath = join(TEST_DIR, '.specdev', 'assignments', '001_feature_test')
@@ -37,7 +45,7 @@ describe('approvePhase — brainstorm', () => {
     mkdirSync(join(assignmentPath, 'brainstorm'), { recursive: true })
     writeFileSync(join(assignmentPath, 'brainstorm', 'design.md'), 'A sufficiently long design document content here.')
 
-    const result = await approvePhase(assignmentPath, 'brainstorm')
+    const result = await approvePhase(assignmentPath, 'brainstorm', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.length > 0)
     assert.ok(result.errors.some(e => e.includes('proposal.md')))
@@ -47,7 +55,7 @@ describe('approvePhase — brainstorm', () => {
     mkdirSync(join(assignmentPath, 'brainstorm'), { recursive: true })
     writeFileSync(join(assignmentPath, 'brainstorm', 'proposal.md'), 'A sufficiently long proposal document content here.')
 
-    const result = await approvePhase(assignmentPath, 'brainstorm')
+    const result = await approvePhase(assignmentPath, 'brainstorm', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.length > 0)
     assert.ok(result.errors.some(e => e.includes('design.md')))
@@ -58,7 +66,7 @@ describe('approvePhase — brainstorm', () => {
     writeFileSync(join(assignmentPath, 'brainstorm', 'proposal.md'), 'short')
     writeFileSync(join(assignmentPath, 'brainstorm', 'design.md'), 'A sufficiently long design document content here.')
 
-    const result = await approvePhase(assignmentPath, 'brainstorm')
+    const result = await approvePhase(assignmentPath, 'brainstorm', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.some(e => e.includes('proposal.md') && e.includes('too short')))
   })
@@ -68,7 +76,7 @@ describe('approvePhase — brainstorm', () => {
     writeFileSync(join(assignmentPath, 'brainstorm', 'proposal.md'), 'A sufficiently long proposal document content here.')
     writeFileSync(join(assignmentPath, 'brainstorm', 'design.md'), 'short')
 
-    const result = await approvePhase(assignmentPath, 'brainstorm')
+    const result = await approvePhase(assignmentPath, 'brainstorm', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.some(e => e.includes('design.md') && e.includes('too short')))
   })
@@ -79,7 +87,7 @@ describe('approvePhase — brainstorm', () => {
     writeFileSync(join(assignmentPath, 'brainstorm', 'proposal.md'), 'A sufficiently long proposal document content here.')
     writeFileSync(join(assignmentPath, 'brainstorm', 'design.md'), 'A sufficiently long design document content here.')
 
-    const result = await approvePhase(assignmentPath, 'brainstorm')
+    const result = await approvePhase(assignmentPath, 'brainstorm', WORKFLOW_INFO)
     assert.equal(result.approved, true)
     assert.equal(result.errors.length, 0)
 
@@ -94,7 +102,7 @@ describe('approvePhase — brainstorm', () => {
     writeFileSync(join(assignmentPath, 'brainstorm', 'proposal.md'), 'A sufficiently long proposal document content here.')
     writeFileSync(join(assignmentPath, 'brainstorm', 'design.md'), 'A sufficiently long design document content here.')
 
-    const result = await approvePhase(assignmentPath, 'brainstorm')
+    const result = await approvePhase(assignmentPath, 'brainstorm', WORKFLOW_INFO)
     assert.equal(result.approved, true)
 
     const status = JSON.parse(readFileSync(join(assignmentPath, 'status.json'), 'utf-8'))
@@ -120,7 +128,7 @@ describe('approvePhase — implementation', () => {
   it('fails when progress.json is missing', async () => {
     mkdirSync(join(assignmentPath, 'implementation'), { recursive: true })
 
-    const result = await approvePhase(assignmentPath, 'implementation')
+    const result = await approvePhase(assignmentPath, 'implementation', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.length > 0)
     assert.ok(result.errors.some(e => e.includes('progress.json')))
@@ -133,7 +141,7 @@ describe('approvePhase — implementation', () => {
       JSON.stringify({ version: 1 })
     )
 
-    const result = await approvePhase(assignmentPath, 'implementation')
+    const result = await approvePhase(assignmentPath, 'implementation', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.some(e => e.includes('no tasks')))
   })
@@ -145,7 +153,7 @@ describe('approvePhase — implementation', () => {
       JSON.stringify({ tasks: [] })
     )
 
-    const result = await approvePhase(assignmentPath, 'implementation')
+    const result = await approvePhase(assignmentPath, 'implementation', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.some(e => e.includes('no tasks')))
   })
@@ -162,7 +170,7 @@ describe('approvePhase — implementation', () => {
       })
     )
 
-    const result = await approvePhase(assignmentPath, 'implementation')
+    const result = await approvePhase(assignmentPath, 'implementation', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.some(e => e.includes('not completed')))
   })
@@ -174,7 +182,7 @@ describe('approvePhase — implementation', () => {
       'not valid json {'
     )
 
-    const result = await approvePhase(assignmentPath, 'implementation')
+    const result = await approvePhase(assignmentPath, 'implementation', WORKFLOW_INFO)
     assert.equal(result.approved, false)
     assert.ok(result.errors.some(e => e.includes('invalid')))
   })
@@ -192,7 +200,7 @@ describe('approvePhase — implementation', () => {
       })
     )
 
-    const result = await approvePhase(assignmentPath, 'implementation')
+    const result = await approvePhase(assignmentPath, 'implementation', WORKFLOW_INFO)
     assert.equal(result.approved, true)
     assert.equal(result.errors.length, 0)
 
@@ -211,7 +219,7 @@ describe('approvePhase — implementation', () => {
       })
     )
 
-    const result = await approvePhase(assignmentPath, 'implementation')
+    const result = await approvePhase(assignmentPath, 'implementation', WORKFLOW_INFO)
     assert.equal(result.approved, true)
 
     const status = JSON.parse(readFileSync(join(assignmentPath, 'status.json'), 'utf-8'))

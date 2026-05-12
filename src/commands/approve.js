@@ -1,7 +1,9 @@
+import { join } from 'path'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { approvePhase } from '../utils/approve-phase.js'
 import { blankLine } from '../utils/output.js'
 import { commandPhases } from '../utils/workflow-contract.js'
+import { loadWorkflowDefinition } from '../utils/workflow-runtime.js'
 
 const VALID_PHASES = commandPhases.approve
 
@@ -24,8 +26,10 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
 
   const assignmentPath = await resolveAssignmentPath(flags)
   const name = assignmentName(assignmentPath)
+  const specdevPath = join(assignmentPath, '..', '..')
+  const workflowInfo = await loadWorkflowDefinition(specdevPath)
 
-  const result = await approvePhase(assignmentPath, phase)
+  const result = await approvePhase(assignmentPath, phase, workflowInfo)
 
   if (!result.approved) {
     if (flags.json) {

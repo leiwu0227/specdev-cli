@@ -12,6 +12,7 @@ import {
   hasUnaddressedFindings,
 } from '../utils/review-feedback.js'
 import { approvePhase } from '../utils/approve-phase.js'
+import { loadWorkflowDefinition } from '../utils/workflow-runtime.js'
 import { resolveRoundFocus } from '../utils/review-focus.js'
 import {
   preflightReviewers,
@@ -681,7 +682,8 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
       printSimplificationPrompt()
     }
 
-    const approveResult = await approvePhase(assignmentPath, phase)
+    const workflowInfo = await loadWorkflowDefinition(specdevPath)
+    const approveResult = await approvePhase(assignmentPath, phase, workflowInfo)
     if (approveResult.approved) {
       printSection(`Review approved! Phase '${phase}' has been approved.`)
       if (flags.autocontinue) {
