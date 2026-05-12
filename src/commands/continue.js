@@ -208,8 +208,6 @@ async function collectWorkflowStatus(assignmentPath) {
     workflowArtifactPaths.brainstorm.design,
     workflowArtifactPaths.breakdown.plan,
     workflowArtifactPaths.implementation.progress,
-    workflowArtifactPaths.capture.projectNotesDiff,
-    workflowArtifactPaths.capture.workflowDiff,
   ]
 
   for (const artifact of trackedArtifacts) {

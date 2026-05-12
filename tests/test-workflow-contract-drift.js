@@ -80,5 +80,22 @@ for (const stack of ['mocha', 'pytest', '#[test]', 'func Test', '@Test', '[Fact]
   assert(reviewerPrompt.includes(stack), `reviewer prompt covers ${stack} counting rule`)
 }
 
+// Dangling-reference guard: every `workflowArtifactPaths.<section>.<key>`
+// referenced in source must resolve against the live contract. Catches
+// refactors that drop a contract section but leave consumers behind
+// (e.g. the `capture.*` regression in `specdev status`).
+const consumerSources = [
+  'src/commands/continue.js',
+]
+const refPattern = /workflowArtifactPaths\.([a-zA-Z_]+)\.([a-zA-Z_]+)/g
+for (const path of consumerSources) {
+  const src = read(path)
+  for (const match of src.matchAll(refPattern)) {
+    const [, section, key] = match
+    const resolved = artifactPaths[section] && artifactPaths[section][key]
+    assert(resolved, `${path} references live artifactPaths.${section}.${key}`)
+  }
+}
+
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)
