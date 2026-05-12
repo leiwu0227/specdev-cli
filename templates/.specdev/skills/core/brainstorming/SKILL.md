@@ -82,7 +82,7 @@ You may always add optional sections (User Stories, Dependencies, Risks, Technic
 
 Once all design sections are validated:
 
-1. Create the assignment folder (use register-assignment pattern)
+1. Create the assignment folder (`specdev assignment "<description>" --type=<type> --slug=<slug>`)
 2. Write `brainstorm/proposal.md` — short (1-2 paragraphs), what and why
 3. Write `brainstorm/design.md` — full validated design including:
    - Goal and approach

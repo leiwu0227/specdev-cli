@@ -1,7 +1,5 @@
 ## How to complete a proposed assignment
 
-**Reference example**: `.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/`
-
 ## Setup rules
 
 - User must provide an assignment description. If missing, ask for it.
@@ -13,7 +11,6 @@
   - `type` is `feature`, `refactor`, `bugfix`, `familiarization`, etc.
   - `name` is kebab-case.
 - Copy `.specdev/_templates/gate_checklist.md` to `review/validation_checklist.md`.
-- Copy `.specdev/skills/skills_invoked_template.md` to `skills_invoked.md`.
 
 ## Switching assignments
 
@@ -37,13 +34,13 @@ Optional phase-end knowledge capture records reusable knowledge only when useful
 
 `.specdev/assignments/[#####_type_name]/`
 
-- `brainstorm/proposal.md` (user)
+- `brainstorm/proposal.md` (user-approved)
 - `brainstorm/design.md`
 - `breakdown/plan.md`
-- `research.md` (optional)
-- `implementation/implementation.md`
+- `implementation/implementation.md` (optional narrative)
 - `implementation/progress.json`
 - `review/validation_checklist.md`
-- `review_request.json` / `review_report.md`
-- `skills_invoked.md`
-- `scaffold/` (only when complexity gate requires it)
+- `review/{brainstorm,implementation}-feedback.md` (per-phase reviewer feedback)
+- `review/{brainstorm,implementation}-changelog.md` (per-phase changelog when changes are made after review)
+- `context/` (assignment-scoped research, notes, and supporting material)
+- `status.json` (gate state)

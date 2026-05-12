@@ -11,9 +11,10 @@
     },
     {
       "number": 2,
-      "status": "in_progress",
+      "status": "completed",
       "started_at": "2026-05-12T02:43:08Z",
-      "completed_at": null
+      "completed_at": "2026-05-12T02:47:32Z",
+      "summary": "Synthesized findings.md from five inventories (per-area + cross-area sections, type+severity tags, executive summary, top 5). Schema check passes; reviewer subagent verdict READY."
     }
   ]
 }

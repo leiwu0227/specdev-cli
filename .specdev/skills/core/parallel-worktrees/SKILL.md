@@ -11,7 +11,7 @@ type: core
 - **Input:** A plan with independent tasks (no overlapping file writes, no shared state)
 - **Process:** Analyze parallelizability → create worktrees → dispatch work → merge → integration test
 - **Output:** Merged implementation with all tasks integrated
-- **Next skill:** verification
+- **Next skill:** verification-before-completion
 
 ## Scripts
 
@@ -80,5 +80,5 @@ After merging all branches:
 ## Integration
 
 - **Before this skill:** planning (identifies which tasks are independent)
-- **After this skill:** verification (final gate checks)
-- **Alternative:** If tasks aren't parallelizable, use executing (sequential) instead
+- **After this skill:** verification-before-completion (final gate checks)
+- **Alternative:** If tasks aren't parallelizable, use implementing (sequential) instead

@@ -32,10 +32,6 @@ Skills are split into two categories:
 - `core/verification-before-completion.md` — No completion claims without evidence
 - `core/receiving-code-review.md` — No performative agreement in reviews
 
-**When needed:**
-- `core/scaffolding-lite.md` — Lightweight scaffolding (contracts + dependency map)
-- `core/scaffolding-full.md` — Full scaffolding (per-file blueprints)
-
 ## Tool Skills (`tools/`)
 
 User-owned. Never touched by `specdev update`. Project-specific tools and capabilities.

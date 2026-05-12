@@ -81,10 +81,7 @@ if [ -d "$KNOWLEDGE_BASE" ]; then
 fi
 
 # --- Current assignments ---
-ASSIGNMENTS_DIR="$PROJECT_ROOT/.specdev/state/assignments"
-if [ ! -d "$ASSIGNMENTS_DIR" ]; then
-  ASSIGNMENTS_DIR="$PROJECT_ROOT/.specdev/assignments"
-fi
+ASSIGNMENTS_DIR="$PROJECT_ROOT/.specdev/assignments"
 if [ -d "$ASSIGNMENTS_DIR" ]; then
   ASSIGNMENT_COUNT=$(find "$ASSIGNMENTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
   if [ "$ASSIGNMENT_COUNT" -gt 0 ]; then
@@ -93,9 +90,10 @@ if [ -d "$ASSIGNMENTS_DIR" ]; then
     find "$ASSIGNMENTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | while read -r dir; do
       ANAME=$(basename "$dir")
       echo "- $ANAME"
-      if [ -f "$dir/review_request.json" ]; then
-        STATUS=$(grep -o '"status":\s*"[^"]*"' "$dir/review_request.json" | head -1 | sed 's/"status":\s*"//;s/"//')
-        echo "  Status: $STATUS"
+      if [ -f "$dir/status.json" ]; then
+        BRAINSTORM=$(grep -o '"brainstorm_approved":\s*[^,}]*' "$dir/status.json" | head -1 | sed 's/.*:\s*//')
+        IMPL=$(grep -o '"implementation_approved":\s*[^,}]*' "$dir/status.json" | head -1 | sed 's/.*:\s*//')
+        echo "  Gates: brainstorm=${BRAINSTORM:-?} implementation=${IMPL:-?}"
       fi
     done
     echo ""

@@ -52,16 +52,23 @@ This directory contains reusable templates for SpecDev workflows.
 - Examples
 - Pseudocode
 
----
+### brainstorm-design.md
+**Purpose:** Starting skeleton for `brainstorm/design.md`
 
-## Examples
+**Usage:** Copy and trim to the sections required by the assignment type
+(feature / bugfix / refactor / familiarization)
 
-### assignment_examples/
-Complete worked examples for each assignment type:
+### workflow_feedback_note.md
+**Purpose:** Structured note format for `.specdev/knowledge/workflow_feedback/<slug>.md`
 
-- **feature/** - Example feature assignment with all documents
-- **refactor/** - Example refactor assignment (if created)
-- **bugfix/** - Example bugfix assignment (if created)
-- **familiarization/** - Example familiarization assignment (if created)
+**Usage:** Copy when capturing a SpecDev workflow/product issue or
+improvement during phase-end knowledge capture. Fill every field
+(Status / Type / Severity / First seen / Last seen / Assignments observed)
+so the search index can rank and filter notes.
 
-**Usage:** Reference these when starting a similar assignment type
+### agent-spec.schema.json
+**Purpose:** JSON schema for workflow agent specs under `agents/<name>/agent.md`
+
+**Usage:** Referenced by `src/utils/agent-runner.js` to validate agent
+specs. Used by `specdev agents inspect` and `specdev research`.
+

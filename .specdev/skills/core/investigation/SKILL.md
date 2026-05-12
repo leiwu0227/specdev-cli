@@ -15,7 +15,7 @@ next: breakdown (if follow-up work needed) or knowledge-capture (if research-onl
 - **Input:** A request to understand unfamiliar code, a system, or a domain area
 - **Process:** Define learning objectives → investigate code → document findings → present to user
 - **Output:** `brainstorm/proposal.md` (learning objectives) + `brainstorm/design.md` (findings and presentation)
-- **Next phase:** breakdown (if the investigation leads to implementation work) or summary (if research-only)
+- **Next phase:** breakdown (if the investigation leads to implementation work) or knowledge-capture (if research-only)
 
 ## Process
 

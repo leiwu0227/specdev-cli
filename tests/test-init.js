@@ -45,7 +45,6 @@ const essentialFiles = [
   '.specdev/_guides/workflow.md',
   '.specdev/_templates/gate_checklist.md',
   '.specdev/_templates/workflow_feedback_note.md',
-  '.specdev/_templates/assignment_examples/feature/00000_feature_email-validator/brainstorm/proposal.md',
   '.specdev/project_notes/big_picture.md',
   '.specdev/assignments/.gitkeep',
   '.specdev/skills/README.md',

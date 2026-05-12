@@ -20,7 +20,6 @@ Current SpecDev projects use this shape:
 │   ├── breakdown/
 │   ├── implementation/
 │   ├── review/
-│   ├── capture/
 │   └── context/
 ├── discussions/
 ├── knowledge/

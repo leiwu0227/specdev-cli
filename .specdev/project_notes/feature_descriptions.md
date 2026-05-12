@@ -1,6 +1,6 @@
 # Feature Descriptions
 
-Running catalog of completed assignments. See `.specdev/_guides/task/validation_guide.md` (Gate 5) for update instructions.
+Running catalog of completed assignments. See `_templates/gate_checklist.md` (Finalize section) and `skills/core/knowledge-capture/SKILL.md` for update guidance.
 
 ---
 

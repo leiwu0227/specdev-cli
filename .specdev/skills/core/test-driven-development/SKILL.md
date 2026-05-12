@@ -1,17 +1,26 @@
 ---
 name: test-driven-development
-description: Iron law — no production code without a failing test first
+description: RED-GREEN-REFACTOR for full-mode tasks and behavior-changing standard-mode tasks
 type: core
 ---
 
 # Test-Driven Development
 
+## Applies When
+
+- A plan task declares `Mode: full` — strict RED → GREEN → REFACTOR is mandatory.
+- A plan task declares `Mode: standard` AND introduces or changes behavior
+  (new function, new branch, fixed bug) — test-first is mandatory.
+- A plan task declares `Mode: lightweight` (trivial scaffold/config with no
+  executable behavior) — TDD does not apply; the lightweight verification
+  steps in `implementing/SKILL.md` govern.
+
 ## Contract
 
 - **Input:** A task to implement (from a plan or assignment)
-- **Process:** RED → GREEN → REFACTOR for every change
+- **Process:** RED → GREEN → REFACTOR for every change in scope above
 - **Output:** Tested, committed code with evidence of the RED-GREEN-REFACTOR cycle
-- **Next skill:** verification
+- **Next skill:** verification-before-completion
 
 ## Scripts
 
