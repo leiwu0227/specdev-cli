@@ -4,7 +4,7 @@ You are working in a project that uses SpecDev — a spec-driven development fra
 
 ## How SpecDev Works
 
-All work is organized into **assignments**. An assignment is a self-contained unit of work — a feature, bugfix, refactor, or investigation — tracked in its own folder under `assignments/`. Each assignment progresses through the same 4 phases in order, producing specific artifacts at each step. The CLI enforces gates between phases so work cannot advance until artifacts are validated and the user approves.
+All work is organized into **assignments**. An assignment is a self-contained unit of work — a feature, bugfix, refactor, or investigation — tracked in its own folder under `assignments/`. Each assignment progresses through three required phases, with optional non-blocking phase-end knowledge capture when reusable knowledge was learned. The CLI enforces gates between phases so work cannot advance until artifacts are validated and the user approves.
 
 ## CLI
 
@@ -23,16 +23,17 @@ All work is organized into **assignments**. An assignment is a self-contained un
 
 ## Workflow FAQ
 
-If workflow instructions conflict, a SpecDev command fails unexpectedly, or you are unsure how to proceed, run `specdev knowledge search "<issue>"` and inspect `knowledge/workflow/` before guessing. Capture recurring workflow gotchas there during the capture phase.
+If workflow instructions conflict, a SpecDev command fails unexpectedly, or you are unsure how to proceed, run `specdev knowledge search "<issue>"` and inspect `knowledge/workflow/` before guessing. Capture recurring workflow gotchas through optional phase-end knowledge capture.
 
 ## The Workflow
 
-Every assignment follows the same 4 phases in order:
+Every assignment follows the same 3 required phases in order:
 
 1. **Brainstorm** — understand the problem, explore approaches, produce a design or research output
-2. **Breakdown** — create an implementation plan with coherent tasks and bite-sized TDD steps
-3. **Implement** — execute tasks in batches using the plan's execution mode and review level
-4. **Optional phase-end knowledge capture** — suggest durable notes only when reusable knowledge was learned
+2. **Breakdown** — create a concise implementation plan with coherent tasks and verification guidance
+3. **Implement** — execute tasks using the plan's execution mode and task-level verification
+
+Optional phase-end knowledge capture may suggest durable notes when reusable knowledge was learned.
 
 Use `workflow.yaml` and `specdev next --json` as the source of truth for action selection. Read `_guides/workflow.md` when you need a human-readable reference for phases, artifacts, gates, and recovery paths.
 

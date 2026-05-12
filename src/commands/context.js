@@ -97,7 +97,7 @@ async function buildAssignmentInfo(specdevPath) {
   const phase = detected.state.startsWith('brainstorm') ? 'brainstorm'
     : detected.state.startsWith('breakdown') ? 'breakdown'
     : detected.state.startsWith('implementation') ? 'implementation'
-    : detected.state.startsWith('summary') || detected.state.startsWith('completed') ? 'summary'
+    : detected.state.startsWith('completed') ? 'completed'
     : detected.state.startsWith('revision') ? 'revision'
     : 'unknown'
 

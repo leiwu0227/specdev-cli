@@ -1,6 +1,6 @@
 # Workflow Guide
 
-Every assignment follows these 4 phases in order. Do not skip phases.
+Every assignment follows these 3 required phases in order. Do not skip phases.
 
 For action selection, use the runtime contract first:
 
@@ -44,7 +44,7 @@ Must pass before requesting review.
 
 ## Phase 2: Breakdown
 
-**Goal:** Turn the approved design into an implementation plan with coherent tasks, bite-sized TDD steps, and an execution mode.
+**Goal:** Turn the approved design into an implementation plan with coherent tasks, verification guidance, and an execution mode.
 
 **Skill:** `skills/core/breakdown/SKILL.md`
 
@@ -58,7 +58,7 @@ After writing the plan, run `specdev next --json` for the next implementation ac
 
 ## Phase 3: Implement
 
-**Goal:** Execute tasks in batches of 3 using the plan's execution mode, TDD, and mode-based review.
+**Goal:** Execute tasks using the plan's execution mode and task-level verification/review.
 
 **Skill:** `skills/core/implementing/SKILL.md`
 
