@@ -78,8 +78,10 @@ Every task MUST follow this structure (compact form shown):
     **Verify:**
     - `exact command` or `text-only scan`
 
-    **Test Budget:**
-    - text-only | focused (<30s) | final-only | full-suite (justify)
+    **Test Budget:** +<count> in <test files>; <runtime-class>
+    e.g. `+1 in tests/test-foo.js; focused (<30s)`
+    e.g. `+0; text-only` (lightweight tasks)
+    e.g. `+2 in tests/test-foo.js, tests/test-bar.js; focused (<30s) — justify why two`
 
     **Test Pruning:**
     - prune/replace nearby stale or duplicate tests before adding new tests
@@ -100,10 +102,17 @@ Assign `full` when ANY of these apply:
 Use `standard` for ordinary behavior changes. Use `lightweight` aggressively for wording, templates, docs, and simple deterministic refactors.
 
 Test budget rules:
+
+*Count* (how many new tests):
+- Default: **at most 1 new test per task** (`+1`). The plan header declares an aggregate ceiling (default **≤ 5 new tests across the plan**); the sum of per-task `+N` values must not exceed it without an explicit justification line in the plan.
+- Lightweight tasks default to `+0` (no executable tests).
+- Tasks adding more than one test must include a one-line justification in the **Test Budget:** line (e.g. `+2 ... — second test covers the error path that cannot be combined with the happy path`).
+- The implementation reviewer counts tests added per task (via grep / framework-appropriate counter) and flags any task whose actual count exceeds its declared `+N`. See `review-agent/prompts/implementation-reviewer.md`.
+
+*Runtime* (how slow):
 - Focused task verification should be under 30 seconds.
 - Final assignment verification should be under 2 minutes.
 - Full-suite verification is only for broad executable risk and must be justified in the task.
-- Do not add more than one new test file in a task unless the task explicitly justifies why existing tests cannot cover the behavior.
 
 Test pruning rules:
 - Prefer prune-and-replace over additive testing.
@@ -136,6 +145,8 @@ Test pruning rules:
 **Tech Stack:** [From design]
 
 **Execution Mode:** inline
+
+**Test Budget:** ≤ 5 new tests across all tasks (default). If a higher cap is needed, state it here with one-sentence justification.
 
 ---
 ```
