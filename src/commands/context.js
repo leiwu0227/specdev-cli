@@ -6,7 +6,7 @@ import { scanAssignments, scanSingleAssignment } from '../utils/scan.js'
 import { detectAssignmentState } from '../utils/state.js'
 import { COMMANDS } from '../utils/commands.js'
 import { scanSkillsDir } from '../utils/skills.js'
-import { collectKnowledgeDocuments } from '../utils/knowledge.js'
+import { collectKnowledgeDocuments, KNOWLEDGE_DB_SUBPATH } from '../utils/knowledge.js'
 
 const KNOWLEDGE_BRANCHES = ['architecture', 'codestyle', 'domain', 'workflow', 'workflow_feedback']
 
@@ -126,7 +126,7 @@ async function buildKnowledgeInfo(specdevPath) {
     .filter(Boolean)
     .sort((a, b) => a.path.localeCompare(b.path))
 
-  const dbPath = join(specdevPath, 'cache', 'knowledge.sqlite')
+  const dbPath = join(specdevPath, KNOWLEDGE_DB_SUBPATH)
   const indexExists = await fse.pathExists(dbPath)
   let indexedDocumentCount = 0
 

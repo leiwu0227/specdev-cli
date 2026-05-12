@@ -2,7 +2,8 @@ import { createHash } from 'node:crypto'
 import { basename, dirname, join, relative, sep } from 'node:path'
 import fse from 'fs-extra'
 
-export const KNOWLEDGE_DB_RELATIVE_PATH = '.specdev/cache/knowledge.sqlite'
+export const KNOWLEDGE_DB_SUBPATH = 'cache/knowledge.sqlite'
+export const KNOWLEDGE_DB_RELATIVE_PATH = `.specdev/${KNOWLEDGE_DB_SUBPATH}`
 
 const INDEXED_MARKDOWN_ROOTS = [
   'project_notes',
@@ -22,7 +23,7 @@ export function normalizeFtsQuery(query) {
 
 export async function buildKnowledgeIndex(specdevPath) {
   const sqlite = await loadSqlite()
-  const dbPath = join(specdevPath, 'cache', 'knowledge.sqlite')
+  const dbPath = join(specdevPath, KNOWLEDGE_DB_SUBPATH)
   await fse.ensureDir(dirname(dbPath))
   await fse.remove(dbPath)
 
@@ -76,7 +77,7 @@ export async function buildKnowledgeIndex(specdevPath) {
 }
 
 export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
-  const dbPath = join(specdevPath, 'cache', 'knowledge.sqlite')
+  const dbPath = join(specdevPath, KNOWLEDGE_DB_SUBPATH)
   if (!(await fse.pathExists(dbPath))) {
     await buildKnowledgeIndex(specdevPath)
   }

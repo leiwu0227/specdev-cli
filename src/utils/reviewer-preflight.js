@@ -1,6 +1,7 @@
 import { spawnSync } from 'child_process'
 import { join } from 'path'
 import fse from 'fs-extra'
+import { listReviewers } from './reviewers.js'
 
 export const DEFAULT_REVIEWER_TIMEOUT_SECONDS = 900
 export const VALID_REVIEWER_NAME_PATTERN = /^[A-Za-z0-9._-]+$/
@@ -18,16 +19,6 @@ export function reviewerTimeoutSeconds(config = {}) {
   return value
 }
 
-export async function availableReviewerNames(specdevPath) {
-  const reviewersDir = join(specdevPath, 'skills', 'core', 'reviewloop', 'reviewers')
-  if (!(await fse.pathExists(reviewersDir))) return []
-  const files = await fse.readdir(reviewersDir)
-  return files
-    .filter((file) => file.endsWith('.json'))
-    .map((file) => file.replace(/\.json$/, ''))
-    .sort()
-}
-
 export async function resolveReviewerNames(specdevPath, rawList) {
   const names = rawList.map((name) => name.trim())
   for (const name of names) {
@@ -38,7 +29,7 @@ export async function resolveReviewerNames(specdevPath, rawList) {
     }
   }
 
-  const available = await availableReviewerNames(specdevPath)
+  const available = await listReviewers(specdevPath)
   const availableSet = new Set(available)
   for (const name of names) {
     if (!availableSet.has(name)) {

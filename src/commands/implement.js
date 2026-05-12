@@ -3,6 +3,7 @@ import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printLines, printSection } from '../utils/output.js'
+import { listReviewers } from '../utils/reviewers.js'
 
 /**
  * specdev implement — Set up implementation scaffolding and print instructions
@@ -141,12 +142,3 @@ function parseExecutionMode(planContent) {
   return match ? match[1].toLowerCase() : 'inline'
 }
 
-async function listReviewers(specdevPath) {
-  const reviewersDir = join(specdevPath, 'skills', 'core', 'reviewloop', 'reviewers')
-  if (!(await fse.pathExists(reviewersDir))) return []
-  const files = await fse.readdir(reviewersDir)
-  return files
-    .filter((file) => file.endsWith('.json'))
-    .map((file) => file.replace('.json', ''))
-    .sort()
-}

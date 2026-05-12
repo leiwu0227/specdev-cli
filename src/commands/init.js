@@ -25,10 +25,9 @@ If you stop announcing subtasks, the user will assume you've stopped following t
 }
 
 export const ADAPTERS = {
-  claude:  { path: 'CLAUDE.md',              heading: 'CLAUDE.md' },
-  codex:   { path: 'AGENTS.md',              heading: 'AGENTS.md' },
-  cursor:  { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
-  generic: { path: 'AGENTS.md',              heading: 'AGENTS.md' },
+  claude: { path: 'CLAUDE.md',              heading: 'CLAUDE.md' },
+  codex:  { path: 'AGENTS.md',              heading: 'AGENTS.md' },
+  cursor: { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
 }
 
 const assignmentTypesText = ASSIGNMENT_TYPES.join(' | ')
@@ -243,7 +242,7 @@ This is a Node.js CLI command — run it directly, never via pip/python.
 // The unique adapters to create on every init
 export const ALL_ADAPTERS = [
   ADAPTERS.claude,
-  ADAPTERS.codex,   // AGENTS.md — same for codex and generic
+  ADAPTERS.codex,
   ADAPTERS.cursor,
 ]
 

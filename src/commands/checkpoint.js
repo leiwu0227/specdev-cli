@@ -7,6 +7,7 @@ import { readActiveTools } from '../utils/active-tools.js'
 import { blankLine } from '../utils/output.js'
 import { commandPhases, REQUIRED_BRAINSTORM_SECTIONS, artifactPaths } from '../utils/workflow-contract.js'
 import { buildReviewChoices } from '../utils/workflow-runtime.js'
+import { listReviewers } from '../utils/reviewers.js'
 
 const VALID_PHASES = commandPhases.checkpoint
 
@@ -168,16 +169,6 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
       console.log(`   ${index + 1}. ${reviewer}`)
     })
   }
-}
-
-async function listReviewers(specdevPath) {
-  const reviewersDir = join(specdevPath, 'skills', 'core', 'reviewloop', 'reviewers')
-  if (!(await fse.pathExists(reviewersDir))) return []
-  const files = await fse.readdir(reviewersDir)
-  return files
-    .filter((file) => file.endsWith('.json'))
-    .map((file) => file.replace('.json', ''))
-    .sort()
 }
 
 async function checkpointImplementation(assignmentPath, name, flags = {}) {

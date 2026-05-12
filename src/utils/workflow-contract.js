@@ -2,9 +2,6 @@ export const ASSIGNMENT_TYPES = ['feature', 'bugfix', 'refactor', 'familiarizati
 
 export const phases = {
   canonical: ['brainstorm', 'breakdown', 'implementation'],
-  aliases: {
-    implementation: ['implement'],
-  },
 }
 
 export const commandPhases = {
@@ -33,10 +30,6 @@ export const artifactPaths = {
   implementation: {
     progress: 'implementation/progress.json',
   },
-  capture: {
-    projectNotesDiff: 'capture/project-notes-diff.md',
-    workflowDiff: 'capture/workflow-diff.md',
-  },
 }
 
 export const AGENT_SPEC_PATHS = {
@@ -50,8 +43,4 @@ export const gateFields = {
 
 export function assignmentTypeList(separator = ', ') {
   return ASSIGNMENT_TYPES.join(separator)
-}
-
-export function phaseList(command, separator = ' | ') {
-  return (commandPhases[command] || []).join(separator)
 }

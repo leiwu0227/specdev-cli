@@ -1,4 +1,5 @@
 import { spawn as realSpawn } from 'child_process'
+import { appendCapped } from './buffer.js'
 
 export const REVIEWER_TERMINATION_GRACE_MS = 5000
 export const DEFAULT_STDOUT_BUFFER_LIMIT = 2 * 1024 * 1024
@@ -10,13 +11,6 @@ function isoFromNow(now) {
 
 function secondsElapsed(elapsedMs) {
   return Math.floor(elapsedMs / 1000)
-}
-
-function appendCapped(buffer, chunk, limit) {
-  if (limit <= 0) return buffer
-  const next = Buffer.concat([buffer, Buffer.from(chunk)])
-  if (next.length <= limit) return next
-  return next.subarray(next.length - limit)
 }
 
 export function runReviewerProcess({

@@ -6,10 +6,10 @@
 
 ---
 
-## Pre-flight (verify-gates.sh)
+## Pre-flight (`specdev checkpoint <phase>`)
 
 ```
-[paste verify-gates.sh output here]
+[paste `specdev checkpoint <phase>` output here]
 ```
 
 **Result:** PASS / FAIL

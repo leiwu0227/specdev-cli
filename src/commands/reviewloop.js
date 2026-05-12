@@ -21,6 +21,7 @@ import {
 import { runReviewerProcess } from '../utils/reviewer-runner.js'
 import { createReviewerStreamJsonTranslator } from '../utils/reviewer-stream-json.js'
 import { commandPhases } from '../utils/workflow-contract.js'
+import { listReviewers } from '../utils/reviewers.js'
 
 const REVIEWER_HEARTBEAT_MS = 30000
 
@@ -503,15 +504,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
       console.log(`Reviewloop: ${discussionName}`)
       console.log(`   Phase: discussion`)
       blankLine()
-      const reviewersDir = join(targetDir, '.specdev', 'skills', 'core', 'reviewloop', 'reviewers')
-      const reviewers = []
-      if (await fse.pathExists(reviewersDir)) {
-        const files = await fse.readdir(reviewersDir)
-        for (const f of files) {
-          if (f.endsWith('.json')) reviewers.push(f.replace('.json', ''))
-        }
-      }
-      reviewers.sort()
+      const reviewers = await listReviewers(join(targetDir, '.specdev'))
       if (reviewers.length === 0) {
         console.error('No reviewer configs found')
         process.exitCode = 1
@@ -585,22 +578,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   // ── Without --reviewer: list available reviewers and exit ──
 
   if (!flags.reviewer) {
-    const reviewersDir = join(
-      targetDir,
-      '.specdev',
-      'skills',
-      'core',
-      'reviewloop',
-      'reviewers',
-    )
-    const reviewers = []
-    if (await fse.pathExists(reviewersDir)) {
-      const files = await fse.readdir(reviewersDir)
-      for (const f of files) {
-        if (f.endsWith('.json')) reviewers.push(f.replace('.json', ''))
-      }
-    }
-    reviewers.sort()
+    const reviewers = await listReviewers(join(targetDir, '.specdev'))
 
     if (reviewers.length === 0) {
       if (flags.json) {

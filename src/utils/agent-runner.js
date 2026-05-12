@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import fse from 'fs-extra'
 import YAML from 'yaml'
 import Ajv from 'ajv'
+import { appendCapped } from './buffer.js'
 
 export const AGENT_TERMINATION_GRACE_MS = 5000
 export const DEFAULT_AGENT_STDOUT_BUFFER_LIMIT = 2 * 1024 * 1024
@@ -14,13 +15,6 @@ const REQUIRED_MARKDOWN_SECTIONS = ['Topic', 'Scope Used', 'Findings', 'Sources'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const ROOT_DIR = resolve(__dirname, '..', '..')
-
-function appendCapped(buffer, chunk, limit) {
-  if (limit <= 0) return buffer
-  const next = Buffer.concat([buffer, Buffer.from(chunk)])
-  if (next.length <= limit) return next
-  return next.subarray(next.length - limit)
-}
 
 function splitAgentMarkdown(content, specPath) {
   if (!content.startsWith('---\n')) {

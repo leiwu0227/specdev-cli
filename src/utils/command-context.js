@@ -1,12 +1,7 @@
-import { join } from 'path'
 import fse from 'fs-extra'
 
 export function resolveTargetDir(flags = {}) {
   return typeof flags.target === 'string' ? flags.target : process.cwd()
-}
-
-export function resolveSpecdevPath(flags = {}) {
-  return join(resolveTargetDir(flags), '.specdev')
 }
 
 export async function requireSpecdevDirectory(specdevPath) {
@@ -17,13 +12,3 @@ export async function requireSpecdevDirectory(specdevPath) {
   console.log('   Run "specdev init" first')
   process.exit(1)
 }
-
-export async function ensureProgressJson(assignmentPath) {
-  const dir = join(assignmentPath, 'implementation')
-  const progressPath = join(dir, 'progress.json')
-  await fse.ensureDir(dir)
-  if (!(await fse.pathExists(progressPath))) {
-    await fse.writeFile(progressPath, '{}\n', 'utf-8')
-  }
-}
-

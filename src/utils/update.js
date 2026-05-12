@@ -2,8 +2,6 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import fse from 'fs-extra'
 
-const OFFICIAL_TOOL_SKILLS = []
-
 const COMMAND_SKILL_MARKERS = [
   join('specdev-assignment', 'SKILL.md'),
   join('specdev-brainstorm', 'SKILL.md'),
@@ -66,7 +64,6 @@ export async function updateSpecdevSystem(source, destination) {
       'project_scaffolding/_README.md',
       'skills/core',
       'skills/README.md',
-      ...OFFICIAL_TOOL_SKILLS.map((name) => `skills/tools/${name}`),
     ]
 
     for (const path of systemPaths) {
