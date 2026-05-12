@@ -57,23 +57,30 @@ writeFileSync(join(featureDir, 'brainstorm', 'design.md'), `## Overview\nAdd JWT
 setCurrent('001_feature_auth')
 let result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
 assert(result.status === 0, 'feature with all required sections passes')
-assert(result.stdout.includes('Automated review, then continue if approved'), 'brainstorm checkpoint offers autocontinue review choice')
 assert(result.stdout.includes('Review, then continue if approved'), 'brainstorm checkpoint uses review-then-continue language')
-assert(result.stdout.includes('--autocontinue'), 'brainstorm checkpoint includes autocontinue command')
-assert(result.stdout.includes('Automated review only'), 'brainstorm checkpoint offers review-only choice')
 assert(result.stdout.includes('If the user chooses automated review, ask reviewer type as a second multiple-choice question:'), 'brainstorm checkpoint uses second-tier reviewer choices')
 assert(result.stdout.includes('Use one choice per reviewer config; do not ask for free-form reviewer text.'), 'brainstorm checkpoint forbids free-form reviewer choice')
 assert(result.stdout.includes('Do not ask for free-form reviewer text'), 'brainstorm checkpoint reinforces bounded reviewer choices')
 
-result = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, '--json'])
-assert(result.status === 0, 'brainstorm checkpoint --json passes')
+// Snapshot test: text-mode and --json mode derive labels from the same
+// manifest source; choice ids and labels must be byte-identical between modes.
+// This locks the manifest-as-truth contract for checkpoint output.
+const textResult = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`])
+const jsonResult = runCmd(['checkpoint', 'brainstorm', `--target=${TEST_DIR}`, '--json'])
+assert(textResult.status === 0 && jsonResult.status === 0, 'brainstorm checkpoint snapshot: both modes pass')
 try {
-  const json = JSON.parse(result.stdout.trim())
-  assert(json.interaction?.type === 'choice', 'brainstorm json includes choice interaction')
-  assert(json.interaction.choices.some(c => c.id === 'reviewloop_autocontinue'), 'brainstorm json includes autocontinue choice id')
-  assert(json.interaction.choices.some(c => c.command.includes('specdev approve brainstorm')), 'brainstorm json includes approve command')
-} catch {
-  assert(false, 'brainstorm checkpoint --json outputs valid JSON: ' + result.stdout.slice(0, 120))
+  const json = JSON.parse(jsonResult.stdout.trim())
+  const jsonChoices = (json.interaction?.choices) || []
+  for (const choice of jsonChoices) {
+    assert(textResult.stdout.includes(choice.label), `snapshot: text mode includes label "${choice.label}" for id ${choice.id}`)
+    assert(textResult.stdout.includes(choice.command), `snapshot: text mode includes command "${choice.command}" for id ${choice.id}`)
+  }
+  assert(jsonChoices.some(c => c.id === 'reviewloop_autocontinue'), 'snapshot: brainstorm has reviewloop_autocontinue id')
+  assert(jsonChoices.some(c => c.id === 'reviewloop_only'), 'snapshot: brainstorm has reviewloop_only id')
+  assert(jsonChoices.some(c => c.id === 'manual_review'), 'snapshot: brainstorm has manual_review id')
+  assert(jsonChoices.some(c => c.id === 'approve_skip_review'), 'snapshot: brainstorm has approve_skip_review id')
+} catch (e) {
+  assert(false, 'brainstorm snapshot test: invalid JSON or assertion failure: ' + (e?.message || jsonResult.stdout.slice(0, 120)))
 }
 
 result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
@@ -81,7 +88,7 @@ assert(result.status === 0, 'next --json passes for brainstorm checkpoint-ready 
 try {
   const json = JSON.parse(result.stdout.trim())
   assert(json.next_action?.id === 'brainstorm.checkpoint', 'next action is brainstorm checkpoint')
-  assert(json.workflow?.contract_version === 1, 'next action reports workflow contract version')
+  assert(json.workflow?.contract_version === 2, 'next action reports workflow contract version')
   assert(json.interaction?.type === 'choice', 'next action includes structured choice interaction')
   assert(json.interaction.choices.some(c => c.id === 'reviewloop_autocontinue'), 'next action includes autocontinue choice')
   assert(Array.isArray(json.trace) && json.trace.length > 0, 'next action includes trace')
@@ -105,13 +112,13 @@ try {
 }
 writeFileSync(manifestPath, manifest)
 
-writeFileSync(manifestPath, manifest.replace('workflow_contract_version: 1\n\n', ''))
+writeFileSync(manifestPath, manifest.replace('workflow_contract_version: 2\n\n', ''))
 result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
 assert(result.status === 1, 'next exits non-zero for missing workflow contract version')
 try {
   const json = JSON.parse(result.stdout.trim())
   assert(json.state === 'workflow_manifest_invalid', 'missing workflow contract version reports workflow_manifest_invalid')
-  assert(json.blockers?.some(blocker => blocker.detail.includes('workflow_contract_version must be 1')), 'missing workflow contract version reports supported version')
+  assert(json.blockers?.some(blocker => blocker.detail.includes('workflow_contract_version must be 2')), 'missing workflow contract version reports supported version')
 } catch {
   assert(false, 'missing contract version next --json outputs valid JSON: ' + result.stdout.slice(0, 120))
 }
@@ -157,7 +164,7 @@ try {
 rmSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), { force: true })
 
 console.log('\nnext --json — invalid phases manifest returns blocker JSON:')
-writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), 'workflow_contract_version: 1\nphases: 123\nhooks: []\n')
+writeFileSync(join(TEST_DIR, '.specdev', 'workflow.yaml'), 'workflow_contract_version: 2\nphases: 123\nhooks: []\n')
 result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
 assert(result.status === 1, 'next exits non-zero for invalid phases manifest')
 try {
@@ -348,23 +355,24 @@ writeFileSync(join(assignmentDir, 'implementation', 'progress.json'), JSON.strin
   tasks: [{ status: 'completed' }, { status: 'completed' }]
 }))
 
-console.log('\ncheckpoint implementation (advisory):')
+console.log('\ncheckpoint implementation (advisory) + snapshot:')
 setCurrent('001_feature_test')
-result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`])
-assert(result.status === 0, 'checkpoint passes (tools are advisory)')
-assert(result.stdout.includes('Automated review, then continue if approved'), 'implementation checkpoint offers autocontinue review choice')
-assert(result.stdout.includes('specdev reviewloop implementation --reviewer=<name> --autocontinue'), 'implementation checkpoint prints autocontinue command')
-
-console.log('\ncheckpoint implementation --json:')
-result = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, '--json'])
-assert(result.status === 0, 'checkpoint --json passes')
+const implTextResult = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`])
+const implJsonResult = runCmd(['checkpoint', 'implementation', `--target=${TEST_DIR}`, '--json'])
+assert(implTextResult.status === 0 && implJsonResult.status === 0, 'implementation checkpoint snapshot: both modes pass')
+result = implJsonResult
 const output = result.stdout.trim()
 try {
   const json = JSON.parse(output)
   assert(json.status === 'pass', 'json status is pass')
   assert(Array.isArray(json.warnings), 'json has warnings array')
   assert(json.interaction?.type === 'choice', 'implementation json includes choice interaction')
-  assert(json.interaction.choices.some(c => c.id === 'reviewloop_autocontinue'), 'implementation json includes autocontinue choice id')
+  const jsonChoices = json.interaction.choices || []
+  for (const choice of jsonChoices) {
+    assert(implTextResult.stdout.includes(choice.label), `snapshot: impl text mode includes label "${choice.label}"`)
+    assert(implTextResult.stdout.includes(choice.command), `snapshot: impl text mode includes command "${choice.command}"`)
+  }
+  assert(jsonChoices.some(c => c.id === 'reviewloop_autocontinue'), 'snapshot: implementation has reviewloop_autocontinue id')
 } catch {
   assert(false, 'json output is valid JSON: ' + output.slice(0, 100))
 }

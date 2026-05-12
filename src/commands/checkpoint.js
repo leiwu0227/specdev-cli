@@ -5,8 +5,8 @@ import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { readActiveTools } from '../utils/active-tools.js'
 import { blankLine } from '../utils/output.js'
-import { commandPhases, REQUIRED_BRAINSTORM_SECTIONS, artifactPaths } from '../utils/workflow-contract.js'
-import { buildReviewChoices } from '../utils/workflow-runtime.js'
+import { commandPhases, REQUIRED_BRAINSTORM_SECTIONS } from '../utils/workflow-contract.js'
+import { loadWorkflowDefinition, renderStepOutput, findTopLevelInteraction } from '../utils/workflow-runtime.js'
 import { listReviewers } from '../utils/reviewers.js'
 
 const VALID_PHASES = commandPhases.checkpoint
@@ -61,35 +61,60 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   }
 }
 
+function findPhaseStep(workflow, phase, stepId) {
+  const phaseDef = workflow?.phases?.[phase]
+  if (!phaseDef || !Array.isArray(phaseDef.steps)) return null
+  return phaseDef.steps.find((s) => s && s.id === stepId) || null
+}
+
+function requirePathStrings(requires) {
+  if (!Array.isArray(requires)) return []
+  const paths = []
+  for (const entry of requires) {
+    if (typeof entry === 'string' && entry.length > 0) paths.push(entry)
+    else if (entry && typeof entry === 'object' && typeof entry.path === 'string') paths.push(entry.path)
+  }
+  return paths
+}
+
+function formatChoiceLine(index, choice) {
+  const num = index + 1
+  if (choice.requires_reviewer) {
+    return `   ${num}. ${choice.label} — choose a reviewer, then run ${choice.command}`
+  }
+  if (choice.id === 'manual_review') {
+    return `   ${num}. ${choice.label} — run ${choice.command} in a separate session`
+  }
+  return `   ${num}. ${choice.label} — run ${choice.command}`
+}
+
 async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
   const missing = []
+  const specdevPath = join(assignmentPath, '..', '..')
+  const workflowInfo = await loadWorkflowDefinition(specdevPath)
+  const workflow = workflowInfo.workflow
 
-  const proposalArtifact = artifactPaths.brainstorm.proposal
-  const designArtifact = artifactPaths.brainstorm.design
-  const proposalPath = join(assignmentPath, proposalArtifact)
-  const designPath = join(assignmentPath, designArtifact)
+  const checkpointStep = findPhaseStep(workflow, 'brainstorm', 'checkpoint')
+  const requiredArtifacts = requirePathStrings(checkpointStep?.requires)
+  const proposalArtifact = requiredArtifacts.find((p) => p.endsWith('proposal.md')) || requiredArtifacts[0]
+  const designArtifact = requiredArtifacts.find((p) => p.endsWith('design.md')) || requiredArtifacts[1]
 
-  if (!(await fse.pathExists(proposalPath))) {
-    missing.push(proposalArtifact)
-  } else {
-    const content = await fse.readFile(proposalPath, 'utf-8')
-    if (content.trim().length < 20) {
-      missing.push(`${proposalArtifact} (empty or too short)`)
+  for (const artifact of requiredArtifacts) {
+    const fullPath = join(assignmentPath, artifact)
+    if (!(await fse.pathExists(fullPath))) {
+      missing.push(artifact)
+    } else {
+      const content = await fse.readFile(fullPath, 'utf-8')
+      if (content.trim().length < 20) {
+        missing.push(`${artifact} (empty or too short)`)
+      }
     }
   }
 
+  // Validate required sections based on assignment type (content check on design.md)
   let designContent = ''
-  if (!(await fse.pathExists(designPath))) {
-    missing.push(designArtifact)
-  } else {
-    designContent = await fse.readFile(designPath, 'utf-8')
-    if (designContent.trim().length < 20) {
-      missing.push(`${designArtifact} (empty or too short)`)
-    }
-  }
-
-  // Validate required sections based on assignment type
-  if (designContent && missing.length === 0) {
+  if (designArtifact && missing.length === 0) {
+    designContent = await fse.readFile(join(assignmentPath, designArtifact), 'utf-8')
     const parsed = parseAssignmentId(name)
     const type = parsed.type || 'feature'
     const required = REQUIRED_BRAINSTORM_SECTIONS[type] || REQUIRED_BRAINSTORM_SECTIONS.feature
@@ -115,11 +140,22 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
     return
   }
 
-  const specdevPath = join(assignmentPath, '..', '..')
   const reviewers = await listReviewers(specdevPath)
   const isDiscussion = Boolean(flags.discussion)
   const reviewPhase = isDiscussion ? 'discussion' : 'brainstorm'
-  const discussionArg = isDiscussion ? ` --discussion=${flags.discussion}` : ''
+
+  // Resolve the interaction source: top-level discussion_checkpoint for
+  // discussions, the brainstorm checkpoint step's interaction for assignments.
+  const interactionStep = isDiscussion
+    ? { interaction: findTopLevelInteraction(workflow, 'discussion_checkpoint') }
+    : checkpointStep
+
+  const runtimeContext = {
+    phase: reviewPhase,
+    discussion: isDiscussion ? flags.discussion : null,
+    reviewers,
+  }
+  const rendered = renderStepOutput(interactionStep, runtimeContext, { format: flags.json ? 'json' : 'text' })
 
   if (flags.json) {
     console.log(JSON.stringify({
@@ -127,35 +163,34 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
       phase: reviewPhase,
       assignment: isDiscussion ? null : name,
       discussion: isDiscussion ? flags.discussion : null,
-      artifacts: [proposalArtifact, designArtifact],
+      artifacts: requiredArtifacts,
       interaction: {
         type: 'choice',
-        prompt: isDiscussion
-          ? 'How do you want to review this discussion?'
-          : 'How do you want to proceed from brainstorm?',
-        choices: buildReviewChoices('brainstorm', {
-          discussion: isDiscussion ? flags.discussion : null,
-          reviewers,
-        }),
+        prompt: rendered.interaction?.prompt,
+        choices: (rendered.interaction?.choices || []).map((c) => ({
+          id: c.id,
+          label: c.label,
+          command: c.command,
+          ...(c.requires_reviewer ? { requires_reviewer: true, reviewers: c.reviewers } : {}),
+          ...(c.autocontinue ? { autocontinue: true } : {}),
+        })),
       },
     }, null, 2))
     return
   }
 
   console.log(`✅ Brainstorm checkpoint passed for ${name}`)
-  console.log(`   ${proposalArtifact} ✓`)
-  console.log(`   ${designArtifact} ✓`)
+  for (const artifact of requiredArtifacts) {
+    console.log(`   ${artifact} ✓`)
+  }
   blankLine()
 
   console.log('Ready for user decision. Present these multiple-choice options:')
-  if (isDiscussion) {
-    console.log(`   1. Automated review — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name>`)
-    console.log(`   2. Manual review — run specdev review ${reviewPhase}${discussionArg} in a separate session`)
-  } else {
-    console.log(`   1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name> --autocontinue`)
-    console.log(`   2. Automated review only — choose a reviewer, then run specdev reviewloop ${reviewPhase}${discussionArg} --reviewer=<name>`)
-    console.log(`   3. Manual review — run specdev review ${reviewPhase}${discussionArg} in a separate session`)
-    console.log('   4. Skip review and approve — run specdev approve brainstorm')
+  const choices = rendered.interaction?.choices || []
+  choices.forEach((choice, index) => {
+    console.log(formatChoiceLine(index, choice))
+  })
+  if (!isDiscussion) {
     console.log('   Review, then continue if approved keeps the workflow moving after approval.')
   }
   blankLine()
@@ -173,25 +208,38 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
 
 async function checkpointImplementation(assignmentPath, name, flags = {}) {
   const missing = []
+  const specdevPath = join(assignmentPath, '..', '..')
+  const workflowInfo = await loadWorkflowDefinition(specdevPath)
+  const workflow = workflowInfo.workflow
 
-  const progressArtifact = artifactPaths.implementation.progress
-  const progressPath = join(assignmentPath, progressArtifact)
+  const checkpointStep = findPhaseStep(workflow, 'implementation', 'checkpoint')
+  const requiredArtifacts = requirePathStrings(checkpointStep?.requires)
+  // Content validation: the implementation checkpoint's progress.json must
+  // have a non-empty tasks[] with all tasks complete. Find the progress.json
+  // entry in requires (today the only required artifact).
+  const progressArtifact = requiredArtifacts.find((p) => p.endsWith('progress.json')) || requiredArtifacts[0]
 
-  if (!(await fse.pathExists(progressPath))) {
-    missing.push(progressArtifact)
-  } else {
-    try {
-      const raw = await fse.readJson(progressPath)
-      if (!Array.isArray(raw.tasks) || raw.tasks.length === 0) {
-        missing.push(`${progressArtifact} has no tasks array (expected tasks: [{status: "completed"}, ...])`)
-      } else {
-        const incomplete = raw.tasks.filter(t => t.status !== 'completed')
-        if (incomplete.length > 0) {
-          missing.push(`${incomplete.length} of ${raw.tasks.length} tasks not completed`)
+  // Presence check for all required artifacts; content check on progress.json
+  for (const artifact of requiredArtifacts) {
+    const fullPath = join(assignmentPath, artifact)
+    if (!(await fse.pathExists(fullPath))) {
+      missing.push(artifact)
+      continue
+    }
+    if (artifact === progressArtifact) {
+      try {
+        const raw = await fse.readJson(fullPath)
+        if (!Array.isArray(raw.tasks) || raw.tasks.length === 0) {
+          missing.push(`${artifact} has no tasks array (expected tasks: [{status: "completed"}, ...])`)
+        } else {
+          const incomplete = raw.tasks.filter(t => t.status !== 'completed')
+          if (incomplete.length > 0) {
+            missing.push(`${incomplete.length} of ${raw.tasks.length} tasks not completed`)
+          }
         }
+      } catch {
+        missing.push(`${artifact} (invalid JSON)`)
       }
-    } catch {
-      missing.push(`${progressArtifact} (invalid JSON)`)
     }
   }
 
@@ -212,7 +260,6 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
   }
 
   // Tool skill enforcement (advisory)
-  const specdevPath = join(assignmentPath, '..', '..')
   const activeTools = await readActiveTools(specdevPath)
   const activeToolNames = Object.keys(activeTools.tools)
   const toolWarnings = []
@@ -243,9 +290,15 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
     }
   }
 
+  const reviewers = await listReviewers(specdevPath)
+  const rendered = renderStepOutput(checkpointStep, {
+    phase: 'implementation',
+    discussion: null,
+    reviewers,
+  }, { format: flags.json ? 'json' : 'text' })
+
   // JSON output mode
   if (flags.json) {
-    const reviewers = await listReviewers(specdevPath)
     console.log(JSON.stringify({
       status: 'pass',
       phase: 'implementation',
@@ -253,8 +306,14 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
       warnings: toolWarnings,
       interaction: {
         type: 'choice',
-        prompt: 'How do you want to proceed from implementation?',
-        choices: buildReviewChoices('implementation', { reviewers }),
+        prompt: rendered.interaction?.prompt,
+        choices: (rendered.interaction?.choices || []).map((c) => ({
+          id: c.id,
+          label: c.label,
+          command: c.command,
+          ...(c.requires_reviewer ? { requires_reviewer: true, reviewers: c.reviewers } : {}),
+          ...(c.autocontinue ? { autocontinue: true } : {}),
+        })),
       },
     }, null, 2))
     return
@@ -277,12 +336,11 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
   }
 
   blankLine()
-  const reviewers = await listReviewers(specdevPath)
   console.log('Ready for user decision. Present these multiple-choice options:')
-  console.log('   1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name> --autocontinue')
-  console.log('   2. Automated review only — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name>')
-  console.log('   3. Manual review — run specdev review implementation in a separate session')
-  console.log('   4. Skip review and approve — run specdev approve implementation')
+  const choices = rendered.interaction?.choices || []
+  choices.forEach((choice, index) => {
+    console.log(formatChoiceLine(index, choice))
+  })
   blankLine()
   console.log('If the user chooses automated review, ask reviewer type as a second multiple-choice question:')
   if (reviewers.length === 0) {
