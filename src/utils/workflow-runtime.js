@@ -6,8 +6,119 @@ import { scanSingleAssignment } from './scan.js'
 import { detectAssignmentState } from './state.js'
 import { artifactPaths, gateFields, phases as workflowPhases } from './workflow-contract.js'
 
+const BRAINSTORM_CHECKPOINT_INTERACTION = {
+  id: 'brainstorm_review_decision',
+  kind: 'choice',
+  prompt: 'How do you want to proceed from brainstorm?',
+  render_via: 'choice_prompt',
+  choices: [
+    {
+      id: 'reviewloop_autocontinue',
+      label: 'Automated review, then continue if approved',
+      command_template: 'specdev reviewloop brainstorm --reviewer=<name> --autocontinue',
+      requires_reviewer: true,
+      autocontinue: true,
+    },
+    {
+      id: 'reviewloop_only',
+      label: 'Automated review only',
+      command_template: 'specdev reviewloop brainstorm --reviewer=<name>',
+      requires_reviewer: true,
+    },
+    {
+      id: 'manual_review',
+      label: 'Manual review',
+      command_template: 'specdev review brainstorm',
+    },
+    {
+      id: 'approve_skip_review',
+      label: 'Skip review and approve',
+      command_template: 'specdev approve brainstorm',
+    },
+  ],
+  follow_up: {
+    when: 'choice.requires_reviewer',
+    id: 'reviewer_pick',
+    kind: 'choice',
+    prompt: 'Which reviewer?',
+    source: 'reviewers_listing',
+  },
+}
+
+const IMPLEMENTATION_CHECKPOINT_INTERACTION = {
+  id: 'implementation_review_decision',
+  kind: 'choice',
+  prompt: 'How do you want to proceed from implementation?',
+  render_via: 'choice_prompt',
+  choices: [
+    {
+      id: 'reviewloop_autocontinue',
+      label: 'Automated review, then continue if approved',
+      command_template: 'specdev reviewloop implementation --reviewer=<name> --autocontinue',
+      requires_reviewer: true,
+      autocontinue: true,
+    },
+    {
+      id: 'reviewloop_only',
+      label: 'Automated review only',
+      command_template: 'specdev reviewloop implementation --reviewer=<name>',
+      requires_reviewer: true,
+    },
+    {
+      id: 'manual_review',
+      label: 'Manual review',
+      command_template: 'specdev review implementation',
+    },
+    {
+      id: 'approve_skip_review',
+      label: 'Skip review and approve',
+      command_template: 'specdev approve implementation',
+    },
+  ],
+  follow_up: {
+    when: 'choice.requires_reviewer',
+    id: 'reviewer_pick',
+    kind: 'choice',
+    prompt: 'Which reviewer?',
+    source: 'reviewers_listing',
+  },
+}
+
+const DISCUSSION_CHECKPOINT_INTERACTION = {
+  id: 'discussion_checkpoint',
+  kind: 'choice',
+  prompt: 'How do you want to review this discussion?',
+  render_via: 'choice_prompt',
+  choices: [
+    {
+      id: 'reviewloop',
+      label: 'Automated review',
+      command_template: 'specdev reviewloop discussion --discussion={discussion} --reviewer=<name>',
+      requires_reviewer: true,
+    },
+    {
+      id: 'manual_review',
+      label: 'Manual review',
+      command_template: 'specdev review discussion --discussion={discussion}',
+    },
+  ],
+  follow_up: {
+    when: 'choice.requires_reviewer',
+    id: 'reviewer_pick',
+    kind: 'choice',
+    prompt: 'Which reviewer?',
+    source: 'reviewers_listing',
+  },
+}
+
+const GATE_ON_SATISFIED = {
+  next: { kind: 'workflow_advance' },
+  sticky: ['reviewer', 'autocontinue'],
+  interrupt: false,
+}
+
 export const DEFAULT_WORKFLOW = {
-  workflow_contract_version: 1,
+  workflow_contract_version: 2,
   phases: {
     brainstorm: {
       steps: [
@@ -20,8 +131,26 @@ export const DEFAULT_WORKFLOW = {
             artifactPaths.brainstorm.design,
           ],
         },
-        { id: 'checkpoint', kind: 'command', run: 'specdev checkpoint brainstorm' },
-        { id: 'approval', kind: 'gate', gate: 'brainstorm_approved' },
+        {
+          id: 'checkpoint',
+          kind: 'command',
+          run: 'specdev checkpoint brainstorm',
+          requires: [
+            artifactPaths.brainstorm.proposal,
+            artifactPaths.brainstorm.design,
+          ],
+          interaction: BRAINSTORM_CHECKPOINT_INTERACTION,
+        },
+        {
+          id: 'approval',
+          kind: 'gate',
+          gate: 'brainstorm_approved',
+          requires: [
+            artifactPaths.brainstorm.proposal,
+            artifactPaths.brainstorm.design,
+          ],
+          on_satisfied: GATE_ON_SATISFIED,
+        },
       ],
     },
     breakdown: {
@@ -42,11 +171,24 @@ export const DEFAULT_WORKFLOW = {
           guide: '.specdev/skills/core/implementing/SKILL.md',
           produces: [artifactPaths.implementation.progress],
         },
-        { id: 'checkpoint', kind: 'command', run: 'specdev checkpoint implementation' },
-        { id: 'approval', kind: 'gate', gate: 'implementation_approved' },
+        {
+          id: 'checkpoint',
+          kind: 'command',
+          run: 'specdev checkpoint implementation',
+          requires: [artifactPaths.implementation.progress],
+          interaction: IMPLEMENTATION_CHECKPOINT_INTERACTION,
+        },
+        {
+          id: 'approval',
+          kind: 'gate',
+          gate: 'implementation_approved',
+          requires: [artifactPaths.implementation.progress],
+          on_satisfied: GATE_ON_SATISFIED,
+        },
       ],
     },
   },
+  interactions: [DISCUSSION_CHECKPOINT_INTERACTION],
   hooks: [
     {
       id: 'brainstorm_knowledge_prompt',
@@ -128,11 +270,25 @@ export function validateWorkflowDefinition(workflow) {
     }
   }
 
-  if (workflow.workflow_contract_version !== 1) {
-    errors.push('workflow_contract_version must be 1')
+  if (workflow.workflow_contract_version !== 2) {
+    if (workflow.workflow_contract_version === 1) {
+      errors.push('workflow_contract_version 1 is no longer supported; run `specdev update` to migrate to version 2')
+    } else {
+      errors.push('workflow_contract_version must be 2')
+    }
   }
 
   validateWorkflowPhases(workflow, errors)
+
+  if (workflow.interactions !== undefined) {
+    if (!Array.isArray(workflow.interactions)) {
+      errors.push('interactions must be an array when provided')
+    } else {
+      for (const interaction of workflow.interactions) {
+        validateInteractionBlock(interaction, 'interactions entry', errors)
+      }
+    }
+  }
 
   if (workflow.hooks !== undefined && !Array.isArray(workflow.hooks)) {
     errors.push('hooks must be an array when provided')
@@ -210,6 +366,76 @@ function validateWorkflowStep(phase, step, errors) {
   }
   if (step.kind === 'gate' && !step.gate) {
     errors.push(`phase ${phase} gate step ${step.id || '(unknown)'} missing gate`)
+  }
+
+  const stepLabel = `phase ${phase} step ${step.id || '(unknown)'}`
+
+  // Checkpoint steps (kind: command, id: checkpoint) must declare an interaction block
+  if (step.kind === 'command' && step.id === 'checkpoint') {
+    if (!step.interaction || typeof step.interaction !== 'object' || Array.isArray(step.interaction)) {
+      errors.push(`${stepLabel} missing interaction block`)
+    } else {
+      validateInteractionBlock(step.interaction, `${stepLabel} interaction`, errors)
+    }
+    validateRequiresField(step, stepLabel, errors)
+  }
+
+  // Gate steps must declare on_satisfied + requires
+  if (step.kind === 'gate') {
+    validateRequiresField(step, stepLabel, errors)
+    if (!step.on_satisfied || typeof step.on_satisfied !== 'object' || Array.isArray(step.on_satisfied)) {
+      errors.push(`${stepLabel} missing on_satisfied block`)
+    } else {
+      if (!step.on_satisfied.next || typeof step.on_satisfied.next !== 'object' || Array.isArray(step.on_satisfied.next)) {
+        errors.push(`${stepLabel} on_satisfied.next must be a mapping/object`)
+      } else if (!step.on_satisfied.next.kind) {
+        errors.push(`${stepLabel} on_satisfied.next.kind missing`)
+      }
+      if (typeof step.on_satisfied.interrupt !== 'boolean') {
+        errors.push(`${stepLabel} on_satisfied.interrupt must be a boolean`)
+      }
+    }
+  }
+}
+
+function validateRequiresField(step, stepLabel, errors) {
+  if (step.requires === undefined) {
+    errors.push(`${stepLabel} missing requires`)
+    return
+  }
+  if (!Array.isArray(step.requires)) {
+    errors.push(`${stepLabel} requires must be an array`)
+    return
+  }
+  for (const entry of step.requires) {
+    if (typeof entry === 'string' && entry.length > 0) continue
+    if (entry && typeof entry === 'object' && !Array.isArray(entry) && typeof entry.path === 'string' && entry.path.length > 0) {
+      continue
+    }
+    errors.push(`${stepLabel} requires entries must be path strings or { path: string } objects`)
+  }
+}
+
+function validateInteractionBlock(block, label, errors) {
+  if (!block || typeof block !== 'object' || Array.isArray(block)) {
+    errors.push(`${label} must be a mapping/object`)
+    return
+  }
+  if (!block.id) errors.push(`${label} missing id`)
+  if (block.kind !== 'choice') errors.push(`${label} kind must be 'choice'`)
+  if (!block.prompt) errors.push(`${label} missing prompt`)
+  if (block.render_via !== 'choice_prompt') errors.push(`${label} render_via must be 'choice_prompt'`)
+  if (!Array.isArray(block.choices) || block.choices.length === 0) {
+    errors.push(`${label} choices must be a non-empty array`)
+    return
+  }
+  for (const choice of block.choices) {
+    if (!choice || typeof choice !== 'object' || Array.isArray(choice)) {
+      errors.push(`${label} choices entries must be mappings/objects`)
+      continue
+    }
+    if (!choice.id) errors.push(`${label} choice missing id`)
+    if (!choice.label) errors.push(`${label} choice ${choice.id || '(unknown)'} missing label`)
   }
 }
 
