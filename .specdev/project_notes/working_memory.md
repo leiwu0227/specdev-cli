@@ -8,14 +8,14 @@ Refresh with: `specdev memory refresh`
 specdev-cli is a CLI tool that enforces a spec-driven development workflow for AI coding agents (Claude Code, Codex, Cursor, etc.). It provides structured phases — brainstorm, breakdown, implementation, review — with hard gates between them. Agents must produce artifacts (proposal, design, plan, code) and get approval at each gate before proceeding.
 
 ## Current Workflow
-00020_refactor_reduce-test-suite: completed. Next: Assignment appears complete. Start a new assignment or capture additional learnings
+00023_familiarization_codebase-consistency-audit: implementation_checkpoint_ready. Next: Run specdev checkpoint implementation, then request user approval with specdev approve implementation
 
 ## Recent Completed Assignments
+- 00022_refactor_thin-runtime-guidance
+- 00021_familiarization_workflow-review
 - 00020_refactor_reduce-test-suite
 - 00019_feature_autocontinue-reviewloop
 - 00018_feature_workflow-agents
-- 00017_refactor_workflow-architecture
-- 00016_refactor_distill-workflow
 
 ## Durable Knowledge
 - architecture/flat-skill-view-scope.md: Assignment 00010 added `specdev skills view <name> [relative-path]`. Folder skills are scoped to their own directory, but flat markdown skills use the parent category directory as their base because they do not have a dedicated skill folder.
@@ -27,6 +27,9 @@ specdev-cli is a CLI tool that enforces a spec-driven development workflow for A
 - architecture/sqlite-knowledge-retrieval.md: Assignment 00013 added `specdev knowledge index` and `specdev knowledge search <query>` as the first retrieval layer for SpecDev knowledge.
 - architecture/workflow-agents.md: Assignment `00018_feature_workflow-agents` introduced agents as a third SpecDev workflow primitive alongside skills and scripts.
 - architecture/workflow-contract-facts.md: Assignment `00017_refactor_workflow-architecture` introduced `src/utils/workflow-contract.js` as the owner for structured workflow facts.
+- architecture/workflow-runtime-overlay.md: SpecDev now installs a declarative `.specdev/workflow.yaml` and exposes `specdev next --json` as the canonical next-action contract for agents.
+- workflow/assignment-schema.md: SpecDev uses a single authoritative assignment schema file:
+- workflow/local-bin-for-new-cli-commands.md: Use `node ./bin/specdev.js <command>` from the repo when verifying commands added in the current working tree. The globally installed `specdev` may not include newly added commands until the package is installed or updated.
 - workflow_feedback/breakdown-checkpoint-mismatch.md: Assignment 00010 showed that the breakdown skill refers to plan review/checkpoint behavior, but the CLI only supports `brainstorm`, `implementation`, and `discussion` checkpoint phases.
 - workflow_feedback/codex-reviewer-recurring-false-positives.md: The codex reviewer may repeat the same findings across rounds even after they've been addressed or disputed in changelogs. Observed in assignment 00003 where two findings persisted across all 3 rounds despite detailed changelog responses each time.
 - workflow_feedback/codex-sandbox-test-limitations.md: Codex's sandboxed environment cannot capture `spawnSync` stdout/stderr when running specdev CLI tests. This causes `test-reviewloop-command.js` (and likely other test files using the same pattern) to report false failures during `specdev reviewloop implementation --reviewer=codex`.
@@ -34,7 +37,10 @@ specdev-cli is a CLI tool that enforces a spec-driven development workflow for A
 - workflow_feedback/knowledge-search-sqlite-json-error.md: Status: fixed Type: issue Severity: major First seen: 2026-05-10, 00015_feature_claude-reviewer-observability Last seen: 2026-05-11, 00018_feature_workflow-agents Assignments observed: 00015_feature_claude-reviewer-observability, 00018_feature_workflow-agents
 - workflow_feedback/plan-file-ownership-precision.md: Assignment 00009 listed `src/utils/reviewers.js` as an implementation file, but the final reviewer preflight implementation did not need to touch it.
 - workflow_feedback/plan-skills-bracket-parsing.md: Status: open Type: issue Severity: moderate First seen: 2026-05-07, 00008_feature_workflow-status-json Last seen: 2026-05-11, 00019_feature_autocontinue-reviewloop Assignments observed: 00008_feature_workflow-status-json, 00019_feature_autocontinue-reviewloop
+- workflow_feedback/plan-task-header-depth-h3.md: Status: resolved Type: issue Severity: minor First seen: 2026-04-25, oceanlive-cli/00007–00014 Last seen: 2026-04-25 Assignments observed: oceanlive-cli/00007, /00011, /00012, /00014
+- workflow_feedback/progress-json-init-race.md: Status: resolved Type: issue Severity: minor First seen: 2026-04-25, oceanlive-cli/00007–00010 Last seen: 2026-04-25 Assignments observed: oceanlive-cli/00007, /00008, /00009, /00010
 - workflow_feedback/progress-json-parallel-write-race.md: Status: open Type: issue Severity: moderate First seen: 2026-05-11, 00019_feature_autocontinue-reviewloop Last seen: 2026-05-11, 00019_feature_autocontinue-reviewloop Assignments observed: 00019_feature_autocontinue-reviewloop
 - workflow_feedback/review-finds-masked-error-handling.md: Assignment 00011 showed that behavior tests can pass while error handling is still structurally wrong. `readCurrentWorkflow` returned the right output only because a broad catch hid misuse of `resolveCurrentAssignment()`.
 - workflow_feedback/review-round-template-mismatch.md: Status: open Type: issue Severity: minor First seen: 2026-05-11, 00017_refactor_workflow-architecture Last seen: 2026-05-11, 00017_refactor_workflow-architecture Assignments observed: 00017_refactor_workflow-architecture
+- workflow_feedback/silent-test-relaxation.md: Status: resolved Type: recurring-pattern Severity: moderate First seen: 2026-04-25, oceanlive-cli/00014 Last seen: 2026-04-25 Assignments observed: oceanlive-cli/00014, oceanlive-cli/00008 (cousin)
 - workflow_feedback/structured-workflow-feedback-format.md: Status: resolved Type: improvement Severity: moderate First seen: 2026-05-10, 00016_refactor_distill-workflow Last seen: 2026-05-10, 00016_refactor_distill-workflow Assignments observed: 00016_refactor_distill-workflow

@@ -33,7 +33,7 @@ Running catalog of completed assignments. See `_templates/gate_checklist.md` (Fi
 ### Workflow Status JSON
 **Assignment:** 00008_feature_workflow-status-json
 **Completed:** 2026-05-07
-**Description:** Added `specdev status [--json]` for human-readable and machine-readable workflow state. The command reports active assignment state, gates, artifact presence, blockers, progress, review diagnostics, distill nudges, and next action.
+**Description:** Added `specdev status [--json]` for human-readable and machine-readable workflow state. The command reports active assignment state, gates, artifact presence, blockers, progress, and next action.
 **Key files:** `src/commands/status.js`, `src/commands/continue.js`, `tests/test-workflow.js`
 
 ### Reviewer Preflight Checks
@@ -101,6 +101,22 @@ Running catalog of completed assignments. See `_templates/gate_checklist.md` (Fi
 **Completed:** 2026-05-12
 **Description:** Added an installed workflow manifest and `specdev next --json` runtime overlay that computes canonical next actions, validates manifest contracts, emits structured gate choices, and surfaces advisory hook outcomes while preserving the existing `.specdev` assignment layout.
 **Key files:** `templates/.specdev/workflow.yaml`, `src/utils/workflow-runtime.js`, `src/commands/next.js`, `src/commands/checkpoint.js`, `tests/test-checkpoints.js`
+
+---
+
+## Refactors
+
+### Thin Runtime Guidance
+**Assignment:** 00022_refactor_thin-runtime-guidance
+**Completed:** 2026-05-12
+**Description:** Thinned duplicated procedural guidance across `_main.md`, `_index.md`, `_guides/workflow.md`, `_guides/assignment_guide.md`, and the brainstorming / breakdown / implementing / reviewloop / knowledge-capture SKILL.md files. Knowledge capture is now optional and non-blocking; `_main.md` and the guides defer to `workflow.yaml` and `specdev next --json` for runtime decisions.
+**Key files:** `templates/.specdev/_main.md`, `templates/.specdev/_index.md`, `templates/.specdev/workflow.yaml`, `templates/.specdev/_guides/workflow.md`, `templates/.specdev/_guides/assignment_guide.md`, `templates/.specdev/_templates/gate_checklist.md`, `templates/.specdev/skills/core/*/SKILL.md`
+
+### Codebase Consistency Audit + Cleanup
+**Assignment:** 00023_familiarization_codebase-consistency-audit
+**Completed:** 2026-05-12
+**Description:** Holistic audit of the repo for legacy artifacts, contradictions, and inconsistencies. Produced `findings.md` (124 findings across root docs, source, templates, tests, and `.specdev/` state) plus a follow-up cleanup pass: re-synced installed `.specdev/` from templates; deleted v1-era root docs (SETUP/GITHUB_SETUP/setup-github.sh/CHANGELOG); migrated top-level `learnings/` notes into `.specdev/knowledge/workflow_feedback/`; archived `docs/plans/` under `.specdev/_archive/plans/`; removed the legacy `distill` command chain; dropped dead exports / dedup'd helpers (`listReviewers`, `appendCapped`); fixed broken references and stale wording across templates; tidied test fixture directories.
+**Key files:** `.specdev/assignments/00023_familiarization_codebase-consistency-audit/findings.md`, plus most files touched in the cleanup batches.
 
 ---
 

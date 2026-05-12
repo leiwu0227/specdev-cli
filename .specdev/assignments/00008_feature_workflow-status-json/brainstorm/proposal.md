@@ -1,5 +1,12 @@
-# Proposal: Research Hermes Agent Learnings
+# Proposal: Workflow Status JSON
 
-Investigate `NousResearch/hermes-agent` and identify concrete design or workflow ideas that could improve SpecDev CLI. Focus on mechanisms that map to SpecDev's scope: spec-driven assignments, skills, review loops, project context, knowledge capture, and agent-facing CLI ergonomics.
+Add `specdev status [--json]` so coding agents (and CI / tooling) have a
+single canonical command for "where is this assignment right now?". The
+human form should be readable in a terminal; the JSON form should expose
+the structured fields agents need: active assignment, current state, gates,
+artifact presence, blockers, progress, review diagnostics, and the next
+suggested action.
 
-The output should separate directly applicable ideas from ideas that are interesting but outside SpecDev's current product boundary.
+Promoted from D00001 (research learnings from NousResearch Hermes), where
+the "always-on status surface" idea was one of five recommended follow-ups.
+See `discussion_progress.md` for the full split.

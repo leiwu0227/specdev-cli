@@ -36,6 +36,7 @@ Below is a list of proposed assignments and their completion progress.
 | 00011 | bounded-working-memory | Done | 2026-05-07 | Added memory refresh command and bounded working_memory.md generation |
 | 00012 | guided-layout-migration | Done | 2026-05-08 | Made migrate guide-based by default; moved old automatic assignment migration to legacy-assignments |
 | 00013 | sqlite-knowledge-retrieval | Done | 2026-05-08 | Added SQLite FTS knowledge index/search commands with generated cache |
+| 00014 | agent-friendly-workflow | Rolled Back | 2026-05-09 | Stalled at implementation review after 6 rounds of needs-changes from Codex (knowledge list / context one-level scan, hook history, JSON scope inconsistencies). status.json reflects only the brainstorm gate. |
 | 00015 | claude-reviewer-observability | Done | 2026-05-10 | Added reviewloop heartbeats, richer reviewer logs, timeout cleanup, strict stdout salvage, and Claude stream-json progress |
 | 00016 | distill-workflow | Done | 2026-05-10 | Added structured workflow feedback note template and accumulation guidance |
 | 00017 | workflow-architecture | Done | 2026-05-11 | Centralized workflow facts in a contract module and added drift coverage |
@@ -43,6 +44,8 @@ Below is a list of proposed assignments and their completion progress.
 | 00019 | autocontinue-reviewloop | Done | 2026-05-11 | Added reviewloop autocontinue contract/guidance and kept discussions standalone |
 | 00020 | reduce-test-suite | Done | 2026-05-11 | Reduced maintained tests to 9 command-level smoke/regression files |
 | 00021 | workflow-review | Done | 2026-05-12 | Added workflow manifest, next-action runtime, structured choices, and advisory hook outcomes |
+| 00022 | thin-runtime-guidance | Done | 2026-05-12 | Thinned duplicated runtime guidance across `_main.md`, `_index.md`, `_guides/`, and skill SKILL.md files; made knowledge capture optional and non-blocking. |
+| 00023 | codebase-consistency-audit | In Progress | — | Holistic codebase audit (findings + cleanup); see assignment folder. |
 
 ---
 

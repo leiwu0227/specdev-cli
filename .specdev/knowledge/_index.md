@@ -1,6 +1,9 @@
 # Knowledge Vault
 
-This directory contains accumulated project knowledge, organized by topic. Agents read this at the start of assignments for context and write to it at the end to capture learnings.
+This directory contains accumulated project knowledge, organized by topic.
+Agents read this at the start of assignments for context and may add to it
+at the end via optional phase-end knowledge capture (see
+`skills/core/knowledge-capture/SKILL.md`).
 
 ## Branches
 
@@ -13,11 +16,19 @@ This directory contains accumulated project knowledge, organized by topic. Agent
 
 ## Workflow Feedback
 
-`workflow_feedback/` contains observations about the SpecDev workflow itself (not project-specific). These are collected by the maintainer to improve the workflow guides across all projects.
+`workflow_feedback/` contains observations about the SpecDev workflow
+itself (not project-specific). Notes follow the structured template at
+`.specdev/_templates/workflow_feedback_note.md`: every entry carries
+`Status` (open / mitigated / resolved), `Type`, `Severity`, `First seen`,
+`Last seen`, and `Assignments observed`, plus `Observation / Impact /
+Current Mitigation / Proposed Action` sections so the search index can
+rank and filter.
 
 ## How This Grows
 
-- Agents create new files and subdirectories as they encounter new categories
-- After each assignment, the validation step prompts agents to distill learnings here
-- Periodically, agents consolidate and deduplicate during natural workflow pauses
-- Keep entries concise and actionable — this is reference material, not a journal
+- Agents add new files (or update existing ones) during optional
+  knowledge capture at the end of a phase.
+- Periodically, agents consolidate and deduplicate during natural
+  workflow pauses (`prune-and-replace` in `knowledge-capture/SKILL.md`).
+- Keep entries concise and actionable — this is reference material, not
+  a journal.
