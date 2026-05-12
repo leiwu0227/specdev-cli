@@ -25,7 +25,7 @@
     "test:approve-phase": "node ./tests/test-approve-phase.js",
     "test:checkpoints": "node ./tests/test-checkpoints.js",
     "test:reviewloop-command": "node ./tests/test-reviewloop-command.js",
-    "test:cleanup": "rm -rf ./tests/test-init-output ./test-assignment-output ./tests/test-assignment-schema-output ./tests/test-update-output ./tests/test-knowledge-output ./tests/test-workflow-agent-output ./tests/test-approve-phase-output ./tests/test-reviewloop-command-output ./tests/test-checkpoints-output",
+    "test:cleanup": "rm -rf ./tests/test-*-output ./test-assignment-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
     "preversion": "sed -i \"s/\\\"releaseDate\\\": \\\"[0-9-]*\\\"/\\\"releaseDate\\\": \\\"$(date +%Y-%m-%d)\\\"/\" package.json",

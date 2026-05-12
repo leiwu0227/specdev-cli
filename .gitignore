@@ -8,3 +8,4 @@ test-manual/
 dist/
 coverage/
 tests/tmp-*/
+tests/test-*-output/
