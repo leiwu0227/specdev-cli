@@ -4,14 +4,15 @@
   "tasks": [
     {
       "number": 1,
-      "status": "in_progress",
+      "status": "completed",
       "started_at": "2026-05-12T02:33:08Z",
-      "completed_at": null
+      "completed_at": "2026-05-12T02:43:00Z",
+      "summary": "Five parallel general-purpose subagents produced inventory files for root-docs, source, templates, tests, and .specdev state; schema check passes."
     },
     {
       "number": 2,
-      "status": "pending",
-      "started_at": null,
+      "status": "in_progress",
+      "started_at": "2026-05-12T02:43:08Z",
       "completed_at": null
     }
   ]
