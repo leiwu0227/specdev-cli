@@ -67,5 +67,18 @@ for (const skill of ['brainstorming', 'breakdown', 'implementing', 'reviewloop']
   assert(read(`templates/.specdev/skills/core/${skill}/SKILL.md`).includes('specdev next --json'), `${skill} skill uses runtime next action`)
 }
 
+// Test budget contract (D00004 layer C)
+const breakdownSkill = read('templates/.specdev/skills/core/breakdown/SKILL.md')
+assert(breakdownSkill.includes('**Test Budget:** +<count>'), 'breakdown SKILL declares per-task Test Budget format')
+assert(breakdownSkill.includes('≤ 5 new tests across all tasks'), 'breakdown SKILL plan header declares aggregate Test Budget cap')
+assert(breakdownSkill.includes('Test budget rules'), 'breakdown SKILL includes test budget rules section')
+
+const reviewerPrompt = read('templates/.specdev/skills/core/review-agent/prompts/implementation-reviewer.md')
+assert(reviewerPrompt.includes('Test budget'), 'implementation reviewer prompt enforces test budget')
+assert(reviewerPrompt.includes('net new tests'), 'implementation reviewer counts net additions (not raw)')
+for (const stack of ['mocha', 'pytest', '#[test]', 'func Test', '@Test', '[Fact]', 'RSpec', 'TEST_F', 'XCTest', 'ExUnit']) {
+  assert(reviewerPrompt.includes(stack), `reviewer prompt covers ${stack} counting rule`)
+}
+
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)
