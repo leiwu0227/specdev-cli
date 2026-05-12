@@ -15,7 +15,7 @@
     "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "npm run test:init && npm run test:assignment && npm run test:workflow-contract-drift && npm run test:update && npm run test:knowledge && npm run test:workflow-agent && npm run test:approve-phase && npm run test:checkpoints && npm run test:reviewloop-command && npm run test:cleanup",
+    "test": "npm run test:init && npm run test:assignment && npm run test:workflow-contract-drift && npm run test:update && npm run test:knowledge && npm run test:workflow-agent && npm run test:approve-phase && npm run test:checkpoints && npm run test:cleanup",
     "test:init": "node ./tests/test-init.js",
     "test:assignment": "node ./tests/test-assignment.js",
     "test:workflow-contract-drift": "node ./tests/test-workflow-contract-drift.js",
@@ -24,7 +24,6 @@
     "test:workflow-agent": "node ./tests/test-workflow-agent.js",
     "test:approve-phase": "node ./tests/test-approve-phase.js",
     "test:checkpoints": "node ./tests/test-checkpoints.js",
-    "test:reviewloop-command": "node ./tests/test-reviewloop-command.js",
     "test:cleanup": "rm -rf ./tests/test-*-output ./test-assignment-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",

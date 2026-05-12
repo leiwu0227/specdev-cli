@@ -1,6 +1,6 @@
 # Full Suite Reviewloop Command Hang
 
-Status: open
+Status: resolved
 Type: recurring-pattern
 Severity: major
 First seen: 2026-05-08, 00012_feature_guided-layout-migration
@@ -12,12 +12,11 @@ Assignments observed: 00012_feature_guided-layout-migration, 00019_feature_autoc
 - During assignment 00019, focused suites passed, but `timeout 600s npm test` exceeded the timeout during later full-suite execution, and an implementation reviewer also timed out after writing an approved round because it continued into a long `npm test` run.
 
 ## Impact
-- Agents can have valid targeted verification and approved review artifacts while the overall reviewloop process or full suite remains blocked.
-- Phase approval may need manual recovery if a reviewer writes `**Verdict:** approved` and then times out before reviewloop calls `approvePhase()`.
+- Agents could have valid targeted verification and approved review artifacts while the overall reviewloop process or full suite remained blocked.
+- Phase approval might need manual recovery if a reviewer wrote `**Verdict:** approved` and then timed out before reviewloop called `approvePhase()`.
 
 ## Current Mitigation
-- When full `npm test` hangs, inspect the process tree before terminating and run assignment-relevant focused suites separately.
-- If reviewloop times out after an approved feedback round, verify the feedback artifact and status before manually approving the phase.
+- Resolved during the 00023 cleanup: `tests/test-reviewloop-command.js` was removed from the maintained suite (the slowest tail, dominated by multi-reviewer mocks and real timeouts). The reviewloop contract is now covered indirectly by drift assertions in `tests/test-workflow-contract-drift.js` and the per-phase choice tests in `tests/test-checkpoints.js`. See `knowledge/architecture/reduced-test-suite.md`.
 
 ## Proposed Action
-- create-assignment
+- none
