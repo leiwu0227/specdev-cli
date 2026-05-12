@@ -23,8 +23,9 @@ specdev reviewloop <phase>
 specdev reviewloop <phase> --reviewer=<name>
 ```
 
-Without `--reviewer`: lists available reviewers. Ask the user to select one.
+Without `--reviewer`: lists available reviewers. If the user has already chosen automated review mode, ask reviewer type as a second multiple-choice question. Use one choice per reviewer config; do not ask for free-form reviewer text.
 With `--reviewer`: spawns the reviewer and processes the result.
+With `--autocontinue`: after approval, continue to the next workflow phase without another user prompt.
 
 ## Reviewer Launch Notes
 
@@ -47,13 +48,14 @@ Each agent only writes to its own file and reads the other's.
 ## Flow
 
 1. Run `specdev reviewloop <phase>` — lists reviewers
-2. Ask user which reviewer to use
-3. Run `specdev reviewloop <phase> --reviewer=<name>`
-4. Command spawns reviewer, waits for completion
-5. Reads verdict from `review/{phase}-feedback.md`
-6. **Pass** → auto-approves phase, proceed to next phase
-7. **Fail** → run `specdev check-review` to read findings, fix issues, write `{phase}-changelog.md`
-8. Re-run `specdev reviewloop` for next round
+2. Ask the user whether to run review-only or review-then-autocontinue
+3. Ask reviewer type as a second multiple-choice question
+4. Run `specdev reviewloop <phase> --reviewer=<name>`
+5. Command spawns reviewer, waits for completion
+6. Reads verdict from `review/{phase}-feedback.md`
+7. **Pass** → auto-approves phase, proceed to next phase
+8. **Fail** → run `specdev check-review` to read findings, fix issues, write `{phase}-changelog.md`
+9. Re-run `specdev reviewloop` for next round
 
 ## Hard Rules
 

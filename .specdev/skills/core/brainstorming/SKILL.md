@@ -30,6 +30,7 @@ next: breakdown
 1. Run `.specdev/skills/core/brainstorming/scripts/get-project-context.sh <project-root>` to get current state
 2. Read the output — repo structure, recent work, existing knowledge
 3. Search for prior decisions: run `specdev knowledge search "<topic keywords>"` (auto-indexes on first use) with 1-2 queries related to the assignment topic. Look for prior design decisions, rejected approaches, and relevant architecture notes. Use `rg` for current implementation facts.
+   - If the topic is unfamiliar or knowledge search returns sparse results, run `specdev research "<topic>" --scope=all` (spec at `.specdev/agents/researcher/agent.md`).
 4. Ask the user 1-3 tightly related questions per message to understand their goal
    - Prefer multiple-choice over open-ended
    - Acknowledge each answer before asking the next question

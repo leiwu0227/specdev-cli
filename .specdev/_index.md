@@ -8,6 +8,10 @@ Reference dictionary for all SpecDev resources. Consult when you need to find a 
 
 - **`_guides/workflow.md`** — The 4-phase workflow (brainstorm → breakdown → implement → summary (capture)). Contains phase-by-phase instructions: what to do, which skill to load, checkpoint/gate commands, and review options. Read this when starting an assignment or resuming work.
 
+## Agents
+
+- **`agents/researcher/agent.md`** — Researches a topic across the repo, SpecDev knowledge, and the public web. Use via `specdev research "<topic>"` when evidence is thin or the assignment topic is unfamiliar.
+
 ## Reference Guides
 
 - **`_guides/assignment_guide.md`** — How to create and structure assignment folders. Covers naming convention (NNNNN_type_slug), required subdirectories (brainstorm/, breakdown/, implementation/, review/), which template files to copy, and the expected artifacts at each phase.

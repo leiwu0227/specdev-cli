@@ -1,0 +1,30 @@
+{
+  "plan_file": ".specdev/assignments/00022_refactor_thin-runtime-guidance/breakdown/plan.md",
+  "total_tasks": 4,
+  "tasks": [
+    {
+      "number": 1,
+      "name": "Route Guidance Through Runtime Contract",
+      "status": "completed",
+      "summary": "Replaced duplicated phase routing with specdev next --json handoffs while preserving gates and reviewloop behavior."
+    },
+    {
+      "number": 2,
+      "name": "Thin Breakdown And Implementation Task Model",
+      "status": "completed",
+      "summary": "Introduced concise task contracts, task modes, test budgets, and prune-and-replace testing guidance."
+    },
+    {
+      "number": 3,
+      "name": "Make Knowledge Capture Optional Phase-End Guidance",
+      "status": "completed",
+      "summary": "Removed required capture runtime phase and made knowledge capture optional non-blocking phase-end guidance."
+    },
+    {
+      "number": 4,
+      "name": "Documentation And Contract Drift Cleanup",
+      "status": "completed",
+      "summary": "Updated docs, guides, indexes, and tests to match the three-phase workflow and legacy distill positioning."
+    }
+  ]
+}
