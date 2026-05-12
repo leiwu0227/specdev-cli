@@ -6,12 +6,16 @@ import {
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
 import { scanSingleAssignment } from '../utils/scan.js'
-import { loadStateForAssignment, readGateStatus } from '../utils/state.js'
+import {
+  loadStateForAssignment,
+  readGateStatus,
+  enumerateGateFieldsByPhase,
+  enumeratePhaseArtifacts,
+} from '../utils/state.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
 import { getLatestRound } from '../utils/review-feedback.js'
 import { resolveCurrentAssignment } from '../utils/current.js'
-import { artifactPaths as workflowArtifactPaths, gateFields } from '../utils/workflow-contract.js'
 
 export async function continueCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -31,7 +35,7 @@ export async function continueCommand(flags = {}) {
   const selected = selection.selected
 
   const assignmentSummary = await scanSingleAssignment(selected.path, selected.name)
-  const { detected } = await loadStateForAssignment(specdevPath, assignmentSummary, selected.path)
+  const { detected, workflowInfo } = await loadStateForAssignment(specdevPath, assignmentSummary, selected.path)
 
   // Check for review feedback from a separate review session
   // Use the structured phase from detected state directly. When there's no
@@ -51,7 +55,7 @@ export async function continueCommand(flags = {}) {
     }
   }
 
-  const workflowStatus = await collectWorkflowStatus(selected.path)
+  const workflowStatus = await collectWorkflowStatus(selected.path, workflowInfo)
   const payload = buildContinuePayload(
     detected,
     selected,
@@ -202,15 +206,11 @@ export function buildStatusPayload(payload) {
   }
 }
 
-async function collectWorkflowStatus(assignmentPath) {
-  const gates = await readGateStatus(assignmentPath)
+async function collectWorkflowStatus(assignmentPath, workflowInfo) {
+  const gates = await readGateStatus(assignmentPath, workflowInfo)
+  const gateByPhase = enumerateGateFieldsByPhase(workflowInfo)
   const artifacts = {}
-  const trackedArtifacts = [
-    workflowArtifactPaths.brainstorm.proposal,
-    workflowArtifactPaths.brainstorm.design,
-    workflowArtifactPaths.breakdown.plan,
-    workflowArtifactPaths.implementation.progress,
-  ]
+  const trackedArtifacts = enumeratePhaseArtifacts(workflowInfo)
 
   for (const artifact of trackedArtifacts) {
     artifacts[artifact] = await fse.pathExists(join(assignmentPath, artifact))
@@ -218,11 +218,14 @@ async function collectWorkflowStatus(assignmentPath) {
       : 'missing'
   }
 
+  // Build phase-keyed gate summary (e.g., { brainstorm: 'approved', implementation: 'pending' })
+  const phaseGates = {}
+  for (const [phaseName, fieldName] of Object.entries(gateByPhase)) {
+    phaseGates[phaseName] = gates[fieldName] ? 'approved' : 'pending'
+  }
+
   return {
-    gates: {
-      brainstorm: gates[gateFields.brainstorm] ? 'approved' : 'pending',
-      implementation: gates[gateFields.implementation] ? 'approved' : 'pending',
-    },
+    gates: phaseGates,
     artifacts,
   }
 }

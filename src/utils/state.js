@@ -1,6 +1,5 @@
 import { join } from 'path'
 import fse from 'fs-extra'
-import { gateFields } from './workflow-contract.js'
 
 /**
  * @typedef {Object} DetectedState
@@ -23,20 +22,72 @@ const LEGACY_ROOT_ARTIFACTS = [
   'validation_checklist.md',
 ]
 
-export async function readGateStatus(assignmentPath) {
+/**
+ * Read gate status for every manifest-declared gate field.
+ *
+ * @param {string} assignmentPath
+ * @param {object} workflowInfo - loaded workflow definition
+ * @returns {Promise<Record<string, boolean>>} keyed by gate field name
+ */
+export async function readGateStatus(assignmentPath, workflowInfo) {
+  const gateFieldsFromManifest = enumerateGateFields(workflowInfo)
   const statusPath = join(assignmentPath, 'status.json')
-  if (!(await fse.pathExists(statusPath))) {
-    return { [gateFields.brainstorm]: false, [gateFields.implementation]: false }
-  }
+  const empty = Object.fromEntries(gateFieldsFromManifest.map((f) => [f, false]))
+  if (!(await fse.pathExists(statusPath))) return empty
   try {
     const raw = await fse.readJson(statusPath)
-    return {
-      [gateFields.brainstorm]: Boolean(raw[gateFields.brainstorm]),
-      [gateFields.implementation]: Boolean(raw[gateFields.implementation]),
-    }
+    return Object.fromEntries(gateFieldsFromManifest.map((f) => [f, Boolean(raw[f])]))
   } catch {
-    return { [gateFields.brainstorm]: false, [gateFields.implementation]: false }
+    return empty
   }
+}
+
+function enumerateGateFields(workflowInfo) {
+  const fields = []
+  const phases = workflowInfo?.workflow?.phases || {}
+  for (const phaseName of Object.keys(phases)) {
+    const steps = phases[phaseName]?.steps
+    if (!Array.isArray(steps)) continue
+    for (const step of steps) {
+      if (step && step.kind === 'gate' && step.gate) fields.push(step.gate)
+    }
+  }
+  return fields
+}
+
+export function enumerateGateFieldsByPhase(workflowInfo) {
+  const byPhase = {}
+  const phases = workflowInfo?.workflow?.phases || {}
+  for (const phaseName of Object.keys(phases)) {
+    const steps = phases[phaseName]?.steps
+    if (!Array.isArray(steps)) continue
+    for (const step of steps) {
+      if (step && step.kind === 'gate' && step.gate) {
+        byPhase[phaseName] = step.gate
+      }
+    }
+  }
+  return byPhase
+}
+
+export function enumeratePhaseArtifacts(workflowInfo) {
+  const seen = new Set()
+  const artifacts = []
+  const phases = workflowInfo?.workflow?.phases || {}
+  for (const phaseName of Object.keys(phases)) {
+    const steps = phases[phaseName]?.steps
+    if (!Array.isArray(steps)) continue
+    for (const step of steps) {
+      if (!step) continue
+      for (const path of producePathStrings(step.produces)) {
+        if (!seen.has(path)) { seen.add(path); artifacts.push(path) }
+      }
+      for (const path of requirePathStrings(step.requires)) {
+        if (!seen.has(path)) { seen.add(path); artifacts.push(path) }
+      }
+    }
+  }
+  return artifacts
 }
 
 async function readRawStatusJson(assignmentPath) {
