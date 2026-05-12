@@ -2,6 +2,19 @@ import { join } from 'path'
 import fse from 'fs-extra'
 import { artifactPaths, gateFields } from './workflow-contract.js'
 
+/**
+ * @typedef {Object} DetectedState
+ * @property {'brainstorm'|'breakdown'|'implementation'|null} phase - active phase from manifest
+ * @property {string|null} stepId - active step id (e.g., 'create_artifacts', 'checkpoint', 'approval')
+ * @property {'guide'|'command'|'gate'|null} stepKind - active step kind
+ * @property {'in_progress'|'checkpoint_ready'|'approved'|'completed'|'blocked'} status
+ * @property {string[]} completedPhases - phase names whose gate is satisfied
+ * @property {string|null} gate - gate field declared on the active step, if any
+ * @property {string} state - legacy state-name string (e.g., 'brainstorm_in_progress'); derived from above for one-release back-compat; DO NOT branch on this in new code
+ * @property {Array<{code:string,detail:string,recommended_fix:string}>} blockers
+ * @property {Object} progress - existing progress shape
+ */
+
 const LEGACY_ROOT_ARTIFACTS = [
   'proposal.md',
   'design.md',

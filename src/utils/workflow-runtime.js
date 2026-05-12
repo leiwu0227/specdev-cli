@@ -738,3 +738,95 @@ function buildTrace(state) {
   }
   return traces[state] || ['workflow state requires inspection']
 }
+
+/**
+ * Render a manifest step's interaction, continuation, or blocker output.
+ * Consumed by checkpoint, approve, reviewloop, next, status, review commands.
+ *
+ * @param {Object} step - manifest step (with interaction/on_satisfied/requires fields)
+ * @param {Object} runtimeContext - { phase, discussion, reviewers, sessionState }
+ * @param {Object} options - { format: 'text' | 'json' }
+ * @returns {Object} - { interaction?, continuation?, blockers? } depending on what the step has
+ */
+export function renderStepOutput(step, runtimeContext, { format = 'json' } = {}) {
+  if (!step) return {}
+  const output = {}
+
+  if (step.interaction) {
+    output.interaction = renderInteractionBlock(step.interaction, runtimeContext)
+  }
+  if (step.on_satisfied) {
+    output.continuation = renderContinuationBlock(step.on_satisfied, runtimeContext)
+  }
+  // requires-based blockers are computed by callers that know what's missing on disk;
+  // renderStepOutput just formats the step's manifest contract, not the runtime artifact-presence check.
+
+  return output
+}
+
+function renderInteractionBlock(interaction, runtimeContext) {
+  const { phase, discussion, reviewers = [] } = runtimeContext
+  const substitute = (str) => {
+    if (typeof str !== 'string') return str
+    return str
+      .replace(/\{phase\}/g, phase || '')
+      .replace(/\{discussion\}/g, discussion || '')
+  }
+
+  const choices = (interaction.choices || []).map((choice) => {
+    const rendered = {
+      id: choice.id,
+      label: substitute(choice.label),
+      command: substitute(choice.command_template),
+    }
+    if (choice.requires_reviewer) {
+      rendered.requires_reviewer = true
+      rendered.reviewers = reviewers
+    }
+    if (choice.autocontinue) rendered.autocontinue = true
+    return rendered
+  })
+
+  let followUp
+  if (interaction.follow_up) {
+    followUp = {
+      id: interaction.follow_up.id,
+      kind: interaction.follow_up.kind,
+      prompt: substitute(interaction.follow_up.prompt),
+      when: interaction.follow_up.when,
+      source: interaction.follow_up.source,
+    }
+  }
+
+  return {
+    id: substitute(interaction.id),
+    kind: interaction.kind,
+    prompt: substitute(interaction.prompt),
+    render_via: interaction.render_via,
+    choices,
+    follow_up: followUp,
+  }
+}
+
+function renderContinuationBlock(onSatisfied, runtimeContext) {
+  const { sessionState = {} } = runtimeContext
+  const sticky = onSatisfied.sticky || []
+  const expanded = { ...onSatisfied.next }
+
+  // Sticky-state expansion happens here when callers actually emit the continuation;
+  // for now just pass through the manifest data and let approve.js / reviewloop.js
+  // do the final substitution with sticky state in Task 11.
+  return {
+    next: expanded,
+    sticky,
+    interrupt: onSatisfied.interrupt === true,
+    sticky_resolved: Object.fromEntries(
+      sticky.map((key) => [key, sessionState[key] ?? null])
+    ),
+  }
+}
+
+export function findTopLevelInteraction(workflow, id) {
+  const list = Array.isArray(workflow?.interactions) ? workflow.interactions : []
+  return list.find((entry) => entry && entry.id === id) || null
+}
