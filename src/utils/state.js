@@ -1,6 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
-import { artifactPaths, gateFields } from './workflow-contract.js'
+import { gateFields } from './workflow-contract.js'
 
 /**
  * @typedef {Object} DetectedState
@@ -39,16 +39,69 @@ export async function readGateStatus(assignmentPath) {
   }
 }
 
-export async function detectAssignmentState(assignmentSummary, assignmentPath) {
-  const blockers = []
-  const hasProposal = await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.proposal))
-  const hasDesign = await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.design))
-  const hasPlan = await fse.pathExists(join(assignmentPath, artifactPaths.breakdown.plan))
-  const hasProgressFile = await fse.pathExists(
-    join(assignmentPath, artifactPaths.implementation.progress)
-  )
+async function readRawStatusJson(assignmentPath) {
+  const statusPath = join(assignmentPath, 'status.json')
+  if (!(await fse.pathExists(statusPath))) return {}
+  try {
+    return await fse.readJson(statusPath)
+  } catch {
+    return {}
+  }
+}
 
-  const gates = await readGateStatus(assignmentPath)
+function requirePathStrings(requires) {
+  if (!Array.isArray(requires)) return []
+  const paths = []
+  for (const entry of requires) {
+    if (typeof entry === 'string' && entry.length > 0) {
+      paths.push(entry)
+    } else if (entry && typeof entry === 'object' && typeof entry.path === 'string') {
+      paths.push(entry.path)
+    }
+  }
+  return paths
+}
+
+function producePathStrings(produces) {
+  if (!Array.isArray(produces)) return []
+  const paths = []
+  for (const entry of produces) {
+    if (typeof entry === 'string' && entry.length > 0) {
+      paths.push(entry)
+    } else if (entry && typeof entry === 'object' && typeof entry.path === 'string') {
+      paths.push(entry.path)
+    }
+  }
+  return paths
+}
+
+async function allPathsExist(assignmentPath, relPaths) {
+  for (const rel of relPaths) {
+    if (!(await fse.pathExists(join(assignmentPath, rel)))) return false
+  }
+  return true
+}
+
+export async function loadStateForAssignment(specdevPath, assignmentSummary, assignmentPath) {
+  const { loadWorkflowDefinition } = await import('./workflow-runtime.js')
+  const workflowInfo = await loadWorkflowDefinition(specdevPath)
+  const detected = await detectAssignmentState(assignmentSummary, assignmentPath, workflowInfo)
+  return { workflowInfo, detected }
+}
+
+export async function detectAssignmentState(assignmentSummary, assignmentPath, workflowInfo) {
+  if (!workflowInfo || !workflowInfo.workflow || !workflowInfo.workflow.phases) {
+    throw new Error(
+      'detectAssignmentState requires workflowInfo; use loadStateForAssignment helper or load the workflow manifest first'
+    )
+  }
+
+  const workflow = workflowInfo.workflow
+  const phaseOrder = ['brainstorm', 'breakdown', 'implementation']
+  const blockers = []
+  const completedPhases = []
+
+  const statusJson = await readRawStatusJson(assignmentPath)
   const progress = await readImplementationProgress(assignmentSummary, assignmentPath)
 
   if (assignmentSummary.skippedPhases && assignmentSummary.skippedPhases.length > 0) {
@@ -68,87 +121,210 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     })
   }
 
-  // Brainstorm phase
-  if (!hasProposal || !hasDesign) {
-    return {
-      state: 'brainstorm_in_progress',
-      next_action: 'Continue brainstorm and produce brainstorm/proposal.md + brainstorm/design.md',
-      blockers,
-      progress,
-    }
-  }
+  // Walk phases in declared order.
+  for (let phaseIndex = 0; phaseIndex < phaseOrder.length; phaseIndex++) {
+    const phase = phaseOrder[phaseIndex]
+    const phaseDef = workflow.phases[phase]
+    if (!phaseDef || !Array.isArray(phaseDef.steps)) continue
 
-  if (!gates[gateFields.brainstorm]) {
-    return {
-      state: 'brainstorm_checkpoint_ready',
-      next_action: 'Run specdev checkpoint brainstorm, then request user approval with specdev approve brainstorm',
-      blockers,
-      progress,
-    }
-  }
+    const steps = phaseDef.steps
 
-  // Breakdown phase
-  if (!hasPlan) {
-    return {
-      state: 'breakdown_in_progress',
-      next_action: 'Invoke breakdown skill to generate breakdown/plan.md',
-      blockers,
-      progress,
-    }
-  }
-
-  const revisionGuard = await checkRevisionMismatch(assignmentPath)
-  if (revisionGuard.hasMismatch) {
-    blockers.push({
-      code: 'design_revision_mismatch',
-      detail:
-        `brainstorm revision is v${revisionGuard.brainstormRevision}, ` +
-        `but breakdown is based on v${revisionGuard.breakdownRevision}`,
-      recommended_fix: 'Re-run breakdown to refresh the plan for the latest design revision',
-    })
-    return {
-      state: 'revision_requires_rebreakdown',
-      next_action: 'Re-run breakdown before continuing implementation',
-      blockers,
-      progress,
-    }
-  }
-
-  // Implementation phase
-  if (!hasProgressFile) {
-    return {
-      state: 'implementation_in_progress',
-      next_action: 'Invoke implementing skill to execute the plan',
-      blockers,
-      progress,
-    }
-  }
-
-  if (progress.totalTasks > 0 && progress.completedTasks >= progress.totalTasks) {
-    if (!gates[gateFields.implementation]) {
-      return {
-        state: 'implementation_checkpoint_ready',
-        next_action: 'Run specdev checkpoint implementation, then request user approval with specdev approve implementation',
-        blockers,
-        progress,
+    // Special-case revision mismatch check between brainstorm and breakdown:
+    // when entering breakdown (brainstorm completed), confirm breakdown is
+    // based on the latest brainstorm revision.
+    if (phase === 'breakdown') {
+      const revisionGuard = await checkRevisionMismatch(assignmentPath)
+      if (revisionGuard.hasMismatch) {
+        blockers.push({
+          code: 'design_revision_mismatch',
+          detail:
+            `brainstorm revision is v${revisionGuard.brainstormRevision}, ` +
+            `but breakdown is based on v${revisionGuard.breakdownRevision}`,
+          recommended_fix: 'Re-run breakdown to refresh the plan for the latest design revision',
+        })
+        return finalizeDetected({
+          phase: 'breakdown',
+          stepId: null,
+          stepKind: null,
+          status: 'blocked',
+          completedPhases,
+          gate: null,
+          legacyState: 'revision_requires_rebreakdown',
+          legacyNextAction: 'Re-run breakdown before continuing implementation',
+          blockers,
+          progress,
+        })
       }
     }
-  } else {
-    return {
-      state: 'implementation_in_progress',
-      next_action: 'Continue implementing remaining tasks and keep progress evidence updated',
-      blockers,
-      progress,
+
+    for (const step of steps) {
+      if (!step || typeof step !== 'object') continue
+
+      if (step.kind === 'guide') {
+        const produces = producePathStrings(step.produces)
+        if (produces.length > 0 && !(await allPathsExist(assignmentPath, produces))) {
+          return finalizeDetected({
+            phase,
+            stepId: step.id,
+            stepKind: 'guide',
+            status: 'in_progress',
+            completedPhases,
+            gate: null,
+            legacyState: `${phase}_in_progress`,
+            legacyNextAction: legacyNextActionForGuide(phase, produces),
+            blockers,
+            progress,
+          })
+        }
+        // Special handling for implementation execute_plan: even if
+        // progress.json exists, if it shows incomplete work we stay in
+        // execute_plan with the "continue implementing" message.
+        if (phase === 'implementation' && step.id === 'execute_plan') {
+          const incomplete = progress.totalTasks === 0 || progress.completedTasks < progress.totalTasks
+          if (incomplete) {
+            return finalizeDetected({
+              phase,
+              stepId: step.id,
+              stepKind: 'guide',
+              status: 'in_progress',
+              completedPhases,
+              gate: null,
+              legacyState: 'implementation_in_progress',
+              legacyNextAction: 'Continue implementing remaining tasks and keep progress evidence updated',
+              blockers,
+              progress,
+            })
+          }
+        }
+        continue
+      }
+
+      if (step.kind === 'command') {
+        // Checkpoint-style step: artifacts must already exist (verified by
+        // earlier guide step gating). If we get here, the next-needed thing
+        // is the checkpoint command, gated by the upcoming gate field on the
+        // matching gate step in this phase.
+        const gateStep = steps.find((s) => s && s.kind === 'gate')
+        const gateField = gateStep?.gate || null
+        const gateSatisfied = gateField ? Boolean(statusJson[gateField]) : false
+        if (!gateSatisfied) {
+          return finalizeDetected({
+            phase,
+            stepId: step.id,
+            stepKind: 'command',
+            status: 'checkpoint_ready',
+            completedPhases,
+            gate: gateField,
+            legacyState: `${phase}_checkpoint_ready`,
+            legacyNextAction: legacyNextActionForCheckpoint(phase),
+            blockers,
+            progress,
+          })
+        }
+        // Gate satisfied; fall through to gate step (which will mark
+        // completedPhases and continue).
+        continue
+      }
+
+      if (step.kind === 'gate') {
+        const gateField = step.gate
+        const gateSatisfied = gateField ? Boolean(statusJson[gateField]) : false
+        if (!gateSatisfied) {
+          // Phase has no command step (e.g., breakdown without checkpoint)
+          // but a gate that's unsatisfied — treat as checkpoint_ready under
+          // this phase. In current manifest, breakdown has no gate, so this
+          // path only fires for brainstorm/implementation where the command
+          // step above would already have returned. Defensive fallback only.
+          return finalizeDetected({
+            phase,
+            stepId: step.id,
+            stepKind: 'gate',
+            status: 'checkpoint_ready',
+            completedPhases,
+            gate: gateField,
+            legacyState: `${phase}_checkpoint_ready`,
+            legacyNextAction: legacyNextActionForCheckpoint(phase),
+            blockers,
+            progress,
+          })
+        }
+        completedPhases.push(phase)
+        continue
+      }
+    }
+
+    // If we walked the entire phase without returning and the phase has no
+    // gate step (e.g., breakdown), it's considered complete once its guides'
+    // produces all exist. The walk continues to the next phase.
+    const hasGate = steps.some((s) => s && s.kind === 'gate')
+    if (!hasGate) {
+      completedPhases.push(phase)
     }
   }
 
-  return {
-    state: 'completed',
-    next_action:
+  // All phases walked: workflow complete.
+  return finalizeDetected({
+    phase: null,
+    stepId: null,
+    stepKind: null,
+    status: 'completed',
+    completedPhases,
+    gate: null,
+    legacyState: 'completed',
+    legacyNextAction:
       'Assignment complete. Optionally record reusable knowledge, then start a new assignment',
     blockers,
     progress,
+  })
+}
+
+function finalizeDetected({
+  phase,
+  stepId,
+  stepKind,
+  status,
+  completedPhases,
+  gate,
+  legacyState,
+  legacyNextAction,
+  blockers,
+  progress,
+}) {
+  return {
+    phase,
+    stepId,
+    stepKind,
+    status,
+    completedPhases: [...completedPhases],
+    gate,
+    state: legacyState,
+    next_action: legacyNextAction,
+    blockers,
+    progress,
   }
+}
+
+function legacyNextActionForGuide(phase, produces) {
+  if (phase === 'brainstorm') {
+    return `Continue brainstorm and produce ${produces.join(' + ')}`
+  }
+  if (phase === 'breakdown') {
+    return 'Invoke breakdown skill to generate breakdown/plan.md'
+  }
+  if (phase === 'implementation') {
+    return 'Invoke implementing skill to execute the plan'
+  }
+  return `Continue ${phase}`
+}
+
+function legacyNextActionForCheckpoint(phase) {
+  if (phase === 'brainstorm') {
+    return 'Run specdev checkpoint brainstorm, then request user approval with specdev approve brainstorm'
+  }
+  if (phase === 'implementation') {
+    return 'Run specdev checkpoint implementation, then request user approval with specdev approve implementation'
+  }
+  return `Run specdev checkpoint ${phase}`
 }
 
 async function checkRevisionMismatch(assignmentPath) {
