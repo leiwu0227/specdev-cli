@@ -206,10 +206,10 @@ writeFileSync(join(featureDir, 'status.json'), JSON.stringify({
   implementation_approved: true,
 }))
 result = runCmd(['next', `--target=${TEST_DIR}`, '--json'])
-assert(result.status === 0, 'next --json passes at implementation-to-capture boundary')
+assert(result.status === 0, 'next --json passes after implementation approval')
 try {
   const json = JSON.parse(result.stdout.trim())
-  assert(json.state === 'summary_in_progress', 'next action enters capture after implementation approval')
+  assert(json.state === 'completed', 'next action completes after implementation approval')
   assert(json.hook_outcomes?.some(hook => hook.id === 'repo_knowledge_prompt' && hook.outcome === 'skipped'), 'next action surfaces advisory repo knowledge hook')
 } catch {
   assert(false, 'next --json hook output is valid JSON: ' + result.stdout.slice(0, 120))

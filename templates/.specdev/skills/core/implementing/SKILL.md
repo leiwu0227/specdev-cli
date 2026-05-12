@@ -1,11 +1,11 @@
 ---
 name: implementing
-description: Execute a plan task-by-task using the plan's execution mode, TDD discipline, and batch reporting
+description: Execute a plan task-by-task using the plan's execution mode and task-level verification
 type: core
 phase: implement
 input: breakdown/plan.md
 output: Implemented code, committed per-task
-next: knowledge-capture
+next: null
 ---
 
 # Implementing
@@ -13,9 +13,9 @@ next: knowledge-capture
 ## Contract
 
 - **Input:** `breakdown/plan.md` from the assignment folder
-- **Process:** Extract tasks -> execute in batches of 3 -> execute inline or dispatch subagents based on plan execution mode -> mode-based review -> commit -> batch test + report
+- **Process:** Extract tasks -> execute inline or dispatch subagents based on plan execution mode -> mode-based verification/review -> commit -> progress report
 - **Output:** Implemented code, committed per-task, with progress tracked
-- **Next phase:** knowledge-capture
+- **Next phase:** assignment complete after implementation approval; optional phase-end knowledge capture may be suggested
 
 ## Scripts
 
@@ -23,7 +23,7 @@ next: knowledge-capture
 |--------|---------|-------------|
 | `.specdev/skills/core/implementing/scripts/extract-tasks.sh` | Parse plan into structured JSON task list | At the start |
 | `.specdev/skills/core/implementing/scripts/prepare-task.sh` | Mark started, resolve skills, output ready-to-use prompt + mode as JSON | Before dispatching each task |
-| `.specdev/skills/core/implementing/scripts/complete-task.sh` | Mark completed, store summary, report batch status | After each task completes |
+| `.specdev/skills/core/implementing/scripts/complete-task.sh` | Mark completed, store summary, report progress | After each task completes |
 | `.specdev/skills/core/implementing/scripts/track-progress.sh` | Low-level progress primitive (used internally by prepare/complete scripts) | For summary only |
 
 ## Prompts
@@ -46,46 +46,42 @@ next: knowledge-capture
    - `parallel`: use `skills/core/parallel-worktrees/SKILL.md` only for disjoint file ownership
    - Missing or unknown mode: treat as `inline`
 
-### Phase 2: Batch Execution
+### Phase 2: Task Execution
 
-Execute tasks in batches of 3. For each batch:
-
-#### Per task (within the batch):
+Execute tasks in plan order. For each task:
 
 1. **Prepare** — run `.specdev/skills/core/implementing/scripts/prepare-task.sh <plan-file> <N>`
    - This marks the task as started, resolves skills, and outputs JSON with `task_number`, `total_tasks`, `mode`, and `prompt`
    - You MUST use the `prompt` field from this output as the task contract — do not construct task instructions manually
 2. **Execute task** according to execution mode:
-   - `inline`: use the `prompt` as your task contract, then implement, test, commit, and self-review in this session
+   - `inline`: use the `prompt` as your task contract, then implement, verify, commit, and self-review in this session
    - `subagent`: dispatch a fresh subagent with the `prompt` from step 1; fresh subagent, no prior context
    - `parallel`: follow `skills/core/parallel-worktrees/SKILL.md` for isolated worktrees and integration
-3. **Mode-based review** — use the `mode` from step 1:
-   - `full`: dispatch `.specdev/skills/core/implementing/prompts/code-reviewer.md` — FAIL/NOT READY blocks; fix findings → re-review loop
-   - `standard`: self-review only — no reviewer subagent
-   - `lightweight`: skip review unless the task touched executable logic
+3. **Mode-based verification/review** — use the `mode` from step 1:
+   - `lightweight`: do not run per-task executable tests. Run only cheap text-only checks listed by the task, if any. Defer executable tests to final verification.
+   - `standard`: if executable behavior changed, run the focused relevant test or command; otherwise use the listed verification. Self-review only. Keep focused verification under 30 seconds unless justified.
+   - `full`: use strict TDD and dispatch `.specdev/skills/core/implementing/prompts/code-reviewer.md` — FAIL/NOT READY blocks; fix findings → re-review loop.
 4. **Complete** — run `.specdev/skills/core/implementing/scripts/complete-task.sh <plan-file> <N> "<summary of task changes>"`
-   - This marks the task as completed, stores the summary, and reports batch progress
+   - This marks the task as completed, stores the summary, and reports progress
 
-#### After each batch:
+After meaningful checkpoints, report concise progress: tasks completed, verification run, and notable decisions. Do not stop for a user gate during implementation.
 
-1. Run the full test suite
-2. If tests fail: stop, debug, and fix before continuing to the next batch
-3. Report batch summary: tasks completed, tests passing, any notable decisions
-4. Continue to next batch (no user gate — informational only)
-
-The last batch may have fewer than 3 tasks.
+When touching tests:
+- Prefer prune-and-replace over adding coverage.
+- Inspect nearby tests before adding anything.
+- Delete stale, duplicate, or implementation-detail tests and replace them with the smallest current contract test.
+- Keep compatibility, migration, public CLI contract, regression, safety, and security tests when the supported behavior still exists.
+- Do not preserve obsolete historical assertions just because they already exist.
 
 ### Phase 3: Final Review
 
-1. Run full test suite one final time
+1. Run the verification appropriate for the assignment risk. Use focused commands or text-only scans for narrow docs/template/config changes. Run executable tests once here for lightweight work if needed. Use the full test suite only for broad executable changes. Keep final verification under 2 minutes unless explicitly justified.
 2. Run `.specdev/skills/core/implementing/scripts/track-progress.sh <plan-file> summary`
 3. Present a summary to the user inline: what was built, tests passing, any notable decisions
-4. If this implementation was reached from `reviewloop brainstorm --autocontinue`, run `specdev checkpoint implementation`, then run `specdev reviewloop implementation --reviewer=<same-reviewer> --autocontinue` without asking the user for another decision.
-5. Otherwise, tell the user their options:
-   - `specdev reviewloop implementation` — automated external review (e.g., Codex)
-   - `specdev review implementation` — manual review in a separate session
-   - `specdev approve implementation` — skip review and proceed to knowledge capture
-6. Stop and wait only in the non-autocontinue path.
+4. Run `specdev checkpoint implementation`.
+5. If this implementation was reached from `reviewloop brainstorm --autocontinue`, continue with the returned runtime action without asking the user for another decision. The expected action is `specdev reviewloop implementation --reviewer=<same-reviewer> --autocontinue`.
+6. Otherwise, present the returned choices. If checkpoint output is unavailable, run `specdev next --json` and present the returned choices.
+7. Stop and wait only in the non-autocontinue path.
 
 ## Red Flags
 
@@ -100,5 +96,5 @@ The last batch may have fewer than 3 tasks.
 ## Integration
 
 - **Before this skill:** breakdown (creates the plan)
-- **After this skill:** knowledge-capture (distill learnings)
+- **After this skill:** use `specdev next --json`; assignment completes after implementation approval, with optional phase-end knowledge capture
 - **Review:** User may run `specdev review implementation` for optional holistic review after all tasks complete

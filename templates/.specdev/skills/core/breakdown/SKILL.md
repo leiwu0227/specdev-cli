@@ -1,6 +1,6 @@
 ---
 name: breakdown
-description: Turn a validated design into a coherent implementation plan with bite-sized TDD steps — automatic, no user interaction
+description: Turn a validated design into a concise, executable implementation plan — automatic, no user interaction
 type: core
 phase: breakdown
 input: brainstorm/design.md
@@ -13,9 +13,9 @@ next: implementing
 ## Contract
 
 - **Input:** `brainstorm/design.md` from the assignment folder
-- **Process:** Review design (subagent, up to 2 rounds) → decompose into coherent tasks → choose execution mode → detail each task with bite-sized TDD steps, exact code, exact commands
+- **Process:** Review design (subagent, up to 2 rounds) → decompose into coherent tasks → choose execution mode → write concise task contracts with verification
 - **Output:** `breakdown/plan.md` in the assignment folder
-- **Next phase:** implementing (automatic)
+- **Next phase:** determined by `specdev next --json` after the plan is ready
 
 ## Process
 
@@ -49,7 +49,7 @@ This is a lightweight sanity check — the design was already validated section-
 - **Independent enough to commit** — each task produces working code
 - **Ordered by dependency** — later tasks build on earlier ones
 
-The 2-5 minute rule applies to the steps inside a task, not to top-level tasks. Do not split a single coherent change across many artificial tasks just to make every task tiny.
+Avoid tiny artificial tasks. A task should be small enough to review, but large enough to represent a coherent change.
 
 ### Phase 2.5: Choose Execution Mode
 
@@ -68,40 +68,49 @@ Every task MUST be an H3 heading (`### Task N: …`). The breakdown scripts grep
 Every task MUST follow this structure (compact form shown):
 
     ### Task N: [Name]
-    **Mode:** standard
+    **Mode:** lightweight | standard | full
     **Skills:** [skill-a, skill-b]
-    **Files:** Create/Modify/Test with exact paths
+    **Files:** exact paths expected to change
 
-    **Step 1: Write the failing test**
-    [full test code block]
+    **Work:**
+    - concise implementation bullets
 
-    **Step 2: Run test to verify it fails**
-    Run: `exact command`
-    Expected: FAIL with "specific error"
+    **Verify:**
+    - `exact command` or `text-only scan`
 
-    **Step 3: Write minimal implementation**
-    [full implementation code block]
+    **Test Budget:**
+    - text-only | focused (<30s) | final-only | full-suite (justify)
 
-    **Step 4: Run test to verify it passes**
-    Run: `exact command`
-    Expected: PASS
+    **Test Pruning:**
+    - prune/replace nearby stale or duplicate tests before adding new tests
 
-    **Step 5: Commit**
-    [exact git commands + commit message]
+    **Commit:** `git commit -m "..."`
 
 Mode rules:
-- `standard` (default): TDD + implementer self-review only — no reviewer subagent dispatched
-- `full`: TDD + reviewer subagent (unified spec + quality review) — use when task is complex or risky
-- `lightweight`: no TDD, no review — only for trivial scaffold/config with no executable behavior
+- `lightweight`: no TDD, no reviewer subagent, and no per-task executable tests. Use for docs, templates, command text, scaffolding, and deterministic config with no executable behavior change. Cheap text-only checks are allowed; defer executable tests to final verification if needed.
+- `standard` (default): test-first when behavior changes; otherwise implement directly with focused verification and self-review.
+- `full`: strict TDD + reviewer subagent (unified spec + quality review). Use only when task is complex or risky.
 
 Assign `full` when ANY of these apply:
-- Task touches 3+ files
 - Task introduces new architecture (new module, new pattern, new abstraction)
 - Task is security-sensitive (auth, input validation, crypto)
 - Task is integration-heavy (wiring multiple components together)
-- Task is the last task in the plan (catches accumulated drift)
+- Task changes shared behavior with broad blast radius
 
-All other tasks default to `standard`. Use `lightweight` only for trivial scaffold/config.
+Use `standard` for ordinary behavior changes. Use `lightweight` aggressively for wording, templates, docs, and simple deterministic refactors.
+
+Test budget rules:
+- Focused task verification should be under 30 seconds.
+- Final assignment verification should be under 2 minutes.
+- Full-suite verification is only for broad executable risk and must be justified in the task.
+- Do not add more than one new test file in a task unless the task explicitly justifies why existing tests cannot cover the behavior.
+
+Test pruning rules:
+- Prefer prune-and-replace over additive testing.
+- Before adding tests, inspect nearby tests for the same behavior.
+- Delete stale, duplicate, or implementation-detail tests and replace them with the smallest current contract test.
+- Do not preserve obsolete historical assertions unless the current design explicitly supports that behavior.
+- Keep backward-compatibility, migration, public CLI contract, regression, safety, and security tests when the supported behavior still exists.
 
 **Skill declaration:** Run `specdev skills` to list available skills. Declare only what each task needs:
 
@@ -118,7 +127,7 @@ All other tasks default to `standard`. Use `lightweight` only for trivial scaffo
 ```
 # [Feature Name] Implementation Plan
 
-> **For agent:** Implement this plan task-by-task using TDD discipline.
+> **For agent:** Implement this plan task-by-task. Match verification effort to task mode.
 
 **Goal:** [One sentence from design]
 
@@ -138,9 +147,9 @@ All other tasks default to `standard`. Use `lightweight` only for trivial scaffo
 
 ### Phase 5: Start Implementation (MANDATORY — do not stop here)
 
-Breakdown has NO user gate. Once the plan review passes, you MUST continue immediately:
+Breakdown has NO user gate. Once the plan review passes, you MUST continue immediately through the runtime contract:
 
-Run `specdev implement` and follow its output exactly.
+Run `specdev next --json` and follow the returned command/guide. The expected next action is implementation.
 
 Do NOT stop, report, or wait for user input between plan completion and implementation start.
 
@@ -159,21 +168,23 @@ Apply these when planning tasks — they are not optional:
 ## Rules
 
 - Exact file paths always — never "add a test file"
-- Complete code in plan — never "add validation logic"
-- Exact commands with expected output — never "run the tests"
-- Every task follows RED-GREEN-REFACTOR
+- Concrete work bullets — never "add validation logic" with no target behavior
+- Exact verification commands or an explicit text-only scan
+- TDD is required for `full` tasks and for `standard` tasks that change executable behavior
+- Lightweight tasks defer executable tests to final verification
+- Tests should be pruned/replaced rather than added alongside stale coverage
 - DRY, YAGNI — only what the design specifies
 - Frequent commits — one per task
 
 ## Red Flags
 
-- Vague task steps ("add error handling") — show the actual code
+- Vague task steps ("add error handling") — name the behavior and files
 - Large unfocused tasks — split by component, behavior, or integration point
-- Tiny artificial tasks — merge into a coherent task with bite-sized steps
-- Missing test steps — every task must have RED and GREEN
+- Tiny artificial tasks — merge into coherent work
+- Requiring full code blocks in breakdown — that duplicates implementation and slows the workflow
 
 ## Integration
 
 - **Before this skill:** brainstorming (produces the design this skill reads)
-- **After this skill:** implementing (auto-chains — proceed directly after plan review passes)
+- **After this skill:** use `specdev next --json` to auto-chain to implementation after plan review passes
 - **Review:** Design review (subagent, up to 2 rounds) runs first, then plan review (subagent, 1-2 rounds). Do NOT use `specdev review` here — proceed directly to implementing

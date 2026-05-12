@@ -6,7 +6,7 @@ Reference dictionary for all SpecDev resources. Consult when you need to find a 
 
 ## Workflow
 
-- **`_guides/workflow.md`** — The 4-phase workflow (brainstorm → breakdown → implement → summary (capture)). Contains phase-by-phase instructions: what to do, which skill to load, checkpoint/gate commands, and review options. Read this when starting an assignment or resuming work.
+- **`_guides/workflow.md`** — The 3-phase workflow (brainstorm → breakdown → implement) with optional phase-end knowledge capture. Contains phase-by-phase instructions: what to do, which skill to load, checkpoint/gate commands, and review options. Read this when starting an assignment or resuming work.
 
 ## Agents
 
@@ -38,15 +38,15 @@ Reference dictionary for all SpecDev resources. Consult when you need to find a 
 
 ### Implement phase:
 
-- **`skills/core/implementing/SKILL.md`** — Executes plan tasks according to the plan's execution mode: inline by default, fresh subagent per task when boundaries are clear, or parallel worktrees for disjoint file ownership. Tracks progress via `scripts/track-progress.sh`. Supports task review modes: `standard`, `full`, and `lightweight`. Final test suite run before user approval.
+- **`skills/core/implementing/SKILL.md`** — Executes plan tasks according to the plan's execution mode: inline by default, fresh subagent per task when boundaries are clear, or parallel worktrees for disjoint file ownership. Tracks progress via `scripts/track-progress.sh`. Supports task review modes: `standard`, `full`, and `lightweight`. Verification scales by task risk and budget.
 
 - **`skills/core/test-driven-development/SKILL.md`** — The RED-GREEN-REFACTOR cycle. Write failing test → verify RED via `scripts/verify-tests.sh` → write minimal code → verify GREEN → refactor → commit. Used by the current agent or injected into implementer subagents when tasks declare it in their `Skills:` field.
 
 - **`skills/core/parallel-worktrees/SKILL.md`** — Git worktree isolation for tasks with zero overlapping file writes. Analyzes parallelizability, creates worktrees via `scripts/setup-worktree.sh`, dispatches independent subagents, merges branches, runs integration tests. Use when plan has clearly independent tasks.
 
-### Summary phase:
+### Optional phase-end hooks:
 
-- **`skills/core/knowledge-capture/SKILL.md`** — Final phase after implementation approval. Compares learnings against `project_notes/` to produce `capture/project-notes-diff.md` (proposed updates, not applied directly) and `capture/workflow-diff.md` (process friction/wins). Updates `feature_descriptions.md` and marks assignment done.
+- **`skills/core/knowledge-capture/SKILL.md`** — Optional non-blocking phase-end guide. Suggests durable knowledge only when useful, searches existing notes first, and prunes/replaces stale knowledge before writing small direct updates to `knowledge/` or `project_notes/`.
 
 ### Always-apply (read before any assignment):
 
@@ -68,7 +68,7 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 ## Project Context
 
 - **`project_notes/big_picture.md`** — Project goals, tech stack, key decisions. Read at the start of every session.
-- **`project_notes/feature_descriptions.md`** — Catalog of what's built: feature name, assignment ID, completion date, key files. Updated during knowledge capture.
+- **`project_notes/feature_descriptions.md`** — Catalog of what's built: feature name, assignment ID, completion date, key files. Updated only when a phase-end knowledge capture note makes it useful.
 - **`project_notes/assignment_progress.md`** — Assignment status tracking: ID, name, phase, status. Used to determine next assignment number.
 - **`knowledge/`** — Accumulated project knowledge organized by branch (codestyle, architecture, domain, workflow). Built up over assignments via knowledge capture.
 
@@ -85,7 +85,7 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 | `specdev discussion "<desc>"` | Start a parallel brainstorming discussion (no full assignment) | Exploring ideas before committing to an assignment |
 | `specdev checkpoint <phase>` | Validate phase artifacts exist and are well-formed | Before requesting review or approval |
 | `specdev checkpoint <phase> --discussion=<id>` | Validate discussion artifacts | Within a discussion workflow |
-| `specdev approve <phase>` | Hard gate: signal to proceed past a phase | After user reviews and is satisfied |
+| `specdev approve <phase>` | Hard gate: approve a phase | After user reviews and is satisfied |
 | `specdev continue` | Detect current assignment state, suggest next action | Resuming work in a new session |
 | `specdev implement` | Set up and kick off implementation phase | After breakdown completes |
 | `specdev revise` | Record design revision, re-enter brainstorm | When design needs rework after breakdown |
@@ -99,8 +99,8 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 
 | Command | Purpose | When to use |
 |---------|---------|-------------|
-| `specdev distill --assignment=<name>` | Aggregate knowledge from assignment captures | Knowledge distillation (`--assignment` flag required) |
-| `specdev distill done <name>` | Validate and mark assignment as distilled | Final step of knowledge capture phase |
+| `specdev distill --assignment=<name>` | Legacy helper for old capture diffs | Only for assignments that already have `capture/` diffs |
+| `specdev distill done <name>` | Legacy marker for old capture diffs | Only for legacy distillation flows |
 | `specdev knowledge index` | Build/rebuild SQLite FTS index of `.specdev/` knowledge | After adding new content (search auto-builds on first use) |
 | `specdev knowledge search "<query>"` | Search indexed knowledge (BM25-ranked) | Finding relevant project context |
 | `specdev memory refresh` | Regenerate bounded working memory for agents | After completing assignments or adding knowledge |

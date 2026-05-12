@@ -31,15 +31,8 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
   const hasProposal = await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.proposal))
   const hasDesign = await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.design))
   const hasPlan = await fse.pathExists(join(assignmentPath, artifactPaths.breakdown.plan))
-  const hasReviewReport = await fse.pathExists(join(assignmentPath, 'review_report.md'))
   const hasProgressFile = await fse.pathExists(
     join(assignmentPath, artifactPaths.implementation.progress)
-  )
-  const hasCaptureProject = await fse.pathExists(
-    join(assignmentPath, artifactPaths.capture.projectNotesDiff)
-  )
-  const hasCaptureWorkflow = await fse.pathExists(
-    join(assignmentPath, artifactPaths.capture.workflowDiff)
   )
 
   const gates = await readGateStatus(assignmentPath)
@@ -136,30 +129,10 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath) {
     }
   }
 
-  // Summary phase
-  if (!hasCaptureProject || !hasCaptureWorkflow) {
-    return {
-      state: 'summary_in_progress',
-      next_action: 'Invoke knowledge-capture skill to write capture diffs and finalize',
-      blockers,
-      progress,
-    }
-  }
-
-  if (hasReviewReport) {
-    return {
-      state: 'completed',
-      next_action:
-        'Assignment appears complete. Start a new assignment or capture additional learnings',
-      blockers,
-      progress,
-    }
-  }
-
   return {
     state: 'completed',
     next_action:
-      'Assignment appears complete. Start a new assignment or capture additional learnings',
+      'Assignment complete. Optionally record reusable knowledge, then start a new assignment',
     blockers,
     progress,
   }

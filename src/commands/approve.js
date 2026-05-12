@@ -52,17 +52,26 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
   }
 
   if (flags.json) {
-    console.log(JSON.stringify({ command: 'approve', version: 1, status: 'ok', phase, assignment: name, approved: true }))
+    console.log(JSON.stringify({
+      command: 'approve',
+      version: 1,
+      status: 'ok',
+      phase,
+      assignment: name,
+      approved: true,
+      next_action: 'Run specdev next --json and follow the returned action',
+    }))
   } else if (phase === 'brainstorm') {
     console.log(`✅ Brainstorm approved for ${name}`)
     blankLine()
-    console.log('Proceed to breakdown:')
-    console.log('   1. Read .specdev/skills/core/breakdown/SKILL.md and follow it')
-    console.log('   2. After plan review passes, run `specdev implement` to start implementation')
+    console.log('Next step:')
+    console.log('   Run specdev next --json and follow the returned action.')
+    console.log('   Expected action: start breakdown, then auto-chain to implementation after plan review passes.')
   } else if (phase === 'implementation') {
     console.log(`✅ Implementation approved for ${name}`)
     blankLine()
-    console.log('Proceed to summary:')
-    console.log('   Read .specdev/skills/core/knowledge-capture/SKILL.md and follow it')
+    console.log('Next step:')
+    console.log('   Run specdev next --json and follow the returned action.')
+    console.log('   Expected action: assignment complete; optionally record reusable knowledge if suggested.')
   }
 }

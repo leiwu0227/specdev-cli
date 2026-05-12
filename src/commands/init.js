@@ -113,8 +113,8 @@ description: Fully re-read the specdev workflow and re-anchor from scratch
 You have drifted from the specdev workflow. Stop what you're doing and:
 
 1. Read \`.specdev/_main.md\` completely
-2. Check the latest assignment in \`.specdev/assignments/\` and determine current phase
-3. Resume work following the workflow rules
+2. Run \`specdev next --json\` to get the canonical active assignment state, next action, blockers, choices, and hook outcomes
+3. Follow the returned guide or command exactly
 
 Announce every subtask with "Specdev: <action>".
 `,
@@ -125,7 +125,7 @@ description: Resume specdev work from where you left off
 
 Run \`specdev continue\`.
 
-Use the detected state and next action from that output.
+Use \`specdev next --json\` for the canonical runtime action when available; use \`specdev continue\` for human-readable diagnosis and migration hints.
 If blockers are reported, resolve them first (for example \`specdev migrate\`).
 
 Announce every subtask with "Specdev: <action>".
@@ -202,14 +202,15 @@ Run \`specdev reviewloop <phase>\` where phase is \`${assignmentReviewloopPhases
 
 Without \`--reviewer\`: lists available reviewers. If the user has already chosen automated review mode, ask reviewer type as a second multiple-choice question. Use one choice per reviewer config; do not ask for free-form reviewer text.
 With \`--reviewer=<name>\`: spawns the reviewer and processes results automatically.
-With \`--autocontinue\`: after approval, continue to the next workflow phase without another user prompt.
+With \`--autocontinue\`: after approval, follow \`specdev next --json\` without another user prompt.
+After any approved assignment review, prefer \`specdev next --json\` if the next step is not already explicit in the reviewloop output.
 
 Flow:
 1. \`specdev reviewloop <phase>\` — lists reviewers
 2. Ask the user whether to run review-only or review-then-autocontinue
 3. Ask reviewer type as a second multiple-choice question
 4. \`specdev reviewloop <phase> --reviewer=<name>\` — runs review
-5. On pass → auto-approves the phase. **The gate is satisfied — proceed immediately to the next phase.** Do NOT ask the user to run \`specdev approve\` separately.
+5. On pass → auto-approves the phase. **The gate is satisfied — use \`specdev next --json\` for the next action.** Do NOT ask the user to run \`specdev approve\` separately.
 6. On fail → run \`specdev check-review <phase>\` to address findings, then re-run reviewloop
 
 Autocontinue contract:
@@ -217,9 +218,9 @@ Autocontinue contract:
 When \`--autocontinue\` is present and the review is approved:
 
 - Do not stop after an approved autocontinue review.
-- For brainstorm approval, continue immediately to breakdown and implementation.
-- Reuse the same reviewer for implementation review with \`specdev reviewloop implementation --reviewer=<name> --autocontinue\`.
-- For implementation approval, continue immediately to summary and knowledge capture.
+- For brainstorm approval, follow \`specdev next --json\` immediately.
+- Carry the same reviewer forward when the next runtime action asks for implementation review.
+- For implementation approval, follow \`specdev next --json\` immediately.
 - If a reviewer returns \`needs-changes\`, run \`specdev check-review\`, address findings, write the changelog, and rerun reviewloop within max rounds.
 
 ## For discussions

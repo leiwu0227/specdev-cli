@@ -46,21 +46,26 @@ export const DEFAULT_WORKFLOW = {
         { id: 'approval', kind: 'gate', gate: 'implementation_approved' },
       ],
     },
-    capture: {
-      steps: [
-        {
-          id: 'capture_knowledge',
-          kind: 'guide',
-          guide: '.specdev/skills/core/knowledge-capture/SKILL.md',
-          produces: [
-            artifactPaths.capture.projectNotesDiff,
-            artifactPaths.capture.workflowDiff,
-          ],
-        },
-      ],
-    },
   },
   hooks: [
+    {
+      id: 'brainstorm_knowledge_prompt',
+      slot: 'phase:end',
+      phase: 'brainstorm',
+      order: 50,
+      kind: 'guide',
+      guide: '.specdev/skills/core/knowledge-capture/SKILL.md',
+      blocking: false,
+    },
+    {
+      id: 'breakdown_knowledge_prompt',
+      slot: 'phase:end',
+      phase: 'breakdown',
+      order: 50,
+      kind: 'guide',
+      guide: '.specdev/skills/core/knowledge-capture/SKILL.md',
+      blocking: false,
+    },
     {
       id: 'repo_knowledge_prompt',
       slot: 'phase:end',
@@ -188,7 +193,6 @@ function validateWorkflowPhases(workflow, errors) {
   requireWorkflowStep(workflow, 'implementation', 'execute_plan', 'guide', errors)
   requireWorkflowStep(workflow, 'implementation', 'checkpoint', 'command', errors)
   requireWorkflowStep(workflow, 'implementation', 'approval', 'gate', errors, gateFields.implementation)
-  requireWorkflowStep(workflow, 'capture', 'capture_knowledge', 'guide', errors)
 }
 
 function validateWorkflowStep(phase, step, errors) {
@@ -343,12 +347,20 @@ export async function computeNextAction(specdevPath) {
 }
 
 function hookOutcomesForState(workflow, state) {
-  if (state !== 'summary_in_progress' || !Array.isArray(workflow.hooks)) {
+  if (!Array.isArray(workflow.hooks)) {
     return []
   }
+  const endedPhaseByState = {
+    brainstorm_checkpoint_ready: 'brainstorm',
+    implementation_in_progress: 'breakdown',
+    implementation_checkpoint_ready: 'implementation',
+    completed: 'implementation',
+  }
+  const endedPhase = endedPhaseByState[state]
+  if (!endedPhase) return []
 
   return workflow.hooks
-    .filter((hook) => hook.phase === 'implementation' && hook.slot === 'phase:end')
+    .filter((hook) => hook.phase === endedPhase && hook.slot === 'phase:end')
     .sort((a, b) => a.order - b.order)
     .map((hook) => ({
       id: hook.id,
@@ -360,8 +372,8 @@ function hookOutcomesForState(workflow, state) {
       blocking: Boolean(hook.blocking),
       outcome: hook.blocking ? 'not_applicable' : 'skipped',
       reason: hook.blocking
-        ? 'blocking implementation-end hooks are not executed by this runtime overlay'
-        : 'advisory implementation-end hook is available; capture is not blocked',
+        ? 'blocking phase-end hooks are not executed by this runtime overlay'
+        : 'advisory phase-end knowledge capture hook is available; workflow progress is not blocked',
     }))
 }
 
@@ -414,10 +426,6 @@ function actionForDetectedState(state, workflow) {
     implementation_checkpoint_ready: {
       phase: 'implementation',
       step: 'checkpoint',
-    },
-    summary_in_progress: {
-      phase: 'capture',
-      step: 'capture_knowledge',
     },
   }
 
@@ -496,14 +504,10 @@ function buildTrace(state) {
       'implementation approval gate is pending',
       'next action is to run the implementation checkpoint',
     ],
-    summary_in_progress: [
-      'implementation gate is approved',
-      'capture artifacts are missing',
-      'next action is to run knowledge capture',
-    ],
     completed: [
-      'all required workflow artifacts are present',
-      'assignment appears complete',
+      'implementation gate is approved',
+      'required workflow gates are complete',
+      'optional knowledge capture may be suggested by phase-end hooks',
     ],
   }
   return traces[state] || ['workflow state requires inspection']

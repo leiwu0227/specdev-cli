@@ -45,23 +45,16 @@ function printSimplificationPrompt() {
 
 function autocontinueContract(phase, reviewerNames) {
   const reviewerArg = reviewerNames.join(',')
+  const contract = {
+    mode: 'autocontinue',
+    phase,
+    next_action_command: 'specdev next --json',
+    instruction: 'Run specdev next --json and follow the returned action without asking for another user decision.',
+  }
   if (phase === 'brainstorm') {
-    return {
-      mode: 'autocontinue',
-      next_phase: 'breakdown',
-      continue: ['breakdown', 'implementation'],
-      implementation_reviewer: reviewerArg,
-      implementation_review_command: `specdev reviewloop implementation --reviewer=${reviewerArg} --autocontinue`,
-    }
+    contract.reviewer_carry_forward = reviewerArg
   }
-  if (phase === 'implementation') {
-    return {
-      mode: 'autocontinue',
-      next_phase: 'capture',
-      continue: ['knowledge-capture'],
-    }
-  }
-  return { mode: 'autocontinue', next_phase: null, continue: [] }
+  return contract
 }
 
 function printAutocontinuePrompt(phase, reviewerNames) {
@@ -69,10 +62,12 @@ function printAutocontinuePrompt(phase, reviewerNames) {
   blankLine()
   printSection('Autocontinue requested:')
   if (phase === 'brainstorm') {
-    console.log('   The brainstorm gate is approved. Continue immediately to breakdown and implementation.')
-    console.log(`   Reuse the selected reviewer for implementation review: specdev reviewloop implementation --reviewer=${reviewerArg} --autocontinue`)
+    console.log('   The brainstorm gate is approved.')
+    console.log('   Run specdev next --json and follow the returned action without another user decision.')
+    console.log(`   Carry forward reviewer selection when the next action asks for implementation review: ${reviewerArg}`)
   } else if (phase === 'implementation') {
-    console.log('   The implementation gate is approved. Continue immediately to summary and knowledge capture.')
+    console.log('   The implementation gate is approved.')
+    console.log('   Run specdev next --json and follow the returned action without another user decision.')
   }
   console.log('   Contract:')
   console.log(JSON.stringify(autocontinueContract(phase, reviewerNames), null, 2).split('\n').map(line => `   ${line}`).join('\n'))

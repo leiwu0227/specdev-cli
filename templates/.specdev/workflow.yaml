@@ -38,16 +38,23 @@ phases:
         kind: gate
         gate: implementation_approved
 
-  capture:
-    steps:
-      - id: capture_knowledge
-        kind: guide
-        guide: .specdev/skills/core/knowledge-capture/SKILL.md
-        produces:
-          - capture/project-notes-diff.md
-          - capture/workflow-diff.md
-
 hooks:
+  - id: brainstorm_knowledge_prompt
+    slot: phase:end
+    phase: brainstorm
+    order: 50
+    kind: guide
+    guide: .specdev/skills/core/knowledge-capture/SKILL.md
+    blocking: false
+
+  - id: breakdown_knowledge_prompt
+    slot: phase:end
+    phase: breakdown
+    order: 50
+    kind: guide
+    guide: .specdev/skills/core/knowledge-capture/SKILL.md
+    blocking: false
+
   - id: repo_knowledge_prompt
     slot: phase:end
     phase: implementation

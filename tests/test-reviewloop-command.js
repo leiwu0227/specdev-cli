@@ -176,6 +176,8 @@ assert(result.status === 0, 'approved review exits 0', result.stderr)
 assert(output.includes("Phase 'brainstorm' has been approved"), 'brainstorm gate is approved')
 assert(output.includes('Autocontinue requested'), 'autocontinue section is printed')
 assert(output.includes('"mode": "autocontinue"'), 'autocontinue contract is printed')
+assert(output.includes('"next_action_command": "specdev next --json"'), 'autocontinue contract uses next action command')
+assert(!output.includes('"next_phase": "breakdown"'), 'autocontinue contract does not hardcode next phase')
 const approvedStatus = JSON.parse(readFileSync(join(approvedAssignment, 'status.json'), 'utf-8'))
 assert(approvedStatus.brainstorm_approved === true, 'status marks brainstorm approved')
 

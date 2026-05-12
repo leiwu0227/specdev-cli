@@ -13,10 +13,11 @@ All work is organized into **assignments**. An assignment is a self-contained un
 ## First Steps
 
 1. Read `project_notes/big_picture.md` — understand the project
-2. Check `.specdev/.current` for the active assignment pointer
-   - `.current` exists → run `specdev focus <id>` if you need to switch, otherwise resume from the listed assignment
-   - No active assignment → run `specdev assignment "<description>"` to reserve an ID (this sets `.current` automatically)
+2. Check `.specdev/.current` for the active assignment pointer.
+   - `.current` exists → keep it unless the user asks to switch; use `specdev focus <id>` only when needed.
+   - No active assignment → run `specdev assignment "<description>" --type=<type> --slug=<slug>` to create and focus one.
    - For parallel exploration before committing to an assignment → run `specdev discussion "<description>"`
+3. Run `specdev next --json` for the canonical next workflow action. Follow the returned guide, command, blockers, choices, and hook outcomes.
 
 **Reference:** `_index.md` is the detailed lookup for all guides, skills, commands, and project context. Consult it when you need to find a specific resource.
 
@@ -31,9 +32,9 @@ Every assignment follows the same 4 phases in order:
 1. **Brainstorm** — understand the problem, explore approaches, produce a design or research output
 2. **Breakdown** — create an implementation plan with coherent tasks and bite-sized TDD steps
 3. **Implement** — execute tasks in batches using the plan's execution mode and review level
-4. **Summary** (capture) — capture learnings, update project docs, finalize
+4. **Optional phase-end knowledge capture** — suggest durable notes only when reusable knowledge was learned
 
-Read `_guides/workflow.md` for the full phase-by-phase guide with skill references and gates.
+Use `workflow.yaml` and `specdev next --json` as the source of truth for action selection. Read `_guides/workflow.md` when you need a human-readable reference for phases, artifacts, gates, and recovery paths.
 
 ## Rules
 

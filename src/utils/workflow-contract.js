@@ -1,10 +1,9 @@
 export const ASSIGNMENT_TYPES = ['feature', 'bugfix', 'refactor', 'familiarization']
 
 export const phases = {
-  canonical: ['brainstorm', 'breakdown', 'implementation', 'capture'],
+  canonical: ['brainstorm', 'breakdown', 'implementation'],
   aliases: {
     implementation: ['implement'],
-    capture: ['summary'],
   },
 }
 

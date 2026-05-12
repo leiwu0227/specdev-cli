@@ -16,7 +16,7 @@ Skills are split into two categories:
 - `core/diagnosis/` — Bug reproduction and root cause analysis
 - `core/breakdown/` — Turn design into bite-sized executable steps
 - `core/implementing/` — Execute plan with subagent dispatch and unified review
-- `core/knowledge-capture/` — Write diff files after assignment completion
+- `core/knowledge-capture/` — Optional phase-end durable knowledge capture with prune-and-replace
 
 **Review (separate session):**
 - `core/review-agent/` — Holistic reviewer with file-based signals

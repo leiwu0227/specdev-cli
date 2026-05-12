@@ -85,42 +85,39 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   console.log('   This returns a structured JSON task list. Review the tasks.')
   blankLine()
 
-  printSection('Step 2: Execute tasks in batches of 3')
+  printSection('Step 2: Execute tasks in plan order')
   printLines([
     '   For each task:',
     `     a. Run: bash ${prepareScript} ${planPath} <N>`,
     '        - Use the returned prompt as the task contract',
     '     b. Execute according to the plan execution mode:',
-    '        - inline: implement, test, commit, and self-review in this session',
+    '        - inline: implement, verify, commit, and self-review in this session',
     `        - subagent: dispatch a fresh subagent with the returned prompt and ${implementerPrompt}`,
     '        - parallel: use skills/core/parallel-worktrees/SKILL.md for isolated worktrees',
-    '     c. Mode-based review:',
-    `        - full: dispatch ${reviewerPrompt} — FAIL/NOT READY blocks; fix → re-review`,
-    '        - standard: self-review only',
-    '        - lightweight: skip review unless task touched executable logic',
+    '     c. Mode-based verification/review:',
+    '        - lightweight: do not run per-task executable tests; run only cheap text-only checks if listed, defer executable tests to final verification',
+    '        - standard: run focused relevant tests or commands for behavior changes; keep focused verification under 30s unless justified',
+    `        - full: use strict TDD and dispatch ${reviewerPrompt} — FAIL/NOT READY blocks; fix → re-review`,
     `     d. Run: bash ${completeScript} ${planPath} <N> "<summary of task changes>"`,
   ])
   blankLine()
 
-  printSection('After each batch of 3:')
+  printSection('Progress reporting:')
   printLines([
-    '   1. Run the full test suite',
-    '   2. If tests fail: stop, debug, fix before next batch',
-    '   3. Report batch summary (tasks completed, tests passing, notable decisions)',
+    '   After meaningful checkpoints, report tasks completed, verification run, and notable decisions.',
+    '   When touching tests, prefer prune-and-replace over adding coverage: delete stale, duplicate, or implementation-detail tests and replace with the smallest current contract test.',
+    '   Do not stop for a user gate during implementation.',
   ])
   blankLine()
 
   const finalChoiceLines = [
-    '   1. Run full test suite one final time',
+    '   1. Run verification appropriate for assignment risk: focused commands or text-only scans for narrow docs/template/config changes; one executable test pass for lightweight work if needed; full suite only for broad executable changes. Keep final verification under 2 minutes unless justified',
     `   2. Run: bash ${trackScript} ${planPath} summary`,
     '   3. Present summary to the user: what was built, tests passing, notable decisions',
-    '   4. If this implementation was reached from reviewloop brainstorm --autocontinue, run specdev checkpoint implementation, then run specdev reviewloop implementation --reviewer=<same-reviewer> --autocontinue without asking the user for another decision.',
-    '   5. Otherwise, present these multiple-choice options to the user:',
-    '      1. Automated review, then continue if approved — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name> --autocontinue',
-    '      2. Automated review only — choose a reviewer, then run specdev reviewloop implementation --reviewer=<name>',
-    '      3. Manual review — run specdev review implementation in a separate session',
-    '      4. Skip review and approve — run specdev approve implementation',
-    '   6. If the user chooses automated review, ask reviewer type as a second multiple-choice question:',
+    '   4. Run: specdev checkpoint implementation',
+    '   5. If this run is in reviewloop --autocontinue mode, run specdev next --json and follow the returned action without asking for another decision.',
+    '   6. Otherwise, present the checkpoint choices exactly as printed. If checkpoint output is unavailable, run specdev next --json and present the returned choices.',
+    '   7. If the user chooses automated review, ask reviewer type as a second multiple-choice question:',
   ]
   if (reviewers.length === 0) {
     finalChoiceLines.push('      - No reviewer configs found. Add configs to .specdev/skills/core/reviewloop/reviewers/')
@@ -130,13 +127,13 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       finalChoiceLines.push(`      ${index + 1}. ${reviewer}`)
     })
   }
-  finalChoiceLines.push('   7. Stop and wait for user approval only in the non-autocontinue path')
+  finalChoiceLines.push('   8. Stop and wait for user approval only in the non-autocontinue path')
 
   printSection('When all tasks are done:')
   printLines(finalChoiceLines)
   blankLine()
 
-  printSection('Begin now — extract tasks and start the first batch.')
+  printSection('Begin now — extract tasks and start the first task.')
 }
 
 function parseExecutionMode(planContent) {

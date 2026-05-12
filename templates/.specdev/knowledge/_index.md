@@ -18,6 +18,6 @@ This directory contains accumulated project knowledge, organized by topic. Agent
 ## How This Grows
 
 - Agents create new files and subdirectories as they encounter new categories
-- After each assignment, the validation step prompts agents to distill learnings here
+- At phase ends, optional knowledge capture prompts agents to record reusable learnings here
 - Periodically, agents consolidate and deduplicate during natural workflow pauses
 - Keep entries concise and actionable — this is reference material, not a journal

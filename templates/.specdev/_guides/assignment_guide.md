@@ -30,7 +30,7 @@ All assignments follow the same 4 phases. See `_guides/workflow.md` for the full
 1. **Brainstorm** — interactive Q&A → validated design
 2. **Breakdown** — design → implementation plan with coherent tasks and bite-sized TDD steps
 3. **Implement** — plan execution mode, TDD, mode-based review, batch execution
-4. **Summary** — capture learnings, update docs
+4. **Optional phase-end knowledge capture** — record reusable knowledge only when useful
 
 ## Assignment folder structure
 

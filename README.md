@@ -1,12 +1,15 @@
 # SpecDev CLI
 
-Spec-driven workflow guidance for coding agents. SpecDev installs a local `.specdev/` workflow, agent command skills, and a CLI that keeps assignments moving through brainstorm, breakdown, implementation, review, and knowledge capture.
+Spec-driven workflow guidance for coding agents. SpecDev installs a local `.specdev/` workflow, agent command skills, and a CLI that keeps assignments moving through brainstorm, breakdown, implementation, review, and optional phase-end knowledge capture.
 
 ```mermaid
 graph LR
     B[Brainstorm] -->|approve| D[Breakdown]
     D -->|automatic| I[Implement]
-    I -->|approve| S[Summary]
+    I -->|approve| Done[Done]
+    B -.optional.-> K[Knowledge]
+    D -.optional.-> K
+    I -.optional.-> K
 ```
 
 ## Quick Start
@@ -47,10 +50,10 @@ specdev assignment [name]              # Create assignment, route agent to brain
 specdev focus <id>                     # Set the active assignment
 specdev discussion [name]              # Start a parallel brainstorming discussion
 specdev checkpoint <phase>             # Validate phase artifacts (brainstorm | implementation)
-specdev approve <phase>                # Hard gate: approve phase and proceed
+specdev approve <phase>                # Hard gate: approve a phase
 specdev reviewloop <phase>             # Automated external review loop (brainstorm | implementation)
 specdev reviewloop <phase> --reviewer=<name> --autocontinue
-                                        # Review, approve on pass, then continue to the next phase
+                                        # Review, approve on pass, then follow next-action contract
 specdev implement                      # Set up and kick off implementation after breakdown
 specdev revise                         # Archive downstream artifacts, re-enter brainstorm
 specdev check-review                   # Read and address review feedback
@@ -61,16 +64,10 @@ specdev check-review                   # Read and address review feedback
 ```bash
 specdev start                          # Check/fill project context
 specdev continue [--json]              # Detect current state, blockers, and next action
+specdev next --json                    # Canonical next-action contract for agents
 specdev status [--json]                # Show workflow state for humans or automation
 specdev review <phase>                 # Manual review in a separate session
 specdev context [--json]               # Dump project state, commands, knowledge, and skills
-```
-
-### Knowledge distillation
-
-```bash
-specdev distill --assignment=<name>    # Aggregate capture diffs as JSON
-specdev distill done <name>            # Mark capture processed and show memory refresh hint
 ```
 
 ## What gets created
@@ -93,11 +90,11 @@ specdev distill done <name>            # Mark capture processed and show memory 
 
 ## Workflow Architecture
 
-SpecDev guides a single coding agent through a 4-phase workflow. Each phase produces specific artifacts. The CLI enforces hard gates between phases so work cannot advance until artifacts are validated and the user approves.
+SpecDev guides a single coding agent through a 3-phase workflow. Each phase produces specific artifacts. The CLI enforces hard gates between phases so work cannot advance until artifacts are validated and the user approves. Agents use `specdev next --json` as the canonical source for the next action.
 
-Breakdown and summary run automatically — the user only approves brainstorm and implementation. Optional review (manual or automated via reviewloop) can be run before either approval gate.
+Breakdown runs automatically — the user only approves brainstorm and implementation. Optional review (manual or automated via reviewloop) can be run before either approval gate. Optional phase-end knowledge capture can suggest durable notes without blocking progress.
 
-## The 4 Phases
+## The 3 Phases
 
 All work happens through assignments in `.specdev/assignments/<id>/`.
 
@@ -109,13 +106,13 @@ Interactive Q&A with the user to validate scope and design. Questions are guided
 
 **Produces:** `brainstorm/proposal.md` + `brainstorm/design.md`
 
-**Gate:** `specdev approve brainstorm` — breakdown begins automatically after approval.
+**Gate:** `specdev approve brainstorm` — after approval, use `specdev next --json`.
 
 ### 2. Breakdown (automatic)
 
 Skill: `skills/core/breakdown/SKILL.md`
 
-Runs automatically after brainstorm approval. Decomposes the design into a plan of coherent implementation tasks. Each task contains bite-sized TDD steps with exact file paths, code, and commands. The plan declares whether execution should be inline, subagent-based, or parallel. Internal subagent review validates the plan (1-2 rounds).
+Runs automatically after brainstorm approval. Decomposes the design into a concise plan of coherent implementation tasks. Each task declares mode, files, work, verification, test budget, and pruning guidance. The plan declares whether execution should be inline, subagent-based, or parallel. Internal subagent review validates the plan (1-2 rounds).
 
 **Produces:** `breakdown/plan.md`
 
@@ -123,19 +120,19 @@ Runs automatically after brainstorm approval. Decomposes the design into a plan 
 
 Skill: `skills/core/implementing/SKILL.md`
 
-Tasks run using the plan's execution mode. The default is inline execution by the current agent; plans can opt into fresh subagents per task or parallel worktrees when task boundaries are clean. Each task follows TDD (Red-Green-Refactor) with mode-based review.
+Tasks run using the plan's execution mode. The default is inline execution by the current agent; plans can opt into fresh subagents per task or parallel worktrees when task boundaries are clean. Verification scales by task mode: lightweight defers executable tests to final verification, standard uses focused tests for behavior changes, and full uses strict TDD plus reviewer handoff.
 
 **Produces:** code changes, `implementation/progress.json`
 
-**Gate:** `specdev approve implementation` — summary runs automatically after approval.
+**Gate:** `specdev approve implementation` — after approval, use `specdev next --json`.
 
-### 4. Summary (automatic)
+## Optional Phase-End Knowledge Capture
 
 Skill: `skills/core/knowledge-capture/SKILL.md`
 
-Runs automatically after implementation approval. Distills learnings into workflow observations and documentation gaps. Later, `specdev distill --assignment=<name>` aggregates capture files as JSON and `specdev distill done <name>` marks them processed.
+After brainstorm, breakdown, or implementation, SpecDev may suggest a non-blocking knowledge capture hook. Agents should record knowledge only when there is reusable information for future assignments.
 
-**Produces:** `capture/project-notes-diff.md` + `capture/workflow-diff.md`
+Before writing knowledge, agents must run `specdev knowledge search "<topic>"`, prune or replace stale nearby notes, and ask the user before updating `knowledge/` or `project_notes/`.
 
 ## Optional Review Before Approval
 
@@ -146,7 +143,7 @@ Before either approval gate, users can optionally review:
 | `specdev checkpoint <phase>` | Validate required artifacts exist |
 | `specdev review <phase>` | Manual review in a separate session |
 | `specdev reviewloop <phase>` | Automated external review via CLI (e.g., Codex) |
-| `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Automated review, then continue after approval |
+| `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Automated review, then follow the next-action contract after approval |
 | `specdev reviewloop <phase> --preflight --reviewer=<name> --json` | Check reviewer readiness without launching the reviewer |
 
 ## Assignment Folder Structure
@@ -184,9 +181,9 @@ skills/core/<name>/
 |-------|------|---------|
 | `brainstorming` | Phase | Interactive design Q&A |
 | `breakdown` | Phase | Design to executable plan |
-| `implementing` | Phase | Subagent dispatch + TDD |
+| `implementing` | Phase | Task execution with risk-scaled verification |
 | `review-agent` | Phase | Holistic review (separate session) |
-| `knowledge-capture` | Phase | Post-assignment learning capture |
+| `knowledge-capture` | Optional hook | Phase-end reusable knowledge capture |
 | `test-driven-development` | Supporting | Red-Green-Refactor enforcement |
 | `systematic-debugging` | Supporting | Root-cause-first bugfix |
 | `parallel-worktrees` | Supporting | Git worktree isolation |

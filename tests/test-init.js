@@ -80,9 +80,9 @@ assert(workflowFeedbackTemplate.includes('Status: open | mitigated | resolved'),
 assert(workflowFeedbackTemplate.includes('Proposed Action'), 'workflow feedback template includes proposed action section')
 
 const knowledgeCaptureSkill = readFileSync(join(TEST_DIR, '.specdev', 'skills', 'core', 'knowledge-capture', 'SKILL.md'), 'utf-8')
-assert(knowledgeCaptureSkill.includes('Classify workflow observations'), 'knowledge-capture explains workflow observation classification')
+assert(knowledgeCaptureSkill.includes('Optional phase-end capture'), 'knowledge-capture is phase-end guidance')
 assert(knowledgeCaptureSkill.includes('workflow_feedback_note.md'), 'knowledge-capture references workflow feedback template')
-assert(knowledgeCaptureSkill.includes('update it instead of creating a duplicate'), 'knowledge-capture explains feedback accumulation')
+assert(knowledgeCaptureSkill.includes('Prefer prune-and-replace'), 'knowledge-capture explains prune-and-replace')
 
 const knowledgeIndex = readFileSync(join(TEST_DIR, '.specdev', 'knowledge', '_index.md'), 'utf-8')
 assert(knowledgeIndex.includes('project-specific process knowledge'), 'knowledge index distinguishes project workflow knowledge')
@@ -156,9 +156,11 @@ assert(assignmentSkill.includes(expectedTypes), 'assignment skill uses contract 
 
 const rewindSkill = readFileSync(join(codexSkillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
+assert(rewindSkill.includes('specdev next --json'), 'rewind skill uses next action contract')
 
 const continueSkill = readFileSync(join(codexSkillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
 assert(continueSkill.includes('specdev continue'), 'continue skill references specdev continue command')
+assert(continueSkill.includes('specdev next --json'), 'continue skill points to runtime contract')
 
 const reviewSkill = readFileSync(join(codexSkillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
 assert(reviewSkill.includes('specdev review'), 'review skill references specdev review command')
@@ -170,9 +172,10 @@ assert(checkReviewSkill.includes(checkReviewPhasesText), 'check-review skill use
 const reviewloopSkill = readFileSync(join(codexSkillsDir, 'specdev-reviewloop', 'SKILL.md'), 'utf-8')
 const reviewloopPhasesText = commandPhases.reviewloop.filter(p => p !== 'discussion').join('` or `')
 assert(reviewloopSkill.includes(reviewloopPhasesText), 'reviewloop skill uses contract reviewloop phases')
-assert(reviewloopSkill.includes('With `--autocontinue`: after approval, continue to the next workflow phase without another user prompt.'), 'reviewloop skill documents autocontinue')
+assert(reviewloopSkill.includes('With `--autocontinue`: after approval, follow `specdev next --json` without another user prompt.'), 'reviewloop skill documents autocontinue')
+assert(reviewloopSkill.includes('specdev next --json'), 'reviewloop skill points to runtime handoff')
 assert(reviewloopSkill.includes('Do not stop after an approved autocontinue review'), 'reviewloop skill forbids stopping after autocontinue approval')
-assert(reviewloopSkill.includes('implementation --reviewer=<name> --autocontinue'), 'reviewloop skill carries reviewer to implementation review')
+assert(reviewloopSkill.includes('Carry the same reviewer forward when the next runtime action asks for implementation review'), 'reviewloop skill carries reviewer through runtime action')
 
 const layoutMigrationSkill = readFileSync(join(codexSkillsDir, 'specdev-layout-migration', 'SKILL.md'), 'utf-8')
 assert(layoutMigrationSkill.includes('.specdev/_guides/migration_guide.md'), 'layout migration skill references migration guide')

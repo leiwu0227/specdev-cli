@@ -25,7 +25,7 @@ specdev reviewloop <phase> --reviewer=<name>
 
 Without `--reviewer`: lists available reviewers. If the user has already chosen automated review mode, ask reviewer type as a second multiple-choice question. Use one choice per reviewer config; do not ask for free-form reviewer text.
 With `--reviewer`: spawns the reviewer and processes the result.
-With `--autocontinue`: after approval, continue to the next workflow phase without another user prompt.
+With `--autocontinue`: after approval, follow `specdev next --json` without another user prompt.
 
 ## Reviewer Launch Notes
 
@@ -53,7 +53,7 @@ Each agent only writes to its own file and reads the other's.
 4. Run `specdev reviewloop <phase> --reviewer=<name>`
 5. Command spawns reviewer, waits for completion
 6. Reads verdict from `review/{phase}-feedback.md`
-7. **Pass** → auto-approves phase, proceed to next phase
+7. **Pass** → auto-approves phase, then run `specdev next --json` and follow the returned action
 8. **Fail** → run `specdev check-review` to read findings, fix issues, write `{phase}-changelog.md`
 9. Re-run `specdev reviewloop` for next round
 
@@ -62,9 +62,9 @@ Each agent only writes to its own file and reads the other's.
 When `--autocontinue` is present and the review is approved:
 
 - Do not stop after an approved autocontinue review.
-- For brainstorm approval, continue immediately to breakdown and implementation.
-- Reuse the same reviewer for implementation review with `specdev reviewloop implementation --reviewer=<name> --autocontinue`.
-- For implementation approval, continue immediately to summary and knowledge capture.
+- Run `specdev next --json` and follow the returned action instead of hardcoding phase transitions.
+- For brainstorm approval, carry the same reviewer forward when the next runtime action asks for implementation review.
+- For implementation approval, follow `specdev next --json` immediately.
 - If a reviewer returns `needs-changes`, run `specdev check-review`, address findings, write the changelog, and rerun reviewloop within max rounds.
 
 ## Hard Rules

@@ -15,7 +15,7 @@ next: breakdown
 - **Input:** A vague idea, feature wish, bug report, or refactoring goal
 - **Process:** Context scan → Q&A (1-3 tightly related questions per message) → explore approaches → present design sections → validate each section
 - **Output:** `brainstorm/proposal.md` + `brainstorm/design.md` in the assignment folder
-- **Next phase:** breakdown (after user runs `specdev approve brainstorm`)
+- **Next phase:** determined by `specdev next --json` after brainstorm approval
 
 ## Scripts
 
@@ -91,10 +91,9 @@ Once all design sections are validated:
    - Success criteria
    - Testing approach
 4. Announce: "Brainstorm complete. Design written to assignment folder."
-5. Tell the user their options:
-   - `specdev reviewloop brainstorm` — automated external review (e.g., Codex)
-   - `specdev review brainstorm` — manual review in a separate session
-   - `specdev approve brainstorm` — skip review and proceed to breakdown
+5. Run `specdev checkpoint brainstorm` and present its choices in the repeatable choice format it returns.
+   - If checkpoint output is unavailable, run `specdev next --json` and present the returned choices.
+   - The expected user-facing choices are automated review, manual review, or approval.
 6. Stop and wait — do NOT proceed to breakdown until the user has approved
 
 ## Red Flags
@@ -108,6 +107,6 @@ Once all design sections are validated:
 
 ## Integration
 
-- **After this skill:** breakdown (starts after user runs `specdev approve brainstorm`)
+- **After this skill:** use `specdev next --json`; breakdown starts only after brainstorm approval
 - **Review:** User may run `specdev review brainstorm` before approving
 - **Reviewloop:** User may request automated external review (e.g., Codex) via the reviewloop tool skill before approving

@@ -132,7 +132,7 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
       addressed_findings: latest.addressed,
       next_action:
         latest.verdict === 'approved'
-          ? 'Run specdev approve <phase> to proceed'
+          ? `Run specdev approve ${phase}, then run specdev next --json and follow the returned action`
           : `Address findings, then append to review/${feedbackFilename.replace('-feedback', '-changelog')} under ## Round ${latest.round}`,
     }
     writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
@@ -155,7 +155,8 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
     }
     blankLine()
     printSection('Next step:')
-    console.log('   Run specdev approve <phase> to proceed')
+    console.log(`   Run specdev approve ${phase}`)
+    console.log('   Then run specdev next --json and follow the returned action.')
   } else {
     printSection('Findings:')
     for (const finding of latest.findings) {

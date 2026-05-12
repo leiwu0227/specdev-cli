@@ -60,7 +60,7 @@ export async function continueCommand(flags = {}) {
     workflowStatus
   )
 
-  // Check for unprocessed distill assignments
+  // Legacy support: surface old assignments that still have capture diffs.
   const knowledgePath = join(specdevPath, 'knowledge')
   const allAssignments = await scanAssignments(specdevPath)
   const captureAssignments = allAssignments.filter(a => a.capture)
@@ -199,8 +199,8 @@ function emit(payload, options = {}) {
     console.log('')
     console.log('Distill Pending:')
     const suffix = outputPayload.distill_pending.count > 5 ? ' (showing oldest 5)' : ''
-    console.log(`  ${outputPayload.distill_pending.count} assignment(s) have unprocessed captures${suffix}`)
-    console.log('  Run: specdev distill --assignment=<name>')
+    console.log(`  ${outputPayload.distill_pending.count} legacy assignment(s) have unprocessed capture diffs${suffix}`)
+    console.log('  Legacy helper: specdev distill --assignment=<name>')
   }
 }
 
