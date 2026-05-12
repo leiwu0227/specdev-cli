@@ -16,7 +16,7 @@ This file defines:
 ```text
 .specdev/assignments/<id>_<type>_<name>/
 ├── brainstorm/
-│   ├── proposal.md            (optional if design-only brainstorm)
+│   ├── proposal.md
 │   └── design.md
 ├── breakdown/
 │   └── plan.md
@@ -24,30 +24,31 @@ This file defines:
 │   ├── progress.json
 │   └── implementation.md      (optional narrative)
 ├── context/
-├── review_report.md           (present after final review)
-└── review_request.json        (optional, review in progress)
+├── review/                    (per-phase feedback/changelog and reviewer logs)
+└── status.json                (gate state)
 ```
 
-## Validation Script
+## Validation
 
-Validate an assignment folder against the schema:
+The canonical validator is the CLI:
 
 ```bash
-node scripts/verify-assignment-schema.js .specdev/assignments/00001_feature_auth
+specdev checkpoint <phase>
 ```
 
-The script reports:
+`specdev checkpoint` consumes `specdev.assignment-schema.json` via
+`src/utils/assignment-schema.js` and reports required directory checks,
+detected highest phase, phase integrity for completed phases, and optional
+path presence warnings.
 
-1. required directory checks
-2. detected highest phase
-3. phase integrity for all completed phases
-4. optional path presence warnings
+`scripts/verify-assignment-schema.js` is a low-level test utility that
+covers the same checks for `tests/test-assignment.js`. It is not the
+primary entry point for day-to-day validation.
 
 ## Change Policy
 
 When changing workflow artifacts:
 
 1. update `specdev.assignment-schema.json` first
-2. run `node scripts/verify-assignment-schema.js <assignment-path>`
+2. run `specdev checkpoint <phase>` (and `node scripts/verify-assignment-schema.js <assignment-path>` for the test utility check)
 3. update docs/tests that reference affected paths
-

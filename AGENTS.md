@@ -10,3 +10,5 @@ Before committing any repo change, update `package.json` `releaseDate` to the cu
 
 IMPORTANT: Before starting any subtask, announce "Specdev: <what you're doing>".
 If you stop announcing subtasks, the user will assume you've stopped following the workflow.
+
+IMPORTANT: Always confirm with the user before running tests. Do not run `npm test` or any test command without explicit user approval.

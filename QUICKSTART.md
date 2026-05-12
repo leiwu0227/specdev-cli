@@ -37,19 +37,19 @@ The agent will ask you a few questions about your project — what it does, its 
 Still inside your coding agent, create an assignment:
 
 ```bash
-specdev assignment my-feature
+specdev assignment "Short description of what you're building"
 ```
 
-Replace `my-feature` with a short name for what you're building (e.g. `auth`, `search`, `dashboard`). This kicks off the 4-phase workflow described below.
+This reserves the next assignment ID and kicks off the 3-phase workflow described below. The canonical entry point for the workflow is `.specdev/_main.md`; this guide is a short orientation.
 
-## The 4-Phase Workflow
+## The 3-Phase Workflow
 
-Every assignment moves through these phases in order. The CLI enforces gates between phases — no skipping ahead.
+Every assignment moves through these phases in order. The CLI enforces gates between phases — no skipping ahead. Knowledge capture at the end of a phase is optional and never blocks progress.
 
 ### Phase 1: Brainstorm
 
 ```bash
-specdev assignment my-feature
+specdev assignment "<description>"
 ```
 
 Interactive Q&A with you to nail down scope and design. The agent asks questions guided by category (problem/goal, scope boundaries, success criteria, etc.), explores 2-3 approaches, then presents design sections scaled to the assignment type.
@@ -59,7 +59,7 @@ Interactive Q&A with you to nail down scope and design. The agent asks questions
 **Before approving, you can optionally review:**
 - `specdev checkpoint brainstorm` — validate required design sections exist
 - `specdev review brainstorm` — manual review in a separate session
-- `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex)
+- `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex, Claude)
 - `specdev reviewloop brainstorm --reviewer=<name> --autocontinue` — review, then continue after approval
 
 **Need to revise?** If a later phase reveals a design problem, run `specdev revise` to archive downstream artifacts and re-enter brainstorming with your existing design loaded as context.
@@ -68,44 +68,42 @@ Interactive Q&A with you to nail down scope and design. The agent asks questions
 specdev approve brainstorm            # Gate: proceed to breakdown + implementation
 ```
 
-### Phase 2: Breakdown (automatic)
+### Phase 2: Breakdown
 
-Runs automatically after brainstorm approval — no separate command needed. Decomposes the design into small, executable TDD tasks. Each task is self-contained with exact file paths, code snippets, and test commands. An automatic 1-2 round subagent review validates the plan before it's finalized.
+Runs immediately after brainstorm approval — no separate gate. Decomposes the design into small, executable tasks (H3 `### Task N:` headers inside `breakdown/plan.md`). Each task is self-contained with exact file paths, code snippets, and test commands. An automatic 1-2 round subagent review validates the plan before it's finalized.
 
 **Produces:** `breakdown/plan.md`
 
 ### Phase 3: Implement
 
-Implementation begins automatically after breakdown. A fresh subagent is dispatched per task. Each follows strict TDD (Red → Green → Refactor). Every task goes through **two automatic per-task reviews** before it's considered done:
+Implementation begins immediately after breakdown. Tasks are executed in plan order. Each task declares a mode:
 
-1. **Spec review** — does the task implementation match what was specified in the plan?
-2. **Code quality review** — is the code clean, well-tested, and following project conventions?
+- `lightweight` — no TDD, no review (trivial scaffold/config only).
+- `standard` (default) — TDD + implementer self-review only.
+- `full` — TDD + reviewer subagent dispatched for spec compliance + code quality.
 
-After all tasks complete, the agent runs the full test suite and presents a summary.
+After all tasks complete, the agent runs verification appropriate for the assignment's risk level and presents a summary.
 
 **Produces:** committed code + `implementation/progress.json`
 
 **Before approving, you can optionally review:**
 - `specdev checkpoint implementation` — validate implementation artifacts
 - `specdev review implementation` — manual review in a separate session
-- `specdev reviewloop implementation` — automated review via external CLI (e.g., Codex)
-- `specdev reviewloop implementation --reviewer=<name> --autocontinue` — review, then continue to summary after approval
+- `specdev reviewloop implementation` — automated review via external CLI
+- `specdev reviewloop implementation --reviewer=<name> --autocontinue` — review, then approve after passing
 
 ```bash
-specdev approve implementation        # Gate: proceed to summary
+specdev approve implementation        # Gate: assignment complete
 ```
 
-### Phase 4: Summary (automatic)
+### Optional: Knowledge Capture
 
-Runs automatically after implementation approval. The agent captures per-assignment learnings:
-- `capture/project-notes-diff.md` — gaps in project documentation
-- `capture/workflow-diff.md` — what worked and what didn't
+After a phase completes, if the agent learned something reusable, it may suggest capturing a short note in `.specdev/knowledge/<branch>/` (architecture, codestyle, domain, workflow, or workflow_feedback). This is opportunistic and never blocks progress.
 
-After multiple assignments are complete, you can aggregate learnings across them:
+Subsequent assignments find that knowledge via:
 
 ```bash
-specdev distill workflow               # aggregate workflow observations
-specdev distill project                # aggregate project learnings
+specdev knowledge search "<query>"
 ```
 
 ## Lost? Check your status
@@ -113,10 +111,11 @@ specdev distill project                # aggregate project learnings
 At any point, run:
 
 ```bash
-specdev continue
+specdev continue        # human-readable next action
+specdev next --json     # canonical machine-readable next action
 ```
 
-This tells you exactly where you are, what's blocking you, and what to do next. Works from the terminal or inside an agent session.
+These tell you exactly where you are, what's blocking you, and what to do next. Works from the terminal or inside an agent session.
 
 ## Command reference
 
@@ -128,36 +127,37 @@ This tells you exactly where you are, what's blocking you, and what to do next. 
 | `specdev help` | Terminal | Show usage info |
 | `specdev start` | Either | Fill in or check project context |
 | `specdev continue` | Either | Show current state, blockers, and next action |
-| `specdev assignment <name>` | Coding agent | Create an assignment and start brainstorming |
+| `specdev next --json` | Either | Canonical next workflow action (machine-readable) |
+| `specdev assignment "<desc>"` | Coding agent | Reserve assignment ID and start brainstorming |
+| `specdev discussion "<desc>"` | Coding agent | Start a parallel brainstorming discussion (no gate) |
+| `specdev focus <id>` | Either | Switch the active assignment |
 | `specdev checkpoint <phase>` | Either | Validate phase artifacts |
 | `specdev approve <phase>` | Either | Hard gate: approve phase and proceed |
 | `specdev review <phase>` | Separate session | Manual review (`brainstorm` or `implementation`) |
 | `specdev reviewloop <phase>` | Coding agent | Automated external review loop |
 | `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Coding agent | Automated review and continue after approval |
-| `specdev revise` | Coding agent | Archive downstream artifacts, re-enter brainstorm |
 | `specdev check-review` | Coding agent | Read and address review feedback |
-| `specdev distill workflow` | Terminal | Aggregate workflow observations |
-| `specdev distill project` | Terminal | Aggregate project learnings |
-| `specdev migrate` | Terminal | Convert legacy assignments to V4 layout |
+| `specdev revise` | Coding agent | Archive downstream artifacts, re-enter brainstorm |
+| `specdev knowledge index` | Terminal | Build the SQLite knowledge cache |
+| `specdev knowledge search "<query>"` | Either | Search indexed knowledge notes |
+| `specdev knowledge list` | Either | List all knowledge files with metadata |
+| `specdev memory refresh` | Terminal | Regenerate bounded `working_memory.md` for agents |
+| `specdev migrate` | Coding agent | Guided `.specdev/` layout migration workflow |
+| `specdev migrate legacy-assignments` | Terminal | Mechanical V3→V4 assignment file mover |
 
 ## Putting it all together
 
 ```
 Terminal:  specdev init                        # one-time setup
 Agent:     specdev start                       # describe your project
-Agent:     specdev assignment my-feature       # brainstorm → design.md
+Agent:     specdev assignment "<desc>"         # brainstorm → design.md
            specdev checkpoint brainstorm       # validate design (optional)
            specdev reviewloop brainstorm       # automated review (optional)
-           specdev approve brainstorm          # gate → breakdown runs automatically
+           specdev approve brainstorm          # gate → breakdown runs immediately
                                                # breakdown → plan.md (auto-reviewed)
                                                # implement → committed code
-                                               # (per-task spec + code quality reviews)
            specdev checkpoint implementation   # validate implementation (optional)
            specdev reviewloop implementation   # automated review (optional)
-           specdev approve implementation      # gate → summary runs automatically
-                                               # summary → capture learnings
-
-# After multiple assignments:
-Terminal:  specdev distill workflow             # aggregate workflow observations
-           specdev distill project             # aggregate project learnings
+           specdev approve implementation      # gate → assignment complete
+                                               # optionally capture knowledge
 ```
