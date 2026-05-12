@@ -79,7 +79,7 @@ async function readRecentCompletedAssignments(specdevPath) {
   const completed = []
   for (const assignment of assignments) {
     const { detected } = await loadStateForAssignment(specdevPath, assignment, assignment.path)
-    if (detected.state === 'completed') {
+    if (detected.status === 'completed') {
       completed.push(assignment.name)
     }
   }

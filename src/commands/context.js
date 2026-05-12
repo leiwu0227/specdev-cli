@@ -94,12 +94,20 @@ async function buildAssignmentInfo(specdevPath) {
   const { detected } = await loadStateForAssignment(specdevPath, summary, current.path)
 
   const idMatch = current.name.match(/^(\d+)/)
-  const phase = detected.state.startsWith('brainstorm') ? 'brainstorm'
-    : detected.state.startsWith('breakdown') ? 'breakdown'
-    : detected.state.startsWith('implementation') ? 'implementation'
-    : detected.state.startsWith('completed') ? 'completed'
-    : detected.state.startsWith('revision') ? 'revision'
-    : 'unknown'
+  // Phase resolution comes from the structured detected state. When the
+  // workflow is completed (phase=null, status=completed) the context UI
+  // wants to show "completed"; treat status=blocked (revision mismatch) as
+  // "revision".
+  let phase
+  if (detected.status === 'completed') {
+    phase = 'completed'
+  } else if (detected.status === 'blocked' && detected.phase === 'breakdown') {
+    phase = 'revision'
+  } else if (detected.phase) {
+    phase = detected.phase
+  } else {
+    phase = 'unknown'
+  }
 
   return {
     id: idMatch ? idMatch[1] : null,
@@ -178,7 +186,7 @@ async function buildRecentHistory(specdevPath) {
 
   for (const assignment of assignments) {
     const { detected } = await loadStateForAssignment(specdevPath, assignment, assignment.path)
-    if (detected.state === 'completed') {
+    if (detected.status === 'completed') {
       completed.push(assignment.name)
     }
   }

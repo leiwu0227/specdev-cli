@@ -551,9 +551,9 @@ export async function computeNextAction(specdevPath) {
 
   const summary = await scanSingleAssignment(current.path, current.name)
   const detected = await detectAssignmentState(summary, current.path, workflowInfo)
-  const action = actionForDetectedState(detected.state, workflowInfo.workflow)
-  const interaction = interactionForDetectedState(detected.state)
-  const hookOutcomes = hookOutcomesForState(workflowInfo.workflow, detected.state)
+  const action = actionForDetectedState(detected, workflowInfo.workflow)
+  const interaction = interactionForDetectedState(detected)
+  const hookOutcomes = hookOutcomesForState(workflowInfo.workflow, detected)
 
   return {
     command: 'next',
@@ -566,23 +566,17 @@ export async function computeNextAction(specdevPath) {
     next_action: action,
     interaction,
     hook_outcomes: hookOutcomes,
-    trace: buildTrace(detected.state),
+    trace: buildTrace(detected),
     blockers: detected.blockers,
     progress: detected.progress,
   }
 }
 
-function hookOutcomesForState(workflow, state) {
+function hookOutcomesForState(workflow, detected) {
   if (!Array.isArray(workflow.hooks)) {
     return []
   }
-  const endedPhaseByState = {
-    brainstorm_checkpoint_ready: 'brainstorm',
-    implementation_in_progress: 'breakdown',
-    implementation_checkpoint_ready: 'implementation',
-    completed: 'implementation',
-  }
-  const endedPhase = endedPhaseByState[state]
+  const endedPhase = endedPhaseFromDetected(detected)
   if (!endedPhase) return []
 
   return workflow.hooks
@@ -603,19 +597,34 @@ function hookOutcomesForState(workflow, state) {
     }))
 }
 
-function interactionForDetectedState(state) {
-  if (state === 'brainstorm_checkpoint_ready') {
-    return {
-      type: 'choice',
-      prompt: 'How do you want to proceed from brainstorm?',
-      choices: buildReviewChoices('brainstorm'),
+function endedPhaseFromDetected(detected) {
+  // A "phase:end" hook fires when we've just finished a phase. We treat:
+  //   - phase=brainstorm, status=checkpoint_ready  → brainstorm artifacts done
+  //   - phase=implementation, status=in_progress   → breakdown plan done (we just entered implementation)
+  //   - phase=implementation, status=checkpoint_ready → implementation work done
+  //   - status=completed (phase=null)              → terminal: implementation just finished
+  if (detected.status === 'completed') return 'implementation'
+  if (detected.phase === 'brainstorm' && detected.status === 'checkpoint_ready') return 'brainstorm'
+  if (detected.phase === 'implementation' && detected.status === 'in_progress') return 'breakdown'
+  if (detected.phase === 'implementation' && detected.status === 'checkpoint_ready') return 'implementation'
+  return null
+}
+
+function interactionForDetectedState(detected) {
+  if (detected.stepKind === 'command' && detected.stepId === 'checkpoint' && detected.status === 'checkpoint_ready') {
+    if (detected.phase === 'brainstorm') {
+      return {
+        type: 'choice',
+        prompt: 'How do you want to proceed from brainstorm?',
+        choices: buildReviewChoices('brainstorm'),
+      }
     }
-  }
-  if (state === 'implementation_checkpoint_ready') {
-    return {
-      type: 'choice',
-      prompt: 'How do you want to proceed from implementation?',
-      choices: buildReviewChoices('implementation'),
+    if (detected.phase === 'implementation') {
+      return {
+        type: 'choice',
+        prompt: 'How do you want to proceed from implementation?',
+        choices: buildReviewChoices('implementation'),
+      }
     }
   }
   return null
@@ -629,37 +638,8 @@ function workflowInfoSummary(workflowInfo) {
   }
 }
 
-function actionForDetectedState(state, workflow) {
-  const actionMap = {
-    brainstorm_in_progress: {
-      phase: 'brainstorm',
-      step: 'create_artifacts',
-      afterStep: 'checkpoint',
-    },
-    brainstorm_checkpoint_ready: {
-      phase: 'brainstorm',
-      step: 'checkpoint',
-    },
-    breakdown_in_progress: {
-      phase: 'breakdown',
-      step: 'create_plan',
-    },
-    implementation_in_progress: {
-      phase: 'implementation',
-      step: 'execute_plan',
-      afterStep: 'checkpoint',
-    },
-    implementation_checkpoint_ready: {
-      phase: 'implementation',
-      step: 'checkpoint',
-    },
-  }
-
-  if (actionMap[state]) {
-    return actionFromWorkflowStep(workflow, actionMap[state])
-  }
-
-  if (state === 'completed') {
+function actionForDetectedState(detected, workflow) {
+  if (detected.status === 'completed') {
     return {
       id: 'assignment.completed',
       phase: null,
@@ -669,13 +649,55 @@ function actionForDetectedState(state, workflow) {
     }
   }
 
-  return {
-    id: 'workflow.inspect',
-    phase: null,
-    step: null,
-    kind: 'inspect',
-    evidence: {},
+  if (!detected.phase || !detected.stepId) {
+    return {
+      id: 'workflow.inspect',
+      phase: null,
+      step: null,
+      kind: 'inspect',
+      evidence: {},
+    }
   }
+
+  const phaseDef = workflow.phases?.[detected.phase]
+  if (!phaseDef || !Array.isArray(phaseDef.steps)) {
+    return {
+      id: 'workflow.inspect',
+      phase: null,
+      step: null,
+      kind: 'inspect',
+      evidence: {},
+    }
+  }
+  const step = phaseDef.steps.find((item) => item && item.id === detected.stepId)
+  if (!step) {
+    return {
+      id: 'workflow.inspect',
+      phase: null,
+      step: null,
+      kind: 'inspect',
+      evidence: {},
+    }
+  }
+
+  // When the active step is a guide that has a checkpoint sibling in the
+  // same phase (today: brainstorm/create_artifacts → checkpoint,
+  // implementation/execute_plan → checkpoint), surface the checkpoint
+  // command as the `after` field. This matches the legacy `afterStep`
+  // behavior without branching on the legacy state string.
+  let afterStepId = null
+  if (step.kind === 'guide') {
+    const checkpointStep = phaseDef.steps.find(
+      (item) => item && item.kind === 'command' && item.id === 'checkpoint'
+    )
+    if (checkpointStep) afterStepId = checkpointStep.id
+  }
+
+  return actionFromWorkflowStep(workflow, {
+    phase: detected.phase,
+    step: detected.stepId,
+    afterStep: afterStepId,
+  })
 }
 
 function actionFromWorkflowStep(workflow, actionConfig) {
@@ -704,39 +726,52 @@ function actionFromWorkflowStep(workflow, actionConfig) {
   return action
 }
 
-function buildTrace(state) {
-  const traces = {
-    brainstorm_in_progress: [
-      'brainstorm artifacts are missing',
-      'next action is to run the brainstorm guide',
-    ],
-    brainstorm_checkpoint_ready: [
-      'brainstorm artifacts are present',
-      'brainstorm approval gate is pending',
-      'next action is to run the brainstorm checkpoint',
-    ],
-    breakdown_in_progress: [
-      'brainstorm gate is approved',
-      'breakdown/plan.md is missing',
-      'next action is to run the breakdown guide',
-    ],
-    implementation_in_progress: [
-      'breakdown/plan.md is present',
-      'implementation progress is missing or incomplete',
-      'next action is to run the implementation guide',
-    ],
-    implementation_checkpoint_ready: [
-      'implementation tasks are complete',
-      'implementation approval gate is pending',
-      'next action is to run the implementation checkpoint',
-    ],
-    completed: [
+function buildTrace(detected) {
+  if (detected.status === 'completed') {
+    return [
       'implementation gate is approved',
       'required workflow gates are complete',
       'optional knowledge capture may be suggested by phase-end hooks',
-    ],
+    ]
   }
-  return traces[state] || ['workflow state requires inspection']
+
+  const { phase, stepKind, status } = detected
+
+  if (phase === 'brainstorm' && status === 'in_progress') {
+    return [
+      'brainstorm artifacts are missing',
+      'next action is to run the brainstorm guide',
+    ]
+  }
+  if (phase === 'brainstorm' && status === 'checkpoint_ready') {
+    return [
+      'brainstorm artifacts are present',
+      'brainstorm approval gate is pending',
+      'next action is to run the brainstorm checkpoint',
+    ]
+  }
+  if (phase === 'breakdown' && status === 'in_progress') {
+    return [
+      'brainstorm gate is approved',
+      'breakdown/plan.md is missing',
+      'next action is to run the breakdown guide',
+    ]
+  }
+  if (phase === 'implementation' && status === 'in_progress' && stepKind === 'guide') {
+    return [
+      'breakdown/plan.md is present',
+      'implementation progress is missing or incomplete',
+      'next action is to run the implementation guide',
+    ]
+  }
+  if (phase === 'implementation' && status === 'checkpoint_ready') {
+    return [
+      'implementation tasks are complete',
+      'implementation approval gate is pending',
+      'next action is to run the implementation checkpoint',
+    ]
+  }
+  return ['workflow state requires inspection']
 }
 
 /**

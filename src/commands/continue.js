@@ -34,8 +34,10 @@ export async function continueCommand(flags = {}) {
   const { detected } = await loadStateForAssignment(specdevPath, assignmentSummary, selected.path)
 
   // Check for review feedback from a separate review session
-  // Determine current phase from detected state
-  const currentPhase = detected.state.startsWith('brainstorm') ? 'brainstorm' : 'implementation'
+  // Use the structured phase from detected state directly. When there's no
+  // active phase (e.g., assignment is completed), fall back to implementation
+  // since review feedback files live alongside the most-recent reviewable phase.
+  const currentPhase = detected.phase || 'implementation'
   const feedbackPath = join(selected.path, 'review', `${currentPhase}-feedback.md`)
   let reviewStatus = null
   let reviewFeedbackRelPath = null

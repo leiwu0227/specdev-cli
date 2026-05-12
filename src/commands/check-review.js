@@ -29,11 +29,26 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
     const summary = await scanSingleAssignment(assignmentPath, name)
     const specdevPath = join(assignmentPath, '..', '..')
     const { detected } = await loadStateForAssignment(specdevPath, summary, assignmentPath)
-    if (detected.state.startsWith('brainstorm')) {
-      phase = 'brainstorm'
-    } else {
-      phase = 'implementation'
+    if (!detected.phase || !VALID_PHASES.includes(detected.phase)) {
+      const payload = {
+        version: 1,
+        status: 'error',
+        error: 'phase_not_inferable',
+        detail: detected.phase
+          ? `Active phase "${detected.phase}" is not a check-review target`
+          : 'No active phase to infer from; pass an explicit phase positional arg',
+        valid_phases: VALID_PHASES,
+      }
+      if (json) {
+        writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
+      } else {
+        console.error(payload.detail)
+        console.log(`   Valid phases: ${VALID_PHASES.join(', ')}`)
+      }
+      process.exitCode = 1
+      return
     }
+    phase = detected.phase
   }
 
   if (!VALID_PHASES.includes(phase)) {
