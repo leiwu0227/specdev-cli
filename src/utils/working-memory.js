@@ -1,7 +1,7 @@
 import { join } from 'path'
 import fse from 'fs-extra'
 import { scanAssignments, scanSingleAssignment } from './scan.js'
-import { detectAssignmentState } from './state.js'
+import { loadStateForAssignment } from './state.js'
 import { resolveCurrentAssignment } from './current.js'
 
 export const MAX_WORKING_MEMORY_WORDS = 800
@@ -67,7 +67,7 @@ async function readCurrentWorkflow(specdevPath) {
     if (current.error) return null
     const summary = await scanSingleAssignment(current.path, current.name)
     if (!summary) return null
-    const detected = await detectAssignmentState(summary, current.path)
+    const { detected } = await loadStateForAssignment(specdevPath, summary, current.path)
     return `${current.name}: ${detected.state}. Next: ${detected.next_action}`
   } catch {
     return null
@@ -78,7 +78,7 @@ async function readRecentCompletedAssignments(specdevPath) {
   const assignments = await scanAssignments(specdevPath)
   const completed = []
   for (const assignment of assignments) {
-    const detected = await detectAssignmentState(assignment, assignment.path)
+    const { detected } = await loadStateForAssignment(specdevPath, assignment, assignment.path)
     if (detected.state === 'completed') {
       completed.push(assignment.name)
     }

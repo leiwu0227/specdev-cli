@@ -3,7 +3,7 @@ import fse from 'fs-extra'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { resolveCurrentAssignment } from '../utils/current.js'
 import { scanAssignments, scanSingleAssignment } from '../utils/scan.js'
-import { detectAssignmentState } from '../utils/state.js'
+import { loadStateForAssignment } from '../utils/state.js'
 import { COMMANDS } from '../utils/commands.js'
 import { scanSkillsDir } from '../utils/skills.js'
 import { collectKnowledgeDocuments, KNOWLEDGE_DB_SUBPATH } from '../utils/knowledge.js'
@@ -91,7 +91,7 @@ async function buildAssignmentInfo(specdevPath) {
   if (current.error) return null
 
   const summary = await scanSingleAssignment(current.path, current.name)
-  const detected = await detectAssignmentState(summary, current.path)
+  const { detected } = await loadStateForAssignment(specdevPath, summary, current.path)
 
   const idMatch = current.name.match(/^(\d+)/)
   const phase = detected.state.startsWith('brainstorm') ? 'brainstorm'
@@ -177,7 +177,7 @@ async function buildRecentHistory(specdevPath) {
   const completed = []
 
   for (const assignment of assignments) {
-    const detected = await detectAssignmentState(assignment, assignment.path)
+    const { detected } = await loadStateForAssignment(specdevPath, assignment, assignment.path)
     if (detected.state === 'completed') {
       completed.push(assignment.name)
     }

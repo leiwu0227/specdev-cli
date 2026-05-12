@@ -5,7 +5,7 @@ import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { blankLine, printSection } from '../utils/output.js'
 import { getLatestRound } from '../utils/review-feedback.js'
 import { scanSingleAssignment } from '../utils/scan.js'
-import { detectAssignmentState } from '../utils/state.js'
+import { loadStateForAssignment } from '../utils/state.js'
 import { commandPhases } from '../utils/workflow-contract.js'
 
 const VALID_PHASES = commandPhases.checkReview
@@ -27,7 +27,8 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
   let phase = positionalArgs[0]
   if (!phase) {
     const summary = await scanSingleAssignment(assignmentPath, name)
-    const detected = await detectAssignmentState(summary, assignmentPath)
+    const specdevPath = join(assignmentPath, '..', '..')
+    const { detected } = await loadStateForAssignment(specdevPath, summary, assignmentPath)
     if (detected.state.startsWith('brainstorm')) {
       phase = 'brainstorm'
     } else {

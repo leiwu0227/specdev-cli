@@ -550,7 +550,7 @@ export async function computeNextAction(specdevPath) {
   }
 
   const summary = await scanSingleAssignment(current.path, current.name)
-  const detected = await detectAssignmentState(summary, current.path)
+  const detected = await detectAssignmentState(summary, current.path, workflowInfo)
   const action = actionForDetectedState(detected.state, workflowInfo.workflow)
   const interaction = interactionForDetectedState(detected.state)
   const hookOutcomes = hookOutcomesForState(workflowInfo.workflow, detected.state)

@@ -6,7 +6,7 @@ import {
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
 import { scanSingleAssignment } from '../utils/scan.js'
-import { detectAssignmentState, readGateStatus } from '../utils/state.js'
+import { loadStateForAssignment, readGateStatus } from '../utils/state.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
 import { getLatestRound } from '../utils/review-feedback.js'
@@ -31,7 +31,7 @@ export async function continueCommand(flags = {}) {
   const selected = selection.selected
 
   const assignmentSummary = await scanSingleAssignment(selected.path, selected.name)
-  const detected = await detectAssignmentState(assignmentSummary, selected.path)
+  const { detected } = await loadStateForAssignment(specdevPath, assignmentSummary, selected.path)
 
   // Check for review feedback from a separate review session
   // Determine current phase from detected state
