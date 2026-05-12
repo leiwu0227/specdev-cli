@@ -99,8 +99,6 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 
 | Command | Purpose | When to use |
 |---------|---------|-------------|
-| `specdev distill --assignment=<name>` | Legacy helper for old capture diffs | Only for assignments that already have `capture/` diffs |
-| `specdev distill done <name>` | Legacy marker for old capture diffs | Only for legacy distillation flows |
 | `specdev knowledge index` | Build/rebuild SQLite FTS index of `.specdev/` knowledge | After adding new content (search auto-builds on first use) |
 | `specdev knowledge search "<query>"` | Search indexed knowledge (BM25-ranked) | Finding relevant project context |
 | `specdev memory refresh` | Regenerate bounded working memory for agents | After completing assignments or adding knowledge |

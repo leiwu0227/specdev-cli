@@ -27,8 +27,6 @@ export const COMMANDS = [
   { name: 'check-review', usage: 'check-review', description: 'Read and address review feedback' },
   { name: 'implement', usage: 'implement', description: 'Set up implementation task execution' },
   { name: 'reviewloop', usage: 'reviewloop <phase>', description: 'Automated external review loop (brainstorm | implementation)' },
-  { name: 'distill', usage: 'distill', description: 'Legacy helper for old assignment capture diffs' },
-  { name: 'distill done', usage: 'distill done <name>', description: 'Legacy marker for old capture distillation flows' },
   { name: 'context', usage: 'context', description: 'Dump project state, commands, knowledge, and skills for agents' },
   { name: 'help', usage: 'help', description: 'Show this help message' },
   { name: 'version', usage: '--version, -v', description: 'Show version number' },

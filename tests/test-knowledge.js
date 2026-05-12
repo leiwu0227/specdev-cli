@@ -165,36 +165,6 @@ assert(json?.command === 'memory refresh', 'memory json identifies command')
 assert(json?.status === 'ok', 'memory json status is ok')
 assert(existsSync(join(TEST_DIR, '.specdev', 'project_notes', 'working_memory.md')), 'working memory file is created')
 
-console.log('\ndistill --assignment:')
-result = runCmd(['distill', `--target=${TEST_DIR}`, '--assignment=00001_feature_retrieval-cache', '--json'])
-assert(result.status === 0, 'distill exits 0', result.stderr || result.stdout)
-try {
-  json = JSON.parse(result.stdout)
-  assert(true, 'distill outputs valid JSON')
-} catch {
-  assert(false, 'distill outputs valid JSON', result.stdout)
-}
-assert(json?.status === 'ok', 'distill status is ok')
-assert(json?.capture?.project_notes_diff?.includes('Retrieval cache added'), 'distill includes project capture')
-assert(json?.capture?.workflow_diff?.includes('Knowledge search was useful'), 'distill includes workflow capture')
-
-console.log('\ndistill done --json:')
-writeFileSync(
-  join(TEST_DIR, '.specdev', 'project_notes', 'feature_descriptions.md'),
-  '# Feature Descriptions\n\n### Retrieval Cache\n**Assignment:** 00001_feature_retrieval-cache\n',
-)
-result = runCmd(['distill', 'done', '00001_feature_retrieval-cache', `--target=${TEST_DIR}`, '--json'])
-assert(result.status === 0, 'distill done exits 0', result.stderr || result.stdout)
-try {
-  json = JSON.parse(result.stdout)
-  assert(true, 'distill done outputs valid JSON')
-} catch {
-  assert(false, 'distill done outputs valid JSON', result.stdout)
-}
-assert(json?.status === 'ok', 'distill done status is ok')
-assert(json?.marked === '00001_feature_retrieval-cache', 'distill done marks assignment')
-assert(json?.memory_hint === 'Run specdev memory refresh', 'distill done includes memory hint')
-
 cleanup()
 console.log(`\n${passes} passed, ${failures} failed`)
 process.exit(failures > 0 ? 1 : 0)

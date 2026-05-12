@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# complete-task.sh — Mark a task completed and report batch status
+# complete-task.sh — Mark a task completed and report progress
 #
 # Usage:
 #   complete-task.sh <plan-file> <task-number> [summary]
 #
-# Output: Task status and batch progress to stdout
+# Output: Task status and overall progress to stdout
 # Exit: 0 on success, 1 on error
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,7 +32,7 @@ PROGRESS_FILE="${ASSIGNMENT_DIR}/implementation/progress.json"
 # Mark the task as completed via track-progress.sh
 "${SCRIPT_DIR}/track-progress.sh" "$PLAN_FILE" "$TASK_NUM" completed > /dev/null
 
-# Store summary (if provided) and calculate batch status
+# Store summary (if provided) and calculate progress
 node -e "
   const fs = require('fs');
   const taskNum = parseInt(process.argv[1], 10);
@@ -48,23 +48,12 @@ node -e "
     fs.writeFileSync(progressFile, JSON.stringify(data, null, 2));
   }
 
-  // Calculate batch info
-  const batchNumber = Math.ceil(taskNum / 3);
-  const batchStart = (batchNumber - 1) * 3 + 1;
-  const batchEnd = Math.min(batchNumber * 3, data.total_tasks);
-
-  const batchTasks = data.tasks.filter(t => t.number >= batchStart && t.number <= batchEnd);
-  const batchCompleted = batchTasks.filter(t => t.status === 'completed').length;
-  const batchTotal = batchTasks.length;
+  const totalCompleted = data.tasks.filter(t => t.status === 'completed').length;
 
   // Output status
   console.log('Task ' + taskNum + ': completed');
   if (summary) {
     console.log('Summary: ' + summary);
   }
-  if (batchCompleted === batchTotal) {
-    console.log('Batch ' + batchNumber + ': ' + batchCompleted + '/' + batchTotal + ' complete — run test suite before next batch');
-  } else {
-    console.log('Batch ' + batchNumber + ': ' + batchCompleted + '/' + batchTotal + ' complete — continue to next task');
-  }
+  console.log('Progress: ' + totalCompleted + '/' + data.total_tasks + ' tasks complete');
 " "$TASK_NUM" "$SUMMARY" "$PROGRESS_FILE"

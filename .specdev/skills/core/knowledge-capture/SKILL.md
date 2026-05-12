@@ -1,10 +1,10 @@
 ---
 name: knowledge-capture
-description: Distill learnings into knowledge branches after assignment completion
+description: Optional phase-end capture of reusable knowledge with prune-and-replace discipline
 type: core
-phase: capture
-input: Completed assignment
-output: Knowledge diff files, updated project_notes, knowledge branches
+phase: phase-end
+input: Completed workflow phase
+output: Small updates to knowledge/ or project_notes/ when useful
 next: null
 ---
 
@@ -12,83 +12,77 @@ next: null
 
 ## Contract
 
-- **Input:** A completed, verified assignment
-- **Process:** Write capture diffs → update big_picture → update catalogs → run distill → finalize
-- **Output:** `capture/` diffs, updated `project_notes/`, knowledge branches updated, assignment marked done
-- **Next:** None — this is the final phase
+- **Input:** A completed brainstorm, breakdown, or implementation phase
+- **Process:** Notice reusable knowledge -> search existing knowledge -> prune/replace stale notes -> ask user before writing -> update the smallest durable note
+- **Output:** Optional direct updates to `knowledge/` or `project_notes/`
+- **Next:** None. This guide never blocks workflow progress.
 
-## Process
+Knowledge capture is opportunistic. Do not write notes just because a phase ended. Suggest capture only when the learning is reusable for future assignments.
 
-### Step 1: Project Notes Diff
+## When To Suggest Capture
 
-1. Read `project_notes/big_picture.md` and `project_notes/feature_descriptions.md`
-2. What did you learn that these files don't capture?
-3. Write findings to `capture/project-notes-diff.md`:
+Suggest capture only if at least one is true:
 
-```markdown
-# Project Notes Diff — [Assignment Name]
-**Date:** YYYY-MM-DD  |  **Assignment:** [id and name]
+- A repo fact, command, architecture pattern, or workflow rule changed
+- The agent learned a recurring gotcha that future agents are likely to hit
+- A previous knowledge note is stale, duplicated, or contradicted
+- A design decision or testing lesson will affect future assignments
 
-## Gaps Found
-- [What's missing or outdated, with specific suggestions]
+Skip capture when the observation is one-off, obvious from nearby code, or already covered by existing knowledge.
 
-## No Changes Needed
-- [Aspects already well-documented]
+## Phase Guidance
+
+| Phase ending | Useful capture candidates |
+|--------------|---------------------------|
+| brainstorm | design decisions, scope boundaries, repo facts discovered during context scan |
+| breakdown | planning heuristics, task sizing lessons, workflow friction |
+| implementation | implementation patterns, test budget lessons, commands, recurring failures |
+
+## Capture Flow
+
+1. State the candidate knowledge in one or two bullets.
+2. Search first:
+
+```bash
+specdev knowledge search "<topic keywords>"
 ```
 
-### Step 2: Workflow Diff
+3. Choose one action:
+   - `skip` — already covered or not durable
+   - `update` — existing note is mostly correct
+   - `replace` — existing note is stale or duplicated
+   - `add` — genuinely new durable knowledge
+4. Ask the user before writing:
+   - "Record this to knowledge? yes/no/edit"
+5. If approved, write the smallest useful update.
+6. Run `specdev knowledge index` after writing or replacing knowledge notes.
 
-1. Reflect on each phase: brainstorm, breakdown, implement, review
-2. Write findings to `capture/workflow-diff.md`:
+## Prune-And-Replace Rules
 
-```markdown
-# Workflow Diff — [Assignment Name]
-**Date:** YYYY-MM-DD  |  **Assignment:** [id and name]
+Prefer prune-and-replace over accumulation.
 
-## What Worked
-- [Specific observations]
+Before adding a note:
 
-## What Didn't
-- [Friction points, gaps, suggestions]
-```
+- Inspect related search results and nearby files in `knowledge/`
+- Delete stale, duplicate, or contradicted knowledge
+- Replace broad historical commentary with current contract-level guidance
+- Add a new file only if no existing note fits
 
-### Step 3: Update Big Picture
+Keep knowledge that describes current architecture, supported compatibility behavior, public CLI contracts, recurring bugs, review findings, safety/security behavior, and repo-specific commands.
 
-1. Read `project_notes/big_picture.md`
-2. Update it with new information from this assignment:
-   - Add new systems or components that were built
-   - Revise descriptions that are now outdated
-   - Remove things that no longer exist
-3. **Keep it lean — under 2000 words.** Architecture-level facts only, no implementation details.
-4. If the file is already near the limit, replace outdated content rather than appending.
+Remove or replace knowledge that is obsolete, vague, duplicated by a newer note, tied to unsupported workflow behavior, or only useful as historical commentary.
 
-### Step 4: Update Catalogs
+## Destinations
 
-1. Add an entry to `project_notes/feature_descriptions.md`:
-   - Feature/Refactor: `### [Name]` with Assignment, Completed, Description (1-2 sentences), Key files
-   - Familiarization: `### [System]` with Assignment, Completed, Summary (1-2 sentences), Key insights
-   - Keep entries brief — this is a catalog, not detailed documentation
-2. Mark assignment as DONE in `project_notes/assignment_progress.md`
+Use these branches:
 
-### Step 5: Run Distill (hard requirement)
+- `knowledge/codestyle/` — naming conventions, formatting patterns, code style decisions
+- `knowledge/architecture/` — system design, component relationships, key decisions
+- `knowledge/domain/` — domain concepts and business logic patterns
+- `knowledge/workflow/` — project-local process knowledge and tool usage observations
+- `knowledge/workflow_feedback/` — SpecDev workflow/product issues or improvement ideas
 
-1. Search existing knowledge before writing: run `specdev knowledge search "<assignment topic>"` (auto-indexes on first use) to find related notes in `knowledge/`. Avoid duplicating or contradicting existing entries — update them instead if needed.
-2. Run `specdev distill --assignment=<name>`
-3. Read the JSON output — it contains:
-   - Your capture diffs (for reference)
-   - Existing knowledge file listings per branch
-   - `big_picture_word_count` and `big_picture_word_limit` (verify you're under limit)
-   - Heuristic suggestions (cross-assignment patterns)
-4. Write synthesized project observations to `knowledge/` branches as appropriate:
-   - `knowledge/codestyle/` — naming conventions, formatting patterns, code style decisions
-   - `knowledge/architecture/` — system design, component relationships, key decisions
-   - `knowledge/domain/` — domain concepts, business logic patterns
-   - `knowledge/workflow/` — project-specific process knowledge and tool usage observations
-5. Classify workflow observations before writing durable notes:
-   - Project-local process patterns go to `knowledge/workflow/`
-   - SpecDev workflow/product issues or improvement ideas go to `knowledge/workflow_feedback/`
-   - One-off low-value reflections stay only in `capture/workflow-diff.md`
-6. For reusable project workflow knowledge, search first with `specdev knowledge search "<workflow issue keywords>"`. If a related `knowledge/workflow/` FAQ exists, update it with the new example or assignment reference. Otherwise create `knowledge/workflow/<short-slug>.md`:
+For reusable project workflow knowledge, use a short FAQ-style note:
 
 ```markdown
 # <Question or Gotcha>
@@ -104,31 +98,21 @@ next: null
 
 ## Source
 - Assignment: <assignment id/name>
-- Phase: brainstorm | breakdown | implementation | capture
+- Phase: brainstorm | breakdown | implementation
 ```
 
-7. Before creating a workflow feedback note, search existing feedback with `specdev knowledge search "<workflow issue keywords>"` or inspect `knowledge/workflow_feedback/` directly. If a related note exists, update it instead of creating a duplicate by refreshing `Last seen`, `Assignments observed`, `Current Mitigation`, and `Proposed Action`.
-8. For new SpecDev workflow feedback, copy `_templates/workflow_feedback_note.md` into `knowledge/workflow_feedback/<short-slug>.md` and fill every field. Use `Proposed Action: create-assignment` for severe or recurring issues; otherwise use `monitor`, `update-guidance`, or `none`.
-9. Run `specdev knowledge index` after writing or updating knowledge notes.
-10. If no new observations to write, that's OK — not every assignment produces reusable knowledge
-
-### Step 6: Finalize (hard requirement)
-
-1. Run `specdev distill done <assignment-name>`
-2. This validates:
-   - `big_picture.md` is under 2000 words
-   - Assignment name appears in `feature_descriptions.md`
-3. If validation fails: fix the issue and re-run `specdev distill done`
-4. On success: assignment is marked as processed and complete
+For SpecDev workflow feedback, copy `_templates/workflow_feedback_note.md` into `knowledge/workflow_feedback/<short-slug>.md` and fill every field. If a related feedback note exists, update it instead of creating a duplicate by refreshing `Last seen`, `Assignments observed`, `Current Mitigation`, and `Proposed Action`.
 
 ## Red Flags
 
-- Being too vague — "it went fine" is not useful. Be specific.
-- Skipping this phase — even small assignments produce learnings
-- Skipping the distill step — every assignment must run `specdev distill` and `specdev distill done`
-- Bloating `big_picture.md` — if near the word limit, replace outdated content instead of appending
+- Writing knowledge without first running `specdev knowledge search`
+- Adding a new note when an existing note should be updated or replaced
+- Preserving obsolete workflow behavior as durable guidance
+- Capturing vague reflections like "it went fine"
+- Blocking phase progress on knowledge capture
 
 ## Integration
 
-- **Before this skill:** implementing (produces the work to reflect on)
-- **After this skill:** None — terminal phase
+- **Runs as:** optional non-blocking `phase:end` hook
+- **Before this guide:** any completed phase
+- **After this guide:** continue with `specdev next --json` or the user's next requested action

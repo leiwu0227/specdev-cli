@@ -5,7 +5,7 @@ import {
   resolveTargetDir,
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
-import { scanAssignments, scanSingleAssignment, readProcessedCaptures } from '../utils/scan.js'
+import { scanSingleAssignment } from '../utils/scan.js'
 import { detectAssignmentState, readGateStatus } from '../utils/state.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
@@ -59,23 +59,6 @@ export async function continueCommand(flags = {}) {
     reviewLogs,
     workflowStatus
   )
-
-  // Legacy support: surface old assignments that still have capture diffs.
-  const knowledgePath = join(specdevPath, 'knowledge')
-  const allAssignments = await scanAssignments(specdevPath)
-  const captureAssignments = allAssignments.filter(a => a.capture)
-  const processedProject = await readProcessedCaptures(knowledgePath, 'project')
-  const unprocessedDistill = captureAssignments
-    .filter(a => !processedProject.has(a.name))
-    .sort((a, b) => a.name.localeCompare(b.name))
-
-  if (unprocessedDistill.length > 0) {
-    const MAX_SHOWN = 5
-    payload.distill_pending = {
-      count: unprocessedDistill.length,
-      assignments: unprocessedDistill.slice(0, MAX_SHOWN).map(a => a.name),
-    }
-  }
 
   emit(payload, { json, asStatus, statusText })
   if (payload.status === 'blocked') process.exitCode = 1
@@ -195,13 +178,6 @@ function emit(payload, options = {}) {
     printListSection('Blockers:', items)
   }
 
-  if (outputPayload.distill_pending) {
-    console.log('')
-    console.log('Distill Pending:')
-    const suffix = outputPayload.distill_pending.count > 5 ? ' (showing oldest 5)' : ''
-    console.log(`  ${outputPayload.distill_pending.count} legacy assignment(s) have unprocessed capture diffs${suffix}`)
-    console.log('  Legacy helper: specdev distill --assignment=<name>')
-  }
 }
 
 export function buildStatusPayload(payload) {
@@ -220,7 +196,6 @@ export function buildStatusPayload(payload) {
     progress: payload.progress || null,
     review_feedback: payload.review_feedback || null,
     review_logs: payload.review_logs || [],
-    distill_pending: payload.distill_pending || null,
     next_action: payload.next_action,
   }
 }

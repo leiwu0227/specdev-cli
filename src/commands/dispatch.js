@@ -1,8 +1,6 @@
 import { initCommand } from './init.js'
 import { updateCommand } from './update.js'
 import { helpCommand } from './help.js'
-import { distillCommand } from './distill.js'
-import { distillDoneCommand } from './distill-done.js'
 import { skillsCommand } from './skills.js'
 import { startCommand } from './start.js'
 import { assignmentCommand } from './assignment.js'
@@ -51,18 +49,6 @@ const commandHandlers = {
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
-  if (command === 'distill') {
-    const subcommand = positionalArgs[0]
-    if (subcommand === 'done') {
-      const doneArgs = positionalArgs.slice(1)
-      await distillDoneCommand(doneArgs, flags)
-    } else {
-      // No subcommand = combined distill
-      await distillCommand(flags)
-    }
-    return
-  }
-
   if (command === 'migrate') {
     const subcommand = positionalArgs[0]
     if (subcommand === 'legacy-assignments') {
