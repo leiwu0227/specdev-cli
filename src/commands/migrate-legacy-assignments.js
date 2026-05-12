@@ -6,6 +6,9 @@ import {
 } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
 
+// NOTE: this command is intentionally exempt from the manifest contract.
+// It migrates legacy on-disk layouts INTO the current phase-folder shape that
+// the manifest then validates. Drift tests allowlist these literal paths.
 const LEGACY_TO_V4 = [
   { from: 'proposal.md', to: 'brainstorm/proposal.md' },
   { from: 'design.md', to: 'brainstorm/design.md' },

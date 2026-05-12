@@ -4,6 +4,7 @@ import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printLines, printSection } from '../utils/output.js'
 import { listReviewers } from '../utils/reviewers.js'
+import { loadWorkflowDefinition, findProducedByBasename } from '../utils/workflow-runtime.js'
 
 /**
  * specdev implement — Set up implementation scaffolding and print instructions
@@ -17,13 +18,23 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   const name = assignmentName(assignmentPath)
   const targetDir = resolveTargetDir(flags)
 
+  // Derive the breakdown plan artifact path from the manifest.
+  const specdevPath = join(targetDir, '.specdev')
+  const workflowInfo = await loadWorkflowDefinition(specdevPath)
+  const planRel = findProducedByBasename(workflowInfo.workflow, 'breakdown', 'plan.md')
+  if (!planRel) {
+    console.error('Manifest does not declare a breakdown plan artifact')
+    process.exitCode = 1
+    return
+  }
+
   // Verify plan exists
-  const planPath = join(assignmentPath, 'breakdown', 'plan.md')
+  const planPath = join(assignmentPath, planRel)
   if (!await fse.pathExists(planPath)) {
     if (flags.json) {
-      console.log(JSON.stringify({ command: 'implement', version: 1, status: 'error', assignment: name, error: 'breakdown/plan.md not found' }, null, 2))
+      console.log(JSON.stringify({ command: 'implement', version: 1, status: 'error', assignment: name, error: `${planRel} not found` }, null, 2))
     } else {
-      console.error('❌ breakdown/plan.md not found')
+      console.error(`❌ ${planRel} not found`)
       console.log('   Complete breakdown before starting implementation.')
     }
     process.exitCode = 1
@@ -62,7 +73,6 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
   blankLine()
 
   // Resolve script paths relative to the project
-  const specdevPath = join(targetDir, '.specdev')
   const skillBase = join(specdevPath, 'skills', 'core', 'implementing')
   const extractScript = join(skillBase, 'scripts', 'extract-tasks.sh')
   const prepareScript = join(skillBase, 'scripts', 'prepare-task.sh')

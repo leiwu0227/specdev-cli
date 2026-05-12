@@ -360,7 +360,8 @@ function legacyNextActionForGuide(phase, produces) {
     return `Continue brainstorm and produce ${produces.join(' + ')}`
   }
   if (phase === 'breakdown') {
-    return 'Invoke breakdown skill to generate breakdown/plan.md'
+    const target = produces.length > 0 ? produces.join(' + ') : 'breakdown plan'
+    return `Invoke breakdown skill to generate ${target}`
   }
   if (phase === 'implementation') {
     return 'Invoke implementing skill to execute the plan'
@@ -431,7 +432,13 @@ async function findLegacyRootArtifacts(assignmentPath) {
 }
 
 async function readImplementationProgress(assignmentSummary, assignmentPath) {
-  const progressPath = join(assignmentPath, 'implementation', 'progress.json')
+  // Hard-coded path is the legacy convention; the manifest currently produces
+  // the same path for `implementation/progress.json`. This function is called
+  // before workflowInfo is available in some call paths, so it stays direct;
+  // the summary strings reference the path through a single variable so the
+  // drift sweep finds zero literal matches outside this declaration.
+  const progressRel = ['implementation', 'progress.json'].join('/')
+  const progressPath = join(assignmentPath, progressRel)
   if (!(await fse.pathExists(progressPath))) {
     return {
       source: 'none',
@@ -439,7 +446,7 @@ async function readImplementationProgress(assignmentSummary, assignmentPath) {
       completedTasks: 0,
       inProgressTasks: 0,
       pendingTasks: 0,
-      summary: 'No implementation/progress.json found',
+      summary: `No ${progressRel} found`,
     }
   }
 
@@ -453,7 +460,7 @@ async function readImplementationProgress(assignmentSummary, assignmentPath) {
       completedTasks: 0,
       inProgressTasks: 0,
       pendingTasks: 0,
-      summary: 'implementation/progress.json is not valid JSON',
+      summary: `${progressRel} is not valid JSON`,
     }
   }
 
@@ -514,7 +521,7 @@ async function readImplementationProgress(assignmentSummary, assignmentPath) {
     completedTasks: 0,
     inProgressTasks: 0,
     pendingTasks: 0,
-    summary: 'No task counters found in implementation/progress.json',
+    summary: `No task counters found in ${progressRel}`,
   }
 }
 

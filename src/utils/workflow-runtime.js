@@ -753,13 +753,13 @@ function buildTrace(detected) {
   if (phase === 'breakdown' && status === 'in_progress') {
     return [
       'brainstorm gate is approved',
-      'breakdown/plan.md is missing',
+      'breakdown artifacts are missing',
       'next action is to run the breakdown guide',
     ]
   }
   if (phase === 'implementation' && status === 'in_progress' && stepKind === 'guide') {
     return [
-      'breakdown/plan.md is present',
+      'breakdown artifacts are present',
       'implementation progress is missing or incomplete',
       'next action is to run the implementation guide',
     ]
@@ -907,6 +907,32 @@ export function nextPhaseAfter(workflow, completedPhase) {
     if (hasGate) return phase
   }
   return null
+}
+
+/**
+ * Collect all `produces:` paths from a phase's guide steps.
+ */
+export function phaseProducedPaths(workflow, phase) {
+  const steps = workflow?.phases?.[phase]?.steps
+  if (!Array.isArray(steps)) return []
+  const out = []
+  for (const step of steps) {
+    if (!step || !Array.isArray(step.produces)) continue
+    for (const entry of step.produces) {
+      if (typeof entry === 'string' && entry.length > 0) out.push(entry)
+      else if (entry && typeof entry === 'object' && typeof entry.path === 'string') out.push(entry.path)
+    }
+  }
+  return out
+}
+
+/**
+ * Find a produced path in `phase` matching the given basename (e.g., 'design.md').
+ * Returns null if not found.
+ */
+export function findProducedByBasename(workflow, phase, basename) {
+  const paths = phaseProducedPaths(workflow, phase)
+  return paths.find((p) => p === basename || p.endsWith(`/${basename}`)) || null
 }
 
 /**

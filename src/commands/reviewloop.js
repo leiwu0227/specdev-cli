@@ -17,6 +17,7 @@ import {
   renderStepOutput,
   nextPhaseAfter,
   findGateStep,
+  findProducedByBasename,
 } from '../utils/workflow-runtime.js'
 import { readValidatedSessionState } from '../utils/session-state.js'
 import { resolveRoundFocus } from '../utils/review-focus.js'
@@ -33,10 +34,14 @@ import { writeSessionState } from '../utils/session-state.js'
 
 const REVIEWER_HEARTBEAT_MS = 30000
 
-function printDesignDigressionPrompt(name) {
+function printDesignDigressionPrompt(name, workflowInfo) {
+  // Derive the brainstorm design artifact path from the manifest so renaming
+  // an artifact updates this prompt automatically.
+  const designRel = findProducedByBasename(workflowInfo.workflow, 'brainstorm', 'design.md')
+  if (!designRel) return
   blankLine()
   printSection('Design digression check:')
-  console.log(`   Read ${name}/review/brainstorm-changelog*.md and ${name}/brainstorm/design.md.`)
+  console.log(`   Read ${name}/review/brainstorm-changelog*.md and ${name}/${designRel}.`)
   console.log('   Summarize only important digressions from the original design to the user.')
   console.log('   Skip minor fixes, wording changes, and trivial adjustments.')
   blankLine()
@@ -691,13 +696,13 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
   })
 
   if (allApproved) {
+    const workflowInfo = await loadWorkflowDefinition(specdevPath)
     if (phase === 'brainstorm') {
-      printDesignDigressionPrompt(name)
+      printDesignDigressionPrompt(name, workflowInfo)
     } else if (phase === 'implementation') {
       printSimplificationPrompt()
     }
 
-    const workflowInfo = await loadWorkflowDefinition(specdevPath)
     const approveResult = await approvePhase(assignmentPath, phase, workflowInfo)
     if (approveResult.approved) {
       printSection(`Review approved! Phase '${phase}' has been approved.`)
