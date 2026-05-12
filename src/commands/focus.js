@@ -3,6 +3,7 @@ import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-cont
 import { resolveAssignmentSelector } from '../utils/assignment.js'
 import { writeCurrent, clearCurrent } from '../utils/current.js'
 import { scanAssignments } from '../utils/scan.js'
+import { readSessionState, clearSessionState } from '../utils/session-state.js'
 
 export async function focusCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -11,6 +12,8 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
 
   if (flags.clear) {
     await clearCurrent(specdevPath)
+    // Clearing the active assignment invalidates any sticky session-state.
+    await clearSessionState(specdevPath)
     if (flags.json) {
       console.log(JSON.stringify({ command: 'focus', version: 1, status: 'ok', cleared: true }))
     } else {
@@ -50,6 +53,12 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
   }
 
   await writeCurrent(specdevPath, resolved.name)
+  // Cross-assignment switch invalidates any sticky session-state whose
+  // `assignment` field no longer matches the new `.current`.
+  const existingSession = await readSessionState(specdevPath)
+  if (existingSession && existingSession.assignment !== resolved.name) {
+    await clearSessionState(specdevPath)
+  }
   if (flags.json) {
     const id = resolved.name.split('_')[0]
     console.log(JSON.stringify({ command: 'focus', version: 1, status: 'ok', assignment_id: id, assignment_name: resolved.name, path: `.specdev/assignments/${resolved.name}` }))

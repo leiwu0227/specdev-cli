@@ -4,6 +4,7 @@ import { approvePhase } from '../utils/approve-phase.js'
 import { blankLine } from '../utils/output.js'
 import { commandPhases } from '../utils/workflow-contract.js'
 import { loadWorkflowDefinition } from '../utils/workflow-runtime.js'
+import { readValidatedSessionState, clearSessionState } from '../utils/session-state.js'
 
 const VALID_PHASES = commandPhases.approve
 
@@ -29,6 +30,12 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
   const specdevPath = join(assignmentPath, '..', '..')
   const workflowInfo = await loadWorkflowDefinition(specdevPath)
 
+  // Read sticky session-state (validated against .current). Used by Task 11's
+  // continuation-block rendering; harmless side-effect read here so the value
+  // is available regardless of which renderer is active.
+  const sessionState = await readValidatedSessionState(specdevPath)
+  void sessionState
+
   const result = await approvePhase(assignmentPath, phase, workflowInfo)
 
   if (!result.approved) {
@@ -53,6 +60,12 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     }
     process.exitCode = 1
     return
+  }
+
+  // Terminal-phase clear: when the assignment becomes complete, drop sticky
+  // session-state (design.md §Layer 3).
+  if (phase === 'implementation') {
+    await clearSessionState(specdevPath)
   }
 
   if (flags.json) {

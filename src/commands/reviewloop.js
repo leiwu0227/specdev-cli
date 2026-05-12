@@ -23,6 +23,7 @@ import { runReviewerProcess } from '../utils/reviewer-runner.js'
 import { createReviewerStreamJsonTranslator } from '../utils/reviewer-stream-json.js'
 import { commandPhases } from '../utils/workflow-contract.js'
 import { listReviewers } from '../utils/reviewers.js'
+import { writeSessionState } from '../utils/session-state.js'
 
 const REVIEWER_HEARTBEAT_MS = 30000
 
@@ -664,6 +665,19 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     emitPreflightFailure(preflight)
     process.exitCode = 1
     return
+  }
+
+  // Sticky session-state: write before subprocess spawn so downstream CLI
+  // invocations (within autocontinue) can observe the sticky reviewer.
+  // Reviewloop is the only writer of this file (design.md §Layer 3).
+  if (flags.autocontinue) {
+    await writeSessionState(specdevPath, {
+      assignment: name,
+      reviewer: reviewerNames.join(','),
+      autocontinue: true,
+      set_at: new Date().toISOString(),
+      set_by_step: `${phase}.review`,
+    })
   }
 
   const allApproved = await runReviewerChain({
