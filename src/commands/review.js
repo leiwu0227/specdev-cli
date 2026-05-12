@@ -5,7 +5,8 @@ import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { parseReviewFeedback } from '../utils/review-feedback.js'
 import { blankLine, printBullets, printLines, printSection } from '../utils/output.js'
-import { commandPhases, artifactPaths } from '../utils/workflow-contract.js'
+import { commandPhases } from '../utils/workflow-contract.js'
+import { loadWorkflowDefinition } from '../utils/workflow-runtime.js'
 
 const VALID_PHASES = commandPhases.review
 
@@ -68,15 +69,38 @@ async function detectRound(reviewDir, feedbackFilename, flags) {
   return nextRound
 }
 
-async function collectBrainstormArtifacts(assignmentPath, name) {
-  const artifacts = []
-  if (await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.proposal))) {
-    artifacts.push(`${name}/${artifactPaths.brainstorm.proposal}`)
+function producePathStrings(produces) {
+  if (!Array.isArray(produces)) return []
+  const paths = []
+  for (const entry of produces) {
+    if (typeof entry === 'string' && entry.length > 0) paths.push(entry)
+    else if (entry && typeof entry === 'object' && typeof entry.path === 'string') paths.push(entry.path)
   }
-  if (await fse.pathExists(join(assignmentPath, artifactPaths.brainstorm.design))) {
-    artifacts.push(`${name}/${artifactPaths.brainstorm.design}`)
+  return paths
+}
+
+function findGuideStep(workflow, phase) {
+  const phaseDef = workflow?.phases?.[phase]
+  if (!phaseDef || !Array.isArray(phaseDef.steps)) return null
+  return phaseDef.steps.find((s) => s && s.kind === 'guide') || null
+}
+
+async function collectBrainstormArtifacts(assignmentPath, name, workflow) {
+  const guide = findGuideStep(workflow, 'brainstorm')
+  const produces = producePathStrings(guide?.produces)
+  const artifacts = []
+  for (const rel of produces) {
+    if (await fse.pathExists(join(assignmentPath, rel))) {
+      artifacts.push(`${name}/${rel}`)
+    }
   }
   return artifacts
+}
+
+function findArtifactByBasename(workflow, phase, basename) {
+  const guide = findGuideStep(workflow, phase)
+  const produces = producePathStrings(guide?.produces)
+  return produces.find((p) => p.endsWith(`/${basename}`) || p === basename) || null
 }
 
 /**
@@ -116,6 +140,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   }
 
   let assignmentPath, name, feedbackPhase
+  let specdevPath
 
   if (phase === 'discussion') {
     const discussionSelector = flags.discussion || process.env.SPECDEV_DISCUSSION
@@ -126,7 +151,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
     }
     flags = { ...flags, discussion: discussionSelector }
     const targetDir = resolveTargetDir(flags)
-    const specdevPath = join(targetDir, '.specdev')
+    specdevPath = join(targetDir, '.specdev')
     const resolved = await resolveDiscussionSelector(specdevPath, flags.discussion)
     if (!resolved || resolved.error) {
       const msg = resolved?.error === 'malformed'
@@ -143,7 +168,11 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
     assignmentPath = await resolveAssignmentPath(flags)
     name = assignmentName(assignmentPath)
     feedbackPhase = phase
+    specdevPath = join(assignmentPath, '..', '..')
   }
+
+  const workflowInfo = await loadWorkflowDefinition(specdevPath)
+  const workflow = workflowInfo.workflow
 
   const displayPhase = phase === 'discussion' ? 'discussion (brainstorm)' : phase
 
@@ -170,7 +199,7 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
   blankLine()
 
   if (phase === 'brainstorm' || phase === 'discussion') {
-    const artifacts = await collectBrainstormArtifacts(assignmentPath, name)
+    const artifacts = await collectBrainstormArtifacts(assignmentPath, name, workflow)
     printPhaseHeader({
       name, phase,
       scope: 'Design completeness and feasibility',
@@ -185,14 +214,16 @@ export async function reviewCommand(positionalArgs = [], flags = {}) {
       ],
     })
   } else {
+    const designPath = findArtifactByBasename(workflow, 'brainstorm', 'design.md')
+    const planPath = findArtifactByBasename(workflow, 'breakdown', 'plan.md')
+    const upstreamArtifacts = []
+    if (designPath) upstreamArtifacts.push(`${name}/${designPath} (what was requested)`)
+    if (planPath) upstreamArtifacts.push(`${name}/${planPath} (what was planned)`)
+    upstreamArtifacts.push('Changed code files (what was built)')
     printPhaseHeader({
       name, phase,
       scope: 'Spec compliance + code quality',
-      artifacts: [
-        `${name}/brainstorm/design.md (what was requested)`,
-        `${name}/breakdown/plan.md (what was planned)`,
-        'Changed code files (what was built)',
-      ],
+      artifacts: upstreamArtifacts,
       checks: [
         '  1. Spec compliance: does implementation match the design?',
         '  2. Code quality: architecture, testing, style',
