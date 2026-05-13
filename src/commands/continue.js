@@ -26,10 +26,9 @@ export async function continueCommand(flags = {}) {
   await requireSpecdevDirectory(specdevPath)
 
   const bigPicture = await readBigPictureStatus(specdevPath)
-  if (!bigPicture.filled) return emitBlocked(buildProjectContextMissingPayload(), { json, asStatus, statusText })
-
   const selection = await resolveAssignment(specdevPath, flags)
   if (!selection.selected) {
+    if (!bigPicture.filled) return emitBlocked(buildProjectContextMissingPayload(), { json, asStatus, statusText })
     return emitBlocked(selection.payload || buildNoAssignmentPayload(), { json, asStatus, statusText })
   }
   const selected = selection.selected
@@ -56,6 +55,16 @@ export async function continueCommand(flags = {}) {
   }
 
   const workflowStatus = await collectWorkflowStatus(selected.path, workflowInfo)
+  if (!bigPicture.filled) {
+    detected.blockers = [
+      {
+        code: 'project_context_missing',
+        detail: 'project_notes/big_picture.md is missing or still template content',
+        recommended_fix: 'Run specdev start',
+      },
+      ...detected.blockers,
+    ]
+  }
   const payload = buildContinuePayload(
     detected,
     selected,

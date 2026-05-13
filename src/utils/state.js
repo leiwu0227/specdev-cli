@@ -133,6 +133,29 @@ async function allPathsExist(assignmentPath, relPaths) {
   return true
 }
 
+/**
+ * Walk the given steps' `requires:` declarations and append a blocker entry
+ * for any non-existent path. This is how non-canonical requires (added to the
+ * manifest by users or migrations) surface in `specdev next/status` blockers.
+ */
+async function appendMissingRequiresBlockers(assignmentPath, steps, blockers) {
+  const seen = new Set(blockers.filter((b) => b.code === 'required_artifact_missing').map((b) => b.detail))
+  for (const step of steps) {
+    if (!step) continue
+    for (const rel of requirePathStrings(step.requires)) {
+      if (await fse.pathExists(join(assignmentPath, rel))) continue
+      const detail = `Required artifact missing: ${rel}`
+      if (seen.has(detail)) continue
+      seen.add(detail)
+      blockers.push({
+        code: 'required_artifact_missing',
+        detail,
+        recommended_fix: `Produce ${rel} before the ${step.kind === 'gate' ? 'gate' : 'checkpoint'} can advance`,
+      })
+    }
+  }
+}
+
 export async function loadStateForAssignment(specdevPath, assignmentSummary, assignmentPath) {
   const { loadWorkflowDefinition } = await import('./workflow-runtime.js')
   const workflowInfo = await loadWorkflowDefinition(specdevPath)
@@ -259,6 +282,7 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath, w
         const gateField = gateStep?.gate || null
         const gateSatisfied = gateField ? Boolean(statusJson[gateField]) : false
         if (!gateSatisfied) {
+          await appendMissingRequiresBlockers(assignmentPath, [step, gateStep], blockers)
           return finalizeDetected({
             phase,
             stepId: step.id,
@@ -281,6 +305,7 @@ export async function detectAssignmentState(assignmentSummary, assignmentPath, w
         const gateField = step.gate
         const gateSatisfied = gateField ? Boolean(statusJson[gateField]) : false
         if (!gateSatisfied) {
+          await appendMissingRequiresBlockers(assignmentPath, [step], blockers)
           // Phase has no command step (e.g., breakdown without checkpoint)
           // but a gate that's unsatisfied — treat as checkpoint_ready under
           // this phase. In current manifest, breakdown has no gate, so this

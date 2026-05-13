@@ -57,6 +57,8 @@ Each agent only writes to its own file and reads the other's.
 
 The runtime is the single source of truth for what happens after an approved review. Honour the `continuation` block emitted by the CLI; do not hardcode reviewer carry, phase transitions, or "stop and ask" behaviour in this skill. Sticky values such as the carried reviewer are persisted by the runtime in `.specdev/.session-state.json`. If a reviewer returns `needs-changes`, run `specdev check-review`, address findings, write the changelog, and rerun reviewloop within max rounds.
 
+When the runtime does not print a `continuation` block (e.g., manual review chosen, or reviewer needs-changes), consult `specdev next --json` to discover the canonical next action rather than guessing.
+
 ## Hard Rules
 
 1. **Never skip check-review** — always read findings before the next round

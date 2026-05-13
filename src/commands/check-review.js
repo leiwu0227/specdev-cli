@@ -110,8 +110,9 @@ export async function checkReviewCommand(positionalArgs = [], flags = {}) {
     if (json) {
       writeSync(1, `${JSON.stringify(payload, null, 2)}\n`)
     } else {
-      console.error('No review feedback found')
-      console.log('   Run specdev review in a separate session first')
+      console.error(`No review feedback found for phase ${phase}`)
+      console.log(`   Expected file: review/${feedbackFilename}`)
+      console.log(`   Run specdev review ${phase} in a separate session first`)
     }
     process.exitCode = 1
     return
