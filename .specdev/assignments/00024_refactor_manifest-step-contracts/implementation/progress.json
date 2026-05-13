@@ -1,0 +1,139 @@
+{
+  "plan_file": ".specdev/assignments/00024_refactor_manifest-step-contracts/breakdown/plan.md",
+  "total_tasks": 19,
+  "tasks": [
+    {
+      "number": 1,
+      "status": "completed",
+      "started_at": "2026-05-12T23:13:20Z",
+      "completed_at": "2026-05-12T23:18:20Z",
+      "summary": "Bumped workflow_contract_version to 2 in both manifests + DEFAULT_WORKFLOW; added interaction/requires/on_satisfied blocks; extended validator; bumped releaseDate. Local node bin/specdev.js next validates v2 manifest and emits status=ok. Global specdev (npm-installed) still on v1 — needs npm link or reinstall before reviewloop steps work."
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "started_at": "2026-05-12T23:21:25Z",
+      "completed_at": "2026-05-12T23:23:32Z",
+      "summary": "Added renderStepOutput + findTopLevelInteraction in workflow-runtime.js; DetectedState JSDoc typedef in state.js. Smoke verified substitution + reviewers expansion + no runtime regression."
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:29:52Z",
+      "summary": "Migrated detectAssignmentState to 3-arg manifest-driven walk; added loadStateForAssignment helper. Commit 2ded0a8."
+    },
+    {
+      "number": 4,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:29:53Z",
+      "summary": "Migrated all 6 callers (continue, context x2, check-review, working-memory x2, workflow-runtime) to 3-arg form via loadStateForAssignment or pass-through. Commit 3987af7."
+    },
+    {
+      "number": 5,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:29:53Z",
+      "summary": "Migrated string-state consumers (hookOutcomesForState/interactionForDetectedState/actionForDetectedState/buildTrace renderers + continue.js/context.js/check-review.js phase resolution) to structured fields. Commit 0f21045."
+    },
+    {
+      "number": 6,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:39:28Z",
+      "summary": "checkpoint.js manifest-driven; snapshot test text=json. e0a810a"
+    },
+    {
+      "number": 7,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:39:28Z",
+      "summary": "Unified approvePhase(path,phase,workflowInfo). 14fc7f4"
+    },
+    {
+      "number": 8,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:39:28Z",
+      "summary": "review.js artifact list from manifest. 63d8ee7"
+    },
+    {
+      "number": 9,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:39:28Z",
+      "summary": "collectWorkflowStatus + readGateStatus manifest-driven. e43174c"
+    },
+    {
+      "number": 10,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:57:33Z",
+      "summary": "Sticky session-state protocol via .specdev/.session-state.json; reviewloop writes, approve reads+clears on terminal, focus unlinks on assignment switch. Scaffold test file (not run). 3c9a994"
+    },
+    {
+      "number": 11,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:57:33Z",
+      "summary": "on_satisfied continuation blocks emitted by approve.js and reviewloop.js with sticky substitution. cad65e2"
+    },
+    {
+      "number": 12,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-12T23:57:33Z",
+      "summary": "Swept hard-coded artifact-path literals in reviewloop.js, implement.js, revise.js, state.js, workflow-runtime.js; migrate-legacy-assignments.js allowlisted. f8d7912"
+    },
+    {
+      "number": 13,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-13T00:05:01Z",
+      "summary": "workflow-contract.js reduced to minimal CLI-validation surface; artifactPaths/gateFields removed. 4e724cd"
+    },
+    {
+      "number": 14,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-13T00:05:01Z",
+      "summary": "Core SKILL prose collapsed to generic interaction/continuation rendering rule. 4d582a4"
+    },
+    {
+      "number": 15,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-13T00:05:01Z",
+      "summary": "init.js specdev-reviewloop template generalized; .codex and .claude mirrors refreshed. f2230e1"
+    },
+    {
+      "number": 16,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-13T00:14:24Z",
+      "summary": "Drift test expanded with 4 assertion classes (manifest+SKILL+templates+repo-wide sweep). 1d5ee74"
+    },
+    {
+      "number": 17,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-13T00:14:24Z",
+      "summary": "Session-state protocol test: 3 scenarios (autocontinue write+terminal clear, skip-review interrupt-true, cross-assignment stale ignored). ff2fef0"
+    },
+    {
+      "number": 18,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-13T00:14:24Z",
+      "summary": "Manifest-as-truth test: 4 mutation scenarios (requires/gate-rename/produces/check-review). 9cef7d2"
+    },
+    {
+      "number": 19,
+      "status": "completed",
+      "started_at": null,
+      "completed_at": "2026-05-13T00:14:25Z",
+      "summary": "specdev update v1->v2 migration via migrateWorkflowManifest; preserves hand-edited blocks. 208d1ed"
+    }
+  ]
+}

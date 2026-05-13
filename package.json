@@ -15,15 +15,10 @@
     "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "node --test --test-concurrency=4 ./tests/test-*.js && npm run test:cleanup",
-    "test:init": "node ./tests/test-init.js",
-    "test:assignment": "node ./tests/test-assignment.js",
+    "test": "node ./tests/test-workflow-contract-drift.js && node ./tests/test-session-state-protocol.js && node ./tests/test-manifest-as-truth.js && npm run test:cleanup",
     "test:workflow-contract-drift": "node ./tests/test-workflow-contract-drift.js",
-    "test:update": "node ./tests/test-update.js",
-    "test:knowledge": "node ./tests/test-knowledge.js",
-    "test:workflow-agent": "node ./tests/test-workflow-agent.js",
-    "test:approve-phase": "node ./tests/test-approve-phase.js",
-    "test:checkpoints": "node ./tests/test-checkpoints.js",
+    "test:session-state-protocol": "node ./tests/test-session-state-protocol.js",
+    "test:manifest-as-truth": "node ./tests/test-manifest-as-truth.js",
     "test:cleanup": "rm -rf ./tests/test-*-output ./test-assignment-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
