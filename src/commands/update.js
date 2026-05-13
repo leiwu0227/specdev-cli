@@ -1,6 +1,6 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript, backfillAdapters } from '../utils/update.js'
+import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript, backfillAdapters, migrateWorkflowManifest } from '../utils/update.js'
 import { SKILL_FILES, ALL_ADAPTERS, COMMAND_SKILL_DIRS, adapterContent } from './init.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
@@ -69,6 +69,25 @@ export async function updateCommand(flags = {}) {
     }
 
     const updatedPaths = await updateSpecdevSystem(templatePath, specdevPath)
+
+    // Migrate workflow.yaml in-place (v1 → v2). Idempotent for v2 manifests.
+    const manifestMigration = migrateWorkflowManifest(
+      join(templatePath, 'workflow.yaml'),
+      join(specdevPath, 'workflow.yaml'),
+      { force: !!flags.force }
+    )
+    if (manifestMigration.migrated) {
+      const label = manifestMigration.from === null
+        ? 'workflow.yaml (created from template)'
+        : `workflow.yaml (migrated v${manifestMigration.from} → v2)`
+      updatedPaths.push(label)
+    }
+    if (!flags.json) {
+      for (const w of manifestMigration.warnings) {
+        console.warn(`⚠️  ${w}`)
+      }
+    }
+
     const pkg = await import('../../package.json', { with: { type: 'json' } })
 
     // Update skill files if installed

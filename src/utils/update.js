@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import fse from 'fs-extra'
+import YAML from 'yaml'
 
 const COMMAND_SKILL_MARKERS = [
   join('specdev-assignment', 'SKILL.md'),
@@ -53,11 +54,12 @@ export async function updateSpecdevSystem(source, destination) {
       } catch { /* ignore parse errors */ }
     }
 
-    // System files and directories to update
+    // System files and directories to update. NOTE: `workflow.yaml` is
+    // intentionally excluded — it is migrated in-place by `migrateWorkflowManifest`
+    // so user customisations and contract-version awareness are preserved.
     const systemPaths = [
       '_main.md',
       '_index.md',
-      'workflow.yaml',
       '_guides',
       '_templates',
       'agents',
@@ -116,6 +118,154 @@ export async function updateSpecdevSystem(source, destination) {
   } catch (error) {
     throw new Error(`Update failed: ${error.message}`)
   }
+}
+
+/**
+ * Migrate a user `workflow.yaml` from contract version 1 (or unversioned) to
+ * version 2. Idempotent: a manifest already at version 2 is a no-op.
+ *
+ * Strategy:
+ *  - Parse the user manifest and the template manifest.
+ *  - For each phase + step that exists in BOTH manifests, fill in missing
+ *    canonical fields (`interaction:`, `on_satisfied:`, `requires:`, `produces:`)
+ *    from the template. Existing user fields are preserved verbatim — if the
+ *    user has hand-edited a field, we emit a warning and skip overwriting it.
+ *  - Ensure the top-level `interactions:` block exists (copy from template if
+ *    missing).
+ *  - Bump `workflow_contract_version` to 2 only after all injections succeed.
+ *
+ * @param {string} templateManifestPath - absolute path to template workflow.yaml
+ * @param {string} userManifestPath - absolute path to installed workflow.yaml
+ * @param {{ force?: boolean }} [opts]
+ * @returns {{ migrated: boolean, from: number|null, warnings: string[] }}
+ */
+export function migrateWorkflowManifest(templateManifestPath, userManifestPath, opts = {}) {
+  if (!existsSync(userManifestPath)) {
+    // No installed manifest → copy the template verbatim.
+    if (existsSync(templateManifestPath)) {
+      const dir = dirname(userManifestPath)
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+      writeFileSync(userManifestPath, readFileSync(templateManifestPath, 'utf-8'))
+      return { migrated: true, from: null, warnings: [] }
+    }
+    return { migrated: false, from: null, warnings: ['template manifest missing'] }
+  }
+
+  const userText = readFileSync(userManifestPath, 'utf-8')
+  const userManifest = YAML.parse(userText) || {}
+  const fromVersion = typeof userManifest.workflow_contract_version === 'number'
+    ? userManifest.workflow_contract_version
+    : null
+
+  if (fromVersion === 2) {
+    // Already at v2 — leave the user file untouched (idempotent).
+    return { migrated: false, from: 2, warnings: [] }
+  }
+
+  const templateText = existsSync(templateManifestPath)
+    ? readFileSync(templateManifestPath, 'utf-8')
+    : null
+  if (!templateText) {
+    return { migrated: false, from: fromVersion, warnings: ['template manifest missing'] }
+  }
+  const templateManifest = YAML.parse(templateText) || {}
+
+  const warnings = []
+  const force = !!opts.force
+
+  // Walk phases/steps and inject missing canonical fields.
+  for (const [phaseName, templatePhase] of Object.entries(templateManifest.phases || {})) {
+    if (!userManifest.phases) userManifest.phases = {}
+    if (!userManifest.phases[phaseName]) {
+      userManifest.phases[phaseName] = JSON.parse(JSON.stringify(templatePhase))
+      continue
+    }
+    const userPhase = userManifest.phases[phaseName]
+    if (!Array.isArray(userPhase.steps)) userPhase.steps = []
+
+    for (const templateStep of templatePhase.steps || []) {
+      const userStep = userPhase.steps.find((s) => s && s.id === templateStep.id)
+      if (!userStep) {
+        userPhase.steps.push(JSON.parse(JSON.stringify(templateStep)))
+        continue
+      }
+
+      // Inject interaction: on command/checkpoint steps if missing.
+      if (templateStep.kind === 'command' && templateStep.interaction) {
+        if (!userStep.interaction) {
+          userStep.interaction = JSON.parse(JSON.stringify(templateStep.interaction))
+        } else if (!force) {
+          warnings.push(
+            `phases.${phaseName}.${templateStep.id}: keeping user-edited interaction: block (run with --force to overwrite)`
+          )
+        } else {
+          userStep.interaction = JSON.parse(JSON.stringify(templateStep.interaction))
+        }
+      }
+
+      // Inject on_satisfied: on gate steps if missing.
+      if (templateStep.kind === 'gate' && templateStep.on_satisfied) {
+        if (!userStep.on_satisfied) {
+          userStep.on_satisfied = JSON.parse(JSON.stringify(templateStep.on_satisfied))
+        } else if (!force) {
+          warnings.push(
+            `phases.${phaseName}.${templateStep.id}: keeping user-edited on_satisfied: block (run with --force to overwrite)`
+          )
+        } else {
+          userStep.on_satisfied = JSON.parse(JSON.stringify(templateStep.on_satisfied))
+        }
+      }
+
+      // Ensure requires: / produces: arrays exist (mirror template only when
+      // the user hasn't already declared them).
+      if (Array.isArray(templateStep.requires) && !Array.isArray(userStep.requires)) {
+        userStep.requires = [...templateStep.requires]
+      }
+      if (Array.isArray(templateStep.produces) && !Array.isArray(userStep.produces)) {
+        userStep.produces = [...templateStep.produces]
+      }
+    }
+  }
+
+  // Top-level interactions: copy from template if missing.
+  if (!Array.isArray(userManifest.interactions) && Array.isArray(templateManifest.interactions)) {
+    userManifest.interactions = JSON.parse(JSON.stringify(templateManifest.interactions))
+  } else if (Array.isArray(userManifest.interactions) && Array.isArray(templateManifest.interactions)) {
+    // Append any template interaction entry whose id is not already present.
+    const haveIds = new Set(userManifest.interactions.map((e) => e && e.id))
+    for (const entry of templateManifest.interactions) {
+      if (entry && !haveIds.has(entry.id)) {
+        userManifest.interactions.push(JSON.parse(JSON.stringify(entry)))
+      }
+    }
+  }
+
+  // Top-level hooks: mirror template entries that are missing.
+  if (Array.isArray(templateManifest.hooks)) {
+    if (!Array.isArray(userManifest.hooks)) userManifest.hooks = []
+    const haveHookIds = new Set(userManifest.hooks.map((h) => h && h.id))
+    for (const hook of templateManifest.hooks) {
+      if (hook && !haveHookIds.has(hook.id)) {
+        userManifest.hooks.push(JSON.parse(JSON.stringify(hook)))
+      }
+    }
+  }
+
+  // Bump version last, after all injections succeeded.
+  userManifest.workflow_contract_version = 2
+
+  // Preserve top-level key order similar to the template: version first.
+  const orderedKeys = ['workflow_contract_version', 'phases', 'interactions', 'hooks']
+  const ordered = {}
+  for (const k of orderedKeys) {
+    if (k in userManifest) ordered[k] = userManifest[k]
+  }
+  for (const k of Object.keys(userManifest)) {
+    if (!(k in ordered)) ordered[k] = userManifest[k]
+  }
+
+  writeFileSync(userManifestPath, YAML.stringify(ordered), 'utf-8')
+  return { migrated: true, from: fromVersion, warnings }
 }
 
 /**
