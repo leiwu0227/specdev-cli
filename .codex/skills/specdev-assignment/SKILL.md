@@ -5,11 +5,14 @@ description: Create a new assignment and start the brainstorm phase
 
 Run `specdev assignment "<user's description>"` to reserve an assignment ID.
 
-Read the output to get the reserved ID, then:
+For agents, prefer command-created assignment setup:
+
 1. Pick a type (feature | bugfix | refactor | familiarization) and a short hyphenated slug based on the description
-2. Create the assignment folder: `.specdev/assignments/<ID>_<type>_<slug>/`
-3. Create brainstorm/ and context/ subdirectories inside it
-4. Read `.specdev/_guides/workflow.md` to determine which brainstorm skill to use
-5. Follow the chosen skill exactly
+2. Run `specdev assignment "<user's description>" --type=<type> --slug=<slug>`
+3. Read the JSON or text output to confirm the assignment was created and focused
+4. Run `specdev next --json` to get the canonical next action
+5. Follow the returned guide or command exactly
+
+Only use the reserve-only form when a human explicitly wants to create folders manually.
 
 Announce every subtask with "Specdev: <action>".
