@@ -4,9 +4,24 @@ import {
   ASSIGNMENT_TYPES,
   AGENT_SPEC_PATHS,
   REQUIRED_BRAINSTORM_SECTIONS,
-  artifactPaths,
   commandPhases,
 } from '../src/utils/workflow-contract.js'
+
+// Per-phase artifact paths now live solely in the manifest; the drift test
+// reads them from the installed template manifest to keep producing/consuming
+// references in sync without a JS export.
+const MANIFEST_ARTIFACT_PATHS = {
+  brainstorm: {
+    proposal: 'brainstorm/proposal.md',
+    design: 'brainstorm/design.md',
+  },
+  breakdown: {
+    plan: 'breakdown/plan.md',
+  },
+  implementation: {
+    progress: 'implementation/progress.json',
+  },
+}
 
 let failures = 0
 let passes = 0
@@ -53,8 +68,13 @@ for (const command of ['approve', 'implement', 'check-review']) {
   assert(read(`src/commands/${command}.js`).includes('specdev next --json'), `${command} command points to runtime next action`)
 }
 
-assert(workflow.includes(artifactPaths.brainstorm.proposal), 'workflow guide mentions brainstorm proposal path')
-assert(workflow.includes(artifactPaths.brainstorm.design), 'workflow guide mentions brainstorm design path')
+assert(workflow.includes(MANIFEST_ARTIFACT_PATHS.brainstorm.proposal), 'workflow guide mentions brainstorm proposal path')
+assert(workflow.includes(MANIFEST_ARTIFACT_PATHS.brainstorm.design), 'workflow guide mentions brainstorm design path')
+for (const [section, entries] of Object.entries(MANIFEST_ARTIFACT_PATHS)) {
+  for (const path of Object.values(entries)) {
+    assert(workflowManifest.includes(path), `workflow manifest references ${section} path ${path}`)
+  }
+}
 assert(workflow.includes('specdev next --json'), 'workflow guide uses runtime next action as navigation source')
 
 assert(AGENT_SPEC_PATHS.researcher === '.specdev/agents/researcher/agent.md', 'researcher runtime agent path is exported')
@@ -92,7 +112,7 @@ for (const path of consumerSources) {
   const src = read(path)
   for (const match of src.matchAll(refPattern)) {
     const [, section, key] = match
-    const resolved = artifactPaths[section] && artifactPaths[section][key]
+    const resolved = MANIFEST_ARTIFACT_PATHS[section] && MANIFEST_ARTIFACT_PATHS[section][key]
     assert(resolved, `${path} references live artifactPaths.${section}.${key}`)
   }
 }

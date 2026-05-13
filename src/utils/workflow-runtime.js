@@ -4,7 +4,17 @@ import YAML from 'yaml'
 import { resolveCurrentAssignment } from './current.js'
 import { scanSingleAssignment } from './scan.js'
 import { detectAssignmentState } from './state.js'
-import { artifactPaths, gateFields, phases as workflowPhases } from './workflow-contract.js'
+// Canonical phase order and the literal artifact paths / gate field names used
+// by `DEFAULT_WORKFLOW` and the validator are the contract enforced HERE; the
+// installed `workflow.yaml` is the single source of truth at runtime and is
+// asserted to match these literals by `tests/test-workflow-contract-drift.js`.
+const CANONICAL_PHASES = ['brainstorm', 'breakdown', 'implementation']
+const BRAINSTORM_GATE_FIELD = 'brainstorm_approved'
+const IMPLEMENTATION_GATE_FIELD = 'implementation_approved'
+const BRAINSTORM_PROPOSAL_PATH = 'brainstorm/proposal.md'
+const BRAINSTORM_DESIGN_PATH = 'brainstorm/design.md'
+const BREAKDOWN_PLAN_PATH = 'breakdown/plan.md'
+const IMPLEMENTATION_PROGRESS_PATH = 'implementation/progress.json'
 
 const BRAINSTORM_CHECKPOINT_INTERACTION = {
   id: 'brainstorm_review_decision',
@@ -127,8 +137,8 @@ export const DEFAULT_WORKFLOW = {
           kind: 'guide',
           guide: '.specdev/skills/core/brainstorming/SKILL.md',
           produces: [
-            artifactPaths.brainstorm.proposal,
-            artifactPaths.brainstorm.design,
+            BRAINSTORM_PROPOSAL_PATH,
+            BRAINSTORM_DESIGN_PATH,
           ],
         },
         {
@@ -136,18 +146,18 @@ export const DEFAULT_WORKFLOW = {
           kind: 'command',
           run: 'specdev checkpoint brainstorm',
           requires: [
-            artifactPaths.brainstorm.proposal,
-            artifactPaths.brainstorm.design,
+            BRAINSTORM_PROPOSAL_PATH,
+            BRAINSTORM_DESIGN_PATH,
           ],
           interaction: BRAINSTORM_CHECKPOINT_INTERACTION,
         },
         {
           id: 'approval',
           kind: 'gate',
-          gate: 'brainstorm_approved',
+          gate: BRAINSTORM_GATE_FIELD,
           requires: [
-            artifactPaths.brainstorm.proposal,
-            artifactPaths.brainstorm.design,
+            BRAINSTORM_PROPOSAL_PATH,
+            BRAINSTORM_DESIGN_PATH,
           ],
           on_satisfied: GATE_ON_SATISFIED,
         },
@@ -159,7 +169,7 @@ export const DEFAULT_WORKFLOW = {
           id: 'create_plan',
           kind: 'guide',
           guide: '.specdev/skills/core/breakdown/SKILL.md',
-          produces: [artifactPaths.breakdown.plan],
+          produces: [BREAKDOWN_PLAN_PATH],
         },
       ],
     },
@@ -169,20 +179,20 @@ export const DEFAULT_WORKFLOW = {
           id: 'execute_plan',
           kind: 'guide',
           guide: '.specdev/skills/core/implementing/SKILL.md',
-          produces: [artifactPaths.implementation.progress],
+          produces: [IMPLEMENTATION_PROGRESS_PATH],
         },
         {
           id: 'checkpoint',
           kind: 'command',
           run: 'specdev checkpoint implementation',
-          requires: [artifactPaths.implementation.progress],
+          requires: [IMPLEMENTATION_PROGRESS_PATH],
           interaction: IMPLEMENTATION_CHECKPOINT_INTERACTION,
         },
         {
           id: 'approval',
           kind: 'gate',
-          gate: 'implementation_approved',
-          requires: [artifactPaths.implementation.progress],
+          gate: IMPLEMENTATION_GATE_FIELD,
+          requires: [IMPLEMENTATION_PROGRESS_PATH],
           on_satisfied: GATE_ON_SATISFIED,
         },
       ],
@@ -327,7 +337,7 @@ function validateWorkflowPhases(workflow, errors) {
     return
   }
 
-  for (const phase of workflowPhases.canonical) {
+  for (const phase of CANONICAL_PHASES) {
     const phaseDef = workflow.phases[phase]
     if (!phaseDef || typeof phaseDef !== 'object' || Array.isArray(phaseDef)) {
       errors.push(`phase ${phase} must be a mapping/object`)
@@ -344,11 +354,11 @@ function validateWorkflowPhases(workflow, errors) {
 
   requireWorkflowStep(workflow, 'brainstorm', 'create_artifacts', 'guide', errors)
   requireWorkflowStep(workflow, 'brainstorm', 'checkpoint', 'command', errors)
-  requireWorkflowStep(workflow, 'brainstorm', 'approval', 'gate', errors, gateFields.brainstorm)
+  requireWorkflowStep(workflow, 'brainstorm', 'approval', 'gate', errors, BRAINSTORM_GATE_FIELD)
   requireWorkflowStep(workflow, 'breakdown', 'create_plan', 'guide', errors)
   requireWorkflowStep(workflow, 'implementation', 'execute_plan', 'guide', errors)
   requireWorkflowStep(workflow, 'implementation', 'checkpoint', 'command', errors)
-  requireWorkflowStep(workflow, 'implementation', 'approval', 'gate', errors, gateFields.implementation)
+  requireWorkflowStep(workflow, 'implementation', 'approval', 'gate', errors, IMPLEMENTATION_GATE_FIELD)
 }
 
 function validateWorkflowStep(phase, step, errors) {
