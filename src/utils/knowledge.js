@@ -18,7 +18,7 @@ export function normalizeFtsQuery(query) {
   return String(query || '')
     .match(/\S+/g)
     ?.map(term => `"${term.replace(/"/g, '""')}"`)
-    .join(' ') || ''
+    .join(' OR ') || ''
 }
 
 export async function buildKnowledgeIndex(specdevPath) {
