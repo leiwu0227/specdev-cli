@@ -1,0 +1,8 @@
+{
+  "id": "workspace-dispatcher",
+  "version": "1.0.0",
+  "kind": "dispatcher",
+  "title": "SpecDev workspace dispatcher",
+  "description": "Route a user request to the appropriate SpecDev guided workflow.",
+  "activationHints": ["route specdev work"]
+}

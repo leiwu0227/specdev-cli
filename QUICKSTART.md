@@ -22,25 +22,31 @@ This sets up everything you need:
 - `.claude/skills/` and `.codex/skills/` — command skills for Claude Code and Codex
 - Platform adapters (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`) so your agent knows how to use SpecDev
 
-## Step 3: Tell SpecDev about your project
+## Step 3: Enter the guided workflow
 
 Open your coding agent (Claude Code or Codex) and run:
 
 ```bash
-specdev start
+specdev next --json
 ```
 
-The agent will ask you a few questions about your project — what it does, its tech stack, and key conventions. This context is stored in `.specdev/project_notes/big_picture.md` and is used by every subsequent command to give relevant guidance.
+On a new project this returns an idle state. Start orientation with:
+
+```bash
+specdev do "project orientation"
+```
+
+Follow each prompt from `specdev next --json`. Submit node evidence with `specdev step --json=<output>` and explicit choices with `specdev decide <value>`. Project context is stored in `.specdev/project_notes/big_picture.md`.
 
 ## Step 4: Start your first feature
 
 Still inside your coding agent, create an assignment:
 
 ```bash
-specdev assignment "Short description of what you're building"
+specdev do "start an assignment"
 ```
 
-This reserves the next assignment ID and kicks off the 3-phase workflow described below. The canonical entry point for the workflow is `.specdev/_main.md`; this guide is a short orientation.
+The assignment graph asks for the semantic command that creates and focuses the assignment. Run the command it provides, then return to `specdev next --json`.
 
 ## The 3-Phase Workflow
 
@@ -49,7 +55,7 @@ Every assignment moves through these phases in order. The CLI enforces gates bet
 ### Phase 1: Brainstorm
 
 ```bash
-specdev assignment "<description>"
+specdev do "start an assignment"
 ```
 
 Interactive Q&A with you to nail down scope and design. The agent asks questions guided by category (problem/goal, scope boundaries, success criteria, etc.), explores 2-3 approaches, then presents design sections scaled to the assignment type.
@@ -111,8 +117,9 @@ specdev knowledge search "<keywords>"
 At any point, run:
 
 ```bash
-specdev continue        # human-readable next action
-specdev next --json     # canonical machine-readable next action
+specdev next --json     # canonical graph state and next action
+specdev status --json   # focused state plus run history
+specdev continue        # human-readable diagnosis
 ```
 
 These tell you exactly where you are, what's blocking you, and what to do next. Works from the terminal or inside an agent session.
@@ -128,7 +135,12 @@ These tell you exactly where you are, what's blocking you, and what to do next. 
 | `specdev start` | Either | Fill in or check project context |
 | `specdev continue` | Either | Show current state, blockers, and next action |
 | `specdev next --json` | Either | Canonical next workflow action (machine-readable) |
-| `specdev assignment "<desc>"` | Coding agent | Reserve assignment ID and start brainstorming |
+| `specdev do "<intent>"` | Either | Select or resume a guided workflow |
+| `specdev step --json=<output>` | Coding agent | Submit current-node evidence |
+| `specdev decide <value>` | Either | Resolve the current decision gate |
+| `specdev action <id>` | Coding agent | Record a side action without advancing |
+| `specdev cancel [reason]` | Either | Abandon the focused guided run |
+| `specdev assignment "<desc>"` | Coding agent | Create the assignment requested by the graph |
 | `specdev discussion "<desc>"` | Coding agent | Start a parallel brainstorming discussion (no gate) |
 | `specdev focus <id>` | Either | Switch the active assignment |
 | `specdev checkpoint <phase>` | Either | Validate phase artifacts |
@@ -149,8 +161,9 @@ These tell you exactly where you are, what's blocking you, and what to do next. 
 
 ```
 Terminal:  specdev init                        # one-time setup
-Agent:     specdev start                       # describe your project
-Agent:     specdev assignment "<desc>"         # brainstorm → design.md
+Agent:     specdev do "project orientation"    # describe your project
+Agent:     specdev do "start an assignment"    # select assignment workflow
+           specdev assignment "<desc>" ...     # create as prompted by the graph
            specdev checkpoint brainstorm       # validate design (optional)
            specdev reviewloop brainstorm       # automated review (optional)
            specdev approve brainstorm          # gate → breakdown runs immediately

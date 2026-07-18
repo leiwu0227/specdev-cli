@@ -78,6 +78,12 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 
 | Command | Purpose | When to use |
 |---------|---------|-------------|
+| `specdev do "<intent>"` | Start or resume a registered guided workflow | Entering any top-level SpecDev workflow |
+| `specdev next --json` | Return the focused product-shaped workflow state | Before every guided action |
+| `specdev decide <value>` | Submit an explicit gate decision | When `next` reports `awaiting_decision` |
+| `specdev step --json=<output>` | Submit validated evidence and advance | After completing a non-gated node |
+| `specdev action <id>` | Record a side action without advancing | When the current node advertises actions |
+| `specdev cancel [reason]` | Abandon the focused guided workflow | Explicit recovery or cancellation |
 | `specdev assignment "<desc>"` | Reserve next assignment ID; sets `.current` pointer | Starting new work |
 | `specdev assignment "<desc>" --type=<type> --slug=<slug>` | Reserve ID with explicit type and folder slug | Automated/scripted assignment creation |
 | `specdev assignment "<desc>" --discussion=<id>` | Promote a discussion to a full assignment | After a `specdev discussion` exploration |
@@ -104,6 +110,9 @@ Project-specific capabilities installed in `skills/tools/`. Declared in breakdow
 | `specdev memory refresh` | Regenerate bounded working memory for agents | After completing assignments or adding knowledge |
 | `specdev migrate` | Guided layout migration for non-conforming `.specdev/` | When `.specdev/` structure doesn't match current layout |
 | `specdev migrate legacy-assignments [--assignment=<id>]` | Deterministic V3-to-V4 assignment file moves | When old root-level phase files exist in assignments |
+| `specdev distill project` | Scan captures for durable project knowledge | Inside knowledge-distillation |
+| `specdev distill workflow` | Scan captures for durable workflow feedback | Inside knowledge-distillation |
+| `specdev distill mark-processed <type> <names>` | Mark successfully distilled captures | After durable notes are written |
 
 ### Setup & Utility Commands
 

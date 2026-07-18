@@ -8,6 +8,7 @@ import {
   resolveTargetDir,
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
+import { decideGuidedNode, startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 
 const KNOWLEDGE_BRANCHES = ['codestyle', 'architecture', 'domain', 'workflow']
 
@@ -62,6 +63,13 @@ export async function distillProjectCommand(flags = {}) {
     ...generateCaptureDiffSuggestions(unprocessed),
   ]
 
+  startGuidedRun(targetDir, 'knowledge-distillation')
+  decideGuidedNode(targetDir, 'mode-choice', { choice: 'project' })
+  stepGuidedNode(targetDir, 'scan-project', {
+    assignments: unprocessed.map((assignment) => assignment.name),
+    suggestions,
+  })
+
   const knowledgePaths = {}
   for (const branch of KNOWLEDGE_BRANCHES) {
     knowledgePaths[branch] = `.specdev/knowledge/${branch}/`
@@ -73,6 +81,7 @@ export async function distillProjectCommand(flags = {}) {
     unprocessed: unprocessed.length,
     existing_knowledge: existingKnowledge,
     suggestions,
+    assignments: unprocessed.map((assignment) => assignment.name),
     knowledge_paths: knowledgePaths,
   }
 

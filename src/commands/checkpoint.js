@@ -8,6 +8,7 @@ import { blankLine } from '../utils/output.js'
 import { commandPhases, REQUIRED_BRAINSTORM_SECTIONS } from '../utils/workflow-contract.js'
 import { loadWorkflowDefinition, renderStepOutput, findTopLevelInteraction } from '../utils/workflow-runtime.js'
 import { listReviewers } from '../utils/reviewers.js'
+import { stepGuidedNode } from '../utils/engine-sync.js'
 
 const VALID_PHASES = commandPhases.checkpoint
 
@@ -138,6 +139,12 @@ async function checkpointBrainstorm(assignmentPath, name, flags = {}) {
     console.log('Generate the missing artifacts before requesting review.')
     process.exitCode = 1
     return
+  }
+
+  if (!flags.discussion) {
+    stepGuidedNode(join(specdevPath, '..'), 'brainstorm-checkpoint', { passed: true })
+  } else {
+    stepGuidedNode(join(specdevPath, '..'), 'checkpoint', { passed: true })
   }
 
   const reviewers = await listReviewers(specdevPath)
@@ -291,6 +298,7 @@ async function checkpointImplementation(assignmentPath, name, flags = {}) {
   }
 
   const reviewers = await listReviewers(specdevPath)
+  stepGuidedNode(join(specdevPath, '..'), 'implementation-checkpoint', { passed: true })
   const rendered = renderStepOutput(checkpointStep, {
     phase: 'implementation',
     discussion: null,

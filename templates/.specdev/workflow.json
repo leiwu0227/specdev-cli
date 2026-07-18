@@ -1,0 +1,7 @@
+{
+  "id": "specdev-workspace",
+  "version": "1.0.0",
+  "entryGraph": "workspace-dispatcher",
+  "title": "SpecDev workspace workflows",
+  "description": "Durable guided workflows for SpecDev projects."
+}

@@ -1,6 +1,6 @@
 # SpecDev CLI
 
-Spec-driven workflow guidance for coding agents. SpecDev installs a local `.specdev/` workflow, agent command skills, and a CLI that keeps assignments moving through brainstorm, breakdown, implementation, review, and optional phase-end knowledge capture.
+Spec-driven workflow guidance for coding agents. SpecDev installs durable RippleGraph workflows, agent command skills, and semantic CLI commands that validate artifacts and enforce approvals.
 
 ```mermaid
 graph LR
@@ -19,7 +19,16 @@ npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
 
-Command skills are installed to `.claude/skills/` and `.codex/skills/`. Platform adapters are also written for Claude Code, Codex, and Cursor. Use `specdev-start` to fill in your project context interactively, then `specdev-assignment` to begin your first feature. You can also run the CLI commands directly from a terminal or coding agent.
+Command skills are installed to `.claude/skills/` and `.codex/skills/`. Platform adapters are also written for Claude Code, Codex, and Cursor. Start each session with `specdev next --json`. When the workspace is idle, describe the job with `specdev do "<intent>"`.
+
+The normal operator loop is:
+
+```bash
+specdev do "start an assignment"       # Select or resume a guided workflow
+specdev next --json                    # Read the current prompt and allowed action
+specdev step --json='{"summary":"..."}' # Submit node evidence
+specdev decide <value>                 # Resolve an explicit choice gate
+```
 
 ## Commands
 
@@ -28,7 +37,7 @@ Command skills are installed to `.claude/skills/` and `.codex/skills/`. Platform
 ```bash
 specdev init                           # Initialize .specdev in current directory
 specdev update                         # Update core skills, preserve project files
-specdev migrate                         # Guided .specdev layout migration workflow
+specdev do "migrate the layout"        # Start guided .specdev layout migration
 specdev migrate legacy-assignments --dry-run
 specdev skills                         # List available skills
 specdev skills --json                  # Machine-readable skill inventory
@@ -46,7 +55,13 @@ specdev help                           # Show usage information
 ### Agent-directed commands (run inside a coding agent)
 
 ```bash
-specdev assignment [name]              # Create assignment, route agent to brainstorming skill
+specdev do "<intent>"                  # Start or resume one guided workflow
+specdev next --json                    # Read current workflow prompt and output schema
+specdev step --json=<output>           # Submit evidence for the current node
+specdev decide <value>                 # Resolve the current user decision gate
+specdev action <id> --json=<input>     # Record a non-advancing side action
+specdev cancel [reason]                # Abandon the focused guided run
+specdev assignment [name]              # Create the assignment selected by the graph
 specdev focus <id>                     # Set the active assignment
 specdev discussion [name]              # Start a parallel brainstorming discussion
 specdev checkpoint <phase>             # Validate phase artifacts (brainstorm | implementation)
@@ -63,8 +78,7 @@ specdev check-review                   # Read and address review feedback
 
 ```bash
 specdev start                          # Check/fill project context
-specdev continue [--json]              # Detect current state, blockers, and next action
-specdev next --json                    # Canonical next-action contract for agents
+specdev continue [--json]              # Human-readable diagnosis; graph-aware
 specdev status [--json]                # Show workflow state for humans or automation
 specdev review <phase>                 # Manual review in a separate session
 specdev context [--json]               # Dump project state, commands, knowledge, and skills
@@ -76,6 +90,9 @@ specdev context [--json]               # Dump project state, commands, knowledge
 .specdev/
 ├── _main.md                  # Workflow entry point (start here)
 ├── _index.md                 # Detailed lookup for guides, skills, commands
+├── workflow.json             # Workspace identity and dispatcher selection
+├── workflows/                # Dispatcher plus five executable graph packages
+├── .ripplegraph/             # Registry, focused run, checkpoints, and history
 ├── _guides/                  # Workflow and task guides
 ├── _templates/               # Templates and worked examples
 ├── skills/
@@ -90,7 +107,11 @@ specdev context [--json]               # Dump project state, commands, knowledge
 
 ## Workflow Architecture
 
-SpecDev guides a single coding agent through a 3-phase workflow. Each phase produces specific artifacts. The CLI enforces hard gates between phases so work cannot advance until artifacts are validated and the user approves. Agents use `specdev next --json` as the canonical source for the next action.
+SpecDev ships six graph packages: one workspace dispatcher and five executable workflows for project orientation, assignments, discussions, layout migration, and knowledge distillation. Graph packages under `.specdev/workflows/` own sequencing, choices, and resumable state. RippleGraph persists runtime state under `.specdev/.ripplegraph/`.
+
+Existing commands such as `assignment`, `checkpoint`, `approve`, `reviewloop`, `migrate`, and `distill` remain the authority for filesystem effects and domain validation. Their successful results synchronize the focused graph. An assignment that was already active before upgrade continues through the legacy compatibility runtime; newly started work uses RippleGraph. A retained `.specdev/workflow.yaml` is legacy-only and is not installed in new projects.
+
+The assignment workflow still contains the three implementation phases below.
 
 Breakdown runs automatically — the user only approves brainstorm and implementation. Optional review (manual or automated via reviewloop) can be run before either approval gate. Optional phase-end knowledge capture can suggest durable notes without blocking progress.
 

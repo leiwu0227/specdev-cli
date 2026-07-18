@@ -13,11 +13,13 @@ All work is organized into **assignments**. An assignment is a self-contained un
 ## First Steps
 
 1. Read `project_notes/big_picture.md` — understand the project
-2. Check `.specdev/.current` for the active assignment pointer.
-   - `.current` exists → keep it unless the user asks to switch; use `specdev focus <id>` only when needed.
-   - No active assignment → run `specdev assignment "<description>" --type=<type> --slug=<slug>` to create and focus one.
-   - For parallel exploration before committing to an assignment → run `specdev discussion "<description>"`
-3. Run `specdev next --json` for the canonical next workflow action. Follow the returned guide, command, blockers, choices, and hook outcomes.
+2. Run `specdev next --json` for the focused guided workflow.
+3. If the state is idle, enter the appropriate workflow with `specdev do "<intent>"`.
+4. Follow the returned instructions and submit decisions or evidence with the exact `next_action.command_line`.
+
+Assignments already active from a pre-RippleGraph installation continue through
+the compatibility runtime until completion. Do not manually edit
+`.specdev/.ripplegraph/` or attempt to reconstruct its state.
 
 **Reference:** `_index.md` is the detailed lookup for all guides, skills, commands, and project context. Consult it when you need to find a specific resource.
 
@@ -35,7 +37,7 @@ Every assignment follows the same 3 required phases in order:
 
 Optional phase-end knowledge capture may suggest durable notes when reusable knowledge was learned.
 
-Use `workflow.yaml` and `specdev next --json` as the source of truth for action selection. Read `_guides/workflow.md` when you need a human-readable reference for phases, artifacts, gates, and recovery paths.
+Use `specdev next --json` and the registered packages under `workflows/` as the source of truth for action selection. Read `_guides/workflow.md` only as a human-readable reference for phases, artifacts, gates, and recovery paths.
 
 ## Rules
 

@@ -4,6 +4,7 @@ import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-cont
 import { getNextDiscussionId } from '../utils/discussion.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { blankLine } from '../utils/output.js'
+import { startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 
 export async function discussCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -54,7 +55,20 @@ export async function discussCommand(positionalArgs = [], flags = {}) {
   const folderName = `${nextId}_${slug}`
   const discussionPath = join(specdevPath, 'discussions', folderName)
 
+  try {
+    startGuidedRun(targetDir, 'discussion-lifecycle', { strict: true })
+  } catch (error) {
+    console.error(`Cannot create discussion: ${error.message}`)
+    process.exitCode = 1
+    return
+  }
+
   await fse.ensureDir(join(discussionPath, 'brainstorm'))
+  stepGuidedNode(targetDir, 'create-discussion', {
+    id: nextId,
+    path: discussionPath,
+    description,
+  })
 
   const json = Boolean(flags.json)
   if (json) {

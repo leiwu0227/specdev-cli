@@ -11,6 +11,7 @@ import { readBigPictureStatus } from '../utils/project-context.js'
 import { writeCurrent } from '../utils/current.js'
 import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { ASSIGNMENT_TYPES, assignmentTypeList } from '../utils/workflow-contract.js'
+import { startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 
 export async function assignmentCommand(args = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -97,23 +98,31 @@ export async function assignmentCommand(args = [], flags = {}) {
   const type = flags.type
   const slug = flags.slug
 
-  if (type && slug) {
-    if (!ASSIGNMENT_TYPES.includes(type)) {
-      const message = `Unknown assignment type: ${type}`
-      if (json) {
-        console.log(JSON.stringify({
-          version: 1,
-          status: 'error',
-          error: message,
-          valid_types: ASSIGNMENT_TYPES,
-        }))
-      }
-      console.error(`❌ ${message}`)
-      console.error(`   Valid types: ${assignmentTypeList(' | ')}`)
-      process.exitCode = 1
-      return
+  if (type && slug && !ASSIGNMENT_TYPES.includes(type)) {
+    const message = `Unknown assignment type: ${type}`
+    if (json) {
+      console.log(JSON.stringify({
+        version: 1,
+        status: 'error',
+        error: message,
+        valid_types: ASSIGNMENT_TYPES,
+      }))
     }
+    console.error(`❌ ${message}`)
+    console.error(`   Valid types: ${assignmentTypeList(' | ')}`)
+    process.exitCode = 1
+    return
+  }
 
+  try {
+    startGuidedRun(targetDir, 'assignment-lifecycle', { strict: true })
+  } catch (error) {
+    console.error(`Cannot create assignment: ${error.message}`)
+    process.exitCode = 1
+    return
+  }
+
+  if (type && slug) {
     const folderName = `${paddedId}_${type}_${slug}`
     const assignmentPath = join(assignmentsDir, folderName)
     await fse.ensureDir(join(assignmentPath, 'brainstorm'))
@@ -135,6 +144,12 @@ export async function assignmentCommand(args = [], flags = {}) {
     }
 
     await writeCurrent(specdevPath, folderName)
+
+    stepGuidedNode(targetDir, 'create-assignment', {
+      name: folderName,
+      path: assignmentPath,
+      description,
+    })
 
     if (json) {
       console.log(JSON.stringify({

@@ -7,6 +7,7 @@ import { skillsInstallCommand } from './skills-install.js'
 import { scanSkillsDir } from '../utils/skills.js'
 import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
 import { ASSIGNMENT_TYPES, commandPhases } from '../utils/workflow-contract.js'
+import { ensureWorkspaceEngine } from '../utils/engine.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -90,12 +91,13 @@ name: specdev-assignment
 description: Create a new assignment and start the brainstorm phase
 ---
 
-Run \`specdev assignment "<user's description>"\` to reserve an assignment ID.
+Run \`specdev next --json\`. If the workspace is idle, run
+\`specdev do "start an assignment"\`.
 
 For agents, prefer command-created assignment setup:
 
-1. Pick a type (${assignmentTypesText}) and a short hyphenated slug based on the description
-2. Run \`specdev assignment "<user's description>" --type=<type> --slug=<slug>\`
+1. Follow the assignment graph until it requests assignment creation
+2. Pick a type (${assignmentTypesText}) and a short hyphenated slug, then run the printed \`specdev assignment\` command
 3. Read the JSON or text output to confirm the assignment was created and focused
 4. Run \`specdev next --json\` to get the canonical next action
 5. Follow the returned guide or command exactly
@@ -151,7 +153,7 @@ Read \`.specdev/_guides/migration_guide.md\`.
 Follow the guide as an interactive migration workflow:
 
 1. Inspect the existing \`.specdev/\` tree without moving files.
-2. **Cross-check the runtime contract before proposing any move.** \`grep -rn '<path>' src tests templates\`. Paths referenced by \`src/utils/workflow-contract.js\`, \`src/commands/\`, \`src/utils/\`, or the drift tests are load-bearing — recommend "Leave in place" even if they are not in the guide's Target Structure block.
+2. **Cross-check product and graph contracts before proposing any move.** \`rg '<path>' src tests templates\`. Paths referenced by \`src/commands/\`, \`src/utils/\`, or \`.specdev/workflows/\` are load-bearing — recommend "Leave in place" even if they are not in the guide's Target Structure block.
 3. Classify the remaining artifacts against the modern structure.
 4. Write \`.specdev/migration/layout-plan.md\` with proposed moves, files to leave in place, and questions for the user.
 5. Ask the user to approve the plan before editing.
@@ -180,7 +182,8 @@ name: specdev-discussion
 description: Start a parallel brainstorming discussion
 ---
 
-Run \`specdev discussion "<description>"\` to reserve a discussion ID.
+Run \`specdev next --json\`. If the workspace is idle, run
+\`specdev do "start a discussion"\`.
 
 Read the output to get the reserved ID (e.g. D00001) and folder path, then:
 1. Follow \`.specdev/skills/core/brainstorming/SKILL.md\` for Phases 1-3 (Understand, Explore, Design), writing artifacts to the discussion's brainstorm/ folder
@@ -293,6 +296,7 @@ export async function initCommand(flags = {}) {
       overwrite: force,
       errorOnExist: !force,
     })
+    const engine = ensureWorkspaceEngine(targetDir)
 
     // Generate all platform adapter files (never overwrite existing)
     for (const adapter of ALL_ADAPTERS) {
@@ -386,6 +390,7 @@ export async function initCommand(flags = {}) {
         version: 1,
         status: 'ok',
         path: specdevPath,
+        guided_workflows: engine.registered.length - 1,
       }, null, 2))
       return
     }
@@ -395,8 +400,8 @@ export async function initCommand(flags = {}) {
     printSection('📖 Next steps:')
     printLines([
       '   1. Use specdev-start (or run specdev start) to fill in your project context',
-      '   2. Use specdev-assignment (or run specdev assignment) to start a change',
-      '   3. Use specdev-continue (or run specdev continue) to resume where you left off',
+      '   2. Run specdev do "start an assignment" to start a change',
+      '   3. Run specdev next --json to resume where you left off',
     ])
     blankLine()
     printSection('Platform adapters created:')

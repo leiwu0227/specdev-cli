@@ -5,6 +5,7 @@ import { blankLine } from '../utils/output.js'
 import { commandPhases } from '../utils/workflow-contract.js'
 import { loadWorkflowDefinition, renderStepOutput, nextPhaseAfter, findGateStep } from '../utils/workflow-runtime.js'
 import { readValidatedSessionState, clearSessionState } from '../utils/session-state.js'
+import { syncAssignmentApproval } from '../utils/engine-sync.js'
 
 const VALID_PHASES = commandPhases.approve
 
@@ -59,6 +60,8 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     process.exitCode = 1
     return
   }
+
+  syncAssignmentApproval(join(specdevPath, '..'), phase)
 
   // Build the manifest-driven continuation block before terminal-phase clears
   // the session-state (so sticky_resolved still reflects the live state).

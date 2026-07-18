@@ -4,6 +4,7 @@ import {
   resolveTargetDir,
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
+import { stepGuidedNode } from '../utils/engine-sync.js'
 
 const VALID_TYPES = ['project', 'workflow']
 
@@ -49,6 +50,7 @@ export async function distillMarkCommand(positionalArgs = [], flags = {}) {
   }
 
   await markCapturesProcessed(knowledgePath, type, assignments)
+  stepGuidedNode(targetDir, 'mark-processed', { marked: assignments })
 
   console.log(JSON.stringify({
     status: 'ok',

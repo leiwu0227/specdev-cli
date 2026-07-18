@@ -2,11 +2,22 @@ import { join } from 'path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { computeNextAction } from '../utils/workflow-runtime.js'
 import { printKeyValue } from '../utils/output.js'
+import { hasWorkspaceEngine } from '../utils/engine.js'
+import { shouldUseLegacyAssignmentRuntime } from '../utils/legacy-runtime.js'
+import { engineCommand } from './engine.js'
 
 export async function nextCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
+
+  if (
+    hasWorkspaceEngine(targetDir) &&
+    !(await shouldUseLegacyAssignmentRuntime(targetDir))
+  ) {
+    await engineCommand('next', [], flags)
+    return
+  }
 
   const payload = await computeNextAction(specdevPath)
   if (flags.json) {

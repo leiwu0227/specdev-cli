@@ -4,11 +4,13 @@ import {
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
+import { startGuidedRun } from '../utils/engine-sync.js'
 
 export async function migrateCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
+  startGuidedRun(targetDir, 'layout-migration')
 
   if (flags.json) {
     console.log(JSON.stringify({ command: 'migrate', version: 1, status: 'ok', message: 'Read .specdev/_guides/migration_guide.md for guided migration workflow' }))

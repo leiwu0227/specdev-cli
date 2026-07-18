@@ -16,6 +16,9 @@ import { readBigPictureStatus } from '../utils/project-context.js'
 import { printKeyValue, printListSection } from '../utils/output.js'
 import { getLatestRound } from '../utils/review-feedback.js'
 import { resolveCurrentAssignment } from '../utils/current.js'
+import { hasWorkspaceEngine } from '../utils/engine.js'
+import { shouldUseLegacyAssignmentRuntime } from '../utils/legacy-runtime.js'
+import { engineCommand } from './engine.js'
 
 export async function continueCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -24,6 +27,14 @@ export async function continueCommand(flags = {}) {
   const asStatus = Boolean(flags.statusPayload)
   const statusText = Boolean(flags.statusText)
   await requireSpecdevDirectory(specdevPath)
+
+  if (
+    hasWorkspaceEngine(targetDir) &&
+    !(await shouldUseLegacyAssignmentRuntime(targetDir))
+  ) {
+    await engineCommand('next', [], flags)
+    return
+  }
 
   const bigPicture = await readBigPictureStatus(specdevPath)
   const selection = await resolveAssignment(specdevPath, flags)

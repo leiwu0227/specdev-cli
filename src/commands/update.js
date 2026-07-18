@@ -1,10 +1,11 @@
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript, backfillAdapters, migrateWorkflowManifest } from '../utils/update.js'
+import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, updateHookScript, backfillAdapters } from '../utils/update.js'
 import { SKILL_FILES, ALL_ADAPTERS, COMMAND_SKILL_DIRS, adapterContent } from './init.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
 import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
+import { ensureWorkspaceEngine } from '../utils/engine.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -26,7 +27,7 @@ export async function updateCommand(flags = {}) {
   }
 
   const wouldUpdate = [
-    '_main.md', '_index.md', 'workflow.yaml', '_guides/', '_templates/',
+    '_main.md', '_index.md', 'workflow.json', 'workflows/', '_guides/', '_templates/',
     'agents/',
     'skills/core/', 'skills/tools/ (official built-in only)',
     'skills/README.md', 'project_scaffolding/_README.md',
@@ -69,24 +70,7 @@ export async function updateCommand(flags = {}) {
     }
 
     const updatedPaths = await updateSpecdevSystem(templatePath, specdevPath)
-
-    // Migrate workflow.yaml in-place (v1 → v2). Idempotent for v2 manifests.
-    const manifestMigration = migrateWorkflowManifest(
-      join(templatePath, 'workflow.yaml'),
-      join(specdevPath, 'workflow.yaml'),
-      { force: !!flags.force }
-    )
-    if (manifestMigration.migrated) {
-      const label = manifestMigration.from === null
-        ? 'workflow.yaml (created from template)'
-        : `workflow.yaml (migrated v${manifestMigration.from} → v2)`
-      updatedPaths.push(label)
-    }
-    if (!flags.json) {
-      for (const w of manifestMigration.warnings) {
-        console.warn(`⚠️  ${w}`)
-      }
-    }
+    const engine = ensureWorkspaceEngine(targetDir)
 
     const pkg = await import('../../package.json', { with: { type: 'json' } })
 
@@ -122,6 +106,7 @@ export async function updateCommand(flags = {}) {
         skill_updates: skillUpdates.map(u => ({ path: u.path, count: u.count })),
         hook_updated: hookUpdated > 0,
         adapters_created: createdAdapters,
+        guided_workflows: engine.registered.length - 1,
         preserved: ['project_notes/', 'assignments/', 'skills/tools/', 'project_scaffolding/'],
       }, null, 2))
       return

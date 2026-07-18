@@ -31,6 +31,7 @@ import { createReviewerStreamJsonTranslator } from '../utils/reviewer-stream-jso
 import { commandPhases } from '../utils/workflow-contract.js'
 import { listReviewers } from '../utils/reviewers.js'
 import { writeSessionState } from '../utils/session-state.js'
+import { stepGuidedNode, syncAssignmentApproval } from '../utils/engine-sync.js'
 
 const REVIEWER_HEARTBEAT_MS = 30000
 
@@ -572,6 +573,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
     })
 
     if (allApproved) {
+      stepGuidedNode(targetDir, 'review', { review_complete: true })
       printSection('Discussion review approved!')
       if (flags.autocontinue) {
         console.log('   Autocontinue is not supported for discussions; discussions remain standalone.')
@@ -705,6 +707,7 @@ export async function reviewloopCommand(positionalArgs = [], flags = {}) {
 
     const approveResult = await approvePhase(assignmentPath, phase, workflowInfo)
     if (approveResult.approved) {
+      syncAssignmentApproval(targetDir, phase)
       printSection(`Review approved! Phase '${phase}' has been approved.`)
       if (flags.autocontinue) {
         const sessionState = await readValidatedSessionState(specdevPath)

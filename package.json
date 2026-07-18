@@ -1,7 +1,7 @@
 {
   "name": "@specdev/cli",
   "version": "0.0.4",
-  "releaseDate": "2026-07-18",
+  "releaseDate": "2026-07-19",
   "description": "CLI to initialize SpecDev workflow system",
   "type": "module",
   "bin": {
@@ -12,16 +12,20 @@
     "src/",
     "templates/",
     "hooks/",
+    "vendor/",
     "specdev.assignment-schema.json"
   ],
   "scripts": {
-    "test": "node ./tests/test-workflow-contract-drift.js && node ./tests/test-session-state-protocol.js && node ./tests/test-manifest-as-truth.js && npm run test:cleanup",
-    "test:workflow-contract-drift": "node ./tests/test-workflow-contract-drift.js",
+    "test": "node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-engine-integration.js && node ./tests/test-engine-packaging.js && node ./tests/test-session-state-protocol.js && npm run test:cleanup",
+    "test:engine-graphpackages": "node ./tests/test-engine-graphpackages.js",
+    "test:engine-adapter": "node ./tests/test-engine-adapter.js",
+    "test:engine-integration": "node ./tests/test-engine-integration.js",
+    "test:engine-packaging": "node ./tests/test-engine-packaging.js",
     "test:session-state-protocol": "node ./tests/test-session-state-protocol.js",
-    "test:manifest-as-truth": "node ./tests/test-manifest-as-truth.js",
     "test:cleanup": "rm -rf ./tests/test-*-output ./test-assignment-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
+    "vendor:ripplegraph": "node ./scripts/update-ripplegraph.js",
     "preversion": "sed -i \"s/\\\"releaseDate\\\": \\\"[0-9-]*\\\"/\\\"releaseDate\\\": \\\"$(date +%Y-%m-%d)\\\"/\" package.json",
     "release": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
@@ -40,12 +44,16 @@
   "dependencies": {
     "ajv": "^8.20.0",
     "fs-extra": "^11.2.0",
+    "ripplegraph": "file:vendor/ripplegraph-0.1.0.tgz",
     "yaml": "^2.8.4"
   },
+  "bundledDependencies": [
+    "ripplegraph"
+  ],
   "devDependencies": {
     "prettier": "^3.2.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

@@ -16,7 +16,9 @@ Current SpecDev projects use this shape:
 ├── _index.md
 ├── _guides/
 ├── _templates/
-├── workflow.yaml              # workflow contract; installed by `specdev init/update`
+├── workflow.json              # RippleGraph workspace manifest
+├── workflows/                 # installed SpecDev graph packages
+├── .ripplegraph/              # generated runtime state; never hand-edit
 ├── agents/
 │   ├── README.md
 │   └── researcher/            # runtime agent spec (referenced by workflow-contract.js)
@@ -40,7 +42,7 @@ Current SpecDev projects use this shape:
 └── skills/
 ```
 
-The `agents/`, `workflow.yaml`, and `knowledge/workflow_feedback/` paths are
+The `agents/`, `workflow.json`, `workflows/`, and `knowledge/workflow_feedback/` paths are
 load-bearing: they are wired into `src/utils/workflow-contract.js`,
 `src/utils/workflow-runtime.js`, `src/commands/{context,knowledge}.js`,
 `src/utils/{working-memory,update,knowledge}.js`, and locked by
@@ -81,7 +83,9 @@ specdev skills --json
 | Current project facts | `project_notes/` | Use for living notes that agents should read often. |
 | Durable cross-assignment learning | `knowledge/<branch>/` | Use `architecture`, `codestyle`, `domain`, `workflow`, or `workflow_feedback` (SpecDev-workflow observations, not project process). |
 | Source maps or generated structure notes | `project_scaffolding/` | Use for scaffolding and project inventory material. |
-| `workflow.yaml` at `.specdev/` root | Leave in place | Workflow-contract artifact installed by `specdev init/update`; consumed by `src/utils/workflow-runtime.js`. Should be tracked in git. |
+| `workflow.json` and `workflows/` | Leave in place | Installed RippleGraph workflow contract managed by `specdev init/update`. |
+| `.ripplegraph/` | Leave in place; never hand-edit | Generated durable run and registry state managed through SpecDev commands. |
+| Legacy `workflow.yaml` | Leave while a legacy assignment is active | Compatibility input only; new workflows do not consume it. |
 | `agents/` and `agents/<name>/` | Leave in place | Runtime agent specs referenced by `src/utils/workflow-contract.js`. |
 | `_archive/`, `archive/`, historical plans/designs | Leave in place or move out of `.specdev/` | Project history; safe to keep, or relocate to repo-level `docs/archive/` if the user prefers. Never delete without explicit approval. |
 | `migration/` | Leave in place (transient) | Created by this guide. Safe to delete after the migration is complete and approved. |

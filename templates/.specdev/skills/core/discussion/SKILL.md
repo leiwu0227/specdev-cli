@@ -15,8 +15,8 @@ Use it to explore ideas, compare approaches, or think through a topic before com
 
 ## Steps
 
-1. Run `specdev discussion "<description>"` to reserve a discussion ID and folder
-2. Read the output to get the reserved ID (e.g. `D00001`) and folder path
+1. Run `specdev next --json`. If no workflow is focused, run `specdev do "start a discussion"`.
+2. Follow the graph instruction to run `specdev discussion "<description>"` and use the returned folder path.
 3. Follow `.specdev/skills/core/brainstorming/SKILL.md` for Phases 1-3 (Understand, Explore, Design), writing artifacts to the discussion's `brainstorm/` folder
 4. After writing `brainstorm/proposal.md` and `brainstorm/design.md`, add a row to `.specdev/project_notes/discussion_progress.md`
 5. Tell the user their options:

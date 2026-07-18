@@ -82,7 +82,7 @@ You may always add optional sections (User Stories, Dependencies, Risks, Technic
 
 Once all design sections are validated:
 
-1. Create the assignment folder (`specdev assignment "<description>" --type=<type> --slug=<slug>`)
+1. Use the assignment or discussion path supplied by the focused graph. Do not create a second assignment.
 2. Write `brainstorm/proposal.md` — short (1-2 paragraphs), what and why
 3. Write `brainstorm/design.md` — full validated design including:
    - Goal and approach
@@ -91,7 +91,7 @@ Once all design sections are validated:
    - Success criteria
    - Testing approach
 4. Announce: "Brainstorm complete. Design written to assignment folder."
-5. Run `specdev checkpoint brainstorm`. After any specdev command that prints an `interaction` block, render it via `AskUserQuestion` (Claude Code) or its host equivalent, using the exact labels and order. Do not paraphrase, reorder, or drop options. If a chosen option has `requires_reviewer: true`, render the `follow_up` block as a second `AskUserQuestion`. After any command that prints a `continuation` block with `interrupt: false`, invoke the printed command immediately without prompting the user.
+5. Submit the graph-requested evidence with `specdev step --json=<output>`, then follow `specdev next --json`. Semantic checkpoint and review commands remain authoritative when the graph requests them.
 6. Stop and wait — do NOT proceed to breakdown until the user has approved
 
 ## Red Flags

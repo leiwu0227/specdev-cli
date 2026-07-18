@@ -23,6 +23,10 @@ import { knowledgeCommand } from './knowledge.js'
 import { contextCommand } from './context.js'
 import { researchCommand } from './research.js'
 import { agentsInspectCommand } from './agents-inspect.js'
+import { engineCommand } from './engine.js'
+import { distillProjectCommand } from './distill-project.js'
+import { distillWorkflowCommand } from './distill-workflow.js'
+import { distillMarkCommand } from './distill-mark.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -49,6 +53,24 @@ const commandHandlers = {
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
+  if (['do', 'decide', 'step', 'action', 'cancel'].includes(command)) {
+    await engineCommand(command, positionalArgs, flags)
+    return
+  }
+
+  if (command === 'distill') {
+    const subcommand = positionalArgs[0]
+    const rest = positionalArgs.slice(1)
+    if (subcommand === 'project') await distillProjectCommand(flags)
+    else if (subcommand === 'workflow') await distillWorkflowCommand(flags)
+    else if (subcommand === 'mark-processed') await distillMarkCommand(rest, flags)
+    else {
+      console.error('Usage: specdev distill <project | workflow | mark-processed>')
+      process.exitCode = 1
+    }
+    return
+  }
+
   if (command === 'migrate') {
     const subcommand = positionalArgs[0]
     if (subcommand === 'legacy-assignments') {

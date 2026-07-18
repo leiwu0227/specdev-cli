@@ -4,10 +4,9 @@ import YAML from 'yaml'
 import { resolveCurrentAssignment } from './current.js'
 import { scanSingleAssignment } from './scan.js'
 import { detectAssignmentState } from './state.js'
-// Canonical phase order and the literal artifact paths / gate field names used
-// by `DEFAULT_WORKFLOW` and the validator are the contract enforced HERE; the
-// installed `workflow.yaml` is the single source of truth at runtime and is
-// asserted to match these literals by `tests/test-workflow-contract-drift.js`.
+// Legacy assignment compatibility. New guided workflows run from RippleGraph
+// packages; this module keeps pre-upgrade assignments and any retained
+// `.specdev/workflow.yaml` customization operational until they complete.
 const CANONICAL_PHASES = ['brainstorm', 'breakdown', 'implementation']
 const BRAINSTORM_GATE_FIELD = 'brainstorm_approved'
 const IMPLEMENTATION_GATE_FIELD = 'implementation_approved'

@@ -5,6 +5,7 @@ import { resolveTargetDir } from '../utils/command-context.js'
 import { readRevisionNumber } from '../utils/state.js'
 import { blankLine } from '../utils/output.js'
 import { loadWorkflowDefinition, findProducedByBasename } from '../utils/workflow-runtime.js'
+import { restartAssignmentBrainstorm } from '../utils/engine-sync.js'
 
 export async function reviseCommand(flags = {}) {
   const assignmentPath = await resolveAssignmentPath(flags)
@@ -47,6 +48,12 @@ export async function reviseCommand(flags = {}) {
     },
     { spaces: 2 }
   )
+
+  restartAssignmentBrainstorm(resolveTargetDir(flags), {
+    name,
+    path: assignmentPath,
+    description: `Revise assignment ${name} (revision ${nextRevision})`,
+  })
 
   if (flags.json) {
     console.log(JSON.stringify({ command: 'revise', version: 1, status: 'ok', assignment: name, revision: nextRevision, revision_recorded: true, phase: 'brainstorm' }))

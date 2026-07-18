@@ -8,7 +8,16 @@ For action selection, use the runtime contract first:
 specdev next --json
 ```
 
-The runtime reads `.specdev/workflow.yaml`, the active assignment, artifact presence, gates, and progress, then returns one canonical next action with evidence, blockers, structured choices, and hook outcomes. This guide is the human-readable reference for the same workflow; it should not be treated as a second state machine.
+The runtime reads the focused RippleGraph run and registered packages under
+`.specdev/workflows/`, then returns one product-shaped next action. This guide
+is a human-readable reference only; it is not a second state machine.
+
+Start or resume guided work with:
+
+```bash
+specdev do "<intent>"
+specdev next --json
+```
 
 ---
 
@@ -18,7 +27,9 @@ The runtime reads `.specdev/workflow.yaml`, the active assignment, artifact pres
 
 **Output:** `brainstorm/proposal.md` + `brainstorm/design.md`
 
-**Start:** Prefer `specdev assignment "<description>" --type=<type> --slug=<slug>`. This creates the assignment folder, creates the phase directories, and sets `.specdev/.current`.
+**Start:** Run `specdev do "start an assignment"`, then follow the returned
+assignment-creation instruction. The semantic `specdev assignment` command
+creates the folder and remains authoritative for assignment layout.
 - Valid assignment types: feature | bugfix | refactor | familiarization
 - Reserve-only mode exists for manual folder creation: `specdev assignment "<description>"`
 - To switch to an existing assignment: `specdev focus <id>` (updates `.specdev/.current`)
@@ -29,7 +40,8 @@ The runtime reads `.specdev/workflow.yaml`, the active assignment, artifact pres
 - Understanding existing code → `skills/core/investigation/SKILL.md`
 - Diagnosing a bug → `skills/core/diagnosis/SKILL.md`
 
-After setup, run `specdev next --json` and follow the returned guide or command.
+After every semantic command, run the returned `specdev step` or `specdev next`
+command exactly as shown.
 
 **Checkpoint:** Run `specdev checkpoint brainstorm`.
 Must pass before requesting review.

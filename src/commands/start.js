@@ -6,6 +6,7 @@ import {
 } from '../utils/command-context.js'
 import { blankLine } from '../utils/output.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
+import { startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 
 export async function startCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -13,6 +14,12 @@ export async function startCommand(flags = {}) {
   await requireSpecdevDirectory(specdevPath)
 
   const status = await readBigPictureStatus(specdevPath)
+  const guided = startGuidedRun(targetDir, 'project-orientation')
+  if (guided.synchronized) {
+    stepGuidedNode(targetDir, ['inspect-context', 'verify-context'], {
+      ready: Boolean(status.filled),
+    })
+  }
 
   if (status.exists) {
     if (status.filled) {

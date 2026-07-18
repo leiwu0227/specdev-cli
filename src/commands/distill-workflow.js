@@ -8,6 +8,7 @@ import {
   resolveTargetDir,
   requireSpecdevDirectory,
 } from '../utils/command-context.js'
+import { decideGuidedNode, startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 
 export async function distillWorkflowCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -44,6 +45,13 @@ export async function distillWorkflowCommand(flags = {}) {
     ...generateCaptureWorkflowSuggestions(unprocessed),
   ]
 
+  startGuidedRun(targetDir, 'knowledge-distillation')
+  decideGuidedNode(targetDir, 'mode-choice', { choice: 'workflow' })
+  stepGuidedNode(targetDir, 'scan-workflow', {
+    assignments: unprocessed.map((assignment) => assignment.name),
+    suggestions,
+  })
+
   // List existing feedback files
   let existingFiles = []
   if (await fse.pathExists(feedbackDir)) {
@@ -57,6 +65,7 @@ export async function distillWorkflowCommand(flags = {}) {
     unprocessed: unprocessed.length,
     existing_knowledge: existingFiles,
     suggestions,
+    assignments: unprocessed.map((assignment) => assignment.name),
     knowledge_path: '.specdev/knowledge/_workflow_feedback/',
   }
 

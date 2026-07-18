@@ -214,3 +214,58 @@ async function scanCapture(capturePath) {
   return result
 }
 
+export async function findLatestAssignment(specdevPath) {
+  const assignmentsDir = join(specdevPath, 'assignments')
+  if (!(await fse.pathExists(assignmentsDir))) return null
+
+  const assignmentDirs = (await fse.readdir(assignmentsDir, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+  if (assignmentDirs.length === 0) return null
+
+  const latest = assignmentDirs[assignmentDirs.length - 1]
+  return {
+    name: latest,
+    path: join(assignmentsDir, latest),
+    ...parseAssignmentId(latest),
+  }
+}
+
+export async function readKnowledgeBranch(knowledgePath, branch) {
+  const branchPath = join(knowledgePath, branch)
+  if (!(await fse.pathExists(branchPath))) return []
+
+  const files = (await fse.readdir(branchPath))
+    .filter((file) => file.endsWith('.md') && !file.startsWith('.'))
+    .sort()
+  const results = []
+  for (const file of files) {
+    results.push({
+      file,
+      content: await fse.readFile(join(branchPath, file), 'utf-8'),
+    })
+  }
+  return results
+}
+
+const PROCESSED_CAPTURES_FILE = '.processed_captures.json'
+
+export async function readProcessedCaptures(knowledgePath, type) {
+  const filePath = join(knowledgePath, PROCESSED_CAPTURES_FILE)
+  if (!(await fse.pathExists(filePath))) return new Set()
+  const data = await fse.readJson(filePath)
+  return new Set(data[type] || [])
+}
+
+export async function markCapturesProcessed(knowledgePath, type, assignmentNames) {
+  if (assignmentNames.length === 0) return
+
+  const filePath = join(knowledgePath, PROCESSED_CAPTURES_FILE)
+  const data = (await fse.pathExists(filePath)) ? await fse.readJson(filePath) : {}
+  const existing = new Set(data[type] || [])
+  for (const name of assignmentNames) existing.add(name)
+  data[type] = [...existing].sort()
+  await fse.ensureDir(knowledgePath)
+  await fse.writeJson(filePath, data, { spaces: 2 })
+}
