@@ -1,9 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
-import {
-  resolveTargetDir,
-  requireSpecdevDirectory,
-} from '../utils/command-context.js'
+import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
 
 // NOTE: this command is intentionally exempt from the manifest contract.
@@ -20,8 +17,7 @@ const LEGACY_TO_V4 = [
 export async function migrateLegacyAssignmentsCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const dryRun = Boolean(flags['dry-run'])
-  const assignmentFilter =
-    typeof flags.assignment === 'string' ? flags.assignment : null
+  const assignmentFilter = typeof flags.assignment === 'string' ? flags.assignment : null
 
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
@@ -42,7 +38,18 @@ export async function migrateLegacyAssignmentsCommand(flags = {}) {
 
   if (assignmentFilter && assignments.length === 0) {
     if (flags.json) {
-      console.log(JSON.stringify({ command: 'migrate legacy-assignments', version: 1, status: 'error', error: `Assignment not found: ${assignmentFilter}` }, null, 2))
+      console.log(
+        JSON.stringify(
+          {
+            command: 'migrate legacy-assignments',
+            version: 1,
+            status: 'error',
+            error: `Assignment not found: ${assignmentFilter}`,
+          },
+          null,
+          2
+        )
+      )
     } else {
       console.error(`❌ Assignment not found: ${assignmentFilter}`)
     }
@@ -52,7 +59,23 @@ export async function migrateLegacyAssignmentsCommand(flags = {}) {
 
   if (assignments.length === 0) {
     if (flags.json) {
-      console.log(JSON.stringify({ command: 'migrate legacy-assignments', version: 1, status: 'ok', dry_run: dryRun, assignments_scanned: 0, files_moved: 0, paths_created: 0, moves_skipped: 0, assignments_unchanged: 0 }, null, 2))
+      console.log(
+        JSON.stringify(
+          {
+            command: 'migrate legacy-assignments',
+            version: 1,
+            status: 'ok',
+            dry_run: dryRun,
+            assignments_scanned: 0,
+            files_moved: 0,
+            paths_created: 0,
+            moves_skipped: 0,
+            assignments_unchanged: 0,
+          },
+          null,
+          2
+        )
+      )
     } else {
       console.log('No assignments found to migrate.')
     }
@@ -91,17 +114,23 @@ export async function migrateLegacyAssignmentsCommand(flags = {}) {
   }
 
   if (flags.json) {
-    console.log(JSON.stringify({
-      command: 'migrate legacy-assignments',
-      version: 1,
-      status: 'ok',
-      dry_run: dryRun,
-      assignments_scanned: assignments.length,
-      files_moved: movedCount,
-      paths_created: createdCount,
-      moves_skipped: skippedCount,
-      assignments_unchanged: unchangedCount,
-    }, null, 2))
+    console.log(
+      JSON.stringify(
+        {
+          command: 'migrate legacy-assignments',
+          version: 1,
+          status: 'ok',
+          dry_run: dryRun,
+          assignments_scanned: assignments.length,
+          files_moved: movedCount,
+          paths_created: createdCount,
+          moves_skipped: skippedCount,
+          assignments_unchanged: unchangedCount,
+        },
+        null,
+        2
+      )
+    )
     return
   }
 
@@ -171,10 +200,7 @@ async function migrateAssignment(assignmentPath, { dryRun }) {
 
   const implementationDir = join(assignmentPath, 'implementation')
   const progressPath = join(implementationDir, 'progress.json')
-  if (
-    (await fse.pathExists(implementationDir)) &&
-    !(await fse.pathExists(progressPath))
-  ) {
+  if ((await fse.pathExists(implementationDir)) && !(await fse.pathExists(progressPath))) {
     if (!dryRun) {
       await fse.writeFile(progressPath, '{}\n', 'utf-8')
     }

@@ -9,7 +9,7 @@ export async function readActiveTools(specdevPath) {
   try {
     const raw = await fse.readJson(filePath)
     return {
-      tools: (raw && typeof raw.tools === 'object' && !Array.isArray(raw.tools)) ? raw.tools : {},
+      tools: raw && typeof raw.tools === 'object' && !Array.isArray(raw.tools) ? raw.tools : {},
       agents: Array.isArray(raw?.agents) ? raw.agents : [],
     }
   } catch {

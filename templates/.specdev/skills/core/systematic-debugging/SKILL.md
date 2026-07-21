@@ -17,8 +17,8 @@ type: core
 
 This skill has no scripts of its own. It references:
 
-| Script | Source | When to run |
-|--------|--------|-------------|
+| Script                                                                 | Source                        | When to run                                  |
+| ---------------------------------------------------------------------- | ----------------------------- | -------------------------------------------- |
 | `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh` | test-driven-development skill | To run tests and verify reproduce/fix status |
 
 ## Process
@@ -53,6 +53,7 @@ Form your top 3 hypotheses, ranked by likelihood.
 4. Each hypothesis must be testable — you need a way to confirm or rule it out
 
 **Rules:**
+
 - Maximum 3 hypotheses at a time
 - Most likely first
 - Each must be testable
@@ -68,6 +69,7 @@ Test ONE hypothesis at a time.
 5. If all 3 ruled out, go back to Step 2 with new evidence
 
 **Rules:**
+
 - One hypothesis at a time — do not test multiple simultaneously
 - Record every experiment and result
 - If you're on hypothesis #3 and it's ruled out, re-gather evidence

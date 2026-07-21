@@ -42,18 +42,24 @@ async function skillsListCommand(flags) {
   const activeNames = new Set(Object.keys(activeTools.tools))
 
   if (flags.json) {
-    console.log(JSON.stringify({
-      command: 'skills',
-      version: 1,
-      status: 'ok',
-      skills: skills.map((skill) => toSkillJson(skill, activeNames)),
-    }, null, 2))
+    console.log(
+      JSON.stringify(
+        {
+          command: 'skills',
+          version: 1,
+          status: 'ok',
+          skills: skills.map((skill) => toSkillJson(skill, activeNames)),
+        },
+        null,
+        2
+      )
+    )
     return
   }
 
   console.log(`\nAvailable skills (${skills.length}):\n`)
-  const coreSkills = skills.filter(s => s.category === 'core')
-  const toolSkills = skills.filter(s => s.category === 'tool')
+  const coreSkills = skills.filter((s) => s.category === 'core')
+  const toolSkills = skills.filter((s) => s.category === 'tool')
 
   if (coreSkills.length > 0) {
     console.log('Core skills:')
@@ -86,8 +92,8 @@ async function loadSkills(targetDir) {
   }
 
   const skills = []
-  skills.push(...await scanSkillsDir(join(skillsPath, 'core'), 'core'))
-  skills.push(...await scanSkillsDir(join(skillsPath, 'tools'), 'tool'))
+  skills.push(...(await scanSkillsDir(join(skillsPath, 'core'), 'core')))
+  skills.push(...(await scanSkillsDir(join(skillsPath, 'tools'), 'tool')))
   skills.sort((a, b) => a.name.localeCompare(b.name))
 
   return { skills, skillsPath }

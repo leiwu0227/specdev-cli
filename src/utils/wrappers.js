@@ -61,7 +61,9 @@ export function removeWrappers(targetDir, wrapperPaths) {
       const parentDir = dirname(absPath)
       try {
         if (readdirSync(parentDir).length === 0) rmSync(parentDir, { recursive: true })
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
 }

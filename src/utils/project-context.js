@@ -12,8 +12,7 @@ export async function readBigPictureStatus(specdevPath) {
 
   const content = await fse.readFile(bigPicturePath, 'utf-8')
   const filled =
-    content.trim().length > BIG_PICTURE_MIN_LENGTH &&
-    !content.includes(BIG_PICTURE_PLACEHOLDER)
+    content.trim().length > BIG_PICTURE_MIN_LENGTH && !content.includes(BIG_PICTURE_PLACEHOLDER)
 
   return { exists: true, filled, path: bigPicturePath, content }
 }

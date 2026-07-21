@@ -7,7 +7,7 @@ export function parseFrontmatter(content) {
   const result = {}
   let currentParent = null
 
-  let currentKey = null  // tracks the last key at any level for list appending
+  let currentKey = null // tracks the last key at any level for list appending
 
   for (const line of match[1].split(/\r?\n/)) {
     if (!line.trim() || line.trim().startsWith('#')) continue
@@ -77,8 +77,10 @@ function parseYamlValue(raw) {
       return trimmed
     }
   }
-  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-      (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
     return trimmed.slice(1, -1)
   }
   return trimmed

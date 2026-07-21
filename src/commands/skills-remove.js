@@ -8,7 +8,14 @@ export async function skillsRemoveCommand(positionalArgs = [], flags = {}) {
 
   if (!name) {
     if (flags.json) {
-      console.log(JSON.stringify({ command: 'skills remove', version: 1, status: 'error', message: 'Missing required skill name' }))
+      console.log(
+        JSON.stringify({
+          command: 'skills remove',
+          version: 1,
+          status: 'error',
+          message: 'Missing required skill name',
+        })
+      )
     } else {
       console.error('Missing required skill name')
       console.log('Usage: specdev skills remove <name>')
@@ -24,7 +31,15 @@ export async function skillsRemoveCommand(positionalArgs = [], flags = {}) {
 
   if (!activeTools.tools[name]) {
     if (flags.json) {
-      console.log(JSON.stringify({ command: 'skills remove', version: 1, status: 'error', skill: name, message: 'Tool skill is not installed' }))
+      console.log(
+        JSON.stringify({
+          command: 'skills remove',
+          version: 1,
+          status: 'error',
+          skill: name,
+          message: 'Tool skill is not installed',
+        })
+      )
     } else {
       console.error(`Tool skill "${name}" is not installed`)
       console.error(`Active tools: ${Object.keys(activeTools.tools).join(', ') || '(none)'}`)
@@ -41,7 +56,16 @@ export async function skillsRemoveCommand(positionalArgs = [], flags = {}) {
   await removeTool(specdevPath, name)
 
   if (flags.json) {
-    console.log(JSON.stringify({ command: 'skills remove', version: 1, status: 'ok', skill: name, removed: true, wrappers_removed: wrapperPaths }))
+    console.log(
+      JSON.stringify({
+        command: 'skills remove',
+        version: 1,
+        status: 'ok',
+        skill: name,
+        removed: true,
+        wrappers_removed: wrapperPaths,
+      })
+    )
   } else {
     console.log(`Removed ${name}`)
     for (const p of wrapperPaths) {

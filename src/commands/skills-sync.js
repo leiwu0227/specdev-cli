@@ -13,7 +13,7 @@ export async function skillsSyncCommand(flags = {}) {
 
   const activeTools = await readActiveTools(specdevPath)
   const available = await scanSkillsDir(toolsDir, 'tool')
-  const availableNames = new Set(available.map(s => s.name))
+  const availableNames = new Set(available.map((s) => s.name))
 
   let changed = false
   const removedNames = []
@@ -34,7 +34,7 @@ export async function skillsSyncCommand(flags = {}) {
   // 2. Regenerate missing wrappers for active tools
   for (const [name, entry] of Object.entries(activeTools.tools)) {
     const wrapperPaths = entry.wrappers || []
-    const missing = wrapperPaths.filter(p => !fse.pathExistsSync(join(targetDir, p)))
+    const missing = wrapperPaths.filter((p) => !fse.pathExistsSync(join(targetDir, p)))
 
     if (missing.length > 0) {
       // Re-read skill to regenerate
@@ -59,21 +59,27 @@ export async function skillsSyncCommand(flags = {}) {
 
   // 3. Warn about available but inactive tools
   const activeNames = new Set(Object.keys(activeTools.tools))
-  const inactive = available.filter(s => !activeNames.has(s.name))
+  const inactive = available.filter((s) => !activeNames.has(s.name))
 
   if (changed) {
     await writeActiveTools(specdevPath, activeTools)
   }
 
   if (flags.json) {
-    console.log(JSON.stringify({
-      command: 'skills sync',
-      version: 1,
-      status: 'ok',
-      removed: removedNames,
-      synced: regeneratedNames,
-      available_not_installed: inactive.map(s => s.name),
-    }, null, 2))
+    console.log(
+      JSON.stringify(
+        {
+          command: 'skills sync',
+          version: 1,
+          status: 'ok',
+          removed: removedNames,
+          synced: regeneratedNames,
+          available_not_installed: inactive.map((s) => s.name),
+        },
+        null,
+        2
+      )
+    )
     return
   }
 

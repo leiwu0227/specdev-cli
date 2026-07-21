@@ -30,23 +30,23 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
   let selectedSkills, selectedAgents
 
   if (flags.skills) {
-    selectedSkills = flags.skills.split(',').map(s => s.trim())
-    const unknowns = selectedSkills.filter(s => !available.some(a => a.name === s))
+    selectedSkills = flags.skills.split(',').map((s) => s.trim())
+    const unknowns = selectedSkills.filter((s) => !available.some((a) => a.name === s))
     if (unknowns.length > 0) {
       console.error(`Unknown tool skills: ${unknowns.join(', ')}`)
-      console.error(`Available: ${available.map(a => a.name).join(', ')}`)
+      console.error(`Available: ${available.map((a) => a.name).join(', ')}`)
       process.exitCode = 1
       return
     }
   } else {
     // Install all available tool skills
-    selectedSkills = available.map(s => s.name)
+    selectedSkills = available.map((s) => s.name)
   }
 
   if (flags.agents) {
-    selectedAgents = flags.agents.split(',').map(s => s.trim())
+    selectedAgents = flags.agents.split(',').map((s) => s.trim())
     const validAgents = Object.keys(AGENT_CONFIGS)
-    const unknownAgents = selectedAgents.filter(a => !validAgents.includes(a))
+    const unknownAgents = selectedAgents.filter((a) => !validAgents.includes(a))
     if (unknownAgents.length > 0) {
       console.error(`Unknown agents: ${unknownAgents.join(', ')}`)
       console.error(`Valid agents: ${validAgents.join(', ')}`)
@@ -97,7 +97,11 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
       ...(triggers ? { triggers } : {}),
     }
 
-    installedDetails.push({ skill: skillName, path: `skills/tools/${skillName}`, wrappers: wrapperPaths })
+    installedDetails.push({
+      skill: skillName,
+      path: `skills/tools/${skillName}`,
+      wrappers: wrapperPaths,
+    })
 
     if (!flags.json) {
       console.log(`Installed ${skillName}`)
@@ -114,17 +118,25 @@ export async function skillsInstallCommand(positionalArgs = [], flags = {}) {
   await writeActiveTools(specdevPath, activeTools)
 
   if (flags.json) {
-    console.log(JSON.stringify({
-      command: 'skills install',
-      version: 1,
-      status: 'ok',
-      installed: installedDetails,
-      agents: [...agentSet],
-      total_tools: Object.keys(activeTools.tools).length,
-    }, null, 2))
+    console.log(
+      JSON.stringify(
+        {
+          command: 'skills install',
+          version: 1,
+          status: 'ok',
+          installed: installedDetails,
+          agents: [...agentSet],
+          total_tools: Object.keys(activeTools.tools).length,
+        },
+        null,
+        2
+      )
+    )
     return
   }
 
   blankLine()
-  console.log(`Active tools updated (${Object.keys(activeTools.tools).length} tools, ${activeTools.agents.length} agents)`)
+  console.log(
+    `Active tools updated (${Object.keys(activeTools.tools).length} tools, ${activeTools.agents.length} agents)`
+  )
 }
