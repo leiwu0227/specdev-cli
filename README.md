@@ -5,6 +5,21 @@ tracked `.specdev/` folder is portable state; the current coding CLI is the
 interactive worker, while configured subprocess agents perform bounded
 automatic work and review.
 
+The workflow is deliberately small at the project boundary:
+
+- one readable contract and one explicit user approval before code changes;
+- one Assignment by default instead of speculative decomposition;
+- automatic implementation and review with durable, restartable evidence;
+- static-wave Mission parallelism only for already-independent children; and
+- authoritative Markdown knowledge with a disposable SQLite search index.
+
+| Work type  | Purpose                                | Product writes | Concurrency                                             |
+| ---------- | -------------------------------------- | -------------- | ------------------------------------------------------- |
+| Assignment | Deliver one approved change            | Yes            | One focused workflow                                    |
+| Mission    | Deliver a larger user-chosen objective | Yes            | Foreground controller; up to three independent children |
+| Discussion | Explore and preserve a future design   | No             | May coexist with focused work                           |
+| Test Audit | Propose safe test pruning              | No             | May coexist with focused work                           |
+
 ## Install
 
 Node.js 22.13 or newer is required.
@@ -13,6 +28,10 @@ Node.js 22.13 or newer is required.
 npm install -g github:leiwu0227/specdev-cli
 specdev init
 ```
+
+For an existing SpecDev repository, run `specdev update`. SpecDev is a Node.js
+CLI and is never installed or invoked through Python tooling. See
+[QUICKSTART.md](QUICKSTART.md) for the first end-to-end workflow.
 
 `specdev update` refreshes managed templates, installs immutable versioned
 RippleGraph packages, and preserves project-owned notes, guides, and work.
@@ -96,16 +115,17 @@ specdev mission checkpoint M00001 [--push]
 ```
 
 A Mission runs in the foreground on a dedicated Git branch. The user chooses
-Mission; SpecDev does not infer it from size. Mission
-Design defaults to one full-scope child and splits only for a worker context
+Mission; SpecDev does not infer it from size. Mission Design defaults to one
+full-scope child and splits only for a worker context
 limit, an information dependency, an intermediate decision, or independent
 verification/rollback. The single child contract and acceptance criteria are
 derived from the approved Mission without duplicate author or Brainstorm-review
 calls. Its required implementation review is reused for Mission convergence
 when scope and candidate digest are unchanged. Multi-child contracts are
-concise deltas and receive Brainstorm review. A child `follow_up: required`, a Mission-review finding, or a
-failed final receipt invokes the worker profile to revise only the remaining
-queue; completed work and runtime-owned IDs are protected.
+concise deltas and receive Brainstorm review. A child `follow_up: required`, a
+Mission-review finding, or a failed final receipt invokes the worker profile to
+revise only the remaining queue; completed work and runtime-owned IDs are
+protected.
 Explicit Mission approval creates the initial portable checkpoint on that
 branch before Mission Design starts.
 If a child review blocks for user direction, `mission run <id> --override-review`
@@ -132,6 +152,12 @@ the user for a concurrency count and never splits solely for speed. A setup
 failure before launch falls back to sequential execution. An integration
 conflict stops new launches: resolve and stage the conflicted files, then rerun
 the Mission, or abort the cherry-pick to retry the delivery.
+
+Integration uses a durable two-phase marker around the cherry-pick and commit.
+After a restart, SpecDev either retries an unapplied delivery, finishes the
+known staged delivery, or recognizes its completed integration commit. It
+refuses to commit staged paths that do not belong to that child delivery or the
+parent Mission state.
 
 On another machine, fetch and switch to that pushed Mission branch before
 running `mission status` or `mission run`; SpecDev will use an existing fetched

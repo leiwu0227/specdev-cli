@@ -1,179 +1,204 @@
 # Quick Start
 
-Get up and running with SpecDev in under 5 minutes. By the end of this guide, you'll have SpecDev installed, your project configured, and your first feature moving through the workflow.
+This guide takes a repository from installation to its first completed SpecDev
+Assignment. SpecDev is a Node.js CLI; do not install or run it with Python,
+`pip`, or `pipx`.
 
-## Step 1: Install SpecDev
+## 1. Install and initialize
+
+Node.js 22.13 or newer is required.
 
 ```bash
 npm install -g github:leiwu0227/specdev-cli
-```
-
-## Step 2: Set up your project
-
-Navigate to your project and initialize SpecDev:
-
-```bash
 cd your-project
 specdev init
 ```
 
-This sets up everything you need:
+For a repository that already contains `.specdev/`, use:
 
-- `.specdev/` — the workflow folder with skills, templates, and assignment tracking
-- `.claude/skills/` and `.codex/skills/` — command skills for Claude Code and Codex
-- Platform adapters (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`) so your agent knows how to use SpecDev
+```bash
+specdev update
+```
 
-## Step 3: Enter the guided workflow
+Initialization installs the portable workflow under `.specdev/`, host skills
+for supported coding CLIs, and platform adapters such as `AGENTS.md` or
+`CLAUDE.md`. Managed runtime files can be regenerated; project notes,
+Assignments, Missions, Discussions, knowledge, and project guides are
+preserved.
 
-Open your coding agent (Claude Code or Codex) and run:
+After initialization or update, coding agents should prefer the generated
+`.specdev/cache/bin/specdev` wrapper. It prevents an older global executable
+from driving a newer repository workflow. Commands below use `specdev` for
+readability.
+
+## 2. Record project context
+
+In a new repository, ask the coding agent to run:
+
+```bash
+specdev start
+```
+
+This interactively fills `.specdev/project_notes/big_picture.md`. Check the
+current workflow at any time with:
 
 ```bash
 specdev next --json
+specdev status --json
+specdev continue
 ```
 
-On a new project this returns an idle state. Start orientation with:
+## 3. Deliver one Assignment
+
+An Assignment is the default unit of code-changing work.
 
 ```bash
-specdev do "project orientation"
+specdev assignment "add bounded retry handling"
 ```
 
-Follow each prompt from `specdev next --json`. Submit node evidence with `specdev step --json=<output>` and explicit choices with `specdev decide <value>`. Project context is stored in `.specdev/project_notes/big_picture.md`.
-
-## Step 4: Start your first feature
-
-Still inside your coding agent, create an assignment:
+The coding agent collaborates with you in
+`brainstorm/contract.md`. Keep the contract specific to this change, normally
+with one to three observable acceptance criteria.
 
 ```bash
-specdev do "start an assignment"
+specdev checkpoint brainstorm
+specdev reviewloop brainstorm       # optional
+specdev checkpoint brainstorm       # repeat if review changed the contract
+specdev approve brainstorm          # explicit approval of the exact hash
+specdev implement
 ```
 
-The assignment graph asks for the semantic command that creates and focuses the assignment. Run the command it provides, then return to `specdev next --json`.
+`implement` automatically produces the plan, runs the configured worker,
+collects acceptance evidence, and applies the frozen implementation-review
+policy. The default policy is:
 
-## The 3-Phase Workflow
+- Brainstorm review: optional
+- Implementation review: required
 
-Every assignment moves through these phases in order. The CLI enforces gates between phases — no skipping ahead. Knowledge capture at the end of a phase is optional and never blocks progress.
+Set policy when creating an Assignment with
+`--brainstorm-review=required|optional` and
+`--implementation-review=required|waived`. Approval freezes it. There is no
+routine final user gate after an approved implementation.
 
-### Phase 1: Brainstorm
+The durable result is intentionally compact:
+
+```text
+.specdev/assignments/00001_add-bounded-retry-handling/
+  brainstorm/contract.md
+  design/plan.md
+  implementation/progress.json
+  review/                       # when review runs
+  outcome.md
+  status.json
+```
+
+If a worker blocks, rerunning `specdev implement` reuses preserved artifacts
+instead of silently launching another worker. Use `--retry-worker` only when a
+fresh worker Attempt is intentional.
+
+## 4. Use a Mission for a larger objective
+
+The user—not SpecDev—chooses when work is a Mission.
 
 ```bash
-specdev do "start an assignment"
+specdev mission create "repair routing and add its monitoring UI"
+# collaborate on the Mission contract
+specdev reviewloop mission --mission=M00001   # optional
+specdev mission run M00001 --approve
 ```
 
-Interactive Q&A with you to nail down scope and design. The agent asks questions guided by category (problem/goal, scope boundaries, success criteria, etc.), explores 2-3 approaches, then presents design sections scaled to the assignment type.
+Mission Design first tries one full-scope Assignment. It splits only for a
+context limit, an information dependency, an intermediate decision, or a
+meaningfully independent verification or rollback boundary.
 
-**Produces:** `brainstorm/proposal.md` + `brainstorm/design.md`
+If several justified children are independent, Design places them in the same
+static wave. The foreground controller automatically leases up to three ignored
+`.specdev/worktrees/slot-N` worktrees and integrates completed deliveries in
+declared order. The user does not choose a concurrency count. A parallel setup
+failure before launch falls back to sequential execution.
 
-**Before approving, you can optionally review:**
-
-- `specdev checkpoint brainstorm` — validate required design sections exist
-- `specdev review brainstorm` — manual review in a separate session
-- `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex, Claude)
-- `specdev reviewloop brainstorm --reviewer=<name> --autocontinue` — review, then continue after approval
-
-**Need to revise?** If a later phase reveals a design problem, run `specdev revise` to archive downstream artifacts and re-enter brainstorming with your existing design loaded as context.
+Useful Mission commands:
 
 ```bash
-specdev approve brainstorm            # Gate: proceed to breakdown + implementation
+specdev mission status M00001
+specdev mission pause M00001
+specdev mission run M00001 --takeover
+specdev mission checkpoint M00001
+specdev mission checkpoint M00001 --push
 ```
 
-### Phase 2: Breakdown
+Mission checkpoints and branches are portable through Git. Raw logs, SQLite,
+PIDs, and worktree slots remain local and ignored. Restart recovery recognizes
+live children, delivery commits, integration conflicts, and interrupted
+two-phase integrations without treating unrelated staged files as its own.
 
-Runs immediately after brainstorm approval — no separate gate. Decomposes the design into small, executable tasks (H3 `### Task N:` headers inside `breakdown/plan.md`). Each task is self-contained with exact file paths, code snippets, and test commands. An automatic 1-2 round subagent review validates the plan before it's finalized.
+## 5. Explore concurrently without touching code
 
-**Produces:** `breakdown/plan.md`
-
-### Phase 3: Implement
-
-Implementation begins immediately after breakdown. Tasks are executed in plan order. Each task declares a mode:
-
-- `lightweight` — no TDD, no review (trivial scaffold/config only).
-- `standard` (default) — TDD + implementer self-review only.
-- `full` — TDD + reviewer subagent dispatched for spec compliance + code quality.
-
-After all tasks complete, the agent runs verification appropriate for the assignment's risk level and presents a summary.
-
-**Produces:** committed code + `implementation/progress.json`
-
-**Before approving, you can optionally review:**
-
-- `specdev checkpoint implementation` — validate implementation artifacts
-- `specdev review implementation` — manual review in a separate session
-- `specdev reviewloop implementation` — automated review via external CLI
-- `specdev reviewloop implementation --reviewer=<name> --autocontinue` — review, then approve after passing
+A Discussion may run while an Assignment or Mission is active:
 
 ```bash
-specdev approve implementation        # Gate: assignment complete
+specdev discussion "explore a new routing policy"
+specdev discussion D00001
+specdev reviewloop discussion --discussion=D00001   # optional
+specdev discussion D00001 --complete
+specdev assignment --from-discussion=D00001
+# or: specdev mission create --from-discussion=D00001
 ```
 
-### Optional: Knowledge Capture
-
-After a phase completes, if the agent learned something reusable, it may suggest capturing a short note in `.specdev/knowledge/<branch>/` (architecture, codestyle, domain, workflow, or workflow_feedback). This is opportunistic and never blocks progress.
-
-Subsequent assignments find that knowledge via:
+A Test Audit is also code-read-only. It proposes removals but never deletes
+tests itself:
 
 ```bash
-specdev knowledge search "<keywords>"
+specdev test-audit "slow routing tests"
+specdev test-audit TA00001
+specdev test-audit TA00001 --complete
+specdev assignment --from-test-audit=TA00001
 ```
 
-## Lost? Check your status
+## 6. Search and distill knowledge
 
-At any point, run:
+Markdown under `.specdev/knowledge/` is authoritative. SQLite is only a local,
+rebuildable FTS cache.
 
 ```bash
-specdev next --json     # canonical graph state and next action
-specdev status --json   # focused state plus run history
-specdev continue        # human-readable diagnosis
+specdev knowledge rebuild
+specdev knowledge search "routing retry timeout"
+specdev knowledge search "old workaround" --include-stale
+specdev knowledge distill
 ```
 
-These tell you exactly where you are, what's blocking you, and what to do next. Works from the terminal or inside an agent session.
+Keyword eligibility uses OR semantics by default, then ranks results by term
+coverage and BM25. Distillation gives the current coding CLI a bounded list of
+completed work and stale FAQs that may deserve curated knowledge updates.
 
-## Command reference
+## Compact command reference
 
-| Command                                                       | Run from         | What it does                                             |
-| ------------------------------------------------------------- | ---------------- | -------------------------------------------------------- |
-| `specdev init`                                                | Terminal         | Set up `.specdev/`, install skills and platform adapters |
-| `specdev update`                                              | Terminal         | Refresh core skills, keep your project files             |
-| `specdev skills`                                              | Terminal         | List available skills                                    |
-| `specdev help`                                                | Terminal         | Show usage info                                          |
-| `specdev start`                                               | Either           | Fill in or check project context                         |
-| `specdev continue`                                            | Either           | Show current state, blockers, and next action            |
-| `specdev next --json`                                         | Either           | Canonical next workflow action (machine-readable)        |
-| `specdev do "<intent>"`                                       | Either           | Select or resume a guided workflow                       |
-| `specdev step --json=<output>`                                | Coding agent     | Submit current-node evidence                             |
-| `specdev decide <value>`                                      | Either           | Resolve the current decision gate                        |
-| `specdev action <id>`                                         | Coding agent     | Record a side action without advancing                   |
-| `specdev cancel [reason]`                                     | Either           | Abandon the focused guided run                           |
-| `specdev assignment "<desc>"`                                 | Coding agent     | Create the assignment requested by the graph             |
-| `specdev discussion "<desc>"`                                 | Coding agent     | Start a parallel brainstorming discussion (no gate)      |
-| `specdev focus <id>`                                          | Either           | Switch the active assignment                             |
-| `specdev checkpoint <phase>`                                  | Either           | Validate phase artifacts                                 |
-| `specdev approve <phase>`                                     | Either           | Hard gate: approve phase and proceed                     |
-| `specdev review <phase>`                                      | Separate session | Manual review (`brainstorm` or `implementation`)         |
-| `specdev reviewloop <phase>`                                  | Coding agent     | Automated external review loop                           |
-| `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Coding agent     | Automated review and continue after approval             |
-| `specdev check-review`                                        | Coding agent     | Read and address review feedback                         |
-| `specdev revise`                                              | Coding agent     | Archive downstream artifacts, re-enter brainstorm        |
-| `specdev knowledge index`                                     | Terminal         | Build the SQLite knowledge cache                         |
-| `specdev knowledge search "<keywords>"`                       | Either           | Search indexed knowledge notes                           |
-| `specdev knowledge list`                                      | Either           | List all knowledge files with metadata                   |
-| `specdev memory refresh`                                      | Terminal         | Regenerate bounded `working_memory.md` for agents        |
-| `specdev migrate`                                             | Coding agent     | Guided `.specdev/` layout migration workflow             |
-| `specdev migrate legacy-assignments`                          | Terminal         | Mechanical V3→V4 assignment file mover                   |
+| Command                                | Purpose                                          |
+| -------------------------------------- | ------------------------------------------------ |
+| `specdev init`                         | Initialize portable SpecDev state                |
+| `specdev update`                       | Refresh managed runtime files and graph packages |
+| `specdev start`                        | Fill or review project context                   |
+| `specdev next --json`                  | Show the canonical focused-workflow action       |
+| `specdev assignment "<objective>"`     | Create one bounded code change                   |
+| `specdev checkpoint brainstorm`        | Validate the editable contract                   |
+| `specdev approve brainstorm`           | Approve the exact contract hash                  |
+| `specdev implement`                    | Run plan, implementation, evidence, and review   |
+| `specdev discussion "<topic>"`         | Start concurrent code-read-only exploration      |
+| `specdev test-audit "<scope>"`         | Prepare a safe test-pruning proposal             |
+| `specdev mission create "<objective>"` | Create a user-chosen larger objective            |
+| `specdev mission run M00001`           | Run or resume its foreground controller          |
+| `specdev reviewloop <phase>`           | Run the configured bounded reviewer loop         |
+| `specdev knowledge rebuild`            | Rebuild disposable SQLite search                 |
+| `specdev knowledge search "<terms>"`   | OR-search authoritative Markdown                 |
+| `specdev knowledge distill`            | Prepare an on-demand curation brief              |
+| `specdev continue`                     | Diagnose durable state and the next action       |
+| `specdev help`                         | Show the complete compact command list           |
 
-## Putting it all together
+## What is committed
 
-```
-Terminal:  specdev init                        # one-time setup
-Agent:     specdev do "project orientation"    # describe your project
-Agent:     specdev do "start an assignment"    # select assignment workflow
-           specdev assignment "<desc>" ...     # create as prompted by the graph
-           specdev checkpoint brainstorm       # validate design (optional)
-           specdev reviewloop brainstorm       # automated review (optional)
-           specdev approve brainstorm          # gate → breakdown runs immediately
-                                               # breakdown → plan.md (auto-reviewed)
-                                               # implement → committed code
-           specdev checkpoint implementation   # validate implementation (optional)
-           specdev reviewloop implementation   # automated review (optional)
-           specdev approve implementation      # gate → assignment complete
-                                               # optionally capture knowledge
-```
+Commit project-facing state such as Assignments, Missions, Discussions,
+knowledge Markdown, and installed workflows or skills according to your
+repository policy. Keep `.specdev/cache/`, `.specdev/worktrees/`,
+`knowledge.sqlite`, local provider logs, and process markers ignored.
+
+For the detailed behavior and recovery model, see [README.md](README.md).
