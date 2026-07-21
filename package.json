@@ -25,6 +25,7 @@
     "lint": "prettier --check README.md QUICKSTART.md docs/assignment-schema.md package.json package-lock.json \".github/workflows/*.{yml,yaml}\" \"src/**/*.js\" \"templates/.specdev/**/*.{md,json,yaml,yml}\" tests/test-engine-adapter.js tests/test-engine-graphpackages.js tests/test-engine-integration.js tests/test-engine-packaging.js tests/test-vnext-foundations.js",
     "format": "prettier --write .",
     "vendor:ripplegraph": "node ./scripts/update-ripplegraph.js",
+    "prepare": "node ./scripts/prepare-git-install.js",
     "preversion": "sed -i \"s/\\\"releaseDate\\\": \\\"[0-9-]*\\\"/\\\"releaseDate\\\": \\\"$(date +%Y-%m-%d)\\\"/\" package.json",
     "release": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
