@@ -1,105 +1,69 @@
-# Workflow Guide
+# Workflow reference
 
-Every assignment follows these 3 required phases in order. Do not skip phases.
+## Assignment
 
-For action selection, use the runtime contract first:
+Use `_guides/assignment_guide.md`. Approval is the only routine user gate;
+successful evidence and implementation review complete automatically.
 
-```bash
-specdev next --json
-```
+## Mission
 
-The runtime reads the focused RippleGraph run and registered packages under
-`.specdev/workflows/`, then returns one product-shaped next action. This guide
-is a human-readable reference only; it is not a second state machine.
+A Mission is a static foreground workflow with a simple ordered
+`design/assignments.yaml` queue. The contract defaults to `Initial child plan:
+single`; use `planned` only for a worker context limit, an information
+dependency, an intermediate decision, or independent verification/rollback.
+File count and multiple Tasks are not split reasons. A full-scope single child
+is derived from the approved Mission contract and its exact implementation
+review may satisfy Mission convergence when the candidate digest still matches.
+The Mission contract follows the same proportionality rule as an Assignment:
+reference project context, avoid plan details, and keep only independent
+observable acceptance criteria. Multi-child contracts are concise deltas that
+inherit parent authority rather than reproducing the Mission brainstorm.
+Replanning occurs only for blocking review/evidence or an explicit required
+follow-up. Delivery remains normal Git work.
 
-Start or resume guided work with:
+## Discussion
 
-```bash
-specdev do "<intent>"
-specdev next --json
-```
+A Discussion is a RippleGraph callable and never becomes the focused scheduler.
+It may inspect changing repository state but treats product code as read-only.
+Completion records start/end revisions and an artifact hash. Promotion creates a
+fresh Assignment or Mission and revalidates assumptions. Artifacts edited after
+completion must be restored or copied into a new Discussion before promotion.
 
----
+## Test Audit
 
-## Phase 1: Brainstorm
+`specdev test-audit "<scope>"` is another isolated callable. It reads product
+code and tests but writes only `audit.md` and `assignment-contract.md` in its own
+folder. Each removal needs rationale, retained protection, cost impact, and
+confidence. `--complete` freezes the artifacts; `specdev assignment
+--from-test-audit=TA00001` copies the exact contract into the normal approval
+workflow before any test is changed.
 
-**Goal:** Understand the problem and produce a validated design or research output.
+## Profiles and guides
 
-**Output:** `brainstorm/proposal.md` + `brainstorm/design.md`
+`.specdev/agents.yaml` chooses worker/reviewer provider, model, effort, and
+timeout. Ignored `cache/agents.local.yaml` overrides it on one machine. Prompts
+and up to three selected guides define temporary work; there are no permanent
+reviewer personas.
 
-**Start:** Run `specdev do "start an assignment"`, then follow the returned
-assignment-creation instruction. The semantic `specdev assignment` command
-creates the folder and remains authoritative for assignment layout.
-- Valid assignment types: feature | bugfix | refactor | familiarization
-- Reserve-only mode exists for manual folder creation: `specdev assignment "<description>"`
-- To switch to an existing assignment: `specdev focus <id>` (updates `.specdev/.current`)
-- To explore ideas without committing to a full assignment: `specdev discussion "<description>"` — creates a lightweight discussion folder; promote later with `specdev assignment "<desc>" --discussion=<id> --type=<type> --slug=<slug>`
+## Knowledge
 
-**Choose the skill that matches your work:**
-- Building or changing functionality → `skills/core/brainstorming/SKILL.md`
-- Understanding existing code → `skills/core/investigation/SKILL.md`
-- Diagnosing a bug → `skills/core/diagnosis/SKILL.md`
+Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.
+Use default OR search for unfamiliar repository behavior. FAQ entries past
+`review_after` require explicit `--include-stale` and revalidation; entries with
+`status: superseded` are outside default scope. `specdev knowledge distill`
+prepares a bounded, read-only source brief for the current coding CLI and never
+spawns another agent.
 
-After every semantic command, run the returned `specdev step` or `specdev next`
-command exactly as shown.
+## Verification
 
-**Checkpoint:** Run `specdev checkpoint brainstorm`.
-Must pass before requesting review.
+Focused evidence first. Reuse the same command on the same revision. A
+standalone Assignment may run a full suite at most once only when approved scope
+requires it. Mission children never run the full suite; the Mission may run one
+exact final integrated command per final candidate. Repository instructions can
+require an additional explicit user confirmation.
 
-**Review (optional):**
-- `specdev review brainstorm` — manual review in a separate session
-- `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex)
-
-**Gate:** `specdev approve brainstorm` must have been run. If `specdev reviewloop --autocontinue` approved the phase, continue with the next action from its contract or from `specdev next --json`.
-
----
-
-## Phase 2: Breakdown
-
-**Goal:** Turn the approved design into an implementation plan with coherent tasks, verification guidance, and an execution mode.
-
-**Skill:** `skills/core/breakdown/SKILL.md`
-
-**Internal reviews:** Design review (up to 2 rounds) then plan review (1-2 rounds). Both run automatically inside breakdown.
-
-**Output:** `breakdown/plan.md`
-
-After writing the plan, run `specdev next --json` for the next implementation action.
-
----
-
-## Phase 3: Implement
-
-**Goal:** Execute tasks using the plan's execution mode and task-level verification/review.
-
-**Skill:** `skills/core/implementing/SKILL.md`
-
-**Checkpoint:** Run `specdev checkpoint implementation`.
-Must pass before requesting review.
-
-**Review (optional):**
-- `specdev review implementation` — manual review in a separate session
-- `specdev reviewloop implementation` — automated review via external CLI (e.g., Codex)
-
-**Gate:** `specdev approve implementation` must have been run. If `specdev reviewloop --autocontinue` approved the phase, continue with the next action from its contract or from `specdev next --json`.
-
----
-
-## Optional Phase-End Knowledge Capture
-
-**Goal:** Capture reusable knowledge only when it helps future assignments.
-
-**Skill:** `skills/core/knowledge-capture/SKILL.md`
-
-**Output:** Optional direct updates to `knowledge/` or `project_notes/`. This never blocks workflow progress.
-
-At the end of brainstorm, breakdown, or implementation, suggest capture only if the phase produced reusable knowledge. Search first with `specdev knowledge search "<issue>"`. Prefer prune-and-replace: update or replace an existing note when one applies; create a concise new note only when no existing note fits. Ask the user before writing.
-
----
-
-## Always-Apply Skills
-
-Read these before starting any assignment:
-- `skills/core/verification-before-completion.md` — no completion claims without evidence
-- `skills/core/receiving-code-review.md` — no performative agreement in reviews
-- `_guides/codestyle_guide.md` — coding standards
+When work adds or upgrades an external dependency, resolve its version from the
+package manager or registry during the Attempt and inspect available lockfile
+and audit evidence. Direct high/critical advisories block review unless the
+approved contract explicitly accepts them. Lockfile-only resolution is not
+install or launch evidence.

@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { loadGraphPackage } from 'ripplegraph'
+import { installGraphPackages } from '../src/utils/engine.js'
 
 const root = resolve(import.meta.dirname, '..')
 const workflowsRoot = join(root, 'templates', '.specdev', 'workflows')
 const expectedIds = [
   'assignment-lifecycle',
   'discussion-lifecycle',
-  'knowledge-distillation',
   'layout-migration',
+  'mission-lifecycle',
   'project-orientation',
+  'test-audit-lifecycle',
   'workspace-dispatcher',
 ]
 
@@ -19,15 +22,17 @@ const packageIds = readdirSync(workflowsRoot, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort()
 
-assert.deepEqual(packageIds, expectedIds, 'the template ships exactly six graph packages')
+assert.deepEqual(packageIds, expectedIds, 'the template ships the expected graph packages')
 
 const packages = packageIds.map((id) => loadGraphPackage(join(workflowsRoot, id)).manifest)
 const dispatcher = packages.filter((manifest) => manifest.kind === 'dispatcher')
 const workflows = packages.filter((manifest) => manifest.kind === 'workflow')
+const callables = packages.filter((manifest) => manifest.kind === 'callable')
 
 assert.equal(dispatcher.length, 1, 'exactly one dispatcher is registered')
 assert.equal(dispatcher[0].id, 'workspace-dispatcher')
-assert.equal(workflows.length, 5, 'five executable workflows are registered')
+assert.equal(workflows.length, 4, 'four focused workflows are registered')
+assert.equal(callables.length, 2, 'two callable workflows are registered')
 
 for (const graph of workflows) {
   assert.ok(graph.title, `${graph.id} has a product title`)
@@ -42,18 +47,21 @@ for (const graph of workflows) {
   }
 }
 
+assert.deepEqual(callables.map((graph) => graph.id).sort(), ['discussion-lifecycle', 'test-audit-lifecycle'])
+for (const graph of callables) assert.ok(graph.nodes[graph.entry])
+
 const byId = Object.fromEntries(packages.map((manifest) => [manifest.id, manifest]))
 assert.deepEqual(
   Object.keys(byId['assignment-lifecycle'].nodes).filter(
     (id) => byId['assignment-lifecycle'].nodes[id].gate
   ),
-  ['brainstorm-review-choice', 'implementation-review-choice']
+  ['approve-contract']
 )
 assert.deepEqual(
   Object.keys(byId['discussion-lifecycle'].nodes).filter(
     (id) => byId['discussion-lifecycle'].nodes[id].gate
   ),
-  ['review-choice']
+  []
 )
 assert.deepEqual(
   Object.keys(byId['layout-migration'].nodes).filter(
@@ -62,10 +70,18 @@ assert.deepEqual(
   ['approval']
 )
 assert.deepEqual(
-  Object.keys(byId['knowledge-distillation'].nodes).filter(
-    (id) => byId['knowledge-distillation'].nodes[id].gate
+  Object.keys(byId['mission-lifecycle'].nodes).filter(
+    (id) => byId['mission-lifecycle'].nodes[id].gate
   ),
-  ['mode-choice', 'review-suggestions']
+  ['approve-mission']
+)
+assert.equal(
+  byId['mission-lifecycle'].nodes['child-assignment'].workflowRef.graphId,
+  'assignment-lifecycle'
+)
+assert.equal(
+  byId['mission-lifecycle'].nodes['advance-queue'].edges[0].when.follow_up_required,
+  true
 )
 
 const workspace = JSON.parse(
@@ -73,5 +89,21 @@ const workspace = JSON.parse(
 )
 assert.equal(workspace.entryGraph, 'workspace-dispatcher')
 assert.equal(existsSync(join(root, 'templates', '.specdev', 'workflow.yaml')), false)
+
+const installRoot = mkdtempSync(join(tmpdir(), 'specdev-graph-packages-'))
+try {
+  const installed = await installGraphPackages(workflowsRoot, installRoot)
+  assert.equal(installed.length, expectedIds.length)
+  const catalog = JSON.parse(readFileSync(join(installRoot, 'catalog.json'), 'utf8'))
+  assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.1.0')
+  const installedGraph = join(installRoot, 'assignment-lifecycle@2.1.0', 'graph.json')
+  writeFileSync(installedGraph, `${readFileSync(installedGraph, 'utf8')}\n`)
+  await assert.rejects(
+    installGraphPackages(workflowsRoot, installRoot),
+    /changed without a version bump/
+  )
+} finally {
+  rmSync(installRoot, { recursive: true, force: true })
+}
 
 console.log('Engine graph package tests passed.')

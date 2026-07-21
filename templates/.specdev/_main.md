@@ -1,48 +1,78 @@
-# SpecDev Workflow
+# SpecDev workflow
 
-You are working in a project that uses SpecDev — a spec-driven development framework. You MUST follow this workflow for all work.
+SpecDev treats tracked `.specdev/` as portable workflow state and the current
+coding CLI as the interactive worker. Run the Node.js CLI directly as `specdev
+<command>`; never install or invoke it with Python tooling.
 
-## How SpecDev Works
+When `.specdev/cache/bin/specdev` exists, run workflow commands through that
+workspace-local wrapper so a stale global installation cannot drive newer
+artifacts. Fall back to `specdev` on PATH only when the wrapper is absent.
 
-All work is organized into **assignments**. An assignment is a self-contained unit of work — a feature, bugfix, refactor, or investigation — tracked in its own folder under `assignments/`. Each assignment progresses through three required phases, with optional non-blocking phase-end knowledge capture when reusable knowledge was learned. The CLI enforces gates between phases so work cannot advance until artifacts are validated and the user approves.
+## Start here
 
-## CLI
+1. Read `.specdev/project_notes/big_picture.md` and repository instructions.
+2. Run `specdev next --json` for the focused RippleGraph workflow.
+3. For explicit identities use `specdev mission status M00001` or `specdev
+   discussion D00001`.
+4. Announce every subtask with `Specdev: <action>`.
 
-`specdev` is a Node.js CLI installed globally via npm. Run it directly as `specdev <command>`. It is NOT a Python package — never use pip/python/pipx.
+Do not edit `.ripplegraph/` manually. Lifecycle state and approval events belong
+to RippleGraph while work is non-terminal; revisions and diffs belong to Git;
+contracts, outcomes, and receipts are the small durable human record. Successful
+Mission and standalone Assignment completion removes the terminal run and its
+owned Attempt records after their compact activity summary has been preserved.
+Assignment and Mission transitions are owned by their semantic commands;
+generic `specdev step`, `decide`, and `action` cannot advance those graphs.
 
-## First Steps
+For project-facing review, prioritize `missions/` and `assignments/`: they hold
+the approved authority, delivery evidence, and outcomes. Installed workflow
+packages and skills are durable infrastructure. RippleGraph checkpoints and
+process records are temporary recovery infrastructure for non-terminal work;
+human summaries should count or group them instead of enumerating every file.
 
-1. Read `project_notes/big_picture.md` — understand the project
-2. Run `specdev next --json` for the focused guided workflow.
-3. If the state is idle, enter the appropriate workflow with `specdev do "<intent>"`.
-4. Follow the returned instructions and submit decisions or evidence with the exact `next_action.command_line`.
+When an unfamiliar repository-specific failure or recurring hazard appears,
+search living knowledge with `specdev knowledge search "<keyword bag>"`. Use
+`--include-stale` only to recover older guidance and verify it before relying on
+it. `specdev knowledge distill` is an optional read-only brief for the current
+coding CLI; it never launches a distillation agent or rewrites knowledge by
+itself.
 
-Assignments already active from a pre-RippleGraph installation continue through
-the compatibility runtime until completion. Do not manually edit
-`.specdev/.ripplegraph/` or attempt to reconstruct its state.
+## Work types
 
-**Reference:** `_index.md` is the detailed lookup for all guides, skills, commands, and project context. Consult it when you need to find a specific resource.
+- **Assignment:** one readable contract, one user approval, then automatic
+  Design + Implementation + evidence + review.
+- **Mission:** a foreground sequential controller on a dedicated branch using
+  the normal worktree and the same Assignment graph for each child. Mission is
+  user-selected and does not imply multiple children.
+- **Discussion:** a concurrent code-read-only RippleGraph callable that writes
+  proposal/design artifacts and may later be promoted to fresh work.
+- **Test Audit:** a concurrent code-read-only callable that proposes exact test
+  pruning and a ready Assignment contract; it never removes tests itself.
 
-## Workflow FAQ
+Only one focused Assignment or Mission scheduler exists. Discussion and Test
+Audit callables may coexist because their checkpoints are isolated.
 
-If workflow instructions conflict, a SpecDev command fails unexpectedly, or you are unsure how to proceed, run `specdev knowledge search "<issue>"` and inspect `knowledge/workflow/` before guessing. Capture recurring workflow gotchas through optional phase-end knowledge capture.
+## Hard rules
 
-## The Workflow
+- The foreground coding CLI authors Brainstorm with the user; do not spawn a
+  separate Brainstorm author for standalone work.
+- Assignment Brainstorm review defaults to optional and implementation review
+  defaults to required. The user may freeze another supported policy at
+  contract approval. A review waiver never waives acceptance evidence.
+- Mission Brainstorm review is optional and never approves the contract.
+  Multi-child Mission contracts receive review; a deterministic full-scope
+  single child reuses the approved parent authority without another Brainstorm
+  author or reviewer.
+- Approval binds the exact final contract hash. Editing it invalidates approval.
+- Reviewers inspect and report; they never repair tracked code.
+- Never run a full suite when narrower evidence answers the current question.
+  Repository confirmation rules always take precedence.
+- Do not create worktrees for normal Assignments, sequential Mission children,
+  Missions, or Discussions.
+- Raw provider output, PID state, SQLite, and scratch data belong in ignored
+  `cache/`; ordinary interrupted source can be inspected and repaired.
+- A blocked Assignment worker preserves its result and returns a blocked
+  outcome. Finish its artifacts and rerun to resume without another provider
+  call, or use `specdev implement --retry-worker` to request one explicitly.
 
-Every assignment follows the same 3 required phases in order:
-
-1. **Brainstorm** — understand the problem, explore approaches, produce a design or research output
-2. **Breakdown** — create a concise implementation plan with coherent tasks and verification guidance
-3. **Implement** — execute tasks using the plan's execution mode and task-level verification
-
-Optional phase-end knowledge capture may suggest durable notes when reusable knowledge was learned.
-
-Use `specdev next --json` and the registered packages under `workflows/` as the source of truth for action selection. Read `_guides/workflow.md` only as a human-readable reference for phases, artifacts, gates, and recovery paths.
-
-## Rules
-
-- Follow the phases in order. Do not skip phases.
-- No completion claims without evidence.
-- Announce subtasks with "Specdev: <action>".
-- Read `_guides/codestyle_guide.md` before writing any code.
-- When a specdev assignment is active, specdev skills take precedence over superpowers equivalents. See `_guides/superpowers_exclusions.md`.
+See `_index.md` for paths and `_guides/workflow.md` for the concise lifecycle.

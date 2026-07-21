@@ -1,53 +1,56 @@
-# Assignment Schema
+# Assignment Artifacts
 
-SpecDev uses a single authoritative assignment schema file:
-
-- `specdev.assignment-schema.json`
-
-This file defines:
-
-1. required top-level directories for every assignment
-2. ordered workflow phases
-3. per-phase artifact rules (`mode: all` or `mode: any`)
-4. optional-but-recommended paths
+SpecDev deliberately has no second generalized Assignment schema. Lifecycle
+shape belongs to the versioned `assignment-lifecycle` RippleGraph package, while
+small command-level validators check the few durable artifacts that need a
+mechanical contract.
 
 ## Current Canonical Structure
 
 ```text
-.specdev/assignments/<id>_<type>_<name>/
+.specdev/assignments/<id>_<slug>/
 ├── brainstorm/
-│   ├── proposal.md            (optional if design-only brainstorm)
-│   └── design.md
-├── breakdown/
+│   └── contract.md
+├── design/
 │   └── plan.md
 ├── implementation/
-│   ├── progress.json
-│   └── implementation.md      (optional narrative)
-├── context/
-├── review_report.md           (present after final review)
-└── review_request.json        (optional, review in progress)
+│   └── progress.json
+├── review/                     (created only when review runs)
+├── outcome.md
+└── status.json
 ```
 
-## Validation Script
+`brainstorm/contract.md` carries inline acceptance IDs such as `AC-1`.
+`design/plan.md` maps ordered Task IDs to them. `outcome.md` contains the compact
+final acceptance/evidence/result table.
 
-Validate an assignment folder against the schema:
+Required sections are authority boundaries, not invitations to repeat the
+repository's big picture. Keep each section to change-specific information (or
+state that none exists), and use the fewest independent observable acceptance
+criteria—normally 1-3 for a small Assignment and rarely more than 5. Tasks and
+file lists belong in `design/plan.md`.
+
+## Validation
 
 ```bash
-node scripts/verify-assignment-schema.js .specdev/assignments/00001_feature_auth
+specdev checkpoint brainstorm
+specdev implement
 ```
 
-The script reports:
+The Brainstorm checkpoint checks contract sections, remaining placeholders, and
+acceptance IDs. Implementation validates Task coverage, guide selections and
+their catalog versions, verification receipts, structured deviations,
+`follow_up`, and final results before the frozen review policy is applied.
 
-1. required directory checks
-2. detected highest phase
-3. phase integrity for all completed phases
-4. optional path presence warnings
+Review policy is stored in `status.json` while Brainstorm is editable and copied
+into the exact approval decision. Supported values are Brainstorm
+`optional|required` and implementation `required|waived`. A waiver is valid only
+for all-Passed acceptance/evidence with no deviations or follow-up.
 
 ## Change Policy
 
 When changing workflow artifacts:
 
-1. update `specdev.assignment-schema.json` first
-2. run `node scripts/verify-assignment-schema.js <assignment-path>`
-3. update docs/tests that reference affected paths
-
+1. version and update `templates/.specdev/workflows/assignment-lifecycle/graph.json`
+2. update only the narrow validator that owns the changed invariant
+3. update docs and focused tests that reference affected paths

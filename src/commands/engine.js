@@ -11,7 +11,7 @@ import {
 } from 'ripplegraph'
 import { join } from 'path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
-import { ensureWorkspaceEngine, workflowRootFor } from '../utils/engine.js'
+import { assertWorkspaceEngine, workflowRootFor } from '../utils/engine.js'
 import { graphTitle, toProductState, wrapDecision } from '../utils/engine-adapter.js'
 
 export async function engineCommand(command, positionalArgs = [], flags = {}) {
@@ -19,7 +19,7 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
   await requireSpecdevDirectory(join(projectRoot, '.specdev'))
 
   try {
-    ensureWorkspaceEngine(projectRoot)
+    assertWorkspaceEngine(projectRoot)
     const workflowRoot = workflowRootFor(projectRoot)
     const result = runEngineCommand(workflowRoot, command, positionalArgs, flags)
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
@@ -98,6 +98,8 @@ function doCommand(workflowRoot, intent) {
 function decideCommand(workflowRoot, rawValue) {
   if (!rawValue) throw new Error('decide requires <value-or-json>')
   const state = getState({ workflowRoot })
+  const semanticBlock = semanticTransitionBlock(state, 'decide')
+  if (semanticBlock) return semanticBlock
   const schema = state?.node?.gate?.decisionSchema
   if (!schema) throw new Error('current workflow step is not awaiting a decision')
   const value = parseJsonValue(rawValue)
@@ -108,6 +110,9 @@ function decideCommand(workflowRoot, rawValue) {
 }
 
 function stepCommand(workflowRoot, output) {
+  const currentState = getState({ workflowRoot })
+  const semanticBlock = semanticTransitionBlock(currentState, 'step')
+  if (semanticBlock) return semanticBlock
   const result = renderState(workflowRoot, stepRun({ workflowRoot, output: output || {} }))
   if (result.state !== 'invalid') return result
   const current = renderState(workflowRoot, getState({ workflowRoot }))
@@ -122,12 +127,25 @@ function stepCommand(workflowRoot, output) {
 function actionCommand(workflowRoot, actionId, input) {
   if (!actionId) throw new Error('action requires <action-id>')
   const state = getState({ workflowRoot })
+  const semanticBlock = semanticTransitionBlock(state, 'action')
+  if (semanticBlock) return semanticBlock
   const available = (state?.node?.sideChannelActions || []).map((action) => action.id)
   if (!available.includes(actionId)) {
     throw new Error(`unknown action '${actionId}'; available: ${available.join(', ') || '(none)'}`)
   }
   const result = recordSideChannelAction({ workflowRoot, actionId, input })
   return renderState(workflowRoot, result.state)
+}
+
+function semanticTransitionBlock(state, operation) {
+  if (!['assignment-lifecycle', 'mission-lifecycle'].includes(state.position?.graph)) return null
+  const commandLine = state.node?.operatorContext?.command || 'specdev next --json'
+  return {
+    status: 'blocked',
+    state: 'semantic_command_required',
+    problem: `generic ${operation} cannot advance ${state.position.graph}; use its semantic command`,
+    next_action: { command_line: commandLine },
+  }
 }
 
 function statusCommand(workflowRoot) {

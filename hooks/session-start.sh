@@ -42,24 +42,29 @@ EOF
 # the focused run. Older installations fall through to the legacy context path.
 NEXT_JSON=$(specdev next --json 2>/dev/null || true)
 if [ -n "$NEXT_JSON" ]; then
-  NEXT_CONTEXT=$(node -e "
+  NEXT_CONTEXT=$(node -e '
     try {
       const state = JSON.parse(process.argv[1]);
-      if (!state || !state.state || state.state === 'engine_error') process.exit(1);
-      const workflow = state.workflow || 'none';
+      if (
+        !state ||
+        !state.state ||
+        (state.workflow && typeof state.workflow !== "string") ||
+        !state.next_action?.command_line
+      ) process.exit(1);
+      const workflow = state.workflow || "none";
       const phase = state.phase || state.state;
-      const command = state.next_action?.command_line || 'specdev next --json';
-      const instructions = state.instructions || state.prompt || '';
+      const command = state.next_action.command_line;
+      const instructions = state.instructions || state.prompt || "";
       process.stdout.write(
-        'SpecDev active. Workflow: ' + workflow + ' | State: ' + state.state + ' | Phase: ' + phase +
-        '\\n\\nNext: ' + command +
-        (instructions ? '\\n\\nInstructions: ' + instructions : '') +
-        '\\n\\nAnnounce every subtask with \\"Specdev: <action>\\".'
+        "SpecDev active. Workflow: " + workflow + " | State: " + state.state + " | Phase: " + phase +
+        "\n\nNext: " + command +
+        (instructions ? "\n\nInstructions: " + instructions : "") +
+        "\n\nAnnounce every subtask with \"Specdev: <action>\"."
       );
     } catch {
       process.exit(1);
     }
-  " "$NEXT_JSON" 2>/dev/null) || NEXT_CONTEXT=""
+  ' "$NEXT_JSON" 2>/dev/null) || NEXT_CONTEXT=""
   if [ -n "$NEXT_CONTEXT" ]; then
     emit_hook_json "$NEXT_CONTEXT"
     exit 0

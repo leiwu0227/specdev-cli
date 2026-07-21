@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process'
 const root = resolve(import.meta.dirname, '..')
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 
-assert.equal(pkg.engines.node, '>=20.0.0')
+assert.equal(pkg.engines.node, '>=22.13.0')
 assert.match(pkg.dependencies.ripplegraph, /^file:vendor\/ripplegraph-\d+\.\d+\.\d+\.tgz$/)
 assert.equal(pkg.files.includes('vendor/'), true)
 assert.deepEqual(pkg.bundledDependencies, ['ripplegraph'])
@@ -23,12 +23,15 @@ const files = new Set(report.files.map((entry) => entry.path))
 assert.equal(files.has('vendor/ripplegraph-0.1.0.tgz'), true)
 assert.equal(files.has('node_modules/ripplegraph/package.json'), true)
 assert.equal(files.has('templates/.specdev/workflow.json'), true)
+assert.equal(files.has('templates/.specdev/_templates/faq.md'), true)
+assert.equal(files.has('templates/.specdev/knowledge/faq/.gitkeep'), true)
 for (const id of [
   'assignment-lifecycle',
   'discussion-lifecycle',
-  'knowledge-distillation',
   'layout-migration',
+  'mission-lifecycle',
   'project-orientation',
+  'test-audit-lifecycle',
   'workspace-dispatcher',
 ]) {
   assert.equal(files.has(`templates/.specdev/workflows/${id}/graph.json`), true)

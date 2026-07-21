@@ -5,9 +5,7 @@ import fse from 'fs-extra'
 import { blankLine, printLines, printSection } from '../utils/output.js'
 import { skillsInstallCommand } from './skills-install.js'
 import { scanSkillsDir } from '../utils/skills.js'
-import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
-import { ASSIGNMENT_TYPES, commandPhases } from '../utils/workflow-contract.js'
-import { ensureWorkspaceEngine } from '../utils/engine.js'
+import { installGraphPackages, installWorkspaceEngine } from '../utils/engine.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -17,8 +15,6 @@ export function adapterContent(heading) {
   return `# ${heading}
 
 Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
-
-If this repository develops SpecDev itself, treat \`.specdev/\` as the installed workflow/runtime state, not as product source. When changing SpecDev behavior, edit source files such as \`src/\`, \`templates/.specdev/\`, tests, and docs. Do not edit or commit \`.specdev\` workflow files unless the user explicitly runs or asks for \`specdev update\`.
 
 IMPORTANT: Before starting any subtask, announce "Specdev: <what you're doing>".
 If you stop announcing subtasks, the user will assume you've stopped following the workflow.
@@ -31,14 +27,6 @@ export const ADAPTERS = {
   cursor: { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
 }
 
-const assignmentTypesText = ASSIGNMENT_TYPES.join(' | ')
-const assignmentReviewPhases = commandPhases.review.filter(p => p !== 'discussion')
-const assignmentReviewPhasesText = assignmentReviewPhases.join(' or ')
-const assignmentCheckReviewPhasesText = commandPhases.checkReview.join(' or ')
-const assignmentReviewloopPhasesText = commandPhases.reviewloop
-  .filter(p => p !== 'discussion')
-  .join('` or `')
-
 export const SKILL_FILES = {
   'specdev-start': `---
 name: specdev-start
@@ -46,63 +34,10 @@ description: Interactive Q&A to fill in your project's big_picture.md
 ---
 
 Read \`.specdev/project_notes/big_picture.md\`.
-
-**If it already has content** (not the default "TODO: filled by user" template):
-- Present the current content to the user
-- Ask: "This is your current big picture. Would you like to update it?"
-- If yes, ask which sections to change. If no, you're done.
-
-**If empty or still the template:**
-
-1. Run \`bash .specdev/skills/core/brainstorming/scripts/get-project-context.sh .\` and review the output silently to orient yourself.
-
-2. Ask the user the following questions **one at a time**, waiting for each answer before proceeding:
-   - What does this project do? (1-2 sentence summary)
-   - Who are the users or consumers of this project?
-   - What's the tech stack? (languages, frameworks, key dependencies)
-   - What are the key architectural decisions or patterns?
-   - Any conventions or constraints the team follows?
-
-3. After all questions are answered, compose a clean \`big_picture.md\` with the following sections and write it to \`.specdev/project_notes/big_picture.md\`:
-
-\`\`\`markdown
-# Project Big Picture
-
-## Overview
-<what the project does>
-
-## Users / Consumers
-<who uses it>
-
-## Tech Stack
-<languages, frameworks, key deps>
-
-## Architecture
-<key decisions and patterns>
-
-## Conventions & Constraints
-<team rules, style guides, constraints>
-\`\`\`
-
-4. Show the user the final content and ask them to confirm or request changes before writing.
-`,
-  'specdev-assignment': `---
-name: specdev-assignment
-description: Create a new assignment and start the brainstorm phase
----
-
-Run \`specdev next --json\`. If the workspace is idle, run
-\`specdev do "start an assignment"\`.
-
-For agents, prefer command-created assignment setup:
-
-1. Follow the assignment graph until it requests assignment creation
-2. Pick a type (${assignmentTypesText}) and a short hyphenated slug, then run the printed \`specdev assignment\` command
-3. Read the JSON or text output to confirm the assignment was created and focused
-4. Run \`specdev next --json\` to get the canonical next action
-5. Follow the returned guide or command exactly
-
-Only use the reserve-only form when a human explicitly wants to create folders manually.
+If it is already project-specific, present it and ask whether the user wants an
+update. Otherwise ask one focused question at a time about purpose, users,
+technology, architecture, and constraints. Draft the complete file, show it to
+the user, and write only after confirmation.
 
 Announce every subtask with "Specdev: <action>".
 `,
@@ -113,35 +48,13 @@ description: Fully re-read the specdev workflow and re-anchor from scratch
 
 You have drifted from the specdev workflow. Stop what you're doing and:
 
-1. Read \`.specdev/_main.md\` completely
-2. Run \`specdev next --json\` to get the canonical active assignment state, next action, blockers, choices, and hook outcomes
-3. Follow the returned guide or command exactly
+1. Read \`.specdev/_main.md\` completely.
+2. Read the typed \`.specdev/.current\` focus, if present.
+3. Run \`specdev next --json\` for an Assignment, \`specdev mission status\`
+   for a Mission, or \`specdev discussion <id>\` for a Discussion.
+4. Treat the durable graph and folder artifacts as authoritative.
 
 Announce every subtask with "Specdev: <action>".
-`,
-  'specdev-continue': `---
-name: specdev-continue
-description: Resume specdev work from where you left off
----
-
-Run \`specdev continue\`.
-
-Use \`specdev next --json\` for the canonical runtime action when available; use \`specdev continue\` for human-readable diagnosis and migration hints.
-If blockers are reported, resolve them first (for example \`specdev migrate\`).
-
-Announce every subtask with "Specdev: <action>".
-`,
-  'specdev-review': `---
-name: specdev-review
-description: Phase-aware manual review of the current assignment
----
-
-Run \`specdev review <phase>\` where phase is ${assignmentReviewPhasesText}.
-
-Examples: \`specdev review brainstorm\`, \`specdev review implementation\`.
-
-Follow the printed instructions to review the appropriate artifacts.
-Discuss findings with the user before concluding.
 `,
   'specdev-layout-migration': `---
 name: specdev-layout-migration
@@ -164,63 +77,121 @@ If the user only needs the old deterministic assignment-file migration, discuss 
 
 Announce every subtask with "Specdev: <action>".
 `,
-  'specdev-check-review': `---
-name: specdev-check-review
-description: Read and address review feedback from a separate review session
+  'specdev-assignment': `---
+name: specdev-assignment
+description: Create an Assignment and collaborate on its single contract
 ---
 
-Run \`specdev check-review <phase>\` to read review findings (phase is ${assignmentCheckReviewPhasesText}).
+Run \`specdev assignment "<objective>"\`. Collaborate directly with the user in
+\`brainstorm/contract.md\`; do not spawn a Brainstorm author.
 
-Address the findings in the phase artifacts.
-Write a summary of changes to \`review/{phase}-changelog.md\` under \`## Round N\`.
-Then say "auto review" or run "specdev review" in a separate session.
+Keep the contract proportional. Reference existing project context instead of
+restating it, record only change-specific decisions and constraints, and use the
+fewest independent observable acceptance criteria (normally 1-3 for a small
+change and rarely more than 5). Tasks, file lists, and generic quality checks
+belong in the plan, not the contract.
+
+When the contract has no TODOs and the user is comfortable, run \`specdev
+checkpoint brainstorm\`. Brainstorm review is optional by default:
+\`specdev reviewloop brainstorm\`.
+
+Review policy may be set at creation or approval with
+\`--brainstorm-review=optional|required\` and
+\`--implementation-review=required|waived\`; approval freezes it. A waiver never
+waives acceptance evidence.
+
+Show any verdict, textual changes, divergence classification, and exact hash.
+If review changed the contract, run \`specdev checkpoint brainstorm\` once more
+to present the final hash. Only after explicit user agreement run \`specdev
+approve brainstorm\`, then \`specdev implement\` for the automatic section.
+
+Announce every subtask with "Specdev: <action>".
+`,
+  'specdev-continue': `---
+name: specdev-continue
+description: Resume SpecDev work from durable workflow and folder artifacts
+---
+
+Run \`specdev next --json\` for a focused workflow. For a Mission, run \`specdev
+mission status <id>\` then \`specdev mission run <id>\`. For a Discussion, run
+\`specdev discussion <id>\`. Ordinary interrupted source may be inspected,
+continued, repaired, or rewritten; do not assume database-style recovery.
 
 Announce every subtask with "Specdev: <action>".
 `,
   'specdev-discussion': `---
 name: specdev-discussion
-description: Start a parallel brainstorming discussion
+description: Start or resume concurrent code-read-only exploration
 ---
 
-Run \`specdev next --json\`. If the workspace is idle, run
-\`specdev do "start a discussion"\`.
+Run \`specdev discussion "<topic>"\`. Treat product code as read-only and write
+only the returned Discussion's \`brainstorm/proposal.md\` and
+\`brainstorm/design.md\`. Resume with \`specdev discussion D00001\`.
 
-Read the output to get the reserved ID (e.g. D00001) and folder path, then:
-1. Follow \`.specdev/skills/core/brainstorming/SKILL.md\` for Phases 1-3 (Understand, Explore, Design), writing artifacts to the discussion's brainstorm/ folder
-2. After writing brainstorm/proposal.md and brainstorm/design.md, add a row to \`.specdev/project_notes/discussion_progress.md\`
-3. Tell the user: \`specdev reviewloop discussion --discussion=<ID>\` for review (optional)
+Optional review: \`specdev reviewloop discussion --discussion=D00001\`.
+Complete only when the user is satisfied: \`specdev discussion D00001
+--complete\`. Promotion creates fresh identity and a fresh contract.
 
-**Discussions are NOT assignments.** Do NOT use \`specdev reviewloop brainstorm\`, \`specdev approve\`, or \`specdev continue\` — those require an assignment.
+Announce every subtask with "Specdev: <action>".
+`,
+  'specdev-mission': `---
+name: specdev-mission
+description: Create and run a sequential foreground Mission
+---
+
+Run \`specdev mission create "<objective>"\` and collaborate on the Mission
+contract, including its exact final integrated verification command. Run
+\`specdev mission run M00001\` to validate it, and run it again if review changed
+the contract. Only after explicit agreement run \`specdev mission run M00001
+--approve\`.
+
+Keep the Mission contract proportional just like an Assignment contract. Do not
+restate big-picture notes or turn implementation tasks into acceptance criteria.
+Multi-child Assignment contracts are narrow deltas that inherit unchanged
+Mission authority.
+
+The controller stays in the foreground, uses the normal repository worktree on
+the Mission branch, and starts with one full-scope child. Set \`Initial child
+plan: planned\` in the contract only for a concrete execution, dependency,
+decision, or verification boundary. Use
+\`--takeover\` only after inspecting an interrupted controller.
+
+Announce every subtask with "Specdev: <action>".
+`,
+  'specdev-test-audit': `---
+name: specdev-test-audit
+description: Audit redundant tests read-only and prepare an exact Assignment
+---
+
+Run \`specdev test-audit "<scope>"\`. Treat all product code and tests as
+read-only. Fill only the returned Test Audit's \`audit.md\` and
+\`assignment-contract.md\`; every candidate needs rationale, retained
+protection, cost impact, and confidence.
+
+Resume with \`specdev test-audit TA00001\` and freeze with \`--complete\` only
+when the exact contract is ready. Promotion through \`specdev assignment
+--from-test-audit=TA00001\` is the first step that may later grant write
+authority after normal user approval.
 
 Announce every subtask with "Specdev: <action>".
 `,
   'specdev-reviewloop': `---
 name: specdev-reviewloop
-description: Automated external review loop — spawns an external reviewer CLI, reads verdict, auto-approves on pass
+description: Run the repository-configured reviewer with one verification rerun
 ---
 
-## For assignments
+Reviewer provider, model, effort, and timeout come from
+\`.specdev/agents.yaml\` plus optional ignored local overrides. Do not ask the
+user to choose a reviewer per execution and do not pass \`--autocontinue\`.
 
-Run \`specdev reviewloop <phase>\` where phase is \`${assignmentReviewloopPhasesText}\`.
+- Brainstorm: \`specdev reviewloop brainstorm\`; never auto-approve.
+- Mission Brainstorm: \`specdev reviewloop mission --mission=M00001\`; never
+  auto-approve.
+- Implementation: normally invoked by \`specdev implement\`; one worker repair
+  and same-reviewer verification are automatic.
+- Discussion: \`specdev reviewloop discussion --discussion=D00001\`.
 
-Generic rendering rule (applies to every specdev command):
-
-- After any command that prints an \`interaction\` block, render it via \`AskUserQuestion\` (Claude Code) or its host equivalent, using the exact labels and order. Do not paraphrase, reorder, or drop options. If a chosen option has \`requires_reviewer: true\`, render the \`follow_up\` block as a second \`AskUserQuestion\`.
-- After any command that prints a \`continuation\` block with \`interrupt: false\`, invoke the printed command immediately without prompting the user. Sticky values (e.g. the carried reviewer) are persisted by the runtime in \`.specdev/.session-state.json\`.
-
-Flow:
-1. \`specdev reviewloop <phase>\` — lists reviewers and emits a reviewer-selection \`interaction\` block.
-2. \`specdev reviewloop <phase> --reviewer=<name>\` — runs the review and processes the result.
-3. On pass → command auto-approves the phase. **Do NOT ask the user to run \`specdev approve\` separately.** Honour the emitted \`continuation\` block; do not hardcode the next step here.
-4. On fail → run \`specdev check-review <phase>\` to address findings, then re-run reviewloop.
-
-## For discussions
-
-Run \`specdev reviewloop discussion --discussion=<ID>\` where ID is the discussion ID (e.g. D00001). The same generic rendering rule applies — render any \`interaction\` block exactly as printed and invoke any non-interrupting \`continuation\` block automatically.
-
-**Do NOT use \`specdev reviewloop brainstorm\` for discussions — that requires an assignment.**
-
-This is a Node.js CLI command — run it directly, never via pip/python.
+Announce every subtask with "Specdev: <action>".
 `,
 }
 
@@ -296,7 +267,14 @@ export async function initCommand(flags = {}) {
       overwrite: force,
       errorOnExist: !force,
     })
-    const engine = ensureWorkspaceEngine(targetDir)
+    // Install immutable, versioned graph packages rather than leaving the
+    // unversioned template directories in a new workspace.
+    await fse.remove(join(specdevPath, 'workflows'))
+    await installGraphPackages(
+      join(templatePath, 'workflows'),
+      join(specdevPath, 'workflows')
+    )
+    const engine = installWorkspaceEngine(targetDir)
 
     // Generate all platform adapter files (never overwrite existing)
     for (const adapter of ALL_ADAPTERS) {
@@ -418,21 +396,14 @@ export async function initCommand(flags = {}) {
       '   specdev-start         Interactive project context setup',
       '   specdev-assignment    Reserve ID and start brainstorm',
       '   specdev-continue      Resume from current phase',
-      '   specdev-review        Phase-aware manual review',
-      '   specdev-check-review  Read and address review feedback',
-      '   specdev-reviewloop    Automated external review loop',
+      '   specdev-discussion    Concurrent code-read-only exploration',
+      '   specdev-mission       Sequential foreground orchestration',
+      '   specdev-reviewloop    Configured reviewer loop',
       '   specdev-rewind        Full workflow re-read',
     ])
 
-    // Check reviewer CLIs
     blankLine()
-    printSection('Reviewer CLIs:')
-    const reviewerResults = await checkReviewerCLIs(specdevPath)
-    if (reviewerResults.length > 0) {
-      printReviewerCheck(reviewerResults)
-    } else {
-      console.log('   (no reviewer configs found)')
-    }
+    console.log('Agent profiles: .specdev/agents.yaml')
   } catch (error) {
     if (origLog) console.log = origLog
     if (flags.json) {

@@ -1,8 +1,8 @@
 {
   "name": "@specdev/cli",
   "version": "0.0.4",
-  "releaseDate": "2026-07-19",
-  "description": "CLI to initialize SpecDev workflow system",
+  "releaseDate": "2026-07-21",
+  "description": "Contract-governed workflow and Mission orchestration for coding agents",
   "type": "module",
   "bin": {
     "specdev": "./bin/specdev.js"
@@ -12,16 +12,15 @@
     "src/",
     "templates/",
     "hooks/",
-    "vendor/",
-    "specdev.assignment-schema.json"
+    "vendor/"
   ],
   "scripts": {
-    "test": "node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-engine-integration.js && node ./tests/test-engine-packaging.js && node ./tests/test-session-state-protocol.js && npm run test:cleanup",
+    "test": "node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-vnext-foundations.js && node ./tests/test-engine-integration.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
     "test:engine-graphpackages": "node ./tests/test-engine-graphpackages.js",
     "test:engine-adapter": "node ./tests/test-engine-adapter.js",
     "test:engine-integration": "node ./tests/test-engine-integration.js",
     "test:engine-packaging": "node ./tests/test-engine-packaging.js",
-    "test:session-state-protocol": "node ./tests/test-session-state-protocol.js",
+    "test:vnext-foundations": "node ./tests/test-vnext-foundations.js",
     "test:cleanup": "rm -rf ./tests/test-*-output ./test-assignment-output",
     "lint": "prettier --check .",
     "format": "prettier --write .",
@@ -42,7 +41,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "ajv": "^8.20.0",
     "fs-extra": "^11.2.0",
     "ripplegraph": "file:vendor/ripplegraph-0.1.0.tgz",
     "yaml": "^2.8.4"
@@ -54,6 +52,6 @@
     "prettier": "^3.2.4"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.13.0"
   }
 }

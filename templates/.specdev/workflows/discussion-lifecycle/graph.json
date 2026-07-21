@@ -1,104 +1,64 @@
 {
   "id": "discussion-lifecycle",
-  "version": "1.0.0",
-  "kind": "workflow",
+  "version": "2.0.0",
+  "kind": "callable",
   "title": "Discussion lifecycle",
-  "description": "Guide a parallel SpecDev brainstorming discussion and optional review.",
-  "activationHints": [
-    "discussion",
-    "brainstorm discussion",
-    "explore idea",
-    "parallel brainstorm",
-    "design discussion"
-  ],
-  "entry": "create-discussion",
-  "nodes": {
-    "create-discussion": {
-      "purpose": "Create a discussion workspace for the requested topic.",
-      "instructions": "Run `specdev discussion \"<description>\" --json` and submit its JSON result.",
-      "outputSchema": {
-        "type": "object",
-        "required": ["id", "path", "description"],
-        "properties": {
-          "id": { "type": "string" },
-          "path": { "type": "string" },
-          "description": { "type": "string" }
-        }
-      },
-      "operatorContext": { "phase": "discussion", "command": "specdev discussion" },
-      "edges": [{ "to": "brainstorm" }]
+  "description": "Isolated code-read-only exploration that may coexist with a focused workflow.",
+  "activationHints": ["discussion", "brainstorm discussion", "explore idea"],
+  "inputSchema": {
+    "type": "object",
+    "required": ["id", "path", "description", "start_revision"],
+    "properties": {
+      "id": { "type": "string" },
+      "path": { "type": "string" },
+      "description": { "type": "string" },
+      "start_revision": { "type": "string" }
     },
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": ["completed_revision", "artifact_hash"],
+    "properties": {
+      "completed_revision": { "type": "string" },
+      "artifact_hash": { "type": "string" }
+    },
+    "additionalProperties": false
+  },
+  "entry": "brainstorm",
+  "nodes": {
     "brainstorm": {
-      "purpose": "Explore and validate the discussion topic with the user.",
-      "instructions": "Follow `.specdev/skills/core/brainstorming/SKILL.md` for understand, explore, and design. Write the discussion proposal and design, then submit their paths.",
+      "purpose": "Explore the topic with the user while treating product code as read-only.",
+      "instructions": "Write only brainstorm/proposal.md and brainstorm/design.md in this Discussion, then resume the Discussion command.",
       "outputSchema": {
         "type": "object",
         "required": ["proposal", "design"],
         "properties": {
           "proposal": { "type": "string" },
           "design": { "type": "string" }
-        }
+        },
+        "additionalProperties": false
       },
       "operatorContext": { "phase": "discussion" },
-      "edges": [{ "to": "checkpoint" }]
+      "edges": [{ "to": "finalize" }]
     },
-    "checkpoint": {
-      "purpose": "Validate the discussion artifacts.",
-      "instructions": "Run `specdev checkpoint discussion --discussion=<id> --json` and submit `{\"passed\":true}` after it succeeds.",
+    "finalize": {
+      "purpose": "Optionally review the Discussion, then complete it when the user is satisfied.",
+      "instructions": "Run optional `specdev reviewloop discussion --discussion=<id>`, or complete with `specdev discussion <id> --complete`.",
       "outputSchema": {
         "type": "object",
-        "required": ["passed"],
-        "properties": { "passed": { "enum": [true] } }
-      },
-      "operatorContext": { "phase": "discussion", "command": "specdev checkpoint discussion" },
-      "edges": [{ "to": "review-choice" }]
-    },
-    "review-choice": {
-      "purpose": "Choose whether and how to review the discussion.",
-      "interaction": {
-        "id": "discussion-review-choice",
-        "kind": "choice",
-        "prompt": "How should this discussion be reviewed?",
-        "choices": [
-          { "label": "Automated review", "value": "reviewloop" },
-          { "label": "Manual review", "value": "manual_review" },
-          { "label": "Finish without review", "value": "finish" }
-        ]
-      },
-      "gate": {
-        "type": "external_decision",
-        "decisionSchema": {
-          "type": "object",
-          "required": ["choice"],
-          "properties": { "choice": { "enum": ["reviewloop", "manual_review", "finish"] } }
-        }
-      },
-      "operatorContext": {
-        "phase": "discussion",
-        "commands": {
-          "reviewloop": "specdev reviewloop discussion --discussion=<id> --reviewer=<name>",
-          "manual_review": "specdev review discussion --discussion=<id>"
-        }
-      },
-      "edges": [
-        { "to": "review", "when": { "choice": "reviewloop" } },
-        { "to": "review", "when": { "choice": "manual_review" } },
-        { "to": "done", "when": { "choice": "finish" } }
-      ]
-    },
-    "review": {
-      "purpose": "Complete the selected discussion review and resolve findings.",
-      "instructions": "Run the selected review command and submit completion evidence after findings are resolved.",
-      "outputSchema": {
-        "type": "object",
-        "required": ["review_complete"],
-        "properties": { "review_complete": { "enum": [true] } }
+        "required": ["completed_revision", "artifact_hash"],
+        "properties": {
+          "completed_revision": { "type": "string" },
+          "artifact_hash": { "type": "string" }
+        },
+        "additionalProperties": false
       },
       "operatorContext": { "phase": "discussion" },
       "edges": [{ "to": "done" }]
     },
     "done": {
-      "purpose": "Discussion lifecycle is complete.",
+      "purpose": "Discussion is complete.",
       "terminal": true
     }
   }

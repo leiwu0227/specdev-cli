@@ -1,68 +1,52 @@
-import { join } from 'path'
+import { join } from 'node:path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { resolveAssignmentSelector } from '../utils/assignment.js'
-import { writeCurrent, clearCurrent } from '../utils/current.js'
-import { scanAssignments } from '../utils/scan.js'
-import { readSessionState, clearSessionState } from '../utils/session-state.js'
+import { resolveMissionSelector } from '../utils/mission.js'
+import { resolveDiscussionSelector } from '../utils/discussion.js'
+import { writeCurrentFocus, clearCurrent } from '../utils/current.js'
 
 export async function focusCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
-
   if (flags.clear) {
     await clearCurrent(specdevPath)
-    // Clearing the active assignment invalidates any sticky session-state.
-    await clearSessionState(specdevPath)
-    if (flags.json) {
-      console.log(JSON.stringify({ command: 'focus', version: 1, status: 'ok', cleared: true }))
-    } else {
-      console.log('Cleared active assignment.')
-    }
-    return
+    return emit(flags, { command: 'focus', version: 2, status: 'ok', cleared: true })
   }
 
-  const selector = positionalArgs[0]
-  if (!selector) {
-    console.error('Missing assignment ID')
-    console.log('   Usage: specdev focus <id>')
-    console.log('   Usage: specdev focus --clear')
-    process.exitCode = 1
-    return
-  }
-
-  const resolved = await resolveAssignmentSelector(specdevPath, selector)
-  if (!resolved) {
-    const assignments = await scanAssignments(specdevPath)
-    console.error(`Assignment not found: ${selector}`)
-    if (assignments.length > 0) {
-      console.log('   Available:')
-      for (const a of assignments) {
-        console.log(`   - ${a.name}`)
-      }
-    }
-    process.exitCode = 1
-    return
-  }
-
-  if (resolved.ambiguous) {
-    console.error(`Assignment ID is ambiguous: ${selector}`)
-    console.log(`   Matches: ${resolved.matches.join(', ')}`)
-    process.exitCode = 1
-    return
-  }
-
-  await writeCurrent(specdevPath, resolved.name)
-  // Cross-assignment switch invalidates any sticky session-state whose
-  // `assignment` field no longer matches the new `.current`.
-  const existingSession = await readSessionState(specdevPath)
-  if (existingSession && existingSession.assignment !== resolved.name) {
-    await clearSessionState(specdevPath)
-  }
-  if (flags.json) {
-    const id = resolved.name.split('_')[0]
-    console.log(JSON.stringify({ command: 'focus', version: 1, status: 'ok', assignment_id: id, assignment_name: resolved.name, path: `.specdev/assignments/${resolved.name}` }))
+  const selector = String(positionalArgs[0] || '').trim()
+  if (!selector) return fail(flags, 'Usage: specdev focus <Assignment|Mission|Discussion ID>')
+  let kind
+  let resolved
+  if (/^M\d{5}/.test(selector)) {
+    kind = 'mission'
+    resolved = await resolveMissionSelector(specdevPath, selector)
+  } else if (/^D\d{4,5}/.test(selector)) {
+    kind = 'discussion'
+    resolved = await resolveDiscussionSelector(specdevPath, selector)
+    if (resolved) resolved.id = resolved.name.match(/^D\d{4,5}/)?.[0]
   } else {
-    console.log(`Focused on: ${resolved.name}`)
+    kind = 'assignment'
+    resolved = await resolveAssignmentSelector(specdevPath, selector)
+    if (resolved) resolved.id = resolved.name.match(/^\d+/)?.[0]
   }
+  if (!resolved || resolved.ambiguous || resolved.error) return fail(flags, `Work item not found or ambiguous: ${selector}`)
+  await writeCurrentFocus(specdevPath, { kind, id: resolved.id })
+  return emit(flags, {
+    command: 'focus', version: 2, status: 'ok', kind, id: resolved.id,
+    name: resolved.name, path: resolved.path,
+  })
+}
+
+function emit(flags, payload) {
+  if (flags.json) console.log(JSON.stringify(payload, null, 2))
+  else console.log(payload.cleared ? 'Cleared foreground focus.' : `Focused on ${payload.kind}: ${payload.name}`)
+  return payload
+}
+
+function fail(flags, message) {
+  if (flags.json) console.log(JSON.stringify({ command: 'focus', version: 2, status: 'error', error: message }))
+  else console.error(message)
+  process.exitCode = 1
+  return null
 }

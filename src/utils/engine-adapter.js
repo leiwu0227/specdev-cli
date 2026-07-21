@@ -45,6 +45,7 @@ export function toProductState(state, graphs = []) {
   const callStack = productCallStack(state, graphs)
 
   if (node.gate) {
+    const commandLine = node.operatorContext?.command || 'specdev decide <value>'
     return {
       status: 'ok',
       state: 'awaiting_decision',
@@ -56,10 +57,11 @@ export function toProductState(state, graphs = []) {
       ...(node.instructions ? { instructions: node.instructions } : {}),
       ...(actions.length ? { actions } : {}),
       ...(callStack ? { call_stack: callStack } : {}),
-      next_action: { command_line: 'specdev decide <value>' },
+      next_action: { command_line: commandLine },
     }
   }
 
+  const commandLine = node.operatorContext?.command || 'specdev step --json=<output>'
   return {
     status: 'ok',
     state: 'in_progress',
@@ -71,7 +73,7 @@ export function toProductState(state, graphs = []) {
     ...(choices.length ? { choices, render_hint: CHOICE_RENDER_HINT } : {}),
     ...(actions.length ? { actions } : {}),
     ...(callStack ? { call_stack: callStack } : {}),
-    next_action: { command_line: 'specdev step --json=<output>' },
+    next_action: { command_line: commandLine },
   }
 }
 

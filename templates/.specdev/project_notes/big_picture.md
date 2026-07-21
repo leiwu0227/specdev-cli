@@ -4,4 +4,7 @@ TODO: filled by user
 
 ## Architecture
 
-- SpecDev uses three workflow primitives: skills for host-agent instructions, scripts for deterministic mechanics, and agents for contract-bound reasoning subroutines invoked through external CLIs. `specdev reviewloop` is the proof-of-concept for this pattern; `specdev research` is the first formal agent.
+- SpecDev uses versioned RippleGraph workflows, semantic CLI commands, and
+  compact Markdown/YAML/JSON artifacts. Configured worker and reviewer profiles
+  are temporary capabilities shaped by prompts and selected guides, not fixed
+  personas or custom agent-spec trees.

@@ -1,119 +1,153 @@
-import { join } from 'path'
+import { join } from 'node:path'
+import fse from 'fs-extra'
+import { parseResultEnvelope } from '../utils/result-envelope.js'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
-import { approvePhase } from '../utils/approve-phase.js'
-import { blankLine } from '../utils/output.js'
-import { commandPhases } from '../utils/workflow-contract.js'
-import { loadWorkflowDefinition, renderStepOutput, nextPhaseAfter, findGateStep } from '../utils/workflow-runtime.js'
-import { readValidatedSessionState, clearSessionState } from '../utils/session-state.js'
-import { syncAssignmentApproval } from '../utils/engine-sync.js'
-
-const VALID_PHASES = commandPhases.approve
+import { resolveTargetDir } from '../utils/command-context.js'
+import {
+  assertCurrentAssignmentPath,
+  checkpointedContractFor,
+  gitSnapshot,
+  normalizeReviewPolicy,
+  reviewPolicyFromFlags,
+  validateAssignmentContract,
+  writeAssignmentStatus,
+} from '../utils/assignment-vnext.js'
+import { decideGuidedNode } from '../utils/engine-sync.js'
+import { retireTransientArtifact } from '../utils/artifact-retention.js'
+import { workspaceChangeSummaryLines } from '../utils/workspace-changes.js'
 
 export async function approveCommand(positionalArgs = [], flags = {}) {
   const phase = positionalArgs[0]
-
-  if (!phase) {
-    console.error('Missing required phase argument')
-    console.log(`   Usage: specdev approve <${VALID_PHASES.join(' | ')}>`)
+  if (phase !== 'brainstorm') {
+    console.error('Assignment vNext has one user approval: specdev approve brainstorm')
     process.exitCode = 1
     return
   }
 
-  if (!VALID_PHASES.includes(phase)) {
-    console.error(`Unknown approve phase: ${phase}`)
-    console.log(`   Valid phases: ${VALID_PHASES.join(', ')}`)
-    process.exitCode = 1
-    return
-  }
-
+  const targetDir = resolveTargetDir(flags)
   const assignmentPath = await resolveAssignmentPath(flags)
   const name = assignmentName(assignmentPath)
-  const specdevPath = join(assignmentPath, '..', '..')
-  const workflowInfo = await loadWorkflowDefinition(specdevPath)
-
-  // Read sticky session-state (validated against .current); fed into the
-  // continuation-block renderer below to choose interrupt:false vs interrupt:true.
-  const sessionState = await readValidatedSessionState(specdevPath)
-
-  const result = await approvePhase(assignmentPath, phase, workflowInfo)
-
-  if (!result.approved) {
-    if (flags.json) {
-      console.log(JSON.stringify({ command: 'approve', version: 1, status: 'error', phase, assignment: name, approved: false, errors: result.errors }))
-    } else if (phase === 'brainstorm') {
-      console.error(`❌ Cannot approve brainstorm — checkpoint not met`)
-      for (const item of result.errors) {
-        console.log(`   Issue: ${item}`)
-      }
-      console.log('   Run specdev checkpoint brainstorm first')
-    } else if (phase === 'implementation') {
-      const errorMsg = result.errors[0] || 'unknown error'
-      console.error(`❌ Cannot approve implementation — ${errorMsg}`)
-      if (errorMsg.includes('no tasks')) {
-        console.log('   progress.json must have a tasks array with at least one task')
-      } else if (errorMsg.includes('not completed')) {
-        console.log('   Complete all tasks before approving')
-      } else {
-        console.log('   Run specdev checkpoint implementation first')
-      }
-    }
+  let state
+  try {
+    state = await assertCurrentAssignmentPath(targetDir, assignmentPath)
+  } catch (error) {
+    console.error(error.message)
+    process.exitCode = 1
+    return
+  }
+  if (state.position.node !== 'approve-contract') {
+    console.error('The Assignment is not awaiting contract approval. Run specdev checkpoint brainstorm first.')
     process.exitCode = 1
     return
   }
 
-  syncAssignmentApproval(join(specdevPath, '..'), phase)
-
-  // Build the manifest-driven continuation block before terminal-phase clears
-  // the session-state (so sticky_resolved still reflects the live state).
-  const gateStep = findGateStep(workflowInfo.workflow, phase)
-  const nextPhase = nextPhaseAfter(workflowInfo.workflow, phase)
-  const rendered = renderStepOutput(gateStep, { sessionState, nextPhase })
-  const continuation = rendered.continuation || null
-
-  // Terminal-phase clear: when the assignment becomes complete, drop sticky
-  // session-state (design.md §Layer 3).
-  if (phase === 'implementation') {
-    await clearSessionState(specdevPath)
+  const contract = await validateAssignmentContract(assignmentPath)
+  if (!contract.valid) {
+    console.error(`Cannot approve the contract: ${contract.errors.join('; ')}`)
+    process.exitCode = 1
+    return
   }
-
-  if (flags.json) {
-    console.log(JSON.stringify({
-      command: 'approve',
-      version: 1,
-      status: 'ok',
-      phase,
-      assignment: name,
-      approved: true,
-      next_action: 'Run specdev next --json and follow the returned action',
-      continuation,
-    }))
+  const checkpointed = await checkpointedContractFor(targetDir)
+  if (checkpointed?.contract_hash !== contract.hash) {
+    console.error('The Assignment contract changed after its hash was shown. Run specdev checkpoint brainstorm again before approval.')
+    process.exitCode = 1
+    return
+  }
+  const reviewRecord = await readOptionalReview(assignmentPath)
+  const review = reviewRecord?.contract_hash === contract.hash ? reviewRecord.result : null
+  const staleReview = Boolean(reviewRecord && !review)
+  const statusRecord = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => ({}))
+  let reviewPolicy
+  try {
+    reviewPolicy = reviewPolicyFromFlags(flags, normalizeReviewPolicy(statusRecord.review_policy))
+  } catch (error) {
+    console.error(error.message)
+    process.exitCode = 1
+    return
+  }
+  if (
+    reviewPolicy.brainstorm === 'required' &&
+    review?.frontmatter.verdict !== 'approved' &&
+    !flags['override-review']
+  ) {
+    console.error('This Assignment requires an approved Brainstorm review for the exact contract hash. Run specdev reviewloop brainstorm, or explicitly use --override-review.')
+    process.exitCode = 1
+    return
+  }
+  if (review && review.frontmatter.verdict !== 'approved' && !flags['override-review']) {
+    console.error('The latest Brainstorm review is not approved. Address it and rerun review, or explicitly use --override-review.')
+    process.exitCode = 1
     return
   }
 
-  if (phase === 'brainstorm') {
-    console.log(`✅ Brainstorm approved for ${name}`)
-  } else if (phase === 'implementation') {
-    console.log(`✅ Implementation approved for ${name}`)
+  const git = await gitSnapshot(targetDir)
+  const decision = {
+    approved: true,
+    contract_hash: contract.hash,
+    actor: String(flags.actor || 'user'),
+    approved_at: new Date().toISOString(),
+    review_override: Boolean(flags['override-review']),
+    review_policy: reviewPolicy,
+    ...(git.revision ? { revision: git.revision } : {}),
   }
-  blankLine()
-  printContinuationText(continuation, nextPhase)
+  const result = decideGuidedNode(targetDir, 'approve-contract', decision)
+  if (!result.synchronized) {
+    console.error('Could not record contract approval in the focused Assignment workflow')
+    process.exitCode = 1
+    return
+  }
+  await writeAssignmentStatus(assignmentPath, {
+    review_policy: reviewPolicy,
+    review_policy_frozen_at: decision.approved_at,
+  })
+  await retireTransientArtifact(targetDir, join(targetDir, '.specdev'), join(assignmentPath, 'review', 'brainstorm-baseline.md'))
+
+  const payload = {
+    command: 'approve',
+    version: 2,
+    status: 'ok',
+    phase,
+    assignment: name,
+    approved: true,
+    contract_hash: contract.hash,
+    actor: decision.actor,
+    review_override: decision.review_override,
+    review_policy: reviewPolicy,
+    revision: git.revision,
+    dirty_paths: git.dirty_paths,
+    review: review ? {
+      verdict: review.frontmatter.verdict,
+      material_divergence: review.frontmatter.material_divergence ?? null,
+      stale: false,
+    } : staleReview ? { stale: true, reviewed_contract_hash: reviewRecord.contract_hash } : null,
+    next_action: 'specdev implement',
+  }
+  if (flags.json) console.log(JSON.stringify(payload, null, 2))
+  else {
+    console.log(`Approved Assignment contract: ${name}`)
+    console.log(`Contract hash: ${contract.hash}`)
+    console.log(`Reviews: brainstorm ${reviewPolicy.brainstorm}; implementation ${reviewPolicy.implementation}`)
+    if (review) {
+      console.log(`Review verdict: ${review.frontmatter.verdict}`)
+      console.log(`Material divergence: ${review.frontmatter.material_divergence === true ? 'yes' : 'no'}`)
+    } else if (staleReview) {
+      console.log(`Review note: the saved verdict covered older contract hash ${reviewRecord.contract_hash}`)
+    }
+    for (const line of workspaceChangeSummaryLines(git.dirty_paths)) console.log(line)
+    console.log('Automatic delivery can now start: specdev implement')
+  }
+  return payload
 }
 
-function printContinuationText(continuation, nextPhase) {
-  if (!continuation || !nextPhase) {
-    console.log('Next step:')
-    console.log('   Run specdev next --json and follow the returned action.')
-    return
+async function readOptionalReview(assignmentPath) {
+  const path = join(assignmentPath, 'review', 'brainstorm-verdict.md')
+  if (!(await fse.pathExists(path))) return null
+  try {
+    const result = parseResultEnvelope(await fse.readFile(path, 'utf-8'), 'reviewer')
+    const statePath = join(assignmentPath, 'review', 'brainstorm-state.json')
+    const state = await fse.pathExists(statePath) ? await fse.readJson(statePath) : null
+    return { result, contract_hash: state?.contract_hash || null }
+  } catch (error) {
+    throw new Error(`invalid Brainstorm review verdict: ${error.message}`)
   }
-  if (!continuation.interrupt && continuation.command) {
-    console.log('Continuation (no user prompt required):')
-    console.log(`   ${continuation.command}`)
-    return
-  }
-  // interrupt:true → ask user to pick reviewer or skip review.
-  console.log('Continuation (user input required):')
-  console.log(`   Pick a reviewer for ${nextPhase}:`)
-  console.log(`     specdev reviewloop ${nextPhase} --reviewer=<name> --autocontinue`)
-  console.log('   Or skip review:')
-  console.log(`     specdev approve ${nextPhase}`)
 }

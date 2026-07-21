@@ -1,4 +1,4 @@
-import { join } from 'path'
+import { isAbsolute, join, relative, resolve } from 'path'
 import fse from 'fs-extra'
 import { resolveCurrentAssignment } from './current.js'
 import {
@@ -13,6 +13,8 @@ import {
 export function parseAssignmentId(name) {
   const match = name.match(/^(\d+)_(\w+?)_(.+)$/)
   if (match) return { id: match[1], type: match[2], label: match[3] }
+  const current = name.match(/^(\d+)_(.+)$/)
+  if (current) return { id: current[1], type: null, label: current[2] }
   return { id: null, type: null, label: name }
 }
 
@@ -30,9 +32,12 @@ export async function resolveAssignmentSelector(specdevPath, selector) {
 
   const assignmentsDir = join(specdevPath, 'assignments')
 
-  // Preserve existing behavior for full names and absolute paths.
-  const explicitPath = join(assignmentsDir, wanted)
-  if (await fse.pathExists(explicitPath)) {
+  // Full folder names and absolute paths are allowed only when they resolve to
+  // a direct child of this repository's assignments directory.
+  const explicitPath = isAbsolute(wanted) ? resolve(wanted) : join(assignmentsDir, wanted)
+  const explicitRelative = relative(assignmentsDir, explicitPath)
+  const directAssignment = explicitRelative && !explicitRelative.includes('/') && !explicitRelative.includes('\\') && /^\d+_[^/\\]+$/.test(explicitRelative)
+  if (directAssignment && await fse.pathExists(explicitPath) && (await fse.stat(explicitPath)).isDirectory()) {
     return { path: explicitPath, name: assignmentName(explicitPath) }
   }
 
@@ -70,6 +75,15 @@ export async function resolveAssignmentPath(flags) {
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
 
+  if (typeof flags.assignment === 'string') {
+    const explicit = await resolveAssignmentSelector(specdevPath, flags.assignment)
+    if (!explicit || explicit.ambiguous) {
+      console.error(`❌ Assignment selector is not unique or was not found: ${flags.assignment}`)
+      process.exit(1)
+    }
+    return explicit.path
+  }
+
   const current = await resolveCurrentAssignment(specdevPath)
 
   if (current.error === 'stale') {
@@ -92,6 +106,13 @@ export async function resolveAssignmentPath(flags) {
       }
     }
     console.error('❌ No assignments found')
+    process.exit(1)
+  }
+
+  if (current.error === 'ambiguous') {
+    console.error(`❌ Active assignment ID "${current.name}" is ambiguous.`)
+    console.error(`   Matches: ${current.matches.join(', ')}`)
+    console.error('   Run specdev focus <full-assignment-name> after resolving the duplicate IDs.')
     process.exit(1)
   }
 

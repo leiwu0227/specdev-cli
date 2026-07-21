@@ -14,7 +14,7 @@
   "entry": "inspect-context",
   "nodes": {
     "inspect-context": {
-      "purpose": "Inspect whether project_notes/big_picture.md contains usable project context.",
+      "purpose": "Inspect whether .specdev/project_notes/big_picture.md contains usable project context.",
       "instructions": "Run `specdev start`, inspect `.specdev/project_notes/big_picture.md`, then submit whether the context is already ready.",
       "outputSchema": {
         "type": "object",

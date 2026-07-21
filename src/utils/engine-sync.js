@@ -1,13 +1,20 @@
-import { abandonRun, applyDispatchAction, decideGate, getState, stepRun } from 'ripplegraph'
-import { ensureWorkspaceEngine, hasWorkspaceEngine, workflowRootFor } from './engine.js'
+import { applyDispatchAction, decideGate, getState, stepRun } from 'ripplegraph'
+import { assertWorkspaceEngine, workflowRootFor } from './engine.js'
 
 export function startGuidedRun(projectRoot, graphId, options = {}) {
-  if (!hasWorkspaceEngine(projectRoot)) return { synchronized: false, reason: 'engine_missing' }
-  ensureWorkspaceEngine(projectRoot)
+  assertWorkspaceEngine(projectRoot)
   const workflowRoot = workflowRootFor(projectRoot)
   const current = getState({ workflowRoot })
   if (current.status === 'ok' && current.run?.status === 'active') {
     if (current.run.rootGraph === graphId) {
+      if (options.expectedNode && current.position?.node !== options.expectedNode) {
+        if (options.strict) {
+          throw new Error(
+            `${graphId} is already active at ${current.position?.node}; finish or suspend it first`
+          )
+        }
+        return { synchronized: false, reason: 'different_node', state: current }
+      }
       return { synchronized: true, state: current, started: false }
     }
     if (options.strict) {
@@ -25,7 +32,7 @@ export function startGuidedRun(projectRoot, graphId, options = {}) {
 }
 
 export function stepGuidedNode(projectRoot, expectedNodes, output) {
-  if (!hasWorkspaceEngine(projectRoot)) return { synchronized: false, reason: 'engine_missing' }
+  assertWorkspaceEngine(projectRoot)
   const workflowRoot = workflowRootFor(projectRoot)
   const current = getState({ workflowRoot })
   if (current.status !== 'ok' || current.run?.status !== 'active') {
@@ -42,7 +49,7 @@ export function stepGuidedNode(projectRoot, expectedNodes, output) {
 }
 
 export function decideGuidedNode(projectRoot, expectedNode, decision) {
-  if (!hasWorkspaceEngine(projectRoot)) return { synchronized: false, reason: 'engine_missing' }
+  assertWorkspaceEngine(projectRoot)
   const workflowRoot = workflowRootFor(projectRoot)
   const current = getState({ workflowRoot })
   if (
@@ -55,46 +62,5 @@ export function decideGuidedNode(projectRoot, expectedNode, decision) {
   return {
     synchronized: true,
     state: decideGate({ workflowRoot, decision }),
-  }
-}
-
-export function syncAssignmentApproval(projectRoot, phase) {
-  const reviewNode = `${phase}-review`
-  const approvalNode = phase === 'brainstorm' ? 'approve-brainstorm' : 'approve-implementation'
-  stepGuidedNode(projectRoot, reviewNode, { review_complete: true })
-  return stepGuidedNode(projectRoot, approvalNode, { approved: true })
-}
-
-export function restartAssignmentBrainstorm(projectRoot, assignment) {
-  if (!hasWorkspaceEngine(projectRoot)) return { synchronized: false, reason: 'engine_missing' }
-  ensureWorkspaceEngine(projectRoot)
-  const workflowRoot = workflowRootFor(projectRoot)
-  const current = getState({ workflowRoot })
-
-  if (current.status === 'ok' && current.run?.status === 'active') {
-    if (current.run.rootGraph !== 'assignment-lifecycle') {
-      return { synchronized: false, reason: 'other_workflow_active', state: current }
-    }
-    if (current.position.node === 'brainstorm') {
-      return { synchronized: true, restarted: false, state: current }
-    }
-    abandonRun({ workflowRoot, reason: `revising ${assignment.name}` })
-  }
-
-  applyDispatchAction({
-    workflowRoot,
-    action: { action: 'start_run', graphId: 'assignment-lifecycle' },
-  })
-  return {
-    synchronized: true,
-    restarted: true,
-    state: stepRun({
-      workflowRoot,
-      output: {
-        name: assignment.name,
-        path: assignment.path,
-        description: assignment.description || `Revise ${assignment.name}`,
-      },
-    }),
   }
 }

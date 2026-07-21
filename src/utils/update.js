@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import fse from 'fs-extra'
+import { installGraphPackages } from './engine.js'
 
 const COMMAND_SKILL_MARKERS = [
   join('specdev-assignment', 'SKILL.md'),
@@ -10,7 +11,13 @@ const COMMAND_SKILL_MARKERS = [
 
 const DEPRECATED_COMMAND_SKILLS = [
   'specdev-brainstorm',
+  'specdev-review',
+  'specdev-check-review',
 ]
+
+const MANAGED_IGNORE_BEGIN = '# BEGIN specdev managed'
+const MANAGED_IGNORE_END = '# END specdev managed'
+const MANAGED_IGNORE_BLOCK = `${MANAGED_IGNORE_BEGIN}\ncache/\nworktrees/\n${MANAGED_IGNORE_END}`
 
 /**
  * Selectively updates SpecDev system files while preserving project-specific files
@@ -23,6 +30,10 @@ export async function updateSpecdevSystem(source, destination) {
   const updatedPaths = []
 
   try {
+    if (await migrateLegacyWorkflowFeedback(destination)) {
+      updatedPaths.push('knowledge/_workflow_feedback -> knowledge/workflow_feedback')
+    }
+
     // Clean up renamed/deleted files from previous versions
     const removePaths = [
       '_router.md',
@@ -33,6 +44,27 @@ export async function updateSpecdevSystem(source, destination) {
       'skills/tools/reviewloop',
       'skills/core/reviewloop/reviewers/codex-with-context.json',
       'skills/core/reviewloop/scripts',
+      'skills/core/reviewloop/reviewers',
+      'skills/core/reviewloop/review-focus.json',
+      'skills/core/breakdown',
+      'skills/core/implementing',
+      'skills/core/knowledge-capture',
+      'skills/core/parallel-worktrees',
+      'skills/core/review-agent',
+      '_guides/superpowers_exclusions.md',
+      '_templates/assignment_examples',
+      '_templates/brainstorm-design.md',
+      '_templates/gate_checklist.md',
+      '_templates/review_report_template.md',
+      '_templates/review_request_schema.json',
+      '_templates/scaffolding_template.md',
+      '_templates/workflow_feedback_note.md',
+      'project_notes/assignment_progress.md',
+      'project_notes/discussion_progress.md',
+      'project_scaffolding/_README.md',
+      'agents',
+      '_templates/agent-spec.schema.json',
+      'knowledge/_workflow_feedback',
     ]
     for (const path of removePaths) {
       const destPath = join(destination, path)
@@ -59,11 +91,10 @@ export async function updateSpecdevSystem(source, destination) {
       '_main.md',
       '_index.md',
       'workflow.json',
-      'workflows',
       '_guides',
       '_templates',
-      'agents',
-      'project_scaffolding/_README.md',
+      'guides/review.md',
+      'guides/library',
       'skills/core',
       'skills/README.md',
     ]
@@ -78,10 +109,6 @@ export async function updateSpecdevSystem(source, destination) {
         continue
       }
 
-      if (path === 'workflows' && await fse.pathExists(destPath)) {
-        await fse.remove(destPath)
-      }
-
       // Copy the file or directory
       await fse.copy(sourcePath, destPath, {
         overwrite: true,
@@ -91,15 +118,23 @@ export async function updateSpecdevSystem(source, destination) {
       updatedPaths.push(path)
     }
 
+    // Install graph packages by ID and version. Old package directories stay
+    // available for in-flight RippleGraph checkpoints that pin them.
+    await installGraphPackages(join(source, 'workflows'), join(destination, 'workflows'))
+    updatedPaths.push('workflows')
+
     // Ensure new project directories exist (create if missing, never overwrite)
     const ensurePaths = [
       '.gitignore',
+      'agents.yaml',
       'knowledge/_index.md',
+      'knowledge/faq',
       'knowledge/workflow_feedback',
       'knowledge/codestyle',
       'knowledge/architecture',
       'knowledge/domain',
       'knowledge/workflow',
+      'guides/project/catalog.yaml',
       'skills/tools/README.md',
       'skills/tools/.gitkeep',
     ]
@@ -118,10 +153,72 @@ export async function updateSpecdevSystem(source, destination) {
       }
     }
 
+    if (await updateManagedGitignore(destination)) {
+      updatedPaths.push('.gitignore (managed entries)')
+    }
+
     return updatedPaths
   } catch (error) {
     throw new Error(`Update failed: ${error.message}`)
   }
+}
+
+async function migrateLegacyWorkflowFeedback(specdevPath) {
+  const legacyDir = join(specdevPath, 'knowledge', '_workflow_feedback')
+  if (!await fse.pathExists(legacyDir)) return false
+
+  const destinationDir = join(specdevPath, 'knowledge', 'workflow_feedback')
+  await fse.ensureDir(destinationDir)
+  const entries = await fse.readdir(legacyDir, { withFileTypes: true })
+  let migrated = false
+  for (const entry of entries) {
+    if (entry.name === '.gitkeep') continue
+    const sourcePath = join(legacyDir, entry.name)
+    const destinationPath = join(destinationDir, entry.name)
+    if (await fse.pathExists(destinationPath)) {
+      const [sourceStat, destinationStat] = await Promise.all([
+        fse.stat(sourcePath),
+        fse.stat(destinationPath),
+      ])
+      let sameFile = false
+      if (sourceStat.isFile() && destinationStat.isFile()) {
+        const [sourceContent, destinationContent] = await Promise.all([
+          fse.readFile(sourcePath),
+          fse.readFile(destinationPath),
+        ])
+        sameFile = sourceContent.equals(destinationContent)
+      }
+      if (!sameFile) {
+        throw new Error(`Cannot migrate legacy workflow feedback because the destination already exists: knowledge/workflow_feedback/${entry.name}`)
+      }
+      continue
+    }
+    await fse.copy(sourcePath, destinationPath, { overwrite: false, errorOnExist: true })
+    migrated = true
+  }
+  return migrated
+}
+
+export async function updateManagedGitignore(specdevPath) {
+  const ignorePath = join(specdevPath, '.gitignore')
+  const existing = await fse.pathExists(ignorePath)
+    ? await fse.readFile(ignorePath, 'utf-8')
+    : ''
+  const managedPattern = new RegExp(
+    `${escapeRegExp(MANAGED_IGNORE_BEGIN)}[\\s\\S]*?${escapeRegExp(MANAGED_IGNORE_END)}`,
+    'm'
+  )
+  const next = managedPattern.test(existing)
+    ? existing.replace(managedPattern, MANAGED_IGNORE_BLOCK)
+    : `${existing.trimEnd()}${existing.trim() ? '\n\n' : ''}${MANAGED_IGNORE_BLOCK}\n`
+
+  if (next === existing) return false
+  await fse.writeFile(ignorePath, next.endsWith('\n') ? next : `${next}\n`, 'utf-8')
+  return true
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**

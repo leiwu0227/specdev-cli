@@ -21,7 +21,7 @@ const progress = toProductState(
       purpose: 'Produce a design.',
       instructions: 'Write the proposal.',
       outputSchema: { type: 'object', required: ['summary'] },
-      operatorContext: { phase: 'brainstorm' },
+      operatorContext: { phase: 'brainstorm', command: 'specdev checkpoint brainstorm' },
       sideChannelActions: [{ id: 'research', purpose: 'Research without advancing.' }],
     },
     stack: [{ child: { graphId: 'child-graph' } }],
@@ -31,6 +31,7 @@ const progress = toProductState(
 
 assert.equal(progress.workflow, 'Assignment lifecycle')
 assert.equal(progress.phase, 'brainstorm')
+assert.equal(progress.next_action.command_line, 'specdev checkpoint brainstorm')
 assert.deepEqual(progress.actions, [{ id: 'research', purpose: 'Research without advancing.' }])
 assert.deepEqual(progress.call_stack, [
   { title: 'Assignment lifecycle' },
@@ -56,6 +57,7 @@ const gate = toProductState(
       gate: { decisionSchema: { type: 'object', required: ['choice'] } },
       operatorContext: {
         phase: 'brainstorm',
+        command: 'specdev approve brainstorm',
         commands: { approve_skip_review: 'specdev approve brainstorm' },
       },
     },
@@ -64,6 +66,7 @@ const gate = toProductState(
 )
 
 assert.equal(gate.state, 'awaiting_decision')
+assert.equal(gate.next_action.command_line, 'specdev approve brainstorm')
 assert.deepEqual(gate.choices[0], {
   n: 1,
   value: 'approve_skip_review',

@@ -1,5 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
+import { reserveEntityId } from './id-reservation.js'
 
 export function parseDiscussionId(name) {
   const match = name.match(/^(D\d{4,5})_(.+)$/)
@@ -8,21 +9,23 @@ export function parseDiscussionId(name) {
 }
 
 export async function resolveDiscussionSelector(specdevPath, selector) {
-  if (!/^D\d{4,5}/.test(selector)) {
-    return { error: 'malformed', selector }
+  const wanted = String(selector || '').trim()
+  if (!/^D\d{4,5}(?:_[^/\\]+)?$/.test(wanted)) {
+    return { error: 'malformed', selector: wanted }
   }
 
   const discussionsDir = join(specdevPath, 'discussions')
   if (!(await fse.pathExists(discussionsDir))) return null
 
-  const exactPath = join(discussionsDir, selector)
-  if (await fse.pathExists(exactPath)) {
-    return { name: selector, path: exactPath }
+  const exactPath = join(discussionsDir, wanted)
+  if (await fse.pathExists(exactPath) && (await fse.stat(exactPath)).isDirectory()) {
+    return { name: wanted, path: exactPath }
   }
+  if (wanted.includes('_')) return null
 
   const entries = await fse.readdir(discussionsDir, { withFileTypes: true })
   const matches = entries
-    .filter(e => e.isDirectory() && e.name.startsWith(selector))
+    .filter(e => e.isDirectory() && e.name.startsWith(`${wanted}_`))
     .map(e => e.name)
 
   if (matches.length === 1) {
@@ -33,18 +36,5 @@ export async function resolveDiscussionSelector(specdevPath, selector) {
 }
 
 export async function getNextDiscussionId(specdevPath) {
-  const discussionsDir = join(specdevPath, 'discussions')
-  await fse.ensureDir(discussionsDir)
-
-  const entries = await fse.readdir(discussionsDir, { withFileTypes: true })
-  const ids = entries
-    .filter(e => e.isDirectory())
-    .map(e => {
-      const parsed = parseDiscussionId(e.name)
-      return parsed.id ? Number(parsed.id.slice(1)) : 0
-    })
-    .filter(n => n > 0)
-
-  const nextNum = ids.length > 0 ? Math.max(...ids) + 1 : 1
-  return `D${String(nextNum).padStart(5, '0')}`
+  return reserveEntityId(specdevPath, 'discussion')
 }

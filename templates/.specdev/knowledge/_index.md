@@ -1,23 +1,21 @@
-# Knowledge Vault
+# Living knowledge
 
-This directory contains accumulated project knowledge, organized by topic. Agents read this at the start of assignments for context and write to it at the end to capture learnings.
+Repository maintainers curate current Markdown under `faq/`, `architecture/`,
+`codestyle/`, `domain/`, and `workflow/`. `workflow_feedback/` records concise
+reusable SpecDev process observations. FAQ entries use `_templates/faq.md` and
+may declare `verified_at`, `review_after`, applicability, source outcomes, and
+explicit supersession through `status: superseded` and `superseded_by`.
 
-## Branches
+Completed Assignment and Mission outcomes are searchable history; they are not
+automatically promoted into living truth. `specdev knowledge distill` prepares a
+bounded read-only brief of completed outcomes and hash-valid completed
+Discussion designs not cited by active knowledge, plus stale FAQs. The current
+coding CLI classifies and edits Markdown; there is no spawned distillation
+agent, confidence engine, processed ledger, or automatic rewrite.
 
-| Branch | Purpose |
-|--------|---------|
-| `codestyle/` | Naming conventions, error handling patterns, test structure |
-| `architecture/` | Design patterns, dependencies, module boundaries |
-| `domain/` | Business domain concepts and terminology |
-| `workflow/` | project-specific process knowledge and tool usage patterns |
-
-## Workflow Feedback
-
-`workflow_feedback/` contains structured observations about the SpecDev workflow itself (not project-specific process preferences). These notes track issues, improvements, recurring patterns, mitigations, and proposed actions that can improve SpecDev templates, skills, CLI behavior, or review flow across projects.
-
-## How This Grows
-
-- Agents create new files and subdirectories as they encounter new categories
-- At phase ends, optional knowledge capture prompts agents to record reusable learnings here
-- Periodically, agents consolidate and deduplicate during natural workflow pauses
-- Keep entries concise and actionable — this is reference material, not a journal
+`specdev knowledge rebuild` derives ignored `cache/knowledge.sqlite` from
+Markdown. Search rebuilds it synchronously when missing or stale. Default search
+uses authoritative current notes, fresh FAQs, and verified outcomes. Use
+`--include-stale` only when older guidance is useful and verify it before reuse;
+use explicit scopes for broader history, superseded entries, or workflow
+material.

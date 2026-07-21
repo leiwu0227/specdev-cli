@@ -3,61 +3,36 @@ import { COMMANDS, formatCommandLine } from '../utils/commands.js'
 
 export function helpCommand(flags = {}) {
   if (flags.json) {
-    console.log(JSON.stringify({ command: 'help', version: 1, commands: COMMANDS }))
+    console.log(JSON.stringify({ command: 'help', version: 2, commands: COMMANDS }))
     return
   }
   blankLine()
-  printSection('📋 SpecDev CLI - Spec-Driven Workflow for Coding Agents')
+  printSection('SpecDev — contract-governed orchestration for coding agents')
   blankLine()
-  printSection('USAGE:')
+  printSection('Usage:')
   printLines(['  specdev <command> [options]'])
   blankLine()
-  printSection('COMMANDS:')
+  printSection('Commands:')
   printLines(COMMANDS.map(formatCommandLine))
   blankLine()
-  printSection('OPTIONS:')
+  printSection('Normal Assignment:')
   printLines([
-    '  --force, -f       Overwrite existing .specdev folder',
-    '  --dry-run         Show what would be copied without copying',
-    '  --target=<path>   Specify target directory (default: current directory)',
-    '  --assignment=<id> Specify assignment (migrate legacy-assignments only)',
-    '  --discussion=<id> Target a discussion instead of an assignment',
-    '  --type=<type>     Assignment type for folder creation (assignment command)',
-    '  --slug=<slug>     Assignment slug for folder creation (assignment command)',
+    '  specdev assignment "<objective>"',
+    '  # collaborate in brainstorm/contract.md',
+    '  specdev checkpoint brainstorm',
+    '  specdev reviewloop brainstorm       # optional',
+    '  specdev approve brainstorm          # only after explicit user agreement',
+    '  specdev implement                   # automatic plan + code + evidence + review',
   ])
   blankLine()
-  printSection('WORKFLOW:')
+  printSection('Parallel thought work and larger objectives:')
   printLines([
-    '  specdev init',
-    '  specdev do "project orientation"   # Start or resume project setup',
-    '  specdev do "start an assignment"   # Start or resume assignment work',
-    '  specdev do "explore a discussion"  # Start or resume a discussion',
-    '  specdev next --json               # Read the canonical next action',
-    '  specdev decide <value>            # Submit an explicit gate choice',
-    '  specdev step --json=<output>      # Submit evidence and advance',
-    '  specdev action <id>               # Record a side action without advancing',
-    '  specdev checkpoint brainstorm     # Validate brainstorm artifacts',
-    '  specdev approve brainstorm        # Hard gate: then use next --json',
-    '  specdev implement                 # Kick off implementation after breakdown',
-    '  specdev checkpoint implementation # Validate implementation artifacts',
-    '  specdev approve implementation    # Hard gate: then use next --json',
-    '  specdev continue                  # Diagnose state and next action',
-    '  specdev status --json             # Machine-readable workflow state',
-    '  specdev cancel [reason]           # Cancel the focused guided workflow',
-    '',
-    '  # Optional: review before approving',
-    '  specdev review brainstorm         # Manual review (separate session)',
-    '  specdev reviewloop brainstorm     # Automated review via external CLI',
-    '  specdev reviewloop brainstorm --reviewer=<name> --autocontinue',
-    '                                    # Review, approve on pass, then use next --json',
-    '  specdev review implementation     # Manual review (separate session)',
-    '  specdev reviewloop implementation # Automated review via external CLI',
-    '  specdev check-review              # Read feedback in main session',
-    '',
-    '  # Knowledge retrieval',
-    '  specdev knowledge index',
-    '  specdev knowledge search "bounded memory"',
+    '  specdev discussion "<topic>"',
+    '  specdev discussion D00001 --complete',
+    '  specdev test-audit "<test scope>"',
+    '  specdev assignment --from-test-audit=TA00001',
+    '  specdev mission create "<objective>"',
+    '  specdev reviewloop mission --mission=M00001  # optional',
+    '  specdev mission run M00001',
   ])
-  blankLine()
-  printSection('For more information, visit: https://github.com/leiwu0227/specdev-cli')
 }

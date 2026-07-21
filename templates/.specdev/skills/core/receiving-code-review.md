@@ -51,4 +51,6 @@ If you pushed back and were wrong: "Verified and you're correct. My initial unde
 
 ## Deliverable
 
-Append a feedback disposition section to `review/validation_checklist.md` with status for each finding.
+Summarize each addressed or disputed finding in the repair worker result. Update
+`implementation/progress.json` and `outcome.md` only when its Task, evidence, or
+acceptance result changed.

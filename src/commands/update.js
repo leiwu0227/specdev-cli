@@ -4,8 +4,7 @@ import { updateSpecdevSystem, isValidSpecdevInstallation, updateSkillFiles, upda
 import { SKILL_FILES, ALL_ADAPTERS, COMMAND_SKILL_DIRS, adapterContent } from './init.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { blankLine, printBullets, printSection } from '../utils/output.js'
-import { checkReviewerCLIs, printReviewerCheck } from '../utils/reviewers.js'
-import { ensureWorkspaceEngine } from '../utils/engine.js'
+import { installWorkspaceEngine } from '../utils/engine.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -28,15 +27,15 @@ export async function updateCommand(flags = {}) {
 
   const wouldUpdate = [
     '_main.md', '_index.md', 'workflow.json', 'workflows/', '_guides/', '_templates/',
-    'agents/',
+    'guides/review.md', 'guides/library/',
     'skills/core/', 'skills/tools/ (official built-in only)',
-    'skills/README.md', 'project_scaffolding/_README.md',
+    'skills/README.md',
     'Platform adapters (if missing)',
   ]
   const preserved = [
-    'project_notes/', 'assignments/', 'skills/tools/ (custom)',
-    'project_scaffolding/ (except _README.md)',
-    'Existing platform adapters',
+    'project_notes/', 'assignments/', 'missions/', 'discussions/', 'test-audits/',
+    'knowledge/', 'skills/tools/ (custom)', 'agents.yaml', 'guides/project/',
+    'project_scaffolding/ (legacy custom files)', 'Existing platform adapters',
   ]
 
   if (dryRun) {
@@ -70,7 +69,7 @@ export async function updateCommand(flags = {}) {
     }
 
     const updatedPaths = await updateSpecdevSystem(templatePath, specdevPath)
-    const engine = ensureWorkspaceEngine(targetDir)
+    const engine = installWorkspaceEngine(targetDir)
 
     const pkg = await import('../../package.json', { with: { type: 'json' } })
 
@@ -107,7 +106,11 @@ export async function updateCommand(flags = {}) {
         hook_updated: hookUpdated > 0,
         adapters_created: createdAdapters,
         guided_workflows: engine.registered.length - 1,
-        preserved: ['project_notes/', 'assignments/', 'skills/tools/', 'project_scaffolding/'],
+        preserved: [
+          'project_notes/', 'assignments/', 'missions/', 'discussions/', 'test-audits/',
+          'knowledge/', 'agents.yaml', 'guides/project/', 'skills/tools/',
+          'project_scaffolding/ (legacy custom files)',
+        ],
       }, null, 2))
       return
     }
@@ -140,20 +143,16 @@ export async function updateCommand(flags = {}) {
       'project_notes/ (your project documentation)',
       'assignments/ (your active work)',
       'skills/tools/ (your custom tool skills)',
-      'project_scaffolding/ (except _README.md)',
+      'missions/ and discussions/ (your durable work)',
+      'test-audits/ and knowledge/ (your durable analysis and guidance)',
+      'guides/project/ (your project guidance)',
+      'project_scaffolding/ (legacy custom files, if present)',
     ], '   • ')
-    // Check reviewer CLIs
     blankLine()
-    printSection('Reviewer CLIs:')
-    const reviewerResults = await checkReviewerCLIs(specdevPath)
-    if (reviewerResults.length > 0) {
-      printReviewerCheck(reviewerResults)
-    } else {
-      console.log('   (no reviewer configs found)')
-    }
+    console.log('💡 Agent profiles live in .specdev/agents.yaml; machine overrides live in ignored cache/agents.local.yaml')
 
     blankLine()
-    console.log('💡 Your project-specific files remain untouched (except official built-in tool skills)')
+    console.log('💡 Your project-owned notes, work, profiles, and guides remain untouched')
     console.log('💡 For legacy .specdev layouts, run: specdev migrate')
     console.log('💡 For old assignment root files only, run: specdev migrate legacy-assignments --dry-run')
     console.log('💡 Check _guides/update_guide.md for manual patches to CLAUDE.md and other unmanaged files')

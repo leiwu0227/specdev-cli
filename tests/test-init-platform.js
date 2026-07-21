@@ -38,10 +38,13 @@ assert(existsSync(join(TEST_DIR, 'CLAUDE.md')), 'creates CLAUDE.md')
 assert(existsSync(join(TEST_DIR, 'AGENTS.md')), 'creates AGENTS.md')
 assert(existsSync(join(TEST_DIR, '.cursor', 'rules')), 'creates .cursor/rules')
 
+const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
+assert(mainMd.includes('.specdev/project_notes/big_picture.md'), '_main.md uses a repository-root-relative project context path')
 const claudeMd = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
 assert(claudeMd.includes('.specdev/_main.md'), 'CLAUDE.md points to _main.md')
 const agentsMd = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8')
 assert(agentsMd.includes('.specdev/_main.md'), 'AGENTS.md points to _main.md')
+assert(!agentsMd.includes('develops SpecDev itself'), 'AGENTS.md does not inject SpecDev source-repository advice')
 const cursorRules = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
 assert(cursorRules.includes('.specdev/_main.md'), '.cursor/rules points to _main.md')
 
@@ -54,11 +57,13 @@ assert(existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')), 'specdev-a
 assert(existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')), 'specdev-rewind/SKILL.md installed')
 assert(!existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), 'specdev-brainstorm removed (redundant with assignment)')
 assert(existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')), 'specdev-continue/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')), 'specdev-review/SKILL.md installed')
+assert(existsSync(join(skillsDir, 'specdev-mission', 'SKILL.md')), 'specdev-mission/SKILL.md installed')
+assert(existsSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md')), 'specdev-reviewloop/SKILL.md installed')
+assert(!existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')), 'retired specdev-review skill is absent')
 
 const startSkill = readFileSync(join(skillsDir, 'specdev-start', 'SKILL.md'), 'utf-8')
 assert(startSkill.includes('big_picture.md'), 'start skill references big_picture.md')
-assert(startSkill.includes('What does this project do'), 'start skill includes Q&A instructions')
+assert(startSkill.includes('purpose, users'), 'start skill includes Q&A instructions')
 
 const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
 assert(assignmentSkill.includes('specdev assignment'), 'assignment skill references specdev assignment command')
@@ -68,10 +73,10 @@ const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
 
 const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
-assert(continueSkill.includes('specdev continue'), 'continue skill references specdev continue command')
+assert(continueSkill.includes('specdev next'), 'continue skill references durable workflow resume')
 
-const reviewSkill = readFileSync(join(skillsDir, 'specdev-review', 'SKILL.md'), 'utf-8')
-assert(reviewSkill.includes('specdev review'), 'review skill references specdev review command')
+const reviewloopSkill = readFileSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md'), 'utf-8')
+assert(reviewloopSkill.includes('agents.yaml'), 'reviewloop skill references repository profiles')
 
 // ---- Test hook installation ----
 console.log('\nhook installation:')
