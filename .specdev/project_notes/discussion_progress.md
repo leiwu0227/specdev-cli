@@ -24,6 +24,7 @@ Below is a list of discussions and their status.
 | D00002 | Autocontinue after reviewloop approval | Promoted | 2026-05-08 | 00019_feature_autocontinue-reviewloop | Proposes `specdev reviewloop <phase> --reviewer=<name> --autocontinue` to carry reviewed brainstorms through implementation and capture. |
 | D00003 | Workflow bugs | Deferred | 2026-05-11 | - | Six bugs documented; verified still present in code at the 00023 audit (state.js "Invoke X skill" wording, `KNOWLEDGE_BRANCHES` duplicated across 4 files, `INDEXED_MARKDOWN_ROOTS` allowlist, CLI rejects `specdev checkpoint breakdown`, autocontinue needs-changes handling, discussion autocontinue silent ignore). Awaits a dedicated follow-up assignment. |
 | D00004 | SpecDev workflow performance — excessive test runs | Resolved | 2026-05-11 | 00023 cleanup batches | All three proposed layers landed: A) test-driven-development/SKILL.md now requires scoped `verify-tests.sh` calls with end-of-phase full run; B) `npm test` switched to `node --test --test-concurrency=4 ./tests/test-*.js` (4.7× speedup: 5:32 -> 1:11); C) breakdown/SKILL.md per-task `+<count>` budget + plan-header aggregate cap + reviewer prompt enforcement. The full-suite hang was also resolved earlier by removing `test-reviewloop-command.js`. |
+| D00006 | Parallel Mission child execution | Complete | 2026-07-21 | - | Static waves; automatic cap of three local worktree children; independent Assignment graphs; rolling deterministic integration; no dynamic DAG, file ownership, or repeated full suites. |
 
 ---
 
