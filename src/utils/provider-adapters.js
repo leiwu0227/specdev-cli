@@ -6,9 +6,12 @@ export function buildProviderInvocation({ profile, role, cwd, resultPath }) {
     const args = [
       'exec',
       '--ephemeral',
-      '--cd', cwd,
-      '--sandbox', role === 'reviewer' ? 'read-only' : 'workspace-write',
-      '--model', profile.model,
+      '--cd',
+      cwd,
+      '--sandbox',
+      role === 'reviewer' ? 'read-only' : 'workspace-write',
+      '--model',
+      profile.model,
     ]
     if (role === 'worker' && profile.network) {
       args.push('--config', 'sandbox_workspace_write.network_access=true')
@@ -22,11 +25,15 @@ export function buildProviderInvocation({ profile, role, cwd, resultPath }) {
   if (profile.provider === 'claude') {
     const args = [
       '--print',
-      '--input-format', 'text',
-      '--output-format', 'text',
+      '--input-format',
+      'text',
+      '--output-format',
+      'text',
       '--no-session-persistence',
-      '--model', profile.model,
-      '--permission-mode', role === 'reviewer' ? 'plan' : 'acceptEdits',
+      '--model',
+      profile.model,
+      '--permission-mode',
+      role === 'reviewer' ? 'plan' : 'acceptEdits',
     ]
     if (profile.effort) args.push('--effort', profile.effort)
     return { command: 'claude', args, stdin: true, resultMode: 'stdout' }

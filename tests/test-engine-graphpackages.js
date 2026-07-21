@@ -47,7 +47,10 @@ for (const graph of workflows) {
   }
 }
 
-assert.deepEqual(callables.map((graph) => graph.id).sort(), ['discussion-lifecycle', 'test-audit-lifecycle'])
+assert.deepEqual(callables.map((graph) => graph.id).sort(), [
+  'discussion-lifecycle',
+  'test-audit-lifecycle',
+])
 for (const graph of callables) assert.ok(graph.nodes[graph.entry])
 
 const byId = Object.fromEntries(packages.map((manifest) => [manifest.id, manifest]))

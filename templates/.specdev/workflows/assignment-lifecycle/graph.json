@@ -4,7 +4,13 @@
   "kind": "workflow",
   "title": "Assignment lifecycle",
   "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",
-  "activationHints": ["assignment", "new assignment", "start feature", "start bugfix", "implement change"],
+  "activationHints": [
+    "assignment",
+    "new assignment",
+    "start feature",
+    "start bugfix",
+    "implement change"
+  ],
   "entry": "create-assignment",
   "nodes": {
     "create-assignment": {
@@ -35,7 +41,10 @@
         }
       },
       "sideChannelActions": [
-        { "id": "brainstorm-review", "purpose": "Run optional Brainstorm review without advancing the contract gate." },
+        {
+          "id": "brainstorm-review",
+          "purpose": "Run optional Brainstorm review without advancing the contract gate."
+        },
         { "id": "research", "purpose": "Run focused research without advancing the Assignment." }
       ],
       "operatorContext": { "phase": "brainstorm", "command": "specdev checkpoint brainstorm" },
@@ -77,7 +86,10 @@
         }
       },
       "sideChannelActions": [
-        { "id": "brainstorm-review", "purpose": "Record optional Brainstorm review without approving the contract." }
+        {
+          "id": "brainstorm-review",
+          "purpose": "Record optional Brainstorm review without approving the contract."
+        }
       ],
       "operatorContext": { "phase": "brainstorm", "command": "specdev approve brainstorm" },
       "edges": [
@@ -126,7 +138,10 @@
           "attempt": { "type": "string" }
         }
       },
-      "operatorContext": { "phase": "implementation", "command": "specdev reviewloop implementation" },
+      "operatorContext": {
+        "phase": "implementation",
+        "command": "specdev reviewloop implementation"
+      },
       "edges": [
         { "to": "done", "when": { "approved": true } },
         { "to": "repair", "when": { "approved": false } }

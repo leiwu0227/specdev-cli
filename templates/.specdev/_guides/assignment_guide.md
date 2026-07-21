@@ -42,7 +42,7 @@ Attempt is intended.
 Review policy is separate from behavior authority:
 
 ```yaml
-brainstorm: optional      # optional | required
+brainstorm: optional # optional | required
 implementation: required # required | waived
 ```
 

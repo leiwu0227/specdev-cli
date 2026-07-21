@@ -1,10 +1,7 @@
 import { isAbsolute, join, relative, resolve } from 'path'
 import fse from 'fs-extra'
 import { resolveCurrentAssignment } from './current.js'
-import {
-  resolveTargetDir,
-  requireSpecdevDirectory,
-} from './command-context.js'
+import { resolveTargetDir, requireSpecdevDirectory } from './command-context.js'
 
 /**
  * Parse assignment directory name into components
@@ -36,8 +33,16 @@ export async function resolveAssignmentSelector(specdevPath, selector) {
   // a direct child of this repository's assignments directory.
   const explicitPath = isAbsolute(wanted) ? resolve(wanted) : join(assignmentsDir, wanted)
   const explicitRelative = relative(assignmentsDir, explicitPath)
-  const directAssignment = explicitRelative && !explicitRelative.includes('/') && !explicitRelative.includes('\\') && /^\d+_[^/\\]+$/.test(explicitRelative)
-  if (directAssignment && await fse.pathExists(explicitPath) && (await fse.stat(explicitPath)).isDirectory()) {
+  const directAssignment =
+    explicitRelative &&
+    !explicitRelative.includes('/') &&
+    !explicitRelative.includes('\\') &&
+    /^\d+_[^/\\]+$/.test(explicitRelative)
+  if (
+    directAssignment &&
+    (await fse.pathExists(explicitPath)) &&
+    (await fse.stat(explicitPath)).isDirectory()
+  ) {
     return { path: explicitPath, name: assignmentName(explicitPath) }
   }
 
@@ -87,7 +92,9 @@ export async function resolveAssignmentPath(flags) {
   const current = await resolveCurrentAssignment(specdevPath)
 
   if (current.error === 'stale') {
-    console.error(`❌ Active assignment "${current.name}" not found. Run specdev focus <id> to set a valid assignment.`)
+    console.error(
+      `❌ Active assignment "${current.name}" not found. Run specdev focus <id> to set a valid assignment.`
+    )
     process.exit(1)
   }
 
@@ -95,7 +102,7 @@ export async function resolveAssignmentPath(flags) {
     const assignmentsDir = join(specdevPath, 'assignments')
     if (await fse.pathExists(assignmentsDir)) {
       const entries = await fse.readdir(assignmentsDir, { withFileTypes: true })
-      const dirs = entries.filter(e => e.isDirectory()).map(e => e.name)
+      const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name)
       if (dirs.length > 0) {
         console.error('❌ No active assignment. Run specdev focus <id> to set one.')
         console.error('   Available:')

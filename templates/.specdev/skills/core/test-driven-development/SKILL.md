@@ -24,20 +24,20 @@ type: core
 
 ## Scripts
 
-| Script | Purpose | When to run |
-|--------|---------|-------------|
+| Script                                                                 | Purpose                                                                          | When to run                                                               |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh` | Run a project test command (scoped or full) and return structured pass/fail JSON | After writing a test (RED), after writing code (GREEN), after refactoring |
 
 The script accepts an optional second argument: `verify-tests.sh <project-root> [test-command]`. **Always provide the scoped command authorized by the Assignment contract and repository policy.** Omitting the command auto-detects a full suite and is allowed only when that full suite was explicitly authorized.
 
 Scoping examples:
 
-| Stack | Per-task scoped command | Full-suite command (only when authorized) |
-|-------|------------------------|----------------------------------------|
-| Node (mocha / vitest / node:test) | `node --test tests/test-<feature>.js` or `npx vitest run tests/<feature>.test.ts` | `npm test` |
-| Python (pytest) | `pytest tests/test_<feature>.py::test_<name> -x` | `pytest` |
-| Rust (cargo) | `cargo test <feature>::<name>` | `cargo test` |
-| Go | `go test ./<pkg> -run Test<Name>` | `go test ./...` |
+| Stack                             | Per-task scoped command                                                           | Full-suite command (only when authorized) |
+| --------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------- |
+| Node (mocha / vitest / node:test) | `node --test tests/test-<feature>.js` or `npx vitest run tests/<feature>.test.ts` | `npm test`                                |
+| Python (pytest)                   | `pytest tests/test_<feature>.py::test_<name> -x`                                  | `pytest`                                  |
+| Rust (cargo)                      | `cargo test <feature>::<name>`                                                    | `cargo test`                              |
+| Go                                | `go test ./<pkg> -run Test<Name>`                                                 | `go test ./...`                           |
 
 If the plan does not name a scoped command for a task, infer one from the test file(s) created in that task's Step 1.
 

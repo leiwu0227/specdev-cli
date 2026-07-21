@@ -27,7 +27,9 @@ export function normalizeFtsTerms(query) {
 }
 
 export function normalizeFtsQuery(query) {
-  return normalizeFtsTerms(query).map((term) => `"${term.replaceAll('"', '""')}"`).join(' OR ')
+  return normalizeFtsTerms(query)
+    .map((term) => `"${term.replaceAll('"', '""')}"`)
+    .join(' OR ')
 }
 
 export async function buildKnowledgeIndex(specdevPath) {
@@ -95,7 +97,9 @@ export async function buildKnowledgeIndex(specdevPath) {
     }
   } catch (error) {
     if (!committed) {
-      try { db.exec('ROLLBACK') } catch {}
+      try {
+        db.exec('ROLLBACK')
+      } catch {}
     }
     buildError = error
   } finally {
@@ -134,7 +138,9 @@ export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
     const parameters = [normalizeFtsQuery(query), ...eligibility]
     if (!options.includeStale) parameters.push(today)
     parameters.push(Math.max(limit * 50, 500))
-    const rows = db.prepare(`
+    const rows = db
+      .prepare(
+        `
       SELECT
         d.path, d.kind, d.authority, d.completion_status,
         d.assignment_id, d.mission_id, d.phase, d.title, d.content,
@@ -148,7 +154,9 @@ export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
         ${freshnessClause}
       ORDER BY score
       LIMIT ?
-    `).all(...parameters)
+    `
+      )
+      .all(...parameters)
 
     return rows
       .map((row) => ({
@@ -158,13 +166,14 @@ export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
         applies_to: parseJsonValue(row.applies_to),
         sources: parseJsonValue(row.source_paths) || [],
       }))
-      .sort((left, right) => (
-        right.coverage - left.coverage ||
-        freshnessRank(left.freshness) - freshnessRank(right.freshness) ||
-        authorityRank(left.authority) - authorityRank(right.authority) ||
-        left.score - right.score ||
-        left.path.localeCompare(right.path)
-      ))
+      .sort(
+        (left, right) =>
+          right.coverage - left.coverage ||
+          freshnessRank(left.freshness) - freshnessRank(right.freshness) ||
+          authorityRank(left.authority) - authorityRank(right.authority) ||
+          left.score - right.score ||
+          left.path.localeCompare(right.path)
+      )
       .slice(0, limit)
       .map(({ content, applies_to, source_paths, ...row }) => ({
         ...row,
@@ -180,10 +189,9 @@ export async function buildKnowledgeDistillationBrief(specdevPath, options = {})
   const documents = await collectKnowledgeDocuments(specdevPath)
   const today = dateOnly(options.now || new Date(), 'distillation date')
   const limit = boundedLimit(options.limit)
-  const curated = documents.filter((doc) => (
-    doc.path.startsWith('knowledge/') &&
-    doc.path !== 'knowledge/_index.md'
-  ))
+  const curated = documents.filter(
+    (doc) => doc.path.startsWith('knowledge/') && doc.path !== 'knowledge/_index.md'
+  )
   const activeKnowledge = curated.filter((doc) => doc.knowledgeStatus !== 'superseded')
   const citedSources = new Set(activeKnowledge.flatMap((doc) => doc.sources))
   const completedOutcomes = documents
@@ -192,7 +200,9 @@ export async function buildKnowledgeDistillationBrief(specdevPath, options = {})
     .filter((doc) => matchesDistillationScope(doc, options))
   const completedDiscussionIds = await readCompletedDiscussionIds(specdevPath, documents)
   const completedDiscussionDesigns = documents
-    .filter((doc) => doc.kind === 'discussion_artifact' && doc.path.endsWith('/brainstorm/design.md'))
+    .filter(
+      (doc) => doc.kind === 'discussion_artifact' && doc.path.endsWith('/brainstorm/design.md')
+    )
     .filter((doc) => completedDiscussionIds.has(discussionIdFromPath(doc.path)))
     .filter((doc) => matchesDistillationScope(doc, options))
   const unreferencedSourceDocuments = [...completedOutcomes, ...completedDiscussionDesigns]
@@ -203,10 +213,11 @@ export async function buildKnowledgeDistillationBrief(specdevPath, options = {})
   )
   const staleFaqDocuments = curated
     .filter((doc) => doc.kind === 'faq' && knowledgeFreshness(doc, today) === 'stale')
-    .sort((left, right) => left.reviewAfter.localeCompare(right.reviewAfter) || left.path.localeCompare(right.path))
-  const staleFaqs = staleFaqDocuments
-    .slice(0, limit)
-    .map((doc) => knowledgeSummary(doc, today))
+    .sort(
+      (left, right) =>
+        left.reviewAfter.localeCompare(right.reviewAfter) || left.path.localeCompare(right.path)
+    )
+  const staleFaqs = staleFaqDocuments.slice(0, limit).map((doc) => knowledgeSummary(doc, today))
   const supersededFaqDocuments = curated
     .filter((doc) => doc.kind === 'faq' && doc.knowledgeStatus === 'superseded')
     .sort((left, right) => left.path.localeCompare(right.path))
@@ -258,7 +269,12 @@ export async function knowledgeIndexIsStale(specdevPath) {
   try {
     sqlite = await loadSqlite()
     db = new sqlite.DatabaseSync(dbPath, { readOnly: true })
-    const meta = Object.fromEntries(db.prepare('SELECT key, value FROM metadata').all().map((row) => [row.key, row.value]))
+    const meta = Object.fromEntries(
+      db
+        .prepare('SELECT key, value FROM metadata')
+        .all()
+        .map((row) => [row.key, row.value])
+    )
     return Number(meta.schema_version) !== SCHEMA_VERSION || meta.source_fingerprint !== expected
   } catch {
     return true
@@ -291,7 +307,16 @@ export async function collectKnowledgeDocuments(specdevPath) {
 
 async function collectKnowledgeSourceStats(specdevPath) {
   const files = []
-  for (const root of ['project_notes', 'knowledge', 'assignments', 'missions', 'discussions', '_guides', 'guides', 'skills']) {
+  for (const root of [
+    'project_notes',
+    'knowledge',
+    'assignments',
+    'missions',
+    'discussions',
+    '_guides',
+    'guides',
+    'skills',
+  ]) {
     const absolute = join(specdevPath, root)
     if (await fse.pathExists(absolute)) await collectMarkdownFiles(absolute, files)
   }
@@ -317,7 +342,10 @@ async function classifyDocument(specdevPath, relPath, content) {
     return {
       kind: parts[1] === 'faq' ? 'faq' : workflowFeedback ? 'workflow_feedback' : 'knowledge_note',
       authority: superseded ? 'history' : workflowFeedback ? 'workflow' : 'living',
-      completionStatus: null, assignmentId: null, missionId: null, phase: parts[1] || null,
+      completionStatus: null,
+      assignmentId: null,
+      missionId: null,
+      phase: parts[1] || null,
       ...metadata,
     }
   }
@@ -326,7 +354,10 @@ async function classifyDocument(specdevPath, relPath, content) {
     return {
       kind: kindFromProjectNote(parts.at(-1)),
       authority: topLevel ? 'project' : 'all',
-      completionStatus: null, assignmentId: null, missionId: null, phase: null,
+      completionStatus: null,
+      assignmentId: null,
+      missionId: null,
+      phase: null,
       ...emptyKnowledgeMetadata(),
     }
   }
@@ -338,28 +369,58 @@ async function classifyDocument(specdevPath, relPath, content) {
       kind: outcome ? 'assignment_outcome' : 'assignment_artifact',
       authority: completed && outcome ? 'verified_history' : completed ? 'history' : 'all',
       completionStatus: completed ? 'completed' : 'incomplete',
-      assignmentId: parts[1] || null, missionId: status?.mission || null, phase: parts[2] || null,
+      assignmentId: parts[1] || null,
+      missionId: status?.mission || null,
+      phase: parts[2] || null,
       ...emptyKnowledgeMetadata(),
     }
   }
   if (parts[0] === 'missions') {
-    const completed = entityStatusCompleted(await readEntityStatus(join(specdevPath, 'missions', parts[1])))
+    const completed = entityStatusCompleted(
+      await readEntityStatus(join(specdevPath, 'missions', parts[1]))
+    )
     const outcome = parts.length === 3 && parts[2] === 'outcome.md'
     return {
       kind: outcome ? 'mission_outcome' : 'mission_artifact',
       authority: completed && outcome ? 'verified_history' : completed ? 'history' : 'all',
       completionStatus: completed ? 'completed' : 'incomplete',
-      assignmentId: null, missionId: parts[1] || null, phase: parts[2] || null,
+      assignmentId: null,
+      missionId: parts[1] || null,
+      phase: parts[2] || null,
       ...emptyKnowledgeMetadata(),
     }
   }
   if (parts[0] === 'discussions') {
-    return { kind: 'discussion_artifact', authority: 'all', completionStatus: null, assignmentId: null, missionId: null, phase: parts[2] || null, ...emptyKnowledgeMetadata() }
+    return {
+      kind: 'discussion_artifact',
+      authority: 'all',
+      completionStatus: null,
+      assignmentId: null,
+      missionId: null,
+      phase: parts[2] || null,
+      ...emptyKnowledgeMetadata(),
+    }
   }
   if (['_guides', 'guides', 'skills'].includes(parts[0])) {
-    return { kind: parts[0] === 'skills' ? 'skill' : 'guide', authority: 'workflow', completionStatus: null, assignmentId: null, missionId: null, phase: null, ...emptyKnowledgeMetadata() }
+    return {
+      kind: parts[0] === 'skills' ? 'skill' : 'guide',
+      authority: 'workflow',
+      completionStatus: null,
+      assignmentId: null,
+      missionId: null,
+      phase: null,
+      ...emptyKnowledgeMetadata(),
+    }
   }
-  return { kind: 'markdown', authority: 'all', completionStatus: null, assignmentId: null, missionId: null, phase: null, ...emptyKnowledgeMetadata() }
+  return {
+    kind: 'markdown',
+    authority: 'all',
+    completionStatus: null,
+    assignmentId: null,
+    missionId: null,
+    phase: null,
+    ...emptyKnowledgeMetadata(),
+  }
 }
 
 async function readEntityStatus(entityPath) {
@@ -411,7 +472,9 @@ async function loadSqlite() {
   try {
     return await import('node:sqlite')
   } catch {
-    const error = new Error('SQLite support is unavailable. Use a Node.js runtime that provides node:sqlite.')
+    const error = new Error(
+      'SQLite support is unavailable. Use a Node.js runtime that provides node:sqlite.'
+    )
     error.code = 'SQLITE_UNAVAILABLE'
     throw error
   }
@@ -476,7 +539,9 @@ function toSpecdevRelativePath(specdevPath, file) {
 }
 
 function normalizeWhitespace(value) {
-  return String(value || '').replace(/\s+/g, ' ').trim()
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 export function parseKnowledgeMetadata(content, path = 'knowledge document') {
@@ -491,7 +556,9 @@ export function parseKnowledgeMetadata(content, path = 'knowledge document') {
   if (!frontmatter || typeof frontmatter !== 'object' || Array.isArray(frontmatter)) {
     throw new Error(`${path}: knowledge frontmatter must be a mapping`)
   }
-  const knowledgeStatus = String(frontmatter.status || 'active').trim().toLowerCase()
+  const knowledgeStatus = String(frontmatter.status || 'active')
+    .trim()
+    .toLowerCase()
   if (!VALID_KNOWLEDGE_STATUSES.has(knowledgeStatus)) {
     throw new Error(`${path}: status must be active or superseded`)
   }
@@ -549,19 +616,30 @@ function dateOnly(value, field) {
 
 function normalizeStringMap(value, field) {
   if (value === undefined || value === null) return null
-  if (typeof value !== 'object' || Array.isArray(value)) throw new Error(`${field} must be a mapping`)
+  if (typeof value !== 'object' || Array.isArray(value))
+    throw new Error(`${field} must be a mapping`)
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [String(key), String(item)]))
 }
 
 function normalizeSources(value, path) {
   if (value === undefined || value === null) return []
-  if (!Array.isArray(value)) throw new Error(`${path}: sources must be a list of .specdev-relative paths`)
+  if (!Array.isArray(value))
+    throw new Error(`${path}: sources must be a list of .specdev-relative paths`)
   return [...new Set(value.map((source) => normalizeSourcePath(source, path)))]
 }
 
 function normalizeSourcePath(value, path) {
-  const source = String(value || '').trim().replaceAll('\\', '/').replace(/^\.specdev\//, '')
-  if (!source || source.startsWith('/') || source === '..' || source.startsWith('../') || source.includes('/../')) {
+  const source = String(value || '')
+    .trim()
+    .replaceAll('\\', '/')
+    .replace(/^\.specdev\//, '')
+  if (
+    !source ||
+    source.startsWith('/') ||
+    source === '..' ||
+    source.startsWith('../') ||
+    source.includes('/../')
+  ) {
     throw new Error(`${path}: invalid source path: ${value}`)
   }
   return source
@@ -623,18 +701,22 @@ async function sourceSummary(specdevPath, document) {
   const progressPath = join(assignmentPath, 'implementation', 'progress.json')
   const verdictPath = join(assignmentPath, 'review', 'implementation-verdict.md')
   const relatedEvidence = []
-  if (await fse.pathExists(progressPath)) relatedEvidence.push(toSpecdevRelativePath(specdevPath, progressPath))
-  if (await fse.pathExists(verdictPath)) relatedEvidence.push(toSpecdevRelativePath(specdevPath, verdictPath))
+  if (await fse.pathExists(progressPath))
+    relatedEvidence.push(toSpecdevRelativePath(specdevPath, progressPath))
+  if (await fse.pathExists(verdictPath))
+    relatedEvidence.push(toSpecdevRelativePath(specdevPath, verdictPath))
   const progress = await fse.readJson(progressPath).catch(() => null)
   return {
     ...summary,
     ...(relatedEvidence.length > 0 ? { related_evidence: relatedEvidence } : {}),
-    ...(progress ? {
-      signals: {
-        deviation_count: Array.isArray(progress.deviations) ? progress.deviations.length : 0,
-        follow_up: progress.follow_up || null,
-      },
-    } : {}),
+    ...(progress
+      ? {
+          signals: {
+            deviation_count: Array.isArray(progress.deviations) ? progress.deviations.length : 0,
+            follow_up: progress.follow_up || null,
+          },
+        }
+      : {}),
   }
 }
 
@@ -681,5 +763,9 @@ async function readCompletedDiscussionIds(specdevPath, documents) {
 
 function discussionIdFromPath(path) {
   if (!String(path).startsWith('discussions/')) return null
-  return String(path).split('/')[1]?.match(/^(D\d{4,5})_/)?.[1] || null
+  return (
+    String(path)
+      .split('/')[1]
+      ?.match(/^(D\d{4,5})_/)?.[1] || null
+  )
 }

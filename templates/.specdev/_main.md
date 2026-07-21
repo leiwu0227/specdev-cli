@@ -13,7 +13,7 @@ artifacts. Fall back to `specdev` on PATH only when the wrapper is absent.
 1. Read `.specdev/project_notes/big_picture.md` and repository instructions.
 2. Run `specdev next --json` for the focused RippleGraph workflow.
 3. For explicit identities use `specdev mission status M00001` or `specdev
-   discussion D00001`.
+discussion D00001`.
 4. Announce every subtask with `Specdev: <action>`.
 
 Do not edit `.ripplegraph/` manually. Lifecycle state and approval events belong

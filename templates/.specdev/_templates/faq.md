@@ -6,7 +6,7 @@ status: active
 verified_at: YYYY-MM-DD
 review_after: YYYY-MM-DD
 applies_to:
-  component: "version or environment"
+  component: 'version or environment'
 keywords: [symptom, component, error]
 sources:
   - assignments/00000_example/outcome.md

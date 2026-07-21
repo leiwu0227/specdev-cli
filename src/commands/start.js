@@ -1,9 +1,6 @@
 import { join } from 'path'
 import fse from 'fs-extra'
-import {
-  resolveTargetDir,
-  requireSpecdevDirectory,
-} from '../utils/command-context.js'
+import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { blankLine } from '../utils/output.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'

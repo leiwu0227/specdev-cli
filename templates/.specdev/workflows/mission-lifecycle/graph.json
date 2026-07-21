@@ -19,7 +19,10 @@
           "objective": { "type": "string" }
         }
       },
-      "operatorContext": { "phase": "mission", "command": "specdev mission create \"<objective>\"" },
+      "operatorContext": {
+        "phase": "mission",
+        "command": "specdev mission create \"<objective>\""
+      },
       "edges": [{ "to": "brainstorm" }]
     },
     "brainstorm": {
@@ -34,7 +37,10 @@
         }
       },
       "sideChannelActions": [
-        { "id": "mission-brainstorm-review", "purpose": "Run optional Mission contract review without advancing approval." }
+        {
+          "id": "mission-brainstorm-review",
+          "purpose": "Run optional Mission contract review without advancing approval."
+        }
       ],
       "operatorContext": { "phase": "brainstorm", "command": "specdev mission run <id>" },
       "edges": [{ "to": "approve-mission" }]
@@ -42,13 +48,23 @@
     "approve-mission": {
       "purpose": "Approve the exact Mission authority and establish its branch.",
       "sideChannelActions": [
-        { "id": "mission-brainstorm-review", "purpose": "Record optional Mission contract review before approval." }
+        {
+          "id": "mission-brainstorm-review",
+          "purpose": "Record optional Mission contract review before approval."
+        }
       ],
       "gate": {
         "type": "external_decision",
         "decisionSchema": {
           "type": "object",
-          "required": ["approved", "contract_hash", "actor", "approved_at", "base_revision", "branch"],
+          "required": [
+            "approved",
+            "contract_hash",
+            "actor",
+            "approved_at",
+            "base_revision",
+            "branch"
+          ],
           "properties": {
             "approved": { "type": "boolean" },
             "contract_hash": { "type": "string" },

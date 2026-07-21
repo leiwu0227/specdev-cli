@@ -39,10 +39,16 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
   }
   const selected = progress.selected_guides
   if (!selected || !Array.isArray(selected.implementation) || !Array.isArray(selected.review)) {
-    throw new Error('implementation/progress.json requires selected_guides.implementation and selected_guides.review arrays')
+    throw new Error(
+      'implementation/progress.json requires selected_guides.implementation and selected_guides.review arrays'
+    )
   }
-  const implementationGuides = await resolveGuides(specdevPath, selected.implementation, { phase: 'implementation' })
-  const reviewGuides = await resolveGuides(specdevPath, selected.review, { phase: 'implementation' })
+  const implementationGuides = await resolveGuides(specdevPath, selected.implementation, {
+    phase: 'implementation',
+  })
+  const reviewGuides = await resolveGuides(specdevPath, selected.review, {
+    phase: 'implementation',
+  })
   assertPlanGuideSelection(plan, 'Implementation', implementationGuides)
   assertPlanGuideSelection(plan, 'Review', reviewGuides)
   progress.selected_guide_versions = {
@@ -50,10 +56,14 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
     review: reviewGuides.map(({ id, version }) => ({ id, version })),
   }
   if (!Array.isArray(progress.verification)) {
-    throw new Error('implementation/progress.json requires a verification receipts array (which may be empty when authorized evidence is not needed)')
+    throw new Error(
+      'implementation/progress.json requires a verification receipts array (which may be empty when authorized evidence is not needed)'
+    )
   }
   if (!Array.isArray(progress.deviations)) {
-    throw new Error('implementation/progress.json requires a deviations array (use [] when there are none)')
+    throw new Error(
+      'implementation/progress.json requires a deviations array (use [] when there are none)'
+    )
   }
   if (!['none', 'required'].includes(progress.follow_up)) {
     throw new Error('implementation/progress.json requires follow_up: none or required')
@@ -73,11 +83,24 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
   const outcome = await fse.readFile(outcomePath, 'utf-8')
   for (const id of acceptanceIds) {
     const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    if (!new RegExp(`^\\|\\s*${escaped}\\s*\\|.*\\|\\s*(Passed|Failed|Blocked)[.!]?\\s*\\|\\s*$`, 'mi').test(outcome)) {
+    if (
+      !new RegExp(
+        `^\\|\\s*${escaped}\\s*\\|.*\\|\\s*(Passed|Failed|Blocked)[.!]?\\s*\\|\\s*$`,
+        'mi'
+      ).test(outcome)
+    ) {
       throw new Error(`outcome.md has no final Passed, Failed, or Blocked table result for ${id}`)
     }
   }
-  return { planPath, progressPath, outcomePath, outcome, progress, implementationGuides, reviewGuides }
+  return {
+    planPath,
+    progressPath,
+    outcomePath,
+    outcome,
+    progress,
+    implementationGuides,
+    reviewGuides,
+  }
 }
 
 export function assertReviewWaiverEvidence(delivery, acceptanceIds) {
@@ -88,19 +111,24 @@ export function assertReviewWaiverEvidence(delivery, acceptanceIds) {
     throw new Error('Implementation review cannot be waived when delivery reports deviations')
   }
   if (delivery.progress.verification.some((receipt) => receipt.status !== 'passed')) {
-    throw new Error('Implementation review cannot be waived unless every verification receipt passed')
+    throw new Error(
+      'Implementation review cannot be waived unless every verification receipt passed'
+    )
   }
   const outcome = delivery.outcome || ''
   for (const id of acceptanceIds) {
     const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    if (!new RegExp(`^\\|\\s*${escaped}\\s*\\|.*\\|\\s*Passed[.!]?\\s*\\|\\s*$`, 'mi').test(outcome)) {
+    if (
+      !new RegExp(`^\\|\\s*${escaped}\\s*\\|.*\\|\\s*Passed[.!]?\\s*\\|\\s*$`, 'mi').test(outcome)
+    ) {
       throw new Error(`Implementation review cannot be waived because ${id} is not Passed`)
     }
   }
 }
 
 function assertPlanGuideSelection(plan, label, guides) {
-  const line = plan.match(new RegExp(`^(?:\\*\\*)?${label} Guides:(?:\\*\\*)?\\s*(.+)$`, 'mi'))?.[1] || ''
+  const line =
+    plan.match(new RegExp(`^(?:\\*\\*)?${label} Guides:(?:\\*\\*)?\\s*(.+)$`, 'mi'))?.[1] || ''
   if (!line) throw new Error(`design/plan.md requires a **${label} Guides:** selection`)
   for (const guide of guides) {
     const escaped = guide.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

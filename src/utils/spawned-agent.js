@@ -47,9 +47,8 @@ export async function runSpawnedAgent(options) {
   }
 
   const digestExclusions = [repoRelative(targetDir, resultPath)].filter(Boolean)
-  const beforeReview = role === 'reviewer'
-    ? await trackedStateDigest(targetDir, digestExclusions)
-    : null
+  const beforeReview =
+    role === 'reviewer' ? await trackedStateDigest(targetDir, digestExclusions) : null
   const primary = await executeInvocation({
     targetDir,
     specdevPath,
@@ -183,12 +182,18 @@ async function warnAboutConcurrentWriters(specdevPath, current) {
   const revision = await gitRevision(targetDir)
   const dirtyPaths = await gitDirtyPaths(targetDir)
   process.stderr.write(`SpecDev workspace: HEAD ${revision || 'unborn'}\n`)
-  for (const line of workspaceChangeSummaryLines(dirtyPaths)) process.stderr.write(`SpecDev ${line}\n`)
+  for (const line of workspaceChangeSummaryLines(dirtyPaths))
+    process.stderr.write(`SpecDev ${line}\n`)
 
   const running = await listAttemptRecords(specdevPath, { status: 'running' })
   const candidates = running.filter((record) => {
     if (!['worker', 'mission-controller'].includes(record.kind)) return false
-    if (record.kind === 'mission-controller' && current.mission && record.mission === current.mission) return false
+    if (
+      record.kind === 'mission-controller' &&
+      current.mission &&
+      record.mission === current.mission
+    )
+      return false
     return true
   })
   const live = []
@@ -196,13 +201,19 @@ async function warnAboutConcurrentWriters(specdevPath, current) {
     if ((await attemptLiveness(specdevPath, record.id)).state === 'live_local') live.push(record.id)
   }
   if (live.length > 0) {
-    process.stderr.write(`SpecDev warning: other live write Attempts may be changing this repository: ${live.join(', ')}\n`)
+    process.stderr.write(
+      `SpecDev warning: other live write Attempts may be changing this repository: ${live.join(', ')}\n`
+    )
   }
 }
 
 async function gitDirtyPaths(targetDir) {
   try {
-    const { stdout } = await execFile('git', ['status', '--porcelain=v1', '--untracked-files=all'], { cwd: targetDir })
+    const { stdout } = await execFile(
+      'git',
+      ['status', '--porcelain=v1', '--untracked-files=all'],
+      { cwd: targetDir }
+    )
     return parseGitPorcelainPaths(stdout)
   } catch {
     return []
@@ -210,8 +221,9 @@ async function gitDirtyPaths(targetDir) {
 }
 
 async function assertNoConcurrentReviewer(specdevPath, scope) {
-  const running = (await listAttemptRecords(specdevPath, { status: 'running' }))
-    .filter((record) => ['reviewer', 'format-correction'].includes(record.kind))
+  const running = (await listAttemptRecords(specdevPath, { status: 'running' })).filter((record) =>
+    ['reviewer', 'format-correction'].includes(record.kind)
+  )
   for (const record of running) {
     const sameScope = scope.assignment
       ? record.assignment === scope.assignment
@@ -245,7 +257,8 @@ async function executeInvocation({
     return {
       status: 'failed',
       attempt: null,
-      error: 'Cannot launch a nested Codex provider from inside a sandboxed Codex session. Run this SpecDev automatic/review command from the foreground terminal, or configure a different provider.',
+      error:
+        'Cannot launch a nested Codex provider from inside a sandboxed Codex session. Run this SpecDev automatic/review command from the foreground terminal, or configure a different provider.',
     }
   }
   let invocation
@@ -291,7 +304,9 @@ async function executeInvocation({
       cwd: targetDir,
       resultPath: providerResultPath,
     })
-    process.stderr.write(`SpecDev ${attempt.id}: ${role} agent started (${profile.provider}/${profile.model}).\n`)
+    process.stderr.write(
+      `SpecDev ${attempt.id}: ${role} agent started (${profile.provider}/${profile.model}).\n`
+    )
     processResult = await spawnInvocation({
       ...invocation,
       cwd: targetDir,
@@ -304,17 +319,23 @@ async function executeInvocation({
   } catch (error) {
     process.stderr.write(`SpecDev ${attempt.id}: agent launch failed: ${error.message}\n`)
     await updateAttemptRecord(specdevPath, attempt.id, {
-      status: 'failed', error: error.message, duration_ms: Date.now() - startedAt,
+      status: 'failed',
+      error: error.message,
+      duration_ms: Date.now() - startedAt,
     })
     await clearLocalProcessMarker(specdevPath, attempt.id)
     return { status: 'failed', attempt, error: error.message }
   }
   await clearLocalProcessMarker(specdevPath, attempt.id)
-  process.stderr.write(`SpecDev ${attempt.id}: agent finished after ${Math.max(1, Math.round((Date.now() - startedAt) / 1000))}s.\n`)
+  process.stderr.write(
+    `SpecDev ${attempt.id}: agent finished after ${Math.max(1, Math.round((Date.now() - startedAt) / 1000))}s.\n`
+  )
 
   if (processResult.timedOut) {
     await updateAttemptRecord(specdevPath, attempt.id, {
-      status: 'interrupted', error: 'timeout', duration_ms: Date.now() - startedAt,
+      status: 'interrupted',
+      error: 'timeout',
+      duration_ms: Date.now() - startedAt,
       ...usagePatch(processResult),
     })
     return { status: 'interrupted', attempt, error: 'agent invocation timed out' }
@@ -333,9 +354,10 @@ async function executeInvocation({
     }
   }
 
-  const resultText = invocation.resultMode === 'file' && await fse.pathExists(providerResultPath)
-    ? await fse.readFile(providerResultPath, 'utf-8')
-    : processResult.stdout
+  const resultText =
+    invocation.resultMode === 'file' && (await fse.pathExists(providerResultPath))
+      ? await fse.readFile(providerResultPath, 'utf-8')
+      : processResult.stdout
   const temporaryResult = `${resultPath}.tmp-${process.pid}`
   await fse.writeFile(temporaryResult, resultText, 'utf-8')
   await fse.move(temporaryResult, resultPath, { overwrite: true })
@@ -344,14 +366,24 @@ async function executeInvocation({
     status: 'completed',
     duration_ms: Date.now() - startedAt,
     ...usagePatch(processResult),
-    result_revision: (await gitDirtyPaths(targetDir)).length > 0
-      ? `working-tree@${resultRevision || 'unborn'}`
-      : resultRevision,
+    result_revision:
+      (await gitDirtyPaths(targetDir)).length > 0
+        ? `working-tree@${resultRevision || 'unborn'}`
+        : resultRevision,
   })
   return { status: 'completed', attempt, resultPath }
 }
 
-function spawnInvocation({ command, args, cwd, prompt, timeoutMs, stdoutPath, stderrPath, attemptId }) {
+function spawnInvocation({
+  command,
+  args,
+  cwd,
+  prompt,
+  timeoutMs,
+  stdoutPath,
+  stderrPath,
+  attemptId,
+}) {
   return new Promise((resolvePromise, reject) => {
     const stdoutLog = createWriteStream(stdoutPath, { flags: 'a' })
     const stderrLog = createWriteStream(stderrPath, { flags: 'a' })
@@ -370,15 +402,23 @@ function spawnInvocation({ command, args, cwd, prompt, timeoutMs, stdoutPath, st
 
     const timeoutTimer = setTimeout(() => {
       timedOut = true
-      try { process.kill(-child.pid, 'SIGTERM') } catch {}
+      try {
+        process.kill(-child.pid, 'SIGTERM')
+      } catch {}
       killTimer = setTimeout(() => {
-        try { process.kill(-child.pid, 'SIGKILL') } catch {}
+        try {
+          process.kill(-child.pid, 'SIGKILL')
+        } catch {}
       }, TERMINATION_GRACE_MS)
       killTimer.unref?.()
     }, timeoutMs)
-    const heartbeatTimer = streamProviderOutput ? null : setInterval(() => {
-      process.stderr.write(`SpecDev ${attemptId}: agent is still running; raw output is in .specdev/cache/attempts/.\n`)
-    }, HEARTBEAT_INTERVAL_MS)
+    const heartbeatTimer = streamProviderOutput
+      ? null
+      : setInterval(() => {
+          process.stderr.write(
+            `SpecDev ${attemptId}: agent is still running; raw output is in .specdev/cache/attempts/.\n`
+          )
+        }, HEARTBEAT_INTERVAL_MS)
     heartbeatTimer?.unref?.()
 
     child.stdin.end(prompt)
@@ -428,38 +468,36 @@ function usagePatch(processResult) {
     .map((match) => Number(match[1].replaceAll(',', '')))
     .filter((value) => Number.isSafeInteger(value) && value >= 0)
     .at(-1)
-  return tokens === undefined
-    ? {}
-    : { usage: { provider_reported_tokens: tokens } }
+  return tokens === undefined ? {} : { usage: { provider_reported_tokens: tokens } }
 }
 
 function appendResultContract(prompt, kind, guides) {
-  const guideLines = guides.length > 0
-    ? guides.map((guide) => `- ${guide.id}@${guide.version}: ${guide.path}`).join('\n')
-    : '- none'
-  const envelope = kind === 'reviewer'
-    ? `---\nverdict: approved | needs_changes | blocked\nmaterial_divergence: false\n---\n\n## Findings\n\n<concise findings>`
-    : `---\nstatus: completed | blocked\nrevision: <git revision, working-tree@HEAD, or null>\nfollow_up: none | required\n---\n\n## Changes\n\n<concise result>`
-  const inspectionNote = kind === 'reviewer'
-    ? 'Use `git status` and read relevant untracked files directly; `git diff` alone may omit an untracked candidate.\n'
-    : ''
+  const guideLines =
+    guides.length > 0
+      ? guides.map((guide) => `- ${guide.id}@${guide.version}: ${guide.path}`).join('\n')
+      : '- none'
+  const envelope =
+    kind === 'reviewer'
+      ? `---\nverdict: approved | needs_changes | blocked\nmaterial_divergence: false\n---\n\n## Findings\n\n<concise findings>`
+      : `---\nstatus: completed | blocked\nrevision: <git revision, working-tree@HEAD, or null>\nfollow_up: none | required\n---\n\n## Changes\n\n<concise result>`
+  const inspectionNote =
+    kind === 'reviewer'
+      ? 'Use `git status` and read relevant untracked files directly; `git diff` alone may omit an untracked candidate.\n'
+      : ''
   return `${prompt.trim()}\n\nKeep tool output narrow. Do not repeatedly print full files or full diffs; inspect targeted ranges and return as soon as the required evidence and artifacts are complete.\n${inspectionNote}\nGuides supplied by the host for this invocation:\n${guideLines}\n\nReturn only this compact Markdown result shape:\n\n${envelope}\n`
 }
 
 function formattingCorrectionPrompt(malformed, kind, error) {
-  const envelope = kind === 'reviewer'
-    ? 'Reviewer frontmatter requires verdict and optional boolean material_divergence, followed by ## Findings.'
-    : 'Worker frontmatter requires status and optional revision/follow_up, followed by ## Changes.'
+  const envelope =
+    kind === 'reviewer'
+      ? 'Reviewer frontmatter requires verdict and optional boolean material_divergence, followed by ## Findings.'
+      : 'Worker frontmatter requires status and optional revision/follow_up, followed by ## Changes.'
   return `Reformat the result below. Do not inspect the repository, rerun work, or change its meaning.\n\nValidation error: ${error}\n${envelope}\n\nOriginal result:\n\n${malformed}`
 }
 
 async function trackedStateDigest(targetDir, exclusions = []) {
   try {
-    const excluded = [
-      '.specdev/cache/**',
-      '.specdev/.id-counters.json',
-      ...exclusions,
-    ]
+    const excluded = ['.specdev/cache/**', '.specdev/.id-counters.json', ...exclusions]
     const pathspecs = excluded.map((path) => `:(exclude)${path}`)
     const hasHead = await gitHasHead(targetDir)
     const diffCommands = hasHead
@@ -469,18 +507,24 @@ async function trackedStateDigest(targetDir, exclusions = []) {
           ['diff', '--binary', '--no-ext-diff', '--', '.', ...pathspecs],
         ]
     const [diffs, { stdout: untracked }] = await Promise.all([
-      Promise.all(diffCommands.map((args) => execFile('git', args, {
-        cwd: targetDir,
-        maxBuffer: 32 * 1024 * 1024,
-        encoding: 'buffer',
-      }))),
-      execFile('git', [
-        'ls-files', '--others', '--exclude-standard', '-z', '--', '.', ...pathspecs,
-      ], {
-        cwd: targetDir,
-        maxBuffer: 8 * 1024 * 1024,
-        encoding: 'buffer',
-      }),
+      Promise.all(
+        diffCommands.map((args) =>
+          execFile('git', args, {
+            cwd: targetDir,
+            maxBuffer: 32 * 1024 * 1024,
+            encoding: 'buffer',
+          })
+        )
+      ),
+      execFile(
+        'git',
+        ['ls-files', '--others', '--exclude-standard', '-z', '--', '.', ...pathspecs],
+        {
+          cwd: targetDir,
+          maxBuffer: 8 * 1024 * 1024,
+          encoding: 'buffer',
+        }
+      ),
     ])
     const hash = createHash('sha256')
     for (const { stdout } of diffs) hash.update(stdout)
@@ -555,5 +599,7 @@ function appendCapped(current, chunk) {
 }
 
 function closeStreams(...streams) {
-  return Promise.all(streams.map((stream) => new Promise((resolvePromise) => stream.end(resolvePromise))))
+  return Promise.all(
+    streams.map((stream) => new Promise((resolvePromise) => stream.end(resolvePromise)))
+  )
 }

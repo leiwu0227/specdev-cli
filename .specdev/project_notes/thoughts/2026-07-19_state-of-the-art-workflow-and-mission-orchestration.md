@@ -173,7 +173,7 @@ pointer:
 
 ```yaml
 kind: assignment
-id: "00042"
+id: '00042'
 ```
 
 It does not mean only one piece of work exists. Automatic Mission children and
@@ -300,10 +300,10 @@ approval.
 The plan may reference contract IDs, and the outcome contains one compact
 mapping:
 
-| Criterion | Evidence | Result |
-|---|---|---|
-| AC-1 | Focused search verification | Passed |
-| AC-2 | Invalid-token verification | Passed |
+| Criterion | Evidence                    | Result |
+| --------- | --------------------------- | ------ |
+| AC-1      | Focused search verification | Passed |
+| AC-2      | Invalid-token verification  | Passed |
 
 SpecDev validates only that referenced IDs exist and every acceptance criterion
 has a final result. It does not build a general coverage engine.
@@ -359,15 +359,15 @@ not a dependency graph:
 
 ```yaml
 assignments:
-  - id: "00031"
+  - id: '00031'
     title: Add schema support
     status: completed
 
-  - id: "00032"
+  - id: '00032'
     title: Repair keyword search
     status: running
 
-  - id: "00033"
+  - id: '00033'
     title: Add focused verification
     status: pending
 ```
@@ -711,7 +711,7 @@ not live web plugins.
 - `review.md` defines common evidence, severity, contract-alignment, and verdict
   expectations.
 - `library/` contains SpecDev-curated guidance and may be updated by `specdev
-  update`.
+update`.
 - `project/` is owned by the repository and is never overwritten by SpecDev.
 - A project catalog may point to an existing repository document instead of
   copying it.

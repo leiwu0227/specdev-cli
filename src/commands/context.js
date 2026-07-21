@@ -18,8 +18,9 @@ export async function contextCommand(flags = {}) {
     ? getState({ workflowRoot: workflowRootFor(targetDir) })
     : null
   const discussions = hasWorkspaceEngine(targetDir)
-    ? listCallableCalls({ workflowRoot: workflowRootFor(targetDir) }).calls
-        .filter((call) => call.graphId === 'discussion-lifecycle')
+    ? listCallableCalls({ workflowRoot: workflowRootFor(targetDir) }).calls.filter(
+        (call) => call.graphId === 'discussion-lifecycle'
+      )
     : []
   const knowledgeFileCount = await countMarkdownFiles(join(specdevPath, 'knowledge'))
   const coreSkills = await scanSkillsDir(join(specdevPath, 'skills', 'core'), 'core')
@@ -30,24 +31,36 @@ export async function contextCommand(flags = {}) {
     cli_version: pkg.default.version,
     release_date: pkg.default.releaseDate || null,
     focus,
-    focused_workflow: workflow ? {
-      status: workflow.status,
-      graph: workflow.run?.rootGraph || null,
-      node: workflow.position?.node || null,
-    } : null,
-    discussions: discussions.map((call) => ({ id: call.id, status: call.status, node: call.position?.node, updated_at: call.updatedAt })),
+    focused_workflow: workflow
+      ? {
+          status: workflow.status,
+          graph: workflow.run?.rootGraph || null,
+          node: workflow.position?.node || null,
+        }
+      : null,
+    discussions: discussions.map((call) => ({
+      id: call.id,
+      status: call.status,
+      node: call.position?.node,
+      updated_at: call.updatedAt,
+    })),
     knowledge: {
       file_count: knowledgeFileCount,
       index_exists: await fse.pathExists(join(specdevPath, KNOWLEDGE_DB_SUBPATH)),
     },
-    skills: { core: coreSkills.map((skill) => skill.name), tools: toolSkills.map((skill) => skill.name) },
+    skills: {
+      core: coreSkills.map((skill) => skill.name),
+      tools: toolSkills.map((skill) => skill.name),
+    },
     commands: COMMANDS,
   }
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
   else {
     console.log(`SpecDev Context v${payload.cli_version}`)
     console.log(`Focus: ${focus ? `${focus.kind}:${focus.id}` : 'none'}`)
-    console.log(`Workflow: ${payload.focused_workflow?.graph || 'idle'}${payload.focused_workflow?.node ? ` / ${payload.focused_workflow.node}` : ''}`)
+    console.log(
+      `Workflow: ${payload.focused_workflow?.graph || 'idle'}${payload.focused_workflow?.node ? ` / ${payload.focused_workflow.node}` : ''}`
+    )
     console.log(`Discussions: ${payload.discussions.length}`)
     console.log(`Knowledge files: ${payload.knowledge.file_count}`)
     console.log(`Skills: ${payload.skills.core.length} core, ${payload.skills.tools.length} tools`)

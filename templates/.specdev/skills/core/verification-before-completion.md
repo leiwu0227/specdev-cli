@@ -21,11 +21,11 @@ BEFORE claiming any status:
 
 ## Common Failures
 
-| Claim | Requires | Not Sufficient |
-|-------|----------|----------------|
-| Tests pass | Test command output: 0 failures | Previous run, "should pass" |
-| Build succeeds | Build command: exit 0 | Linter passing, logs look good |
-| Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
+| Claim          | Requires                        | Not Sufficient                 |
+| -------------- | ------------------------------- | ------------------------------ |
+| Tests pass     | Test command output: 0 failures | Previous run, "should pass"    |
+| Build succeeds | Build command: exit 0           | Linter passing, logs look good |
+| Bug fixed      | Test original symptom: passes   | Code changed, assumed fixed    |
 
 ## Red Flags — STOP
 
@@ -37,8 +37,8 @@ BEFORE claiming any status:
 
 ## Evidence Format
 
-| Command | Exit Code | Key Output | Notes |
-|---------|-----------|------------|-------|
+| Command         | Exit Code | Key Output     | Notes     |
+| --------------- | --------- | -------------- | --------- |
 | [exact command] | [0/1/...] | [summary line] | [context] |
 
 ## Deliverable

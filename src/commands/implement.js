@@ -12,12 +12,22 @@ import {
 } from '../utils/assignment-vnext.js'
 import { stepGuidedNode } from '../utils/engine-sync.js'
 import { loadGuideCatalog } from '../utils/guides.js'
-import { assertReviewWaiverEvidence, validateDeliveryArtifacts } from '../utils/delivery-artifacts.js'
-import { attemptActivitySummary, listAttemptRecords, updateAttemptRecord } from '../utils/process-record.js'
+import {
+  assertReviewWaiverEvidence,
+  validateDeliveryArtifacts,
+} from '../utils/delivery-artifacts.js'
+import {
+  attemptActivitySummary,
+  listAttemptRecords,
+  updateAttemptRecord,
+} from '../utils/process-record.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { reviewImplementation } from './reviewloop.js'
-import { compactCompletedWorkflowRuntime, retireTransientArtifact } from '../utils/artifact-retention.js'
+import {
+  compactCompletedWorkflowRuntime,
+  retireTransientArtifact,
+} from '../utils/artifact-retention.js'
 
 export async function implementCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -35,7 +45,10 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
     if (graph.position.node === 'design') {
       const resultPath = join(assignmentPath, 'implementation', 'worker-result.md')
       const recovery = await recoverWorkerArtifacts({
-        specdevPath, assignmentPath, resultPath, acceptanceIds: contract.acceptanceIds,
+        specdevPath,
+        assignmentPath,
+        resultPath,
+        acceptanceIds: contract.acceptanceIds,
       })
       if (recovery?.status === 'blocked' && !flags['retry-worker']) {
         const attempts = await listAttemptRecords(specdevPath, { assignment: name })
@@ -56,8 +69,9 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       let attemptId = 'recovered-artifacts'
       if (!artifacts) {
         const profile = await resolveAgentProfile(specdevPath, 'worker', profileOverrides(flags))
-        const catalog = (await loadGuideCatalog(specdevPath))
-          .filter((guide) => guide.phases.includes('implementation'))
+        const catalog = (await loadGuideCatalog(specdevPath)).filter((guide) =>
+          guide.phases.includes('implementation')
+        )
         const result = await runSpawnedAgent({
           targetDir,
           specdevPath,
@@ -69,7 +83,8 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           assignment: name,
           mission: assignmentStatus?.mission || undefined,
         })
-        if (result.status !== 'completed') throw new Error(result.error || 'Assignment worker failed')
+        if (result.status !== 'completed')
+          throw new Error(result.error || 'Assignment worker failed')
         if (result.result.frontmatter.status !== 'completed') {
           return emitBlockedWorker(flags, {
             command: 'implement',
@@ -81,7 +96,11 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
             next_action: `Resolve the blocker using the preserved work. If the current coding session completes the delivery artifacts and changes worker-result.md to status: completed, rerun specdev implement; SpecDev will reuse those artifacts without launching another worker. To ask SpecDev for a fresh automatic worker instead, run specdev implement --retry-worker.`,
           })
         }
-        artifacts = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+        artifacts = await validateDeliveryArtifacts(
+          specdevPath,
+          assignmentPath,
+          contract.acceptanceIds
+        )
         attemptId = result.attempt.id
         await updateAttemptRecord(specdevPath, result.attempt.id, {
           guides: artifacts.implementationGuides.map(({ id, version }) => ({ id, version })),
@@ -98,7 +117,11 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       })
       graph = await currentAssignmentNode(targetDir)
     } else if (graph.position.node === 'implementation') {
-      const artifacts = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+      const artifacts = await validateDeliveryArtifacts(
+        specdevPath,
+        assignmentPath,
+        contract.acceptanceIds
+      )
       stepGuidedNode(targetDir, 'implementation', {
         progress: relativeToRepo(targetDir, artifacts.progressPath),
         outcome: relativeToRepo(targetDir, artifacts.outcomePath),
@@ -107,23 +130,38 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       graph = await currentAssignmentNode(targetDir)
     }
 
-    if (graph.position.node === 'implementation-review' && reviewPolicy.implementation === 'waived') {
-      const delivery = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+    if (
+      graph.position.node === 'implementation-review' &&
+      reviewPolicy.implementation === 'waived'
+    ) {
+      const delivery = await validateDeliveryArtifacts(
+        specdevPath,
+        assignmentPath,
+        contract.acceptanceIds
+      )
       assertReviewWaiverEvidence(delivery, contract.acceptanceIds)
       const reviewDir = join(assignmentPath, 'review')
       const verdictPath = join(reviewDir, 'implementation-waiver.md')
       const candidateDigest = await productStateDigest(targetDir)
       await fse.ensureDir(reviewDir)
-      await fse.writeFile(verdictPath, `---\nverdict: approved\nmaterial_divergence: false\n---\n\n## Findings\n\nImplementation review was waived by the approved Assignment policy. Host validation confirmed all acceptance criteria Passed, all verification receipts passed, no deviations, and no required follow-up.\n`, 'utf-8')
-      await fse.writeJson(join(reviewDir, 'implementation-state.json'), {
-        version: 1,
-        round: 0,
-        status: 'approved',
-        policy_waiver: true,
-        contract_hash: contract.hash,
-        candidate_digest: candidateDigest,
-        updated_at: new Date().toISOString(),
-      }, { spaces: 2 })
+      await fse.writeFile(
+        verdictPath,
+        `---\nverdict: approved\nmaterial_divergence: false\n---\n\n## Findings\n\nImplementation review was waived by the approved Assignment policy. Host validation confirmed all acceptance criteria Passed, all verification receipts passed, no deviations, and no required follow-up.\n`,
+        'utf-8'
+      )
+      await fse.writeJson(
+        join(reviewDir, 'implementation-state.json'),
+        {
+          version: 1,
+          round: 0,
+          status: 'approved',
+          policy_waiver: true,
+          contract_hash: contract.hash,
+          candidate_digest: candidateDigest,
+          updated_at: new Date().toISOString(),
+        },
+        { spaces: 2 }
+      )
       stepGuidedNode(targetDir, 'implementation-review', {
         approved: true,
         verdict: relativeToRepo(targetDir, verdictPath),
@@ -134,24 +172,39 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         status: 'completed',
         completed_at: completedAt,
       })
-      const activity = assignmentStatus?.mission ? null : await attemptActivitySummary(
-        specdevPath,
-        { assignment: name },
-        {
-          startedAt: assignmentStatus?.approved_at || assignmentStatus?.created_at,
-          endedAt: completedAt,
-        }
-      )
+      const activity = assignmentStatus?.mission
+        ? null
+        : await attemptActivitySummary(
+            specdevPath,
+            { assignment: name },
+            {
+              startedAt: assignmentStatus?.approved_at || assignmentStatus?.created_at,
+              endedAt: completedAt,
+            }
+          )
       if (activity) await writeAssignmentStatus(assignmentPath, { activity })
-      await retireTransientArtifact(targetDir, specdevPath, join(assignmentPath, 'implementation', 'worker-result.md'))
-      await retireTransientArtifact(targetDir, specdevPath, join(assignmentPath, 'implementation', 'repair-result.md'))
-      const runtime = assignmentStatus?.mission ? null : await compactCompletedWorkflowRuntime(specdevPath, {
-        runId: assignmentStatus.run_id,
-        attemptFilter: { assignment: name },
-        focus: { kind: 'assignment', id: assignmentStatus.id },
-      })
+      await retireTransientArtifact(
+        targetDir,
+        specdevPath,
+        join(assignmentPath, 'implementation', 'worker-result.md')
+      )
+      await retireTransientArtifact(
+        targetDir,
+        specdevPath,
+        join(assignmentPath, 'implementation', 'repair-result.md')
+      )
+      const runtime = assignmentStatus?.mission
+        ? null
+        : await compactCompletedWorkflowRuntime(specdevPath, {
+            runId: assignmentStatus.run_id,
+            attemptFilter: { assignment: name },
+            focus: { kind: 'assignment', id: assignmentStatus.id },
+          })
       return emit(flags, {
-        command: 'implement', version: 2, status: 'completed', assignment: name,
+        command: 'implement',
+        version: 2,
+        status: 'completed',
+        assignment: name,
         review: 'waived',
         ...(activity ? { activity } : {}),
         ...(runtime ? { runtime_compaction: runtime } : {}),
@@ -161,7 +214,12 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       return reviewImplementation(flags)
     }
     if (graph.run?.status === 'completed' || graph.position.node === 'done') {
-      return emit(flags, { command: 'implement', version: 2, status: 'completed', assignment: name })
+      return emit(flags, {
+        command: 'implement',
+        version: 2,
+        status: 'completed',
+        assignment: name,
+      })
     }
     throw new Error(`Assignment cannot be implemented from ${graph.position.node}`)
   } catch (error) {
@@ -189,9 +247,15 @@ async function recoverWorkerArtifacts({ specdevPath, assignmentPath, resultPath,
 
 function workerPrompt({ targetDir, assignmentPath, contract, catalog }) {
   const rel = (path) => relativeToRepo(targetDir, path)
-  const catalogText = catalog.length > 0
-    ? catalog.map((guide) => `- ID ${guide.id} (version ${guide.version}): ${guide.summary} (${guide.path})`).join('\n')
-    : '- none'
+  const catalogText =
+    catalog.length > 0
+      ? catalog
+          .map(
+            (guide) =>
+              `- ID ${guide.id} (version ${guide.version}): ${guide.summary} (${guide.path})`
+          )
+          .join('\n')
+      : '- none'
   return [
     'Plan and implement this approved Assignment in one bounded Attempt.',
     'Inspect the current repository and delivery artifacts first. When resuming after an interruption or blocked Attempt, preserve correct existing work and continue only what remains; do not rewrite completed work blindly.',

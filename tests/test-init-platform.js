@@ -39,12 +39,18 @@ assert(existsSync(join(TEST_DIR, 'AGENTS.md')), 'creates AGENTS.md')
 assert(existsSync(join(TEST_DIR, '.cursor', 'rules')), 'creates .cursor/rules')
 
 const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
-assert(mainMd.includes('.specdev/project_notes/big_picture.md'), '_main.md uses a repository-root-relative project context path')
+assert(
+  mainMd.includes('.specdev/project_notes/big_picture.md'),
+  '_main.md uses a repository-root-relative project context path'
+)
 const claudeMd = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
 assert(claudeMd.includes('.specdev/_main.md'), 'CLAUDE.md points to _main.md')
 const agentsMd = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8')
 assert(agentsMd.includes('.specdev/_main.md'), 'AGENTS.md points to _main.md')
-assert(!agentsMd.includes('develops SpecDev itself'), 'AGENTS.md does not inject SpecDev source-repository advice')
+assert(
+  !agentsMd.includes('develops SpecDev itself'),
+  'AGENTS.md does not inject SpecDev source-repository advice'
+)
 const cursorRules = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
 assert(cursorRules.includes('.specdev/_main.md'), '.cursor/rules points to _main.md')
 
@@ -53,20 +59,44 @@ console.log('\ndefault init installs Claude extras:')
 const skillsDir = join(TEST_DIR, '.claude', 'skills')
 assert(existsSync(skillsDir), '.claude/skills/ directory created')
 assert(existsSync(join(skillsDir, 'specdev-start', 'SKILL.md')), 'specdev-start/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')), 'specdev-assignment/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')), 'specdev-rewind/SKILL.md installed')
-assert(!existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')), 'specdev-brainstorm removed (redundant with assignment)')
-assert(existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')), 'specdev-continue/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-mission', 'SKILL.md')), 'specdev-mission/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md')), 'specdev-reviewloop/SKILL.md installed')
-assert(!existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')), 'retired specdev-review skill is absent')
+assert(
+  existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')),
+  'specdev-assignment/SKILL.md installed'
+)
+assert(
+  existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')),
+  'specdev-rewind/SKILL.md installed'
+)
+assert(
+  !existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')),
+  'specdev-brainstorm removed (redundant with assignment)'
+)
+assert(
+  existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')),
+  'specdev-continue/SKILL.md installed'
+)
+assert(
+  existsSync(join(skillsDir, 'specdev-mission', 'SKILL.md')),
+  'specdev-mission/SKILL.md installed'
+)
+assert(
+  existsSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md')),
+  'specdev-reviewloop/SKILL.md installed'
+)
+assert(
+  !existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')),
+  'retired specdev-review skill is absent'
+)
 
 const startSkill = readFileSync(join(skillsDir, 'specdev-start', 'SKILL.md'), 'utf-8')
 assert(startSkill.includes('big_picture.md'), 'start skill references big_picture.md')
 assert(startSkill.includes('purpose, users'), 'start skill includes Q&A instructions')
 
 const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
-assert(assignmentSkill.includes('specdev assignment'), 'assignment skill references specdev assignment command')
+assert(
+  assignmentSkill.includes('specdev assignment'),
+  'assignment skill references specdev assignment command'
+)
 assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix instruction')
 
 const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
@@ -89,10 +119,12 @@ assert(existsSync(settingsFile), '.claude/settings.json exists')
 const settings = JSON.parse(readFileSync(settingsFile, 'utf-8'))
 assert(
   settings.hooks &&
-  Array.isArray(settings.hooks.SessionStart) &&
-  settings.hooks.SessionStart.some(
-    (entry) => entry.hooks && entry.hooks.some((h) => h.command === '.claude/hooks/specdev-session-start.sh')
-  ),
+    Array.isArray(settings.hooks.SessionStart) &&
+    settings.hooks.SessionStart.some(
+      (entry) =>
+        entry.hooks &&
+        entry.hooks.some((h) => h.command === '.claude/hooks/specdev-session-start.sh')
+    ),
   'settings.json contains SessionStart hook pointing to specdev script'
 )
 
@@ -110,7 +142,8 @@ console.log('\nhook registration idempotent:')
 result = runCmd(['init', `--target=${TEST_DIR}`, '--force'])
 const settingsAfter = JSON.parse(readFileSync(settingsFile, 'utf-8'))
 const hookEntries = settingsAfter.hooks.SessionStart.filter(
-  (entry) => entry.hooks && entry.hooks.some((h) => h.command === '.claude/hooks/specdev-session-start.sh')
+  (entry) =>
+    entry.hooks && entry.hooks.some((h) => h.command === '.claude/hooks/specdev-session-start.sh')
 )
 assert(hookEntries.length === 1, 'no duplicate hook entry after re-init with --force')
 
@@ -125,7 +158,10 @@ existing.permissions = { allow: ['Read'] }
 writeFileSync(settingsPath2, JSON.stringify(existing, null, 2) + '\n')
 result = runCmd(['init', `--target=${TEST_DIR}`, '--force'])
 const merged = JSON.parse(readFileSync(settingsPath2, 'utf-8'))
-assert(merged.permissions && merged.permissions.allow.includes('Read'), 'preserves existing permissions key')
+assert(
+  merged.permissions && merged.permissions.allow.includes('Read'),
+  'preserves existing permissions key'
+)
 assert(
   merged.hooks && merged.hooks.SessionStart.length > 0,
   'preserves hook registration alongside existing settings'
@@ -139,7 +175,10 @@ const invalidSettingsPath = join(TEST_DIR, '.claude', 'settings.json')
 writeFileSync(invalidSettingsPath, '{ invalid json')
 result = runCmd(['init', `--target=${TEST_DIR}`, '--force'])
 assert(result.status === 0, 're-init succeeds even with invalid settings')
-assert(readFileSync(invalidSettingsPath, 'utf-8') === '{ invalid json', 'keeps invalid settings file untouched')
+assert(
+  readFileSync(invalidSettingsPath, 'utf-8') === '{ invalid json',
+  'keeps invalid settings file untouched'
+)
 
 // ---- Test adapter contains "Specdev:" instruction ----
 console.log('\nadapter drift-detection instruction:')
@@ -168,8 +207,14 @@ const originalCursor = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
 const modifiedCursor = originalCursor + '\n# Custom cursor rules\n'
 writeFileSync(join(TEST_DIR, '.cursor', 'rules'), modifiedCursor)
 result = runCmd(['init', `--target=${TEST_DIR}`, '--force'])
-assert(readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8').includes('Custom agent rules'), 'preserves existing AGENTS.md content on --force')
-assert(readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8').includes('Custom cursor rules'), 'preserves existing .cursor/rules content on --force')
+assert(
+  readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8').includes('Custom agent rules'),
+  'preserves existing AGENTS.md content on --force'
+)
+assert(
+  readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8').includes('Custom cursor rules'),
+  'preserves existing .cursor/rules content on --force'
+)
 
 cleanup()
 

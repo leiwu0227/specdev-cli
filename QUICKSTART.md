@@ -18,6 +18,7 @@ specdev init
 ```
 
 This sets up everything you need:
+
 - `.specdev/` — the workflow folder with skills, templates, and assignment tracking
 - `.claude/skills/` and `.codex/skills/` — command skills for Claude Code and Codex
 - Platform adapters (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`) so your agent knows how to use SpecDev
@@ -63,6 +64,7 @@ Interactive Q&A with you to nail down scope and design. The agent asks questions
 **Produces:** `brainstorm/proposal.md` + `brainstorm/design.md`
 
 **Before approving, you can optionally review:**
+
 - `specdev checkpoint brainstorm` — validate required design sections exist
 - `specdev review brainstorm` — manual review in a separate session
 - `specdev reviewloop brainstorm` — automated review via external CLI (e.g., Codex, Claude)
@@ -93,6 +95,7 @@ After all tasks complete, the agent runs verification appropriate for the assign
 **Produces:** committed code + `implementation/progress.json`
 
 **Before approving, you can optionally review:**
+
 - `specdev checkpoint implementation` — validate implementation artifacts
 - `specdev review implementation` — manual review in a separate session
 - `specdev reviewloop implementation` — automated review via external CLI
@@ -126,36 +129,36 @@ These tell you exactly where you are, what's blocking you, and what to do next. 
 
 ## Command reference
 
-| Command | Run from | What it does |
-|---|---|---|
-| `specdev init` | Terminal | Set up `.specdev/`, install skills and platform adapters |
-| `specdev update` | Terminal | Refresh core skills, keep your project files |
-| `specdev skills` | Terminal | List available skills |
-| `specdev help` | Terminal | Show usage info |
-| `specdev start` | Either | Fill in or check project context |
-| `specdev continue` | Either | Show current state, blockers, and next action |
-| `specdev next --json` | Either | Canonical next workflow action (machine-readable) |
-| `specdev do "<intent>"` | Either | Select or resume a guided workflow |
-| `specdev step --json=<output>` | Coding agent | Submit current-node evidence |
-| `specdev decide <value>` | Either | Resolve the current decision gate |
-| `specdev action <id>` | Coding agent | Record a side action without advancing |
-| `specdev cancel [reason]` | Either | Abandon the focused guided run |
-| `specdev assignment "<desc>"` | Coding agent | Create the assignment requested by the graph |
-| `specdev discussion "<desc>"` | Coding agent | Start a parallel brainstorming discussion (no gate) |
-| `specdev focus <id>` | Either | Switch the active assignment |
-| `specdev checkpoint <phase>` | Either | Validate phase artifacts |
-| `specdev approve <phase>` | Either | Hard gate: approve phase and proceed |
-| `specdev review <phase>` | Separate session | Manual review (`brainstorm` or `implementation`) |
-| `specdev reviewloop <phase>` | Coding agent | Automated external review loop |
-| `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Coding agent | Automated review and continue after approval |
-| `specdev check-review` | Coding agent | Read and address review feedback |
-| `specdev revise` | Coding agent | Archive downstream artifacts, re-enter brainstorm |
-| `specdev knowledge index` | Terminal | Build the SQLite knowledge cache |
-| `specdev knowledge search "<keywords>"` | Either | Search indexed knowledge notes |
-| `specdev knowledge list` | Either | List all knowledge files with metadata |
-| `specdev memory refresh` | Terminal | Regenerate bounded `working_memory.md` for agents |
-| `specdev migrate` | Coding agent | Guided `.specdev/` layout migration workflow |
-| `specdev migrate legacy-assignments` | Terminal | Mechanical V3→V4 assignment file mover |
+| Command                                                       | Run from         | What it does                                             |
+| ------------------------------------------------------------- | ---------------- | -------------------------------------------------------- |
+| `specdev init`                                                | Terminal         | Set up `.specdev/`, install skills and platform adapters |
+| `specdev update`                                              | Terminal         | Refresh core skills, keep your project files             |
+| `specdev skills`                                              | Terminal         | List available skills                                    |
+| `specdev help`                                                | Terminal         | Show usage info                                          |
+| `specdev start`                                               | Either           | Fill in or check project context                         |
+| `specdev continue`                                            | Either           | Show current state, blockers, and next action            |
+| `specdev next --json`                                         | Either           | Canonical next workflow action (machine-readable)        |
+| `specdev do "<intent>"`                                       | Either           | Select or resume a guided workflow                       |
+| `specdev step --json=<output>`                                | Coding agent     | Submit current-node evidence                             |
+| `specdev decide <value>`                                      | Either           | Resolve the current decision gate                        |
+| `specdev action <id>`                                         | Coding agent     | Record a side action without advancing                   |
+| `specdev cancel [reason]`                                     | Either           | Abandon the focused guided run                           |
+| `specdev assignment "<desc>"`                                 | Coding agent     | Create the assignment requested by the graph             |
+| `specdev discussion "<desc>"`                                 | Coding agent     | Start a parallel brainstorming discussion (no gate)      |
+| `specdev focus <id>`                                          | Either           | Switch the active assignment                             |
+| `specdev checkpoint <phase>`                                  | Either           | Validate phase artifacts                                 |
+| `specdev approve <phase>`                                     | Either           | Hard gate: approve phase and proceed                     |
+| `specdev review <phase>`                                      | Separate session | Manual review (`brainstorm` or `implementation`)         |
+| `specdev reviewloop <phase>`                                  | Coding agent     | Automated external review loop                           |
+| `specdev reviewloop <phase> --reviewer=<name> --autocontinue` | Coding agent     | Automated review and continue after approval             |
+| `specdev check-review`                                        | Coding agent     | Read and address review feedback                         |
+| `specdev revise`                                              | Coding agent     | Archive downstream artifacts, re-enter brainstorm        |
+| `specdev knowledge index`                                     | Terminal         | Build the SQLite knowledge cache                         |
+| `specdev knowledge search "<keywords>"`                       | Either           | Search indexed knowledge notes                           |
+| `specdev knowledge list`                                      | Either           | List all knowledge files with metadata                   |
+| `specdev memory refresh`                                      | Terminal         | Regenerate bounded `working_memory.md` for agents        |
+| `specdev migrate`                                             | Coding agent     | Guided `.specdev/` layout migration workflow             |
+| `specdev migrate legacy-assignments`                          | Terminal         | Mechanical V3→V4 assignment file mover                   |
 
 ## Putting it all together
 

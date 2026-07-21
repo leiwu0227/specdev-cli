@@ -60,7 +60,9 @@ export async function compactCompletedWorkflowRuntime(specdevPath, options) {
   const attempts = await listAttemptRecords(specdevPath, ownerFilter)
   const running = attempts.filter((attempt) => attempt.status === 'running')
   if (running.length > 0) {
-    throw new Error(`cannot compact runtime with running Attempts: ${running.map((attempt) => attempt.id).join(', ')}`)
+    throw new Error(
+      `cannot compact runtime with running Attempts: ${running.map((attempt) => attempt.id).join(', ')}`
+    )
   }
 
   const current = readRippleCurrent(specdevPath)

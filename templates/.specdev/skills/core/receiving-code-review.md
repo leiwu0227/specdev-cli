@@ -35,6 +35,7 @@ BAD: "Thanks for catching that!" → then implement
 ## When To Push Back
 
 Push back when:
+
 - Suggestion breaks existing functionality
 - Reviewer lacks full context
 - Technically incorrect for this stack

@@ -22,8 +22,8 @@ If you stop announcing subtasks, the user will assume you've stopped following t
 }
 
 export const ADAPTERS = {
-  claude: { path: 'CLAUDE.md',              heading: 'CLAUDE.md' },
-  codex:  { path: 'AGENTS.md',              heading: 'AGENTS.md' },
+  claude: { path: 'CLAUDE.md', heading: 'CLAUDE.md' },
+  codex: { path: 'AGENTS.md', heading: 'AGENTS.md' },
   cursor: { path: join('.cursor', 'rules'), heading: 'Cursor Rules' },
 }
 
@@ -196,16 +196,9 @@ Announce every subtask with "Specdev: <action>".
 }
 
 // The unique adapters to create on every init
-export const ALL_ADAPTERS = [
-  ADAPTERS.claude,
-  ADAPTERS.codex,
-  ADAPTERS.cursor,
-]
+export const ALL_ADAPTERS = [ADAPTERS.claude, ADAPTERS.codex, ADAPTERS.cursor]
 
-export const COMMAND_SKILL_DIRS = [
-  join('.claude', 'skills'),
-  join('.codex', 'skills'),
-]
+export const COMMAND_SKILL_DIRS = [join('.claude', 'skills'), join('.codex', 'skills')]
 
 export async function initCommand(flags = {}) {
   const targetDir = typeof flags.target === 'string' ? flags.target : process.cwd()
@@ -213,7 +206,9 @@ export async function initCommand(flags = {}) {
   const dryRun = flags['dry-run']
 
   if (flags.platform && !flags.json) {
-    console.log('ℹ️  --platform is deprecated and ignored; all adapters are now created automatically')
+    console.log(
+      'ℹ️  --platform is deprecated and ignored; all adapters are now created automatically'
+    )
   }
 
   const specdevPath = join(targetDir, '.specdev')
@@ -222,13 +217,19 @@ export async function initCommand(flags = {}) {
   // Check if .specdev already exists
   if (existsSync(specdevPath) && !force) {
     if (flags.json) {
-      console.log(JSON.stringify({
-        command: 'init',
-        version: 1,
-        status: 'error',
-        error: '.specdev folder already exists in this directory',
-        path: specdevPath,
-      }, null, 2))
+      console.log(
+        JSON.stringify(
+          {
+            command: 'init',
+            version: 1,
+            status: 'error',
+            error: '.specdev folder already exists in this directory',
+            path: specdevPath,
+          },
+          null,
+          2
+        )
+      )
       process.exitCode = 1
       return
     }
@@ -240,14 +241,20 @@ export async function initCommand(flags = {}) {
 
   if (dryRun) {
     if (flags.json) {
-      console.log(JSON.stringify({
-        command: 'init',
-        version: 1,
-        status: 'ok',
-        dry_run: true,
-        from: templatePath,
-        to: specdevPath,
-      }, null, 2))
+      console.log(
+        JSON.stringify(
+          {
+            command: 'init',
+            version: 1,
+            status: 'ok',
+            dry_run: true,
+            from: templatePath,
+            to: specdevPath,
+          },
+          null,
+          2
+        )
+      )
       return
     }
     console.log('🔍 Dry run mode - would copy:')
@@ -270,10 +277,7 @@ export async function initCommand(flags = {}) {
     // Install immutable, versioned graph packages rather than leaving the
     // unversioned template directories in a new workspace.
     await fse.remove(join(specdevPath, 'workflows'))
-    await installGraphPackages(
-      join(templatePath, 'workflows'),
-      join(specdevPath, 'workflows')
-    )
+    await installGraphPackages(join(templatePath, 'workflows'), join(specdevPath, 'workflows'))
     const engine = installWorkspaceEngine(targetDir)
 
     // Generate all platform adapter files (never overwrite existing)
@@ -325,7 +329,9 @@ export async function initCommand(flags = {}) {
           settings = JSON.parse(readFileSync(settingsPath, 'utf-8'))
         } catch {
           settingsParseFailed = true
-          console.warn('⚠️  .claude/settings.json is invalid JSON, skipping hook registration to avoid overwriting it')
+          console.warn(
+            '⚠️  .claude/settings.json is invalid JSON, skipping hook registration to avoid overwriting it'
+          )
         }
       }
 
@@ -354,7 +360,7 @@ export async function initCommand(flags = {}) {
     if (await fse.pathExists(toolsDir)) {
       const available = await scanSkillsDir(toolsDir, 'tool')
       if (available.length > 0) {
-        const skillNames = available.map(s => s.name).join(',')
+        const skillNames = available.map((s) => s.name).join(',')
         blankLine()
         console.log('Installing tool skills...')
         await skillsInstallCommand([], { target: targetDir, skills: skillNames })
@@ -363,13 +369,19 @@ export async function initCommand(flags = {}) {
 
     if (origLog) {
       console.log = origLog
-      console.log(JSON.stringify({
-        command: 'init',
-        version: 1,
-        status: 'ok',
-        path: specdevPath,
-        guided_workflows: engine.registered.length - 1,
-      }, null, 2))
+      console.log(
+        JSON.stringify(
+          {
+            command: 'init',
+            version: 1,
+            status: 'ok',
+            path: specdevPath,
+            guided_workflows: engine.registered.length - 1,
+          },
+          null,
+          2
+        )
+      )
       return
     }
 
@@ -407,12 +419,18 @@ export async function initCommand(flags = {}) {
   } catch (error) {
     if (origLog) console.log = origLog
     if (flags.json) {
-      console.log(JSON.stringify({
-        command: 'init',
-        version: 1,
-        status: 'error',
-        error: error.message,
-      }, null, 2))
+      console.log(
+        JSON.stringify(
+          {
+            command: 'init',
+            version: 1,
+            status: 'error',
+            error: error.message,
+          },
+          null,
+          2
+        )
+      )
       process.exitCode = 1
       return
     }

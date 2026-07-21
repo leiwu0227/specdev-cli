@@ -46,7 +46,8 @@ export async function resolveGuides(specdevPath, ids, { phase } = {}) {
 function validateGuideEntry(specdevPath, catalog, entry) {
   if (!entry || typeof entry !== 'object') throw new Error(`invalid guide in ${catalog.path}`)
   for (const field of ['id', 'version', 'summary', 'path']) {
-    if (!String(entry[field] || '').trim()) throw new Error(`guide in ${catalog.path} is missing ${field}`)
+    if (!String(entry[field] || '').trim())
+      throw new Error(`guide in ${catalog.path} is missing ${field}`)
   }
   if (!Array.isArray(entry.signals) || !Array.isArray(entry.phases)) {
     throw new Error(`guide ${entry.id} requires signals and phases arrays`)

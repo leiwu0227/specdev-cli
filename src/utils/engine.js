@@ -22,7 +22,9 @@ export function discoverGraphPackages(workflowRoot) {
   const catalogPath = join(packagesRoot, WORKFLOW_CATALOG)
   if (fse.existsSync(catalogPath)) {
     const catalog = readWorkflowCatalog(packagesRoot)
-    return Object.values(catalog.packages).map((entry) => entry.path).sort()
+    return Object.values(catalog.packages)
+      .map((entry) => entry.path)
+      .sort()
   }
 
   // Legacy installations stored one flat package directory per graph ID.
@@ -62,9 +64,7 @@ export async function installGraphPackages(sourceWorkflowsRoot, destinationWorkf
         directoryDigest(destinationPackage),
       ])
       if (sourceDigest !== installedDigest) {
-        throw new Error(
-          `graph package ${id}@${version} changed without a version bump`
-        )
+        throw new Error(`graph package ${id}@${version} changed without a version bump`)
       }
     } else {
       await fse.copy(sourcePackage, destinationPackage, {
@@ -226,7 +226,12 @@ function readWorkflowCatalog(packagesRoot) {
     ) {
       throw new Error(`invalid workflow catalog entry: ${id}`)
     }
-    if (entry.path.includes('/') || entry.path.includes('\\') || entry.path === '.' || entry.path === '..') {
+    if (
+      entry.path.includes('/') ||
+      entry.path.includes('\\') ||
+      entry.path === '.' ||
+      entry.path === '..'
+    ) {
       throw new Error(`invalid workflow package path in catalog: ${entry.path}`)
     }
     const packageRoot = join(packagesRoot, entry.path)

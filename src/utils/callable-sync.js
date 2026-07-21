@@ -44,8 +44,6 @@ export function listGuidedCalls(projectRoot, graphId = null) {
   const result = listCallableCalls({ workflowRoot: workflowRootFor(projectRoot) })
   return {
     synchronized: true,
-    calls: graphId
-      ? result.calls.filter((call) => call.graphId === graphId)
-      : result.calls,
+    calls: graphId ? result.calls.filter((call) => call.graphId === graphId) : result.calls,
   }
 }

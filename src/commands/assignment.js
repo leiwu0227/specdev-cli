@@ -28,7 +28,10 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   await requireSpecdevDirectory(specdevPath)
 
   if (flags.id && !flags.mission) {
-    return fail(flags, '--id is reserved for the Mission controller; normal Assignments allocate IDs atomically')
+    return fail(
+      flags,
+      '--id is reserved for the Mission controller; normal Assignments allocate IDs atomically'
+    )
   }
 
   const bigPicture = await readBigPictureStatus(specdevPath)
@@ -58,7 +61,10 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     const completedHash = call.state.output?.artifact_hash
     const currentHash = await discussionArtifactHash(resolved.path)
     if (!completedHash || completedHash !== currentHash) {
-      return fail(flags, `Discussion ${discussionId} changed after completion; restore its completed artifacts or create a new Discussion`)
+      return fail(
+        flags,
+        `Discussion ${discussionId} changed after completion; restore its completed artifacts or create a new Discussion`
+      )
     }
     sourceDiscussion = {
       id: discussionId,
@@ -72,18 +78,27 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   let sourceTestAudit = null
   if (testAuditSelector) {
     const resolved = await resolveTestAuditSelector(specdevPath, String(testAuditSelector))
-    if (!resolved || resolved.ambiguous) return fail(flags, `Test Audit not found or ambiguous: ${testAuditSelector}`)
+    if (!resolved || resolved.ambiguous)
+      return fail(flags, `Test Audit not found or ambiguous: ${testAuditSelector}`)
     let call
-    try { call = readGuidedCall(targetDir, resolved.id) } catch (error) { return fail(flags, error.message) }
+    try {
+      call = readGuidedCall(targetDir, resolved.id)
+    } catch (error) {
+      return fail(flags, error.message)
+    }
     if (!call.synchronized || call.state.status !== 'completed') {
       return fail(flags, `Test Audit ${resolved.id} must be completed before promotion`)
     }
     const currentHash = await testAuditArtifactHash(resolved.path)
     if (!call.state.output?.artifact_hash || call.state.output.artifact_hash !== currentHash) {
-      return fail(flags, `Test Audit ${resolved.id} changed after completion; restore its completed artifacts or create a new Test Audit`)
+      return fail(
+        flags,
+        `Test Audit ${resolved.id} changed after completion; restore its completed artifacts or create a new Test Audit`
+      )
     }
     const contract = await validateContractPath(join(resolved.path, 'assignment-contract.md'))
-    if (!contract.valid) return fail(flags, `Test Audit promotion contract is invalid: ${contract.errors.join('; ')}`)
+    if (!contract.valid)
+      return fail(flags, `Test Audit promotion contract is invalid: ${contract.errors.join('; ')}`)
     sourceTestAudit = {
       id: resolved.id,
       path: resolved.path,
@@ -93,15 +108,19 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     }
   }
 
-  const description = positionalArgs.join(' ').trim() ||
-    await descriptionFromTestAudit(sourceTestAudit) ||
-    await descriptionFromDiscussion(sourceDiscussion)
+  const description =
+    positionalArgs.join(' ').trim() ||
+    (await descriptionFromTestAudit(sourceTestAudit)) ||
+    (await descriptionFromDiscussion(sourceDiscussion))
   if (!description) {
     return fail(flags, 'No description provided. Usage: specdev assignment "Add user auth"')
   }
   const kind = String(flags.kind || flags.type || (sourceTestAudit ? 'refactor' : 'change')).trim()
   if (!ASSIGNMENT_KIND_SET.has(kind)) {
-    return fail(flags, `Unknown Assignment kind: ${kind}. Valid kinds: ${[...ASSIGNMENT_KINDS].join(', ')}`)
+    return fail(
+      flags,
+      `Unknown Assignment kind: ${kind}. Valid kinds: ${[...ASSIGNMENT_KINDS].join(', ')}`
+    )
   }
   let reviewPolicy
   try {
@@ -114,7 +133,10 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   if (flags.mission) {
     const current = await currentAssignmentNode(targetDir)
     if (!current || current.position.node !== 'create-assignment') {
-      return fail(flags, 'Mission child creation requires the Assignment child graph at create-assignment')
+      return fail(
+        flags,
+        'Mission child creation requires the Assignment child graph at create-assignment'
+      )
     }
     assignmentGraph = current
   } else {
@@ -129,7 +151,12 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     }
     assignmentGraph = guided.state
     if (!guided.started) {
-      const recovered = await recoverPendingAssignment(targetDir, specdevPath, guided.state.run.id, flags)
+      const recovered = await recoverPendingAssignment(
+        targetDir,
+        specdevPath,
+        guided.state.run.id,
+        flags
+      )
       if (recovered) return recovered
     }
   }
@@ -140,7 +167,10 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   const name = `${id}_${slug}`
   const assignmentPath = join(specdevPath, 'assignments', name)
   if (await fse.pathExists(assignmentPath)) {
-    return fail(flags, `Assignment folder already exists: ${relativeToRepo(targetDir, assignmentPath)}`)
+    return fail(
+      flags,
+      `Assignment folder already exists: ${relativeToRepo(targetDir, assignmentPath)}`
+    )
   }
   await fse.ensureDir(join(assignmentPath, 'brainstorm'))
   await fse.writeFile(
@@ -175,7 +205,11 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     review_policy: reviewPolicy,
   }
   const stepped = stepGuidedNode(targetDir, 'create-assignment', result)
-  if (!stepped.synchronized) return fail(flags, `Could not record Assignment ${id} creation; rerun the same command to recover it`)
+  if (!stepped.synchronized)
+    return fail(
+      flags,
+      `Could not record Assignment ${id} creation; rerun the same command to recover it`
+    )
 
   return emitAssignment(flags, result)
 }
@@ -195,7 +229,8 @@ async function recoverPendingAssignment(targetDir, specdevPath, runId, flags) {
     review_policy: reviewPolicyFromFlags({}, status.review_policy),
   }
   const stepped = stepGuidedNode(targetDir, 'create-assignment', graphOutput)
-  if (!stepped.synchronized) return fail(flags, `Could not recover pending Assignment ${graphOutput.id}`)
+  if (!stepped.synchronized)
+    return fail(flags, `Could not recover pending Assignment ${graphOutput.id}`)
   return emitAssignment(flags, { ...graphOutput, recovered: true })
 }
 
@@ -206,8 +241,12 @@ function emitAssignment(flags, result) {
   } else {
     console.log(`Assignment ${result.id}: ${result.description}`)
     console.log(`Created: ${result.path}`)
-    console.log(`Reviews: brainstorm ${result.review_policy.brainstorm}; implementation ${result.review_policy.implementation}`)
-    console.log('Next: collaborate with the user in brainstorm/contract.md, then run specdev checkpoint brainstorm.')
+    console.log(
+      `Reviews: brainstorm ${result.review_policy.brainstorm}; implementation ${result.review_policy.implementation}`
+    )
+    console.log(
+      'Next: collaborate with the user in brainstorm/contract.md, then run specdev checkpoint brainstorm.'
+    )
   }
   return payload
 }
@@ -223,20 +262,25 @@ async function descriptionFromDiscussion(source) {
 async function descriptionFromTestAudit(source) {
   if (!source) return ''
   const audit = await fse.readFile(join(source.path, 'audit.md'), 'utf-8')
-  return audit.match(/^#\s+Test Audit:\s*(.+)$/mi)?.[1]?.trim() || `Apply Test Audit ${source.id}`
+  return audit.match(/^#\s+Test Audit:\s*(.+)$/im)?.[1]?.trim() || `Apply Test Audit ${source.id}`
 }
 
 function slugify(value) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48)
-    .replace(/-+$/g, '') || 'change'
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48)
+      .replace(/-+$/g, '') || 'change'
+  )
 }
 
 function fail(flags, message) {
-  if (flags.json) console.log(JSON.stringify({ command: 'assignment', version: 2, status: 'error', error: message }))
+  if (flags.json)
+    console.log(
+      JSON.stringify({ command: 'assignment', version: 2, status: 'error', error: message })
+    )
   else console.error(message)
   process.exitCode = 1
   return null

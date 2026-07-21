@@ -9,11 +9,7 @@ const COMMAND_SKILL_MARKERS = [
   join('specdev-start', 'SKILL.md'),
 ]
 
-const DEPRECATED_COMMAND_SKILLS = [
-  'specdev-brainstorm',
-  'specdev-review',
-  'specdev-check-review',
-]
+const DEPRECATED_COMMAND_SKILLS = ['specdev-brainstorm', 'specdev-review', 'specdev-check-review']
 
 const MANAGED_IGNORE_BEGIN = '# BEGIN specdev managed'
 const MANAGED_IGNORE_END = '# END specdev managed'
@@ -82,7 +78,9 @@ export async function updateSpecdevSystem(source, destination) {
           delete activeTools.tools.reviewloop
           await fse.writeFile(activeToolsPath, JSON.stringify(activeTools, null, 2) + '\n')
         }
-      } catch { /* ignore parse errors */ }
+      } catch {
+        /* ignore parse errors */
+      }
     }
 
     // System-owned files and directories to update. Existing workflow.yaml is
@@ -104,7 +102,7 @@ export async function updateSpecdevSystem(source, destination) {
       const destPath = join(destination, path)
 
       // Check if source exists
-      if (!await fse.pathExists(sourcePath)) {
+      if (!(await fse.pathExists(sourcePath))) {
         console.warn(`⚠️  Warning: Source path not found: ${path}`)
         continue
       }
@@ -112,7 +110,7 @@ export async function updateSpecdevSystem(source, destination) {
       // Copy the file or directory
       await fse.copy(sourcePath, destPath, {
         overwrite: true,
-        errorOnExist: false
+        errorOnExist: false,
       })
 
       updatedPaths.push(path)
@@ -165,7 +163,7 @@ export async function updateSpecdevSystem(source, destination) {
 
 async function migrateLegacyWorkflowFeedback(specdevPath) {
   const legacyDir = join(specdevPath, 'knowledge', '_workflow_feedback')
-  if (!await fse.pathExists(legacyDir)) return false
+  if (!(await fse.pathExists(legacyDir))) return false
 
   const destinationDir = join(specdevPath, 'knowledge', 'workflow_feedback')
   await fse.ensureDir(destinationDir)
@@ -189,7 +187,9 @@ async function migrateLegacyWorkflowFeedback(specdevPath) {
         sameFile = sourceContent.equals(destinationContent)
       }
       if (!sameFile) {
-        throw new Error(`Cannot migrate legacy workflow feedback because the destination already exists: knowledge/workflow_feedback/${entry.name}`)
+        throw new Error(
+          `Cannot migrate legacy workflow feedback because the destination already exists: knowledge/workflow_feedback/${entry.name}`
+        )
       }
       continue
     }
@@ -201,9 +201,7 @@ async function migrateLegacyWorkflowFeedback(specdevPath) {
 
 export async function updateManagedGitignore(specdevPath) {
   const ignorePath = join(specdevPath, '.gitignore')
-  const existing = await fse.pathExists(ignorePath)
-    ? await fse.readFile(ignorePath, 'utf-8')
-    : ''
+  const existing = (await fse.pathExists(ignorePath)) ? await fse.readFile(ignorePath, 'utf-8') : ''
   const managedPattern = new RegExp(
     `${escapeRegExp(MANAGED_IGNORE_BEGIN)}[\\s\\S]*?${escapeRegExp(MANAGED_IGNORE_END)}`,
     'm'
@@ -228,18 +226,15 @@ function escapeRegExp(value) {
  * @returns {Promise<boolean>}
  */
 export async function isValidSpecdevInstallation(specdevPath) {
-  if (!await fse.pathExists(specdevPath)) {
+  if (!(await fse.pathExists(specdevPath))) {
     return false
   }
 
   // Check for key system files/directories
-  const requiredPaths = [
-    join(specdevPath, '_guides'),
-    join(specdevPath, 'project_notes')
-  ]
+  const requiredPaths = [join(specdevPath, '_guides'), join(specdevPath, 'project_notes')]
 
   for (const path of requiredPaths) {
-    if (!await fse.pathExists(path)) {
+    if (!(await fse.pathExists(path))) {
       return false
     }
   }

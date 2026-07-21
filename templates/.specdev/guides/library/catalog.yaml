@@ -1,7 +1,7 @@
 version: 1
 guides:
   - id: frontend
-    version: "1"
+    version: '1'
     summary: Review browser-facing behavior, state, responsiveness, and accessibility.
     signals: [frontend, browser, css, component, ui, ux]
     phases: [implementation, discussion, mission]
@@ -11,7 +11,7 @@ guides:
     reviewed: 2026-07-20
 
   - id: api-security
-    version: "1"
+    version: '1'
     summary: Review trust boundaries, validation, authorization, and sensitive data handling.
     signals: [api, auth, security, permission, input, secret]
     phases: [brainstorm, implementation, discussion, mission]

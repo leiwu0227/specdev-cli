@@ -58,7 +58,7 @@ async function nextFromFolders(specdevPath, config) {
   if (!(await fse.pathExists(root))) return 1
   const entries = await fse.readdir(root, { withFileTypes: true })
   const numbers = entries
-    .filter((entry) => config.entryType === 'file' ? entry.isFile() : entry.isDirectory())
+    .filter((entry) => (config.entryType === 'file' ? entry.isFile() : entry.isDirectory()))
     .map((entry) => Number(entry.name.match(config.pattern)?.[1]))
     .filter((value) => Number.isInteger(value) && value > 0)
   return numbers.length > 0 ? Math.max(...numbers) + 1 : 1
@@ -74,7 +74,9 @@ async function withAllocatorLock(specdevPath, callback) {
     try {
       handle = await open(lockPath, 'wx')
       try {
-        await handle.writeFile(JSON.stringify({ pid: process.pid, created_at: new Date().toISOString() }))
+        await handle.writeFile(
+          JSON.stringify({ pid: process.pid, created_at: new Date().toISOString() })
+        )
       } catch (error) {
         await handle.close().catch(() => {})
         handle = null

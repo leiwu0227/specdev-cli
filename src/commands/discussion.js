@@ -4,7 +4,12 @@ import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-cont
 import { getNextDiscussionId, resolveDiscussionSelector } from '../utils/discussion.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
 import { discussionArtifactHash, gitSnapshot, relativeToRepo } from '../utils/assignment-vnext.js'
-import { listGuidedCalls, readGuidedCall, startGuidedCall, stepGuidedCall } from '../utils/callable-sync.js'
+import {
+  listGuidedCalls,
+  readGuidedCall,
+  startGuidedCall,
+  stepGuidedCall,
+} from '../utils/callable-sync.js'
 import { assertWorkspaceEngine } from '../utils/engine.js'
 import { attemptLiveness, listAttemptRecords } from '../utils/process-record.js'
 
@@ -20,16 +25,20 @@ export async function discussCommand(positionalArgs = [], flags = {}) {
 
   if (flags.list) return listDiscussions(targetDir, specdevPath, flags)
 
-  const selector = positionalArgs.length === 1 && /^D\d{4,5}$/.test(positionalArgs[0])
-    ? positionalArgs[0]
-    : null
+  const selector =
+    positionalArgs.length === 1 && /^D\d{4,5}$/.test(positionalArgs[0]) ? positionalArgs[0] : null
   if (selector) return resumeDiscussion(targetDir, specdevPath, selector, flags)
 
   const description = positionalArgs.join(' ').trim()
-  if (!description) return fail(flags, 'Usage: specdev discussion "<topic>" | specdev discussion D00001 | specdev discussion --list')
+  if (!description)
+    return fail(
+      flags,
+      'Usage: specdev discussion "<topic>" | specdev discussion D00001 | specdev discussion --list'
+    )
 
   const bigPicture = await readBigPictureStatus(specdevPath)
-  if (!bigPicture.exists || !bigPicture.filled) return fail(flags, 'big_picture.md is not filled in')
+  if (!bigPicture.exists || !bigPicture.filled)
+    return fail(flags, 'big_picture.md is not filled in')
   const id = await getNextDiscussionId(specdevPath)
   const name = `${id}_${slugify(description)}`
   const discussionPath = join(specdevPath, 'discussions', name)
@@ -53,7 +62,8 @@ export async function discussCommand(positionalArgs = [], flags = {}) {
     await releaseDiscussion(specdevPath, id)
     return fail(flags, error.message)
   }
-  if (!started.synchronized) return fail(flags, 'RippleGraph callable runtime is unavailable; run specdev update')
+  if (!started.synchronized)
+    return fail(flags, 'RippleGraph callable runtime is unavailable; run specdev update')
 
   return emit(flags, {
     command: 'discussion',
@@ -64,7 +74,8 @@ export async function discussCommand(positionalArgs = [], flags = {}) {
     path: input.path,
     description,
     start_revision: revision,
-    authority: 'Product code is read-only; write only this Discussion\'s proposal, design, and optional review artifact.',
+    authority:
+      "Product code is read-only; write only this Discussion's proposal, design, and optional review artifact.",
     next_action: `Write ${input.path}/brainstorm/proposal.md and design.md, then run specdev discussion ${id}.`,
   })
 }
@@ -84,7 +95,8 @@ async function resumeDiscussion(targetDir, specdevPath, selector, flags) {
     await releaseDiscussion(specdevPath, selector)
     return fail(flags, error.message)
   }
-  if (!call.synchronized) return fail(flags, 'RippleGraph callable runtime is unavailable; run specdev update')
+  if (!call.synchronized)
+    return fail(flags, 'RippleGraph callable runtime is unavailable; run specdev update')
   if (call.state.status === 'completed') {
     await releaseDiscussion(specdevPath, selector)
     return emit(flags, discussionPayload(targetDir, resolved, call.state, 'completed'))
@@ -143,18 +155,27 @@ async function resumeDiscussion(targetDir, specdevPath, selector, flags) {
 
 async function listDiscussions(targetDir, specdevPath, flags) {
   const calls = listGuidedCalls(targetDir, 'discussion-lifecycle')
-  if (!calls.synchronized) return fail(flags, 'RippleGraph callable runtime is unavailable; run specdev update')
+  if (!calls.synchronized)
+    return fail(flags, 'RippleGraph callable runtime is unavailable; run specdev update')
   const discussions = []
-  const runningReviews = await listAttemptRecords(specdevPath, { kind: 'reviewer', status: 'running' })
+  const runningReviews = await listAttemptRecords(specdevPath, {
+    kind: 'reviewer',
+    status: 'running',
+  })
   const reviewing = new Set()
   for (const attempt of runningReviews) {
-    if (attempt.discussion && (await attemptLiveness(specdevPath, attempt.id)).state === 'live_local') {
+    if (
+      attempt.discussion &&
+      (await attemptLiveness(specdevPath, attempt.id)).state === 'live_local'
+    ) {
       reviewing.add(attempt.discussion)
     }
   }
   const discussionsDir = join(specdevPath, 'discussions')
-  const dirs = await fse.pathExists(discussionsDir)
-    ? (await fse.readdir(discussionsDir, { withFileTypes: true })).filter((entry) => entry.isDirectory())
+  const dirs = (await fse.pathExists(discussionsDir))
+    ? (await fse.readdir(discussionsDir, { withFileTypes: true })).filter((entry) =>
+        entry.isDirectory()
+      )
     : []
   for (const entry of dirs.sort((a, b) => a.name.localeCompare(b.name))) {
     const id = entry.name.match(/^D\d{4,5}/)?.[0]
@@ -163,14 +184,20 @@ async function listDiscussions(targetDir, specdevPath, flags) {
     discussions.push({
       id,
       name: entry.name,
-      status: call?.status === 'completed'
-        ? 'completed'
-        : reviewing.has(id) ? 'reviewing'
-        : call?.position?.node === 'finalize' ? 'awaiting_review' : 'brainstorming',
-      updated_at: call?.updatedAt || (await fse.stat(join(discussionsDir, entry.name))).mtime.toISOString(),
+      status:
+        call?.status === 'completed'
+          ? 'completed'
+          : reviewing.has(id)
+            ? 'reviewing'
+            : call?.position?.node === 'finalize'
+              ? 'awaiting_review'
+              : 'brainstorming',
+      updated_at:
+        call?.updatedAt || (await fse.stat(join(discussionsDir, entry.name))).mtime.toISOString(),
     })
   }
-  if (flags.json) return emit(flags, { command: 'discussion list', version: 2, status: 'ok', discussions })
+  if (flags.json)
+    return emit(flags, { command: 'discussion list', version: 2, status: 'ok', discussions })
   if (discussions.length === 0) return console.log('No discussions found.')
   console.log('Discussions:')
   for (const item of discussions) console.log(`  ${item.id}  ${item.status}  ${item.name}`)
@@ -180,9 +207,13 @@ async function validateDiscussionArtifacts(discussionPath) {
   const proposalPath = join(discussionPath, 'brainstorm', 'proposal.md')
   const designPath = join(discussionPath, 'brainstorm', 'design.md')
   const errors = []
-  for (const [label, path] of [['proposal', proposalPath], ['design', designPath]]) {
+  for (const [label, path] of [
+    ['proposal', proposalPath],
+    ['design', designPath],
+  ]) {
     if (!(await fse.pathExists(path))) errors.push(`${label}.md is missing`)
-    else if ((await fse.readFile(path, 'utf-8')).trim().length < 40) errors.push(`${label}.md is too short`)
+    else if ((await fse.readFile(path, 'utf-8')).trim().length < 40)
+      errors.push(`${label}.md is too short`)
   }
   return { valid: errors.length === 0, errors, proposalPath, designPath }
 }
@@ -209,7 +240,11 @@ async function claimDiscussion(specdevPath, id) {
       throw new Error(`Discussion ${id} is already claimed by another local session`)
     }
   }
-  await fse.writeJson(path, { id, owner_pid: process.ppid, claimed_at: new Date().toISOString() }, { spaces: 2 })
+  await fse.writeJson(
+    path,
+    { id, owner_pid: process.ppid, claimed_at: new Date().toISOString() },
+    { spaces: 2 }
+  )
 }
 
 async function releaseDiscussion(specdevPath, id) {
@@ -217,11 +252,22 @@ async function releaseDiscussion(specdevPath, id) {
 }
 
 function processIsLive(pid) {
-  try { process.kill(pid, 0); return true } catch { return false }
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
 }
 
 function slugify(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'discussion'
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'discussion'
+  )
 }
 
 function emit(flags, payload) {
@@ -237,7 +283,10 @@ function emit(flags, payload) {
 }
 
 function fail(flags, message) {
-  if (flags.json) console.log(JSON.stringify({ command: 'discussion', version: 2, status: 'error', error: message }))
+  if (flags.json)
+    console.log(
+      JSON.stringify({ command: 'discussion', version: 2, status: 'error', error: message })
+    )
   else console.error(message)
   process.exitCode = 1
   return null

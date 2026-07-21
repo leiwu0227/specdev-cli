@@ -18,15 +18,15 @@ export async function resolveDiscussionSelector(specdevPath, selector) {
   if (!(await fse.pathExists(discussionsDir))) return null
 
   const exactPath = join(discussionsDir, wanted)
-  if (await fse.pathExists(exactPath) && (await fse.stat(exactPath)).isDirectory()) {
+  if ((await fse.pathExists(exactPath)) && (await fse.stat(exactPath)).isDirectory()) {
     return { name: wanted, path: exactPath }
   }
   if (wanted.includes('_')) return null
 
   const entries = await fse.readdir(discussionsDir, { withFileTypes: true })
   const matches = entries
-    .filter(e => e.isDirectory() && e.name.startsWith(`${wanted}_`))
-    .map(e => e.name)
+    .filter((e) => e.isDirectory() && e.name.startsWith(`${wanted}_`))
+    .map((e) => e.name)
 
   if (matches.length === 1) {
     return { name: matches[0], path: join(discussionsDir, matches[0]) }

@@ -15,7 +15,9 @@ export function classifyWorkspaceChanges(paths = []) {
   const workItems = new Map()
 
   for (const value of paths) {
-    const path = String(value || '').trim().replaceAll('\\', '/')
+    const path = String(value || '')
+      .trim()
+      .replaceAll('\\', '/')
     if (!path) continue
     const workItem = path.match(WORK_ITEM_PATH)
     if (workItem) {
@@ -50,14 +52,20 @@ export function workspaceChangeSummaryLines(paths = [], options = {}) {
       `${countLabel(changes.infrastructurePaths.length, 'SpecDev infrastructure path')}.`,
   ]
   if (changes.projectPaths.length > 0) {
-    lines.push(`Preserve existing project changes: ${boundedList(changes.projectPaths, maxProjectPaths)}.`)
+    lines.push(
+      `Preserve existing project changes: ${boundedList(changes.projectPaths, maxProjectPaths)}.`
+    )
   }
   if (changes.workItems.length > 0) {
-    const items = changes.workItems.map((item) => `${item.path} (${countLabel(item.pathCount, 'path')})`)
+    const items = changes.workItems.map(
+      (item) => `${item.path} (${countLabel(item.pathCount, 'path')})`
+    )
     lines.push(`Project workflow artifacts: ${boundedList(items, maxWorkItems)}.`)
   }
   if (changes.infrastructurePaths.length > 0) {
-    lines.push('Infrastructure details hidden (workflows, skills, RippleGraph, and process records).')
+    lines.push(
+      'Infrastructure details hidden (workflows, skills, RippleGraph, and process records).'
+    )
   }
   return lines
 }

@@ -3,13 +3,7 @@ import fse from 'fs-extra'
 import { parse, stringify } from 'yaml'
 import { reserveEntityId } from './id-reservation.js'
 
-const DURABLE_STATUSES = new Set([
-  'running',
-  'completed',
-  'interrupted',
-  'failed',
-  'blocked',
-])
+const DURABLE_STATUSES = new Set(['running', 'completed', 'interrupted', 'failed', 'blocked'])
 
 export async function createAttemptRecord(specdevPath, input) {
   const id = await reserveEntityId(specdevPath, 'attempt')
@@ -27,7 +21,12 @@ export async function createAttemptRecord(specdevPath, input) {
     network: Boolean(input.network),
     result_path: nullableText(input.result_path),
     ...(Array.isArray(input.guides) && input.guides.length > 0
-      ? { guides: input.guides.map((guide) => ({ id: String(guide.id), version: String(guide.version) })) }
+      ? {
+          guides: input.guides.map((guide) => ({
+            id: String(guide.id),
+            version: String(guide.version),
+          })),
+        }
       : {}),
     ...(input.assignment ? { assignment: String(input.assignment) } : {}),
     ...(input.mission ? { mission: String(input.mission) } : {}),
@@ -50,12 +49,17 @@ export async function updateAttemptRecord(specdevPath, id, patch) {
   if (patch.status && !DURABLE_STATUSES.has(patch.status)) {
     throw new Error(`invalid Attempt status: ${patch.status}`)
   }
-  const endedAt = patch.status && patch.status !== 'running' && !patch.ended_at && !existing.ended_at
-    ? new Date().toISOString()
-    : patch.ended_at || existing.ended_at
-  const inferredDuration = endedAt && existing.started_at && patch.duration_ms === undefined && existing.duration_ms === undefined
-    ? Math.max(0, new Date(endedAt).getTime() - new Date(existing.started_at).getTime())
-    : undefined
+  const endedAt =
+    patch.status && patch.status !== 'running' && !patch.ended_at && !existing.ended_at
+      ? new Date().toISOString()
+      : patch.ended_at || existing.ended_at
+  const inferredDuration =
+    endedAt &&
+    existing.started_at &&
+    patch.duration_ms === undefined &&
+    existing.duration_ms === undefined
+      ? Math.max(0, new Date(endedAt).getTime() - new Date(existing.started_at).getTime())
+      : undefined
   const next = {
     ...existing,
     ...patch,
@@ -74,7 +78,9 @@ export async function listAttemptRecords(specdevPath, filters = {}) {
   if (!(await fse.pathExists(dir))) return []
   const entries = await fse.readdir(dir, { withFileTypes: true })
   const records = []
-  for (const entry of entries.filter((candidate) => candidate.isFile() && /^ATT-\d+\.yaml$/.test(candidate.name))) {
+  for (const entry of entries.filter(
+    (candidate) => candidate.isFile() && /^ATT-\d+\.yaml$/.test(candidate.name)
+  )) {
     const record = await readAttemptRecord(specdevPath, entry.name.replace(/\.yaml$/, ''))
     if (!record) continue
     if (filters.status && record.status !== filters.status) continue
@@ -84,7 +90,9 @@ export async function listAttemptRecords(specdevPath, filters = {}) {
     if (filters.discussion && record.discussion !== filters.discussion) continue
     records.push(record)
   }
-  return records.sort((left, right) => String(left.started_at).localeCompare(String(right.started_at)))
+  return records.sort((left, right) =>
+    String(left.started_at).localeCompare(String(right.started_at))
+  )
 }
 
 export async function attemptActivitySummary(specdevPath, filters = {}, bounds = {}) {
@@ -95,8 +103,10 @@ export function summarizeAttemptActivity(attempts, bounds = {}) {
   const records = Array.isArray(attempts) ? attempts : []
   const providerAttempts = records.filter((attempt) => attempt.provider)
   const providerAttemptOutcomes = Object.fromEntries(
-    ['completed', 'failed', 'blocked', 'interrupted', 'running']
-      .map((status) => [status, providerAttempts.filter((attempt) => attempt.status === status).length])
+    ['completed', 'failed', 'blocked', 'interrupted', 'running'].map((status) => [
+      status,
+      providerAttempts.filter((attempt) => attempt.status === status).length,
+    ])
   )
   const tokenValues = providerAttempts
     .map((attempt) => attempt.usage?.provider_reported_tokens)
@@ -116,21 +126,24 @@ export function summarizeAttemptActivity(attempts, bounds = {}) {
       (sum, attempt) => sum + (Number(attempt.duration_ms) || 0),
       0
     ),
-    provider_reported_tokens: tokenValues.length > 0
-      ? tokenValues.reduce((sum, value) => sum + value, 0)
-      : null,
+    provider_reported_tokens:
+      tokenValues.length > 0 ? tokenValues.reduce((sum, value) => sum + value, 0) : null,
   }
 }
 
 export async function writeLocalProcessMarker(specdevPath, attemptId, input = {}) {
   const path = localMarkerPath(specdevPath, attemptId)
   await fse.ensureDir(join(specdevPath, 'cache', 'processes'))
-  await fse.writeJson(path, {
-    attempt: attemptId,
-    pid: input.pid || process.pid,
-    cwd: input.cwd || process.cwd(),
-    started_at: input.started_at || new Date().toISOString(),
-  }, { spaces: 2 })
+  await fse.writeJson(
+    path,
+    {
+      attempt: attemptId,
+      pid: input.pid || process.pid,
+      cwd: input.cwd || process.cwd(),
+      started_at: input.started_at || new Date().toISOString(),
+    },
+    { spaces: 2 }
+  )
   return path
 }
 

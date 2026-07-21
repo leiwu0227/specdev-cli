@@ -44,9 +44,10 @@ export function validateProfile(role, profile) {
     cursor: new Set(),
   }[provider]
   if (effort && !supportedEffort.has(effort)) {
-    const suffix = supportedEffort.size > 0
-      ? `; supported values: ${[...supportedEffort].join(', ')}`
-      : '; this provider adapter does not support an effort setting'
+    const suffix =
+      supportedEffort.size > 0
+        ? `; supported values: ${[...supportedEffort].join(', ')}`
+        : '; this provider adapter does not support an effort setting'
     throw new Error(`${provider} does not support effort=${effort}${suffix}`)
   }
 
@@ -61,7 +62,9 @@ export function validateProfile(role, profile) {
 
 export function parseDuration(value, field = 'duration') {
   if (Number.isInteger(value) && value > 0) return value
-  const match = String(value || '').trim().match(/^(\d+)(ms|s|m|h)$/)
+  const match = String(value || '')
+    .trim()
+    .match(/^(\d+)(ms|s|m|h)$/)
   if (!match || Number(match[1]) <= 0) {
     throw new Error(`${field} must be a positive duration such as 30s, 20m, or 1h`)
   }

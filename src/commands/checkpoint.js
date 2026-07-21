@@ -2,7 +2,13 @@ import { join } from 'node:path'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { resolveTargetDir } from '../utils/command-context.js'
-import { assertCurrentAssignmentPath, checkpointedContractFor, normalizeReviewPolicy, relativeToRepo, validateAssignmentContract } from '../utils/assignment-vnext.js'
+import {
+  assertCurrentAssignmentPath,
+  checkpointedContractFor,
+  normalizeReviewPolicy,
+  relativeToRepo,
+  validateAssignmentContract,
+} from '../utils/assignment-vnext.js'
 import { decideGuidedNode, stepGuidedNode } from '../utils/engine-sync.js'
 
 export async function checkpointCommand(positionalArgs = [], flags = {}) {
@@ -18,7 +24,14 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   const name = assignmentName(assignmentPath)
   const contract = await validateAssignmentContract(assignmentPath)
   if (!contract.valid) {
-    const payload = { command: 'checkpoint', version: 2, status: 'fail', phase, assignment: name, issues: contract.errors }
+    const payload = {
+      command: 'checkpoint',
+      version: 2,
+      status: 'fail',
+      phase,
+      assignment: name,
+      issues: contract.errors,
+    }
     if (flags.json) console.log(JSON.stringify(payload, null, 2))
     else {
       console.error(`Brainstorm contract is not ready for ${name}:`)
@@ -44,7 +57,9 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   } else if (state.position.node === 'approve-contract') {
     const checkpointed = await checkpointedContractFor(targetDir)
     if (checkpointed?.contract_hash !== contract.hash) {
-      const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => ({}))
+      const assignmentStatus = await fse
+        .readJson(join(assignmentPath, 'status.json'))
+        .catch(() => ({}))
       const reset = decideGuidedNode(targetDir, 'approve-contract', {
         approved: false,
         contract_hash: checkpointed?.contract_hash || contract.hash,

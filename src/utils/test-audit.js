@@ -13,7 +13,7 @@ export async function resolveTestAuditSelector(specdevPath, selector) {
   const root = join(specdevPath, 'test-audits')
   if (!(await fse.pathExists(root))) return null
   const exact = join(root, wanted)
-  if (await fse.pathExists(exact) && (await fse.stat(exact)).isDirectory()) {
+  if ((await fse.pathExists(exact)) && (await fse.stat(exact)).isDirectory()) {
     return { id: wanted.slice(0, 7), name: wanted, path: exact }
   }
   if (wanted.includes('_')) return null

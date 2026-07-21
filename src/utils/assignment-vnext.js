@@ -35,7 +35,11 @@ export const CONTRACT_SECTIONS = [
   'Acceptance criteria',
 ]
 
-export function assignmentContractTemplate({ description, kind = 'change', sourceDiscussion = null }) {
+export function assignmentContractTemplate({
+  description,
+  kind = 'change',
+  sourceDiscussion = null,
+}) {
   const source = sourceDiscussion
     ? `\nSource discussion: ${sourceDiscussion.id} (${sourceDiscussion.hash})\n${sourceDiscussion.repoPath ? `Source proposal: \`${sourceDiscussion.repoPath}/brainstorm/proposal.md\`\nSource design: \`${sourceDiscussion.repoPath}/brainstorm/design.md\`\n` : ''}`
     : ''
@@ -44,12 +48,18 @@ export function assignmentContractTemplate({ description, kind = 'change', sourc
 
 export function normalizeReviewPolicy(input = {}, fallback = DEFAULT_REVIEW_POLICY) {
   const policy = {
-    brainstorm: String(input?.brainstorm || fallback.brainstorm || DEFAULT_REVIEW_POLICY.brainstorm).trim(),
-    implementation: String(input?.implementation || fallback.implementation || DEFAULT_REVIEW_POLICY.implementation).trim(),
+    brainstorm: String(
+      input?.brainstorm || fallback.brainstorm || DEFAULT_REVIEW_POLICY.brainstorm
+    ).trim(),
+    implementation: String(
+      input?.implementation || fallback.implementation || DEFAULT_REVIEW_POLICY.implementation
+    ).trim(),
   }
   for (const [field, allowed] of Object.entries(REVIEW_POLICY_VALUES)) {
     if (!allowed.has(policy[field])) {
-      throw new Error(`Invalid ${field} review policy: ${policy[field]}. Valid values: ${[...allowed].join(', ')}`)
+      throw new Error(
+        `Invalid ${field} review policy: ${policy[field]}. Valid values: ${[...allowed].join(', ')}`
+      )
     }
   }
   return policy
@@ -61,14 +71,19 @@ export function reviewPolicyFromFlags(flags = {}, fallback = DEFAULT_REVIEW_POLI
       throw new Error(`--${name} requires an explicit value`)
     }
   }
-  return normalizeReviewPolicy({
-    brainstorm: typeof flags['brainstorm-review'] === 'string'
-      ? flags['brainstorm-review']
-      : fallback.brainstorm,
-    implementation: typeof flags['implementation-review'] === 'string'
-      ? flags['implementation-review']
-      : fallback.implementation,
-  }, fallback)
+  return normalizeReviewPolicy(
+    {
+      brainstorm:
+        typeof flags['brainstorm-review'] === 'string'
+          ? flags['brainstorm-review']
+          : fallback.brainstorm,
+      implementation:
+        typeof flags['implementation-review'] === 'string'
+          ? flags['implementation-review']
+          : fallback.implementation,
+    },
+    fallback
+  )
 }
 
 export async function validateAssignmentContract(assignmentPath) {
@@ -77,7 +92,8 @@ export async function validateAssignmentContract(assignmentPath) {
 }
 
 export async function validateContractPath(path) {
-  if (!(await fse.pathExists(path))) return { valid: false, path, errors: ['brainstorm/contract.md is missing'] }
+  if (!(await fse.pathExists(path)))
+    return { valid: false, path, errors: ['brainstorm/contract.md is missing'] }
   const content = await fse.readFile(path, 'utf-8')
   const errors = []
   if (content.trim().length < 80) errors.push('contract is too short')
@@ -87,9 +103,13 @@ export async function validateContractPath(path) {
       errors.push(`missing section: ## ${section}`)
     }
   }
-  const acceptanceIds = [...content.matchAll(/^\s*-\s+(AC-\d+)\s*:/gim)].map((match) => match[1].toUpperCase())
-  if (acceptanceIds.length === 0) errors.push('at least one acceptance criterion such as AC-1 is required')
-  if (new Set(acceptanceIds).size !== acceptanceIds.length) errors.push('acceptance criterion IDs must be unique')
+  const acceptanceIds = [...content.matchAll(/^\s*-\s+(AC-\d+)\s*:/gim)].map((match) =>
+    match[1].toUpperCase()
+  )
+  if (acceptanceIds.length === 0)
+    errors.push('at least one acceptance criterion such as AC-1 is required')
+  if (new Set(acceptanceIds).size !== acceptanceIds.length)
+    errors.push('acceptance criterion IDs must be unique')
   if (/\bTODO\b/i.test(content)) errors.push('contract still contains TODO placeholders')
   return {
     valid: errors.length === 0,
@@ -126,9 +146,12 @@ export async function assertApprovedContract(targetDir, assignmentPath) {
     throw new Error('Assignment contract has not been approved')
   }
   const contract = await validateAssignmentContract(assignmentPath)
-  if (!contract.valid) throw new Error(`Assignment contract is invalid: ${contract.errors.join('; ')}`)
+  if (!contract.valid)
+    throw new Error(`Assignment contract is invalid: ${contract.errors.join('; ')}`)
   if (contract.hash !== approval.contract_hash) {
-    throw new Error('Assignment contract changed after approval; restore the approved contract or create a new Assignment for changed authority')
+    throw new Error(
+      'Assignment contract changed after approval; restore the approved contract or create a new Assignment for changed authority'
+    )
   }
   return { contract, approval }
 }
@@ -173,7 +196,7 @@ export async function gitSnapshot(targetDir) {
 
 export async function writeAssignmentStatus(assignmentPath, patch) {
   const path = join(assignmentPath, 'status.json')
-  const current = await fse.pathExists(path) ? await fse.readJson(path) : { version: 1 }
+  const current = (await fse.pathExists(path)) ? await fse.readJson(path) : { version: 1 }
   const next = { ...current, ...patch, updated_at: new Date().toISOString() }
   const temporary = `${path}.tmp-${process.pid}`
   await fse.writeJson(temporary, next, { spaces: 2 })

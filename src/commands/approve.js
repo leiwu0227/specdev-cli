@@ -36,7 +36,9 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     return
   }
   if (state.position.node !== 'approve-contract') {
-    console.error('The Assignment is not awaiting contract approval. Run specdev checkpoint brainstorm first.')
+    console.error(
+      'The Assignment is not awaiting contract approval. Run specdev checkpoint brainstorm first.'
+    )
     process.exitCode = 1
     return
   }
@@ -49,7 +51,9 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
   }
   const checkpointed = await checkpointedContractFor(targetDir)
   if (checkpointed?.contract_hash !== contract.hash) {
-    console.error('The Assignment contract changed after its hash was shown. Run specdev checkpoint brainstorm again before approval.')
+    console.error(
+      'The Assignment contract changed after its hash was shown. Run specdev checkpoint brainstorm again before approval.'
+    )
     process.exitCode = 1
     return
   }
@@ -70,12 +74,16 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     review?.frontmatter.verdict !== 'approved' &&
     !flags['override-review']
   ) {
-    console.error('This Assignment requires an approved Brainstorm review for the exact contract hash. Run specdev reviewloop brainstorm, or explicitly use --override-review.')
+    console.error(
+      'This Assignment requires an approved Brainstorm review for the exact contract hash. Run specdev reviewloop brainstorm, or explicitly use --override-review.'
+    )
     process.exitCode = 1
     return
   }
   if (review && review.frontmatter.verdict !== 'approved' && !flags['override-review']) {
-    console.error('The latest Brainstorm review is not approved. Address it and rerun review, or explicitly use --override-review.')
+    console.error(
+      'The latest Brainstorm review is not approved. Address it and rerun review, or explicitly use --override-review.'
+    )
     process.exitCode = 1
     return
   }
@@ -100,7 +108,11 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     review_policy: reviewPolicy,
     review_policy_frozen_at: decision.approved_at,
   })
-  await retireTransientArtifact(targetDir, join(targetDir, '.specdev'), join(assignmentPath, 'review', 'brainstorm-baseline.md'))
+  await retireTransientArtifact(
+    targetDir,
+    join(targetDir, '.specdev'),
+    join(assignmentPath, 'review', 'brainstorm-baseline.md')
+  )
 
   const payload = {
     command: 'approve',
@@ -115,23 +127,33 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     review_policy: reviewPolicy,
     revision: git.revision,
     dirty_paths: git.dirty_paths,
-    review: review ? {
-      verdict: review.frontmatter.verdict,
-      material_divergence: review.frontmatter.material_divergence ?? null,
-      stale: false,
-    } : staleReview ? { stale: true, reviewed_contract_hash: reviewRecord.contract_hash } : null,
+    review: review
+      ? {
+          verdict: review.frontmatter.verdict,
+          material_divergence: review.frontmatter.material_divergence ?? null,
+          stale: false,
+        }
+      : staleReview
+        ? { stale: true, reviewed_contract_hash: reviewRecord.contract_hash }
+        : null,
     next_action: 'specdev implement',
   }
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
   else {
     console.log(`Approved Assignment contract: ${name}`)
     console.log(`Contract hash: ${contract.hash}`)
-    console.log(`Reviews: brainstorm ${reviewPolicy.brainstorm}; implementation ${reviewPolicy.implementation}`)
+    console.log(
+      `Reviews: brainstorm ${reviewPolicy.brainstorm}; implementation ${reviewPolicy.implementation}`
+    )
     if (review) {
       console.log(`Review verdict: ${review.frontmatter.verdict}`)
-      console.log(`Material divergence: ${review.frontmatter.material_divergence === true ? 'yes' : 'no'}`)
+      console.log(
+        `Material divergence: ${review.frontmatter.material_divergence === true ? 'yes' : 'no'}`
+      )
     } else if (staleReview) {
-      console.log(`Review note: the saved verdict covered older contract hash ${reviewRecord.contract_hash}`)
+      console.log(
+        `Review note: the saved verdict covered older contract hash ${reviewRecord.contract_hash}`
+      )
     }
     for (const line of workspaceChangeSummaryLines(git.dirty_paths)) console.log(line)
     console.log('Automatic delivery can now start: specdev implement')
@@ -145,7 +167,7 @@ async function readOptionalReview(assignmentPath) {
   try {
     const result = parseResultEnvelope(await fse.readFile(path, 'utf-8'), 'reviewer')
     const statePath = join(assignmentPath, 'review', 'brainstorm-state.json')
-    const state = await fse.pathExists(statePath) ? await fse.readJson(statePath) : null
+    const state = (await fse.pathExists(statePath)) ? await fse.readJson(statePath) : null
     return { result, contract_hash: state?.contract_hash || null }
   } catch (error) {
     throw new Error(`invalid Brainstorm review verdict: ${error.message}`)
