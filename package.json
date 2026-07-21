@@ -11,8 +11,7 @@
     "bin/",
     "src/",
     "templates/",
-    "hooks/",
-    "vendor/"
+    "hooks/"
   ],
   "scripts": {
     "test": "node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-vnext-foundations.js && node ./tests/test-engine-integration.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
@@ -25,7 +24,6 @@
     "lint": "prettier --check README.md QUICKSTART.md docs/assignment-schema.md package.json package-lock.json \".github/workflows/*.{yml,yaml}\" \"src/**/*.js\" \"templates/.specdev/**/*.{md,json,yaml,yml}\" tests/test-engine-adapter.js tests/test-engine-graphpackages.js tests/test-engine-integration.js tests/test-engine-packaging.js tests/test-vnext-foundations.js",
     "format": "prettier --write .",
     "vendor:ripplegraph": "node ./scripts/update-ripplegraph.js",
-    "prepare": "node ./scripts/prepare-git-install.js",
     "preversion": "sed -i \"s/\\\"releaseDate\\\": \\\"[0-9-]*\\\"/\\\"releaseDate\\\": \\\"$(date +%Y-%m-%d)\\\"/\" package.json",
     "release": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
@@ -43,12 +41,9 @@
   "license": "MIT",
   "dependencies": {
     "fs-extra": "^11.2.0",
-    "ripplegraph": "file:vendor/ripplegraph-0.1.0.tgz",
+    "ripplegraph": "git+https://github.com/leiwu0227/ripplegraph.git#8288620441e8fdcea2d70b52672d6b8f85436644",
     "yaml": "^2.8.4"
   },
-  "bundledDependencies": [
-    "ripplegraph"
-  ],
   "devDependencies": {
     "prettier": "^3.2.4"
   },

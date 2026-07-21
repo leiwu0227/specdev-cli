@@ -9,10 +9,13 @@ const root = resolve(import.meta.dirname, '..')
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 
 assert.equal(pkg.engines.node, '>=22.13.0')
-assert.match(pkg.dependencies.ripplegraph, /^file:vendor\/ripplegraph-\d+\.\d+\.\d+\.tgz$/)
-assert.equal(pkg.files.includes('vendor/'), true)
-assert.deepEqual(pkg.bundledDependencies, ['ripplegraph'])
-assert.equal(pkg.scripts.prepare, 'node ./scripts/prepare-git-install.js')
+assert.match(
+  pkg.dependencies.ripplegraph,
+  /^git\+https:\/\/github\.com\/leiwu0227\/ripplegraph\.git#[0-9a-f]{40}$/
+)
+assert.equal(pkg.files.includes('vendor/'), false)
+assert.equal('bundledDependencies' in pkg, false)
+assert.equal('prepare' in pkg.scripts, false)
 
 const packed = spawnSync('npm', ['pack', '--dry-run', '--json'], {
   cwd: root,
@@ -22,8 +25,8 @@ assert.equal(packed.status, 0, `npm pack failed:\n${packed.stderr}`)
 const report = JSON.parse(packed.stdout)[0]
 const files = new Set(report.files.map((entry) => entry.path))
 
-assert.equal(files.has('vendor/ripplegraph-0.1.0.tgz'), true)
-assert.equal(files.has('node_modules/ripplegraph/package.json'), true)
+assert.equal(files.has('vendor/ripplegraph-0.1.0.tgz'), false)
+assert.equal(files.has('node_modules/ripplegraph/package.json'), false)
 assert.equal(files.has('templates/.specdev/workflow.json'), true)
 assert.equal(files.has('templates/.specdev/_templates/faq.md'), true)
 assert.equal(files.has('templates/.specdev/knowledge/faq/.gitkeep'), true)
