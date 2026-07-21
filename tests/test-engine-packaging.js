@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
@@ -9,6 +9,7 @@ const root = resolve(import.meta.dirname, '..')
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 
 assert.equal(pkg.engines.node, '>=22.13.0')
+assert.notEqual(statSync(resolve(root, pkg.bin.specdev)).mode & 0o111, 0)
 assert.match(
   pkg.dependencies.ripplegraph,
   /^git\+https:\/\/github\.com\/leiwu0227\/ripplegraph\.git#[0-9a-f]{40}$/
