@@ -1,9 +1,9 @@
 {
   "id": "mission-lifecycle",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "kind": "workflow",
   "title": "Mission lifecycle",
-  "description": "Deliver a larger approved objective through an ordered sequential Assignment queue.",
+  "description": "Deliver a larger approved objective through static Assignment waves with bounded parallel execution.",
   "activationHints": ["mission", "large objective", "multi assignment change"],
   "entry": "create-mission",
   "nodes": {
@@ -87,14 +87,18 @@
       "instructions": "Single-child Design is deterministic; a planned split invokes the worker profile and writes design/assignments.yaml.",
       "outputSchema": {
         "type": "object",
-        "required": ["queue", "attempt"],
+        "required": ["queue", "attempt", "parallel"],
         "properties": {
           "queue": { "type": "string" },
-          "attempt": { "type": "string" }
+          "attempt": { "type": "string" },
+          "parallel": { "type": "boolean" }
         }
       },
       "operatorContext": { "phase": "design" },
-      "edges": [{ "to": "child-assignment" }]
+      "edges": [
+        { "to": "execute-wave", "when": { "parallel": true } },
+        { "to": "child-assignment", "when": { "parallel": false } }
+      ]
     },
     "child-assignment": {
       "purpose": "Run the next pending child through the normal Assignment lifecycle.",
@@ -106,17 +110,65 @@
       "purpose": "Record the completed child and choose the next pending queue item.",
       "outputSchema": {
         "type": "object",
-        "required": ["remaining", "completed", "follow_up_required"],
+        "required": ["remaining", "completed", "follow_up_required", "parallel"],
         "properties": {
           "remaining": { "type": "boolean" },
           "completed": { "type": "string" },
-          "follow_up_required": { "type": "boolean" }
+          "follow_up_required": { "type": "boolean" },
+          "parallel": { "type": "boolean" }
         }
       },
       "operatorContext": { "phase": "mission" },
       "edges": [
         { "to": "replan", "when": { "follow_up_required": true } },
-        { "to": "child-assignment", "when": { "remaining": true } },
+        {
+          "to": "execute-wave",
+          "when": { "remaining": true, "parallel": true }
+        },
+        {
+          "to": "child-assignment",
+          "when": { "remaining": true, "parallel": false }
+        },
+        { "to": "mission-review", "when": { "remaining": false } }
+      ]
+    },
+    "execute-wave": {
+      "purpose": "Run the current independent Assignment wave in bounded isolated worktrees.",
+      "instructions": "The foreground Mission controller launches up to three child Assignment runs, creates reviewed delivery commits, and integrates them in declared order.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["wave", "completed"],
+        "properties": {
+          "wave": { "type": "number" },
+          "completed": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "operatorContext": { "phase": "parallel-wave" },
+      "edges": [{ "to": "advance-wave" }]
+    },
+    "advance-wave": {
+      "purpose": "Record the integrated wave and select the next sequential or parallel stage.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["remaining", "completed", "follow_up_required", "parallel"],
+        "properties": {
+          "remaining": { "type": "boolean" },
+          "completed": { "type": "string" },
+          "follow_up_required": { "type": "boolean" },
+          "parallel": { "type": "boolean" }
+        }
+      },
+      "operatorContext": { "phase": "mission" },
+      "edges": [
+        { "to": "replan", "when": { "follow_up_required": true } },
+        {
+          "to": "execute-wave",
+          "when": { "remaining": true, "parallel": true }
+        },
+        {
+          "to": "child-assignment",
+          "when": { "remaining": true, "parallel": false }
+        },
         { "to": "mission-review", "when": { "remaining": false } }
       ]
     },

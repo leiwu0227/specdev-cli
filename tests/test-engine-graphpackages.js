@@ -86,6 +86,18 @@ assert.equal(
   byId['mission-lifecycle'].nodes['advance-queue'].edges[0].when.follow_up_required,
   true
 )
+assert.equal(byId['mission-lifecycle'].version, '1.2.0')
+assert.ok(byId['mission-lifecycle'].nodes['execute-wave'])
+assert.ok(byId['mission-lifecycle'].nodes['advance-wave'])
+assert.equal(
+  byId['mission-lifecycle'].nodes['execute-wave'].outputSchema.properties.wave.type,
+  'number'
+)
+assert.deepEqual(byId['mission-lifecycle'].nodes.design.outputSchema.required, [
+  'queue',
+  'attempt',
+  'parallel',
+])
 
 const workspace = JSON.parse(
   readFileSync(join(root, 'templates', '.specdev', 'workflow.json'), 'utf8')
@@ -98,8 +110,9 @@ try {
   const installed = await installGraphPackages(workflowsRoot, installRoot)
   assert.equal(installed.length, expectedIds.length)
   const catalog = JSON.parse(readFileSync(join(installRoot, 'catalog.json'), 'utf8'))
-  assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.1.0')
-  const installedGraph = join(installRoot, 'assignment-lifecycle@2.1.0', 'graph.json')
+  assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.1.1')
+  assert.equal(catalog.packages['mission-lifecycle'].path, 'mission-lifecycle@1.2.0')
+  const installedGraph = join(installRoot, 'assignment-lifecycle@2.1.1', 'graph.json')
   writeFileSync(installedGraph, `${readFileSync(installedGraph, 'utf8')}\n`)
   await assert.rejects(
     installGraphPackages(workflowsRoot, installRoot),

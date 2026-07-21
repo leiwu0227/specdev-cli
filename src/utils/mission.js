@@ -4,6 +4,7 @@ import fse from 'fs-extra'
 import { parse, stringify } from 'yaml'
 import { ASSIGNMENT_KINDS } from './assignment-vnext.js'
 import { reserveEntityId } from './id-reservation.js'
+import { normalizeMissionWaves } from './mission-waves.js'
 
 export function parseMissionId(name) {
   return name.match(/^(M\d{5})_(.+)$/)?.slice(1) || null
@@ -60,7 +61,7 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
     const candidate = revisedById.get(item.id)
     if (!candidate) throw new Error(`Mission replanning removed existing Assignment ${item.id}`)
     if (
-      ['completed', 'running', 'blocked', 'cancelled'].includes(item.status) &&
+      ['completed', 'integrated', 'running', 'blocked', 'cancelled'].includes(item.status) &&
       !isDeepStrictEqual(candidate, item)
     ) {
       throw new Error(`Mission replanning changed protected Assignment ${item.id}`)
@@ -70,8 +71,18 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
     }
   }
 
+  const originalWaveById = new Map(
+    original.assignments.map((item, index) => [item.id, Number(item.wave) || index + 1])
+  )
+  let nextWave = Math.max(0, ...originalWaveById.values()) + 1
+  const normalizedRevised = normalizeMissionWaves(
+    revised.assignments.map((item) => ({
+      ...item,
+      wave: item.id ? originalWaveById.get(item.id) : nextWave++,
+    }))
+  )
   const assignments = []
-  for (const item of revised.assignments) {
+  for (const item of normalizedRevised) {
     const title = String(item.title || '').trim()
     const kind = item.kind || 'change'
     if (!title) throw new Error('Every replanned Assignment requires a title')
@@ -84,9 +95,9 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
       if (!originalById.has(item.id))
         throw new Error('Mission workers may not allocate new Assignment IDs')
       assignments.push(
-        ['completed', 'running', 'blocked', 'cancelled'].includes(item.status)
+        ['completed', 'integrated', 'running', 'blocked', 'cancelled'].includes(item.status)
           ? item
-          : { id: item.id, title, kind, status: 'pending' }
+          : { id: item.id, title, kind, wave: item.wave, status: 'pending' }
       )
     } else {
       if (item.status && item.status !== 'pending')
@@ -95,6 +106,7 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
         id: await reserveEntityId(specdevPath, 'assignment'),
         title,
         kind,
+        wave: item.wave,
         status: 'pending',
       })
     }
@@ -103,7 +115,7 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
     throw new Error('Mission replanning must leave at least one pending Assignment')
   }
   return {
-    version: 1,
+    version: 2,
     design_mode: 'replanned',
     assignments,
     final_verification: original.final_verification,

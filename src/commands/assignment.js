@@ -26,6 +26,10 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
+  const parallelMissionRoot =
+    Boolean(flags['mission-root']) &&
+    Boolean(flags.mission) &&
+    (process.env.SPECDEV_PARALLEL_CHILD === '1' || flags['internal-mission-child'] === true)
 
   if (flags.id && !flags.mission) {
     return fail(
@@ -131,14 +135,27 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
 
   let assignmentGraph
   if (flags.mission) {
-    const current = await currentAssignmentNode(targetDir)
-    if (!current || current.position.node !== 'create-assignment') {
-      return fail(
-        flags,
-        'Mission child creation requires the Assignment child graph at create-assignment'
-      )
+    if (parallelMissionRoot) {
+      let guided
+      try {
+        guided = startGuidedRun(targetDir, 'assignment-lifecycle', {
+          strict: true,
+          expectedNode: 'create-assignment',
+        })
+      } catch (error) {
+        return fail(flags, `Cannot create parallel Mission Assignment: ${error.message}`)
+      }
+      assignmentGraph = guided.state
+    } else {
+      const current = await currentAssignmentNode(targetDir)
+      if (!current || current.position.node !== 'create-assignment') {
+        return fail(
+          flags,
+          'Mission child creation requires the Assignment child graph at create-assignment'
+        )
+      }
+      assignmentGraph = current
     }
-    assignmentGraph = current
   } else {
     let guided
     try {
@@ -195,7 +212,9 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
       ? { source_test_audit: { id: sourceTestAudit.id, hash: sourceTestAudit.hash } }
       : {}),
   })
-  if (!flags.mission) await writeCurrentFocus(specdevPath, { kind: 'assignment', id })
+  if (!flags.mission || parallelMissionRoot) {
+    await writeCurrentFocus(specdevPath, { kind: 'assignment', id })
+  }
 
   const result = {
     id,

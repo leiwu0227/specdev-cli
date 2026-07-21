@@ -144,7 +144,8 @@ try {
   const registryPath = join(root, '.specdev', '.ripplegraph', 'registry.json')
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
   assert.equal(Object.keys(registry.graphs).length, 7)
-  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.1\.0$/)
+  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.1\.1$/)
+  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.2\.0$/)
   assert.equal(registry.graphs['discussion-lifecycle'].kind, 'callable')
 
   assert.equal(runJson(root, ['next', '--json']).state, 'idle')
@@ -440,6 +441,9 @@ try {
     'workspace-dispatcher',
   ])
   assert.equal(existsSync(join(root, '.specdev', 'workflows', 'catalog.json')), true)
+  const stableRegistry = readFileSync(registryPath, 'utf8')
+  assert.equal(runJson(root, ['update', '--platform=none', '--json']).status, 'ok')
+  assert.equal(readFileSync(registryPath, 'utf8'), stableRegistry)
 
   console.log('Engine integration tests passed.')
 } finally {

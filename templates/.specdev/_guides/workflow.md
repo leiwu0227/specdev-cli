@@ -7,7 +7,7 @@ successful evidence and implementation review complete automatically.
 
 ## Mission
 
-A Mission is a static foreground workflow with a simple ordered
+A Mission is a static foreground workflow with a simple static-wave
 `design/assignments.yaml` queue. The contract defaults to `Initial child plan:
 single`; use `planned` only for a worker context limit, an information
 dependency, an intermediate decision, or independent verification/rollback.
@@ -19,7 +19,10 @@ reference project context, avoid plan details, and keep only independent
 observable acceptance criteria. Multi-child contracts are concise deltas that
 inherit parent authority rather than reproducing the Mission brainstorm.
 Replanning occurs only for blocking review/evidence or an explicit required
-follow-up. Delivery remains normal Git work.
+follow-up. Children that do not depend on one another may share a wave. The
+foreground controller automatically runs up to three children in validated
+ignored worktrees and integrates reviewed deliveries in declared order. Users
+do not tune concurrency, and parallel speed is not a reason to split work.
 
 ## Discussion
 

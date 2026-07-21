@@ -1,6 +1,6 @@
 {
   "id": "assignment-lifecycle",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "kind": "workflow",
   "title": "Assignment lifecycle",
   "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",

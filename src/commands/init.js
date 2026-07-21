@@ -136,7 +136,7 @@ Announce every subtask with "Specdev: <action>".
 `,
   'specdev-mission': `---
 name: specdev-mission
-description: Create and run a sequential foreground Mission
+description: Create and run a foreground Mission with automatic bounded waves
 ---
 
 Run \`specdev mission create "<objective>"\` and collaborate on the Mission
@@ -150,10 +150,11 @@ restate big-picture notes or turn implementation tasks into acceptance criteria.
 Multi-child Assignment contracts are narrow deltas that inherit unchanged
 Mission authority.
 
-The controller stays in the foreground, uses the normal repository worktree on
-the Mission branch, and starts with one full-scope child. Set \`Initial child
-plan: planned\` in the contract only for a concrete execution, dependency,
-decision, or verification boundary. Use
+The controller stays in the foreground and starts with one full-scope child.
+Set \`Initial child plan: planned\` in the contract only for a concrete
+execution, dependency, decision, or verification boundary. Planned children
+receive static waves; independent children in one wave automatically use up to
+three validated ignored worktrees and integrate in declared order. Use
 \`--takeover\` only after inspecting an interrupted controller.
 
 Announce every subtask with "Specdev: <action>".
@@ -409,7 +410,7 @@ export async function initCommand(flags = {}) {
       '   specdev-assignment    Reserve ID and start brainstorm',
       '   specdev-continue      Resume from current phase',
       '   specdev-discussion    Concurrent code-read-only exploration',
-      '   specdev-mission       Sequential foreground orchestration',
+      '   specdev-mission       Foreground orchestration with automatic bounded waves',
       '   specdev-reviewloop    Configured reviewer loop',
       '   specdev-rewind        Full workflow re-read',
     ])

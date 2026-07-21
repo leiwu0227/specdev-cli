@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -24,6 +25,21 @@ import {
 import { loadGuideCatalog, resolveGuides } from '../src/utils/guides.js'
 import { readCurrentFocus, writeCurrentFocus } from '../src/utils/current.js'
 import { validateAndReserveReplannedQueue } from '../src/utils/mission.js'
+import {
+  currentMissionWave,
+  integratableMissionPrefix,
+  missionIntegrationRecoveryAction,
+  missionQueueHasRemaining,
+  missionWaveIsParallel,
+  normalizeMissionWaves,
+} from '../src/utils/mission-waves.js'
+import {
+  createMissionChildDelivery,
+  ensureMissionWorktree,
+  missionChildBranch,
+  missionWorktreeRelativePath,
+  removeMissionWorktree,
+} from '../src/utils/mission-worktrees.js'
 import {
   createAttemptRecord,
   readAttemptRecord,
@@ -211,6 +227,170 @@ try {
     '00008',
   ])
   assert.equal(await reserveEntityId(specdevPath, 'test_audit'), 'TA00001')
+  const previousAttemptNamespace = process.env.SPECDEV_ATTEMPT_NAMESPACE
+  process.env.SPECDEV_ATTEMPT_NAMESPACE = '00031'
+  const namespacedAttempt = await createAttemptRecord(specdevPath, {
+    kind: 'worker',
+    workspace: '.specdev/worktrees/slot-01',
+    mission: 'M00001',
+    assignment: '00031',
+  })
+  assert.equal(namespacedAttempt.id, 'ATT-00031-00001')
+  assert.equal((await readAttemptRecord(specdevPath, namespacedAttempt.id)).assignment, '00031')
+  await updateAttemptRecord(specdevPath, namespacedAttempt.id, { status: 'completed' })
+  if (previousAttemptNamespace === undefined) delete process.env.SPECDEV_ATTEMPT_NAMESPACE
+  else process.env.SPECDEV_ATTEMPT_NAMESPACE = previousAttemptNamespace
+
+  const waveQueue = {
+    version: 2,
+    assignments: normalizeMissionWaves([
+      { id: '00031', wave: 1, status: 'completed', delivery_revision: 'delivery-31' },
+      { id: '00032', wave: 1, status: 'completed', delivery_revision: 'delivery-32' },
+      { id: '00033', wave: 2, status: 'pending' },
+    ]),
+  }
+  assert.equal(currentMissionWave(waveQueue), 1)
+  assert.equal(missionWaveIsParallel(waveQueue), true)
+  assert.deepEqual(
+    integratableMissionPrefix(waveQueue).map((item) => item.id),
+    ['00031', '00032']
+  )
+  waveQueue.assignments[0].status = 'integrated'
+  assert.deepEqual(
+    integratableMissionPrefix(waveQueue).map((item) => item.id),
+    ['00032']
+  )
+  waveQueue.assignments[1].status = 'integrated'
+  assert.equal(currentMissionWave(waveQueue), 2)
+  assert.equal(missionQueueHasRemaining(waveQueue), true)
+  assert.equal(
+    missionQueueHasRemaining({ assignments: [{ id: '00034', wave: 1, status: 'blocked' }] }),
+    true
+  )
+  assert.equal(
+    missionQueueHasRemaining({
+      design_mode: 'single',
+      assignments: [{ id: '00035', wave: 1, status: 'completed' }],
+    }),
+    false
+  )
+  assert.throws(
+    () =>
+      normalizeMissionWaves([
+        { id: '00031', wave: 1 },
+        { id: '00032', wave: 3 },
+      ]),
+    /dense positive integers/
+  )
+  assert.equal(missionChildBranch('M00001', '00031'), 'specdev/M00001/00031')
+  assert.equal(missionWorktreeRelativePath('slot-01'), '.specdev/worktrees/slot-01')
+  const integrationRecovery = {
+    deliveryPaths: ['src/parallel.js', '.specdev/assignments/00031_fixture/outcome.md'],
+    missionPrefix: '.specdev/missions/M00001_parallel-fixture',
+  }
+  assert.equal(
+    missionIntegrationRecoveryAction({
+      ...integrationRecovery,
+      phase: 'applying',
+      stagedPaths: [],
+    }),
+    'retry'
+  )
+  assert.equal(
+    missionIntegrationRecoveryAction({
+      ...integrationRecovery,
+      phase: 'applying',
+      stagedPaths: ['src/parallel.js'],
+    }),
+    'commit'
+  )
+  assert.equal(
+    missionIntegrationRecoveryAction({
+      ...integrationRecovery,
+      phase: 'committing',
+      stagedPaths: ['.specdev/missions/M00001_parallel-fixture/design/assignments.yaml'],
+    }),
+    'commit'
+  )
+  assert.throws(
+    () =>
+      missionIntegrationRecoveryAction({
+        ...integrationRecovery,
+        phase: 'committing',
+        stagedPaths: ['src/unrelated.js'],
+      }),
+    /Unrelated staged paths/
+  )
+
+  const missionGitRoot = join(root, 'mission-worktree-fixture')
+  const missionGitSpecdev = join(missionGitRoot, '.specdev')
+  const missionFolderName = 'M00001_parallel-fixture'
+  const missionGitFolder = join(missionGitSpecdev, 'missions', missionFolderName)
+  mkdirSync(missionGitFolder, { recursive: true })
+  writeFileSync(join(missionGitSpecdev, '.gitignore'), 'worktrees/\n')
+  writeFileSync(join(missionGitSpecdev, '.current'), 'kind: mission\nid: M00001\n')
+  writeFileSync(join(missionGitFolder, 'mission.yaml'), 'id: M00001\nstatus: running\n')
+  writeFileSync(join(missionGitRoot, 'product.js'), 'export const value = 1\n')
+  execFileSync('git', ['init', '-b', 'main'], { cwd: missionGitRoot })
+  execFileSync('git', ['config', 'user.email', 'specdev@example.test'], {
+    cwd: missionGitRoot,
+  })
+  execFileSync('git', ['config', 'user.name', 'SpecDev Test'], { cwd: missionGitRoot })
+  execFileSync('git', ['add', '-A'], { cwd: missionGitRoot })
+  execFileSync('git', ['commit', '-m', 'fixture base'], { cwd: missionGitRoot })
+  const missionBase = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: missionGitRoot,
+    encoding: 'utf-8',
+  }).trim()
+  const leased = await ensureMissionWorktree({
+    projectRoot: missionGitRoot,
+    specdevPath: missionGitSpecdev,
+    slot: 'slot-01',
+    branch: missionChildBranch('M00001', '00031'),
+    baseRevision: missionBase,
+  })
+  writeFileSync(join(leased.path, 'product.js'), 'export const value = 2\n')
+  writeFileSync(join(leased.path, '.specdev', '.current'), 'kind: assignment\nid: 00031\n')
+  writeFileSync(
+    join(leased.path, '.specdev', 'missions', missionFolderName, 'mission.yaml'),
+    'id: M00001\nstatus: child-local\n'
+  )
+  const deliveredAssignment = join(leased.path, '.specdev', 'assignments', '00031_fixture')
+  mkdirSync(deliveredAssignment, { recursive: true })
+  writeFileSync(join(deliveredAssignment, 'outcome.md'), '# Outcome\n\nPassed.\n')
+  const deliveryRevision = await createMissionChildDelivery({
+    worktreePath: leased.path,
+    missionPath: join(leased.path, '.specdev', 'missions', missionFolderName),
+    missionId: 'M00001',
+    childId: '00031',
+    wave: 1,
+  })
+  const deliveryPaths = execFileSync(
+    'git',
+    ['show', '--format=', '--name-only', deliveryRevision],
+    { cwd: leased.path, encoding: 'utf-8' }
+  )
+  assert.match(deliveryPaths, /product\.js/)
+  assert.match(deliveryPaths, /\.specdev\/assignments\/00031_fixture\/outcome\.md/)
+  assert.doesNotMatch(deliveryPaths, /\.specdev\/\.current/)
+  assert.doesNotMatch(deliveryPaths, /\.specdev\/missions\//)
+  assert.equal(
+    await createMissionChildDelivery({
+      worktreePath: leased.path,
+      missionPath: join(leased.path, '.specdev', 'missions', missionFolderName),
+      missionId: 'M00001',
+      childId: '00031',
+      wave: 1,
+    }),
+    deliveryRevision
+  )
+  await removeMissionWorktree({
+    projectRoot: missionGitRoot,
+    specdevPath: missionGitSpecdev,
+    worktreePath: leased.path,
+  })
+  assert.equal(existsSync(leased.path), false)
+
   assert.deepEqual(normalizeReviewPolicy(), { brainstorm: 'optional', implementation: 'required' })
   assert.deepEqual(reviewPolicyFromFlags({ 'implementation-review': 'waived' }), {
     brainstorm: 'optional',
@@ -428,9 +608,10 @@ try {
     attemptFilter: { mission: 'M00001' },
     focus: { kind: 'mission', id: 'M00001' },
   })
-  assert.deepEqual(compaction, { compacted: true, run_id: completedRunId, attempts_removed: 1 })
+  assert.deepEqual(compaction, { compacted: true, run_id: completedRunId, attempts_removed: 2 })
   assert.equal(existsSync(join(specdevPath, '.ripplegraph', 'runs', completedRunId)), false)
   assert.equal(await readAttemptRecord(specdevPath, missionAttempt.id), null)
+  assert.equal(await readAttemptRecord(specdevPath, namespacedAttempt.id), null)
   assert.notEqual(await readAttemptRecord(specdevPath, attempt.id), null)
   assert.equal(readRippleCurrent(specdevPath).focusedRunId, null)
   assert.equal(await readCurrentFocus(specdevPath), null)
@@ -507,16 +688,17 @@ try {
   )
 
   const originalQueue = {
-    version: 1,
+    version: 2,
     assignments: [
       {
         id: '00009',
         title: 'Completed child',
         kind: 'change',
+        wave: 1,
         status: 'completed',
         outcome: '.specdev/assignments/00009_done/outcome.md',
       },
-      { id: '00010', title: 'Pending child', kind: 'change', status: 'pending' },
+      { id: '00010', title: 'Pending child', kind: 'change', wave: 2, status: 'pending' },
     ],
     final_verification: { command: 'node focused-check.js', scope: 'integrated' },
   }
@@ -532,6 +714,7 @@ try {
   })
   assert.equal(replanned.assignments[1].id, '00010')
   assert.equal(replanned.assignments[2].id, '00011')
+  assert.equal(replanned.assignments[2].wave, 3)
   await assert.rejects(
     validateAndReserveReplannedQueue(specdevPath, originalQueue, {
       ...originalQueue,

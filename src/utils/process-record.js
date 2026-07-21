@@ -4,6 +4,7 @@ import { parse, stringify } from 'yaml'
 import { reserveEntityId } from './id-reservation.js'
 
 const DURABLE_STATUSES = new Set(['running', 'completed', 'interrupted', 'failed', 'blocked'])
+const ATTEMPT_ID_PATTERN = /^ATT-(?:\d+|\d{5}-\d+)$/
 
 export async function createAttemptRecord(specdevPath, input) {
   const id = await reserveEntityId(specdevPath, 'attempt')
@@ -79,7 +80,8 @@ export async function listAttemptRecords(specdevPath, filters = {}) {
   const entries = await fse.readdir(dir, { withFileTypes: true })
   const records = []
   for (const entry of entries.filter(
-    (candidate) => candidate.isFile() && /^ATT-\d+\.yaml$/.test(candidate.name)
+    (candidate) =>
+      candidate.isFile() && ATTEMPT_ID_PATTERN.test(candidate.name.replace(/\.yaml$/, ''))
   )) {
     const record = await readAttemptRecord(specdevPath, entry.name.replace(/\.yaml$/, ''))
     if (!record) continue
@@ -183,12 +185,12 @@ async function writeAttemptRecord(specdevPath, record) {
 }
 
 function attemptPath(specdevPath, id) {
-  if (!/^ATT-\d+$/.test(String(id))) throw new Error(`invalid Attempt ID: ${id}`)
+  if (!ATTEMPT_ID_PATTERN.test(String(id))) throw new Error(`invalid Attempt ID: ${id}`)
   return join(specdevPath, 'processes', `${id}.yaml`)
 }
 
 function localMarkerPath(specdevPath, id) {
-  if (!/^ATT-\d+$/.test(String(id))) throw new Error(`invalid Attempt ID: ${id}`)
+  if (!ATTEMPT_ID_PATTERN.test(String(id))) throw new Error(`invalid Attempt ID: ${id}`)
   return join(specdevPath, 'cache', 'processes', `${id}.json`)
 }
 

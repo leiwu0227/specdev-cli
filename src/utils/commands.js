@@ -49,7 +49,7 @@ export const COMMANDS = [
   {
     name: 'mission',
     usage: 'mission <subcommand>',
-    description: 'Create, run, pause, inspect, or checkpoint a sequential Mission',
+    description: 'Create, run, pause, inspect, or checkpoint a foreground Mission',
   },
   {
     name: 'focus',

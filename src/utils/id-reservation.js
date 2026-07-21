@@ -20,14 +20,32 @@ export async function reserveEntityId(specdevPath, kind) {
   const config = ENTITY_CONFIG[kind]
   if (!config) throw new Error(`unknown SpecDev entity kind: ${kind}`)
 
+  const attemptNamespace =
+    kind === 'attempt' ? normalizeAttemptNamespace(process.env.SPECDEV_ATTEMPT_NAMESPACE) : null
+
   return withAllocatorLock(specdevPath, async () => {
     const counters = await readCounters(specdevPath)
-    const scannedNext = await nextFromFolders(specdevPath, config)
-    const nextNumber = Math.max(Number(counters.next[kind]) || 1, scannedNext)
-    counters.next[kind] = nextNumber + 1
+    const counterKey = attemptNamespace ? `attempt:${attemptNamespace}` : kind
+    const effectiveConfig = attemptNamespace
+      ? {
+          ...config,
+          prefix: `ATT-${attemptNamespace}-`,
+          pattern: new RegExp(`^ATT-${attemptNamespace}-(\\d+)\\.yaml$`),
+        }
+      : config
+    const scannedNext = await nextFromFolders(specdevPath, effectiveConfig)
+    const nextNumber = Math.max(Number(counters.next[counterKey]) || 1, scannedNext)
+    counters.next[counterKey] = nextNumber + 1
     await writeCounters(specdevPath, counters)
-    return `${config.prefix}${String(nextNumber).padStart(5, '0')}`
+    return `${effectiveConfig.prefix}${String(nextNumber).padStart(5, '0')}`
   })
+}
+
+function normalizeAttemptNamespace(value) {
+  const text = String(value || '').trim()
+  if (!text) return null
+  if (!/^\d{5}$/.test(text)) throw new Error('invalid SpecDev Attempt namespace')
+  return text
 }
 
 async function readCounters(specdevPath) {

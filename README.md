@@ -82,7 +82,7 @@ design, and optional verdict. It never modifies product code. Completion freezes
 the proposal/design hash; restore those artifacts or create a new Discussion if
 they need to change before promotion.
 
-## Sequential Mission
+## Mission
 
 ```bash
 specdev mission create "repair search end to end"
@@ -95,8 +95,8 @@ specdev mission run M00001 --takeover
 specdev mission checkpoint M00001 [--push]
 ```
 
-A Mission runs in the foreground on a dedicated Git branch in the normal
-worktree. The user chooses Mission; SpecDev does not infer it from size. Mission
+A Mission runs in the foreground on a dedicated Git branch. The user chooses
+Mission; SpecDev does not infer it from size. Mission
 Design defaults to one full-scope child and splits only for a worker context
 limit, an information dependency, an intermediate decision, or independent
 verification/rollback. The single child contract and acceptance criteria are
@@ -124,10 +124,18 @@ completion, SpecDev records terminal state and aggregate activity in
 the Mission/Assignment artifacts, then removes the completed run and its owned
 Attempt records before the completion commit. Completed work therefore remains
 portable as project documents rather than retained execution infrastructure.
+For an already-justified multi-child plan, Mission Design assigns static waves.
+Semantically independent children in one wave automatically run in up to three
+validated `.specdev/worktrees/slot-N` worktrees. Completed branches integrate
+in declared order as soon as the next child is ready; the controller never asks
+the user for a concurrency count and never splits solely for speed. A setup
+failure before launch falls back to sequential execution. An integration
+conflict stops new launches: resolve and stage the conflicted files, then rerun
+the Mission, or abort the cherry-pick to retry the delivery.
+
 On another machine, fetch and switch to that pushed Mission branch before
 running `mission status` or `mission run`; SpecDev will use an existing fetched
 `origin/<mission-branch>` as the tracking source and never fetches by itself.
-Parallel scheduling and worktree leasing are deliberately deferred.
 
 Mission status and outcome separate orchestration records from provider agent
 Attempts and classify provider outcomes as completed, failed, blocked,

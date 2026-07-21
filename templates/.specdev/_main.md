@@ -41,8 +41,9 @@ itself.
 
 - **Assignment:** one readable contract, one user approval, then automatic
   Design + Implementation + evidence + review.
-- **Mission:** a foreground sequential controller on a dedicated branch using
-  the normal worktree and the same Assignment graph for each child. Mission is
+- **Mission:** a foreground controller on a dedicated branch. It uses the
+  normal worktree for sequential children and automatically leases up to three
+  ignored worktrees for an already-justified independent child wave. Mission is
   user-selected and does not imply multiple children.
 - **Discussion:** a concurrent code-read-only RippleGraph callable that writes
   proposal/design artifacts and may later be promoted to fresh work.
@@ -68,7 +69,8 @@ Audit callables may coexist because their checkpoints are isolated.
 - Never run a full suite when narrower evidence answers the current question.
   Repository confirmation rules always take precedence.
 - Do not create worktrees for normal Assignments, sequential Mission children,
-  Missions, or Discussions.
+  Missions, or Discussions. Only the Mission controller may lease the validated
+  `.specdev/worktrees/slot-N` pool for a parallel wave.
 - Raw provider output, PID state, SQLite, and scratch data belong in ignored
   `cache/`; ordinary interrupted source can be inspected and repaired.
 - A blocked Assignment worker preserves its result and returns a blocked

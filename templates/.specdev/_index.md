@@ -9,13 +9,13 @@
   guides/library/catalog.yaml         managed curated guides
   guides/project/catalog.yaml         repository-owned guides
   assignments/<id>_<slug>/            bounded delivery records
-  missions/M<id>_<slug>/              ordered foreground orchestration
+  missions/M<id>_<slug>/              static-wave foreground orchestration
   discussions/D<id>_<slug>/           concurrent thought work
   test-audits/TA<id>_<slug>/           concurrent read-only test pruning proposals
   knowledge/faq/                       current, freshness-aware troubleshooting
   processes/ATT-<id>.yaml              durable invocation summaries
   cache/                               ignored machine-local state
-  worktrees/                           ignored, reserved for future parallelism
+  worktrees/slot-N/                    ignored, bounded Mission child leases
 ```
 
 ## Main commands

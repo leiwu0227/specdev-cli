@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process'
 import { execFile as execFileCallback } from 'node:child_process'
-import { join } from 'node:path'
+import { createWriteStream } from 'node:fs'
+import { basename, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
 import { getState, listRuns, resumeRun, suspendRun } from 'ripplegraph'
@@ -40,6 +42,24 @@ import {
   writeLocalProcessMarker,
 } from '../utils/process-record.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
+import {
+  currentMissionWave,
+  integratableMissionPrefix,
+  MAX_PARALLEL_MISSION_CHILDREN,
+  missionIntegrationRecoveryAction,
+  missionQueueHasRemaining,
+  missionWaveItems,
+  missionWaveIsParallel,
+  normalizeMissionWaves,
+  validateMissionQueueStatuses,
+} from '../utils/mission-waves.js'
+import {
+  createMissionChildDelivery,
+  ensureMissionWorktree,
+  listMissionWorktrees,
+  missionChildBranch,
+  removeMissionWorktree,
+} from '../utils/mission-worktrees.js'
 import { assignmentCommand } from './assignment.js'
 import { checkpointCommand } from './checkpoint.js'
 import { implementCommand } from './implement.js'
@@ -51,10 +71,14 @@ import {
 import { workspaceChangeSummaryLines } from '../utils/workspace-changes.js'
 
 const execFile = promisify(execFileCallback)
+const LOCAL_SPECDEV_BIN = fileURLToPath(new URL('../../bin/specdev.js', import.meta.url))
 
 export async function missionCommand(positionalArgs = [], flags = {}) {
   const subcommand = positionalArgs[0]
   const rest = positionalArgs.slice(1)
+  if (subcommand === 'child' && process.env.SPECDEV_PARALLEL_CHILD === '1') {
+    return runParallelMissionChild(rest[0], rest[1], flags)
+  }
   if (subcommand === 'create') return createMission(rest, flags)
   if (subcommand === 'run') return runMission(rest[0], flags)
   if (subcommand === 'status') return missionStatus(rest[0], flags)
@@ -365,16 +389,56 @@ async function driveMission(context) {
       await designMission(context)
       continue
     }
+    if (node === 'execute-wave') {
+      const wave = await executeParallelMissionWave(context)
+      const stepped = stepGuidedNode(targetDir, 'execute-wave', {
+        wave: wave.number,
+        completed: wave.children,
+      })
+      if (!stepped.synchronized) throw new Error(`Could not record Mission wave ${wave.number}`)
+      mission.completed_wave = wave.number
+      await writeMission(missionPath, mission)
+      continue
+    }
+    if (node === 'advance-wave') {
+      const queue = await readMissionQueue(missionPath)
+      const wave = Number(mission.completed_wave)
+      const completed = queue.assignments.filter((item) => item.wave === wave)
+      if (!Number.isSafeInteger(wave) || completed.length === 0) {
+        throw new Error('Mission has no completed parallel wave to advance')
+      }
+      const followUpRequired = completed.some((item) => item.follow_up === 'required')
+      const remaining = missionQueueHasRemaining(queue)
+      if (followUpRequired) {
+        mission.pending_replan = {
+          reason: 'parallel_wave_follow_up',
+          wave,
+          children: completed
+            .filter((item) => item.follow_up === 'required')
+            .map((item) => item.id),
+          created_at: new Date().toISOString(),
+        }
+      }
+      delete mission.completed_wave
+      await writeMission(missionPath, mission)
+      stepGuidedNode(targetDir, 'advance-wave', {
+        remaining,
+        completed: `wave-${wave}`,
+        follow_up_required: followUpRequired,
+        parallel: remaining ? missionWaveIsParallel(queue) : false,
+      })
+      continue
+    }
     if (node === 'advance-queue') {
       const queue = await readMissionQueue(missionPath)
       const running = queue.assignments.find((item) => item.status === 'running')
       if (!running) throw new Error('Mission queue has no running child to advance')
-      running.status = 'completed'
+      running.status = queue.design_mode === 'single' ? 'completed' : 'integrated'
       running.outcome = `.specdev/assignments/${running.folder}/outcome.md`
       running.completed_at = new Date().toISOString()
       running.follow_up = await childFollowUp(specdevPath, running)
       await writeMissionQueue(missionPath, queue)
-      const remaining = queue.assignments.some((item) => item.status === 'pending')
+      const remaining = missionQueueHasRemaining(queue)
       const followUpRequired = running.follow_up === 'required'
       if (followUpRequired) {
         mission.pending_replan = {
@@ -389,6 +453,7 @@ async function driveMission(context) {
         remaining,
         completed: running.id,
         follow_up_required: followUpRequired,
+        parallel: remaining ? missionWaveIsParallel(queue) : false,
       })
       continue
     }
@@ -493,13 +558,14 @@ async function designMission(context) {
   const contract = await validateMissionContract(missionPath)
   if (contract.executionShape === 'single') {
     const queue = {
-      version: 1,
+      version: 2,
       design_mode: 'single',
       assignments: [
         {
           id: await reserveEntityId(specdevPath, 'assignment'),
           title: mission.objective,
           kind: 'change',
+          wave: 1,
           status: 'pending',
         },
       ],
@@ -512,6 +578,7 @@ async function designMission(context) {
     stepGuidedNode(targetDir, 'design', {
       queue: relativeToRepo(targetDir, queuePath),
       attempt: 'host-derived-single-child',
+      parallel: false,
     })
     return
   }
@@ -536,13 +603,14 @@ async function designMission(context) {
       resultPath,
       resultKind: 'worker',
       prompt: [
-        'Design a sequential Mission plan. Do not modify product code.',
+        'Design a static-wave Mission plan. Do not modify product code.',
         `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
-        `Write ${relativeToRepo(targetDir, queuePath)} as YAML with version: 1, an ordered assignments list containing only title, kind, status: pending, and a final_verification mapping with the exact contract-authorized command and scope.`,
+        `Write ${relativeToRepo(targetDir, queuePath)} as YAML with version: 2, an ordered assignments list containing only title, kind, wave, status: pending, and a final_verification mapping with the exact contract-authorized command and scope.`,
         `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
         'Start by trying to express the entire Mission as one Assignment. Split only for a worker/reviewer context limit, an information dependency, an intermediate user/operational decision, or meaningfully independent verification/rollback.',
         'File count, architectural layers, and the existence of several implementation Tasks are not split reasons. When uncertain, write one Assignment.',
-        'Do not assign IDs, add dependencies, create a graph, or invoke agents.',
+        "Use dense positive wave numbers beginning at 1. Put children in the same wave only when neither requires the other's output, decision, artifact, or intermediate verification.",
+        'Parallel speed alone is not a split reason. Do not predict file ownership, assign IDs, add dependency edges, create a graph, or invoke agents.',
       ]
         .filter(Boolean)
         .join('\n'),
@@ -555,17 +623,22 @@ async function designMission(context) {
   stepGuidedNode(targetDir, 'design', {
     queue: relativeToRepo(targetDir, queuePath),
     attempt: result.attempt.id,
+    parallel: missionWaveIsParallel(queue),
   })
   await retireTransientArtifact(targetDir, specdevPath, resultPath)
 }
 
-async function runMissionChild(context) {
+async function runMissionChild(context, options = {}) {
   const { targetDir, specdevPath, missionPath, mission, childReviewOverrideId } = context
   const queue = await readMissionQueue(missionPath)
-  let child = queue.assignments.find((item) => item.status === 'running')
+  let child = options.childId
+    ? queue.assignments.find((item) => item.id === options.childId)
+    : queue.assignments.find((item) => item.status === 'running')
   if (!child) {
     child = queue.assignments.find((item) => item.status === 'pending')
     if (!child) throw new Error('Mission child graph entered with no pending Assignment')
+  }
+  if (child.status === 'pending') {
     child.status = 'running'
     child.started_at = new Date().toISOString()
     await writeMissionQueue(missionPath, queue)
@@ -727,7 +800,9 @@ async function runMissionChild(context) {
       implementCommand([], { target: targetDir, assignment: child.id, json: true })
     )
   } finally {
-    await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
+    if (!options.parallelRoot) {
+      await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
+    }
   }
   if (result?.status !== 'approved' && result?.status !== 'completed') {
     const status = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => null)
@@ -735,6 +810,791 @@ async function runMissionChild(context) {
       throw new Error(result?.error || `Child ${child.id} implementation blocked`)
     }
   }
+  return { child, assignmentPath, result }
+}
+
+async function runParallelMissionChild(selector, childId, flags) {
+  const context = await missionContext(selector, flags)
+  if (!context) return null
+  const { targetDir, specdevPath, missionPath, mission } = context
+  const queue = await readMissionQueue(missionPath)
+  const child = queue?.assignments?.find((item) => item.id === childId)
+  if (!child) return fail(flags, `Mission child not found: ${childId}`)
+  if (queue.design_mode === 'single' || queue.assignments.length < 2) {
+    return fail(flags, 'The internal parallel child command requires a planned multi-child Mission')
+  }
+
+  try {
+    await assertApprovedMissionContract(missionPath, mission)
+    const workflowRoot = workflowRootFor(targetDir)
+    let graph = getState({ workflowRoot })
+    const existing = await findAssignmentFolder(specdevPath, child.id, { allowMissing: true })
+    if (!existing) {
+      if (graph.status === 'ok' && graph.run?.status === 'active') {
+        suspendRun({ workflowRoot, note: `parallel Mission child ${child.id}` })
+      }
+      const created = await withSuppressedOutput(() =>
+        assignmentCommand([child.title], {
+          target: targetDir,
+          mission: mission.id,
+          id: child.id,
+          kind: child.kind || 'change',
+          slug: slugify(child.title),
+          json: true,
+          'mission-root': true,
+          'brainstorm-review': 'required',
+          'implementation-review': 'required',
+        })
+      )
+      if (!created) throw new Error(`Could not create parallel child Assignment ${child.id}`)
+    } else {
+      const status = await fse.readJson(join(existing.path, 'status.json')).catch(() => null)
+      if (status?.mission !== mission.id || status?.id !== child.id) {
+        throw new Error(`Existing Assignment ${child.id} does not belong to Mission ${mission.id}`)
+      }
+      graph = getState({ workflowRoot })
+      if (graph.run?.id !== status.run_id && graph.run?.status === 'active') {
+        suspendRun({ workflowRoot, note: `resume parallel Mission child ${child.id}` })
+      }
+      const run = listRuns({ workflowRoot }).runs.find(
+        (candidate) => candidate.id === status.run_id
+      )
+      if (run?.status === 'suspended') {
+        resumeRun({ workflowRoot, runId: status.run_id })
+      }
+      await writeCurrentFocus(specdevPath, { kind: 'assignment', id: child.id })
+    }
+
+    const delivered = await runMissionChild(
+      { ...context, childReviewOverrideId: null },
+      { childId: child.id, parallelRoot: true }
+    )
+    return emit(flags, {
+      command: 'mission child',
+      version: 1,
+      status: 'completed',
+      mission: mission.id,
+      assignment: child.id,
+      folder: delivered.child.folder,
+      outcome: relativeToRepo(targetDir, join(delivered.assignmentPath, 'outcome.md')),
+    })
+  } catch (error) {
+    return fail(flags, error.message)
+  }
+}
+
+async function executeParallelMissionWave(context) {
+  const { targetDir, specdevPath, missionPath, mission } = context
+  let queue = await readMissionQueue(missionPath)
+  validateMissionQueueStatuses(queue)
+  normalizeMissionWaves(queue.assignments)
+  const waveNumber = currentMissionWave(queue)
+  const waveItems = missionWaveItems(queue, waveNumber)
+  if (!waveNumber) throw new Error('Parallel Mission execution has no active wave')
+  if (waveItems.length === 1) {
+    return executeMissionWaveSequentialFallback(context, queue, waveNumber)
+  }
+  if (waveItems.length === 0) throw new Error(`Mission wave ${waveNumber} has no executable child`)
+
+  let baseRevision = waveItems.map((item) => item.base_revision).find(Boolean)
+  if (!baseRevision) {
+    const snapshot = await gitSnapshot(targetDir)
+    const productChanges = snapshot.dirty_paths.filter((path) => !path.startsWith('.specdev/'))
+    if (productChanges.length > 0) {
+      throw new Error(
+        `Cannot start a parallel Mission wave while the main worktree has product changes: ${productChanges.join(', ')}`
+      )
+    }
+    const checkpoint = await withSuppressedOutput(() =>
+      checkpointMission(mission.id, { target: targetDir, json: true })
+    )
+    if (!checkpoint?.revision) throw new Error('Could not create the parallel wave base checkpoint')
+    baseRevision = checkpoint.revision
+    for (const item of waveItems) {
+      item.base_revision = baseRevision
+      item.branch = missionChildBranch(mission.id, item.id)
+    }
+    await writeMissionQueue(missionPath, queue)
+  }
+  if (waveItems.some((item) => item.base_revision !== baseRevision)) {
+    throw new Error(`Mission wave ${waveNumber} has inconsistent base revisions`)
+  }
+
+  const active = new Map()
+  let blocker = null
+  let launched = false
+  while (true) {
+    queue = await readMissionQueue(missionPath)
+    await integrateCompletedMissionChildren(context, queue, waveNumber)
+    queue = await readMissionQueue(missionPath)
+    await releaseIntegratedMissionWorktrees(context, queue, waveNumber)
+    const currentItems = queue.assignments.filter((item) => item.wave === waveNumber)
+    if (currentItems.every((item) => ['integrated', 'cancelled'].includes(item.status))) break
+
+    const launchable = currentItems.filter((item) => {
+      const retryableBlocker =
+        item.status === 'blocked' && !String(item.blocker || '').startsWith('integration ')
+      return (
+        (['pending', 'running'].includes(item.status) || retryableBlocker) && !active.has(item.id)
+      )
+    })
+    while (!blocker && active.size < MAX_PARALLEL_MISSION_CHILDREN && launchable.length > 0) {
+      const child = launchable.shift()
+      let worktree
+      try {
+        worktree = await leaseMissionChildWorktree(context, child, active)
+      } catch (error) {
+        if (!launched && active.size === 0) {
+          process.stderr.write(
+            `SpecDev wave ${waveNumber}: worktree parallelism unavailable; continuing sequentially (${error.message}).\n`
+          )
+          return executeMissionWaveSequentialFallback(context, queue, waveNumber)
+        }
+        child.status = 'blocked'
+        child.blocker = `worktree_setup: ${error.message}`
+        await writeMissionQueue(missionPath, queue)
+        blocker = child.blocker
+        continue
+      }
+      child.status = 'running'
+      child.started_at ||= new Date().toISOString()
+      child.branch ||= missionChildBranch(mission.id, child.id)
+      delete child.blocker
+      await writeMissionQueue(missionPath, queue)
+      try {
+        const execution = await launchMissionChildProcess(context, child, worktree)
+        active.set(child.id, { ...execution, child, worktree })
+        launched = true
+      } catch (error) {
+        child.status = 'blocked'
+        child.blocker = `launch: ${error.message}`
+        await writeMissionQueue(missionPath, queue)
+        blocker = child.blocker
+      }
+    }
+
+    if (active.size === 0) {
+      if (blocker) break
+      const unresolved = currentItems.find(
+        (item) => !['integrated', 'cancelled'].includes(item.status)
+      )
+      if (unresolved?.status === 'completed') {
+        await integrateCompletedMissionChildren(context, queue, waveNumber)
+        continue
+      }
+      throw new Error(`Mission wave ${waveNumber} cannot make progress`)
+    }
+
+    const settled = await Promise.race(
+      [...active.entries()].map(([id, execution]) =>
+        execution.promise.then((result) => ({ id, execution, result }))
+      )
+    )
+    active.delete(settled.id)
+    queue = await readMissionQueue(missionPath)
+    const child = queue.assignments.find((item) => item.id === settled.id)
+    try {
+      if (settled.result.exitCode !== 0) {
+        throw new Error(
+          settled.result.error || `child command exited with status ${settled.result.exitCode}`
+        )
+      }
+      const resolved = await findAssignmentFolder(
+        join(settled.execution.worktree.path, '.specdev'),
+        child.id
+      )
+      const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
+      if (status?.status !== 'completed') {
+        throw new Error(`Child ${child.id} exited without a completed Assignment status`)
+      }
+      const delivery = await createMissionChildDelivery({
+        worktreePath: settled.execution.worktree.path,
+        missionPath: join(
+          settled.execution.worktree.path,
+          '.specdev',
+          'missions',
+          basename(missionPath)
+        ),
+        missionId: mission.id,
+        childId: child.id,
+        wave: waveNumber,
+      })
+      child.folder = resolved.name
+      child.outcome = `.specdev/assignments/${resolved.name}/outcome.md`
+      child.delivery_revision = delivery
+      child.completed_at = new Date().toISOString()
+      child.status = 'completed'
+      delete child.blocker
+      await writeMissionQueue(missionPath, queue)
+      try {
+        await removeMissionWorktree({
+          projectRoot: targetDir,
+          specdevPath,
+          worktreePath: settled.execution.worktree.path,
+        })
+      } catch (error) {
+        process.stderr.write(
+          `SpecDev ${child.id}: delivery is safe, but its worktree remains: ${error.message}\n`
+        )
+      }
+    } catch (error) {
+      child.status = 'blocked'
+      child.blocker = `execution: ${error.message}`
+      await writeMissionQueue(missionPath, queue)
+      blocker ||= child.blocker
+    }
+  }
+
+  queue = await readMissionQueue(missionPath)
+  await integrateCompletedMissionChildren(context, queue, waveNumber)
+  queue = await readMissionQueue(missionPath)
+  const finalItems = queue.assignments.filter((item) => item.wave === waveNumber)
+  const finalBlocker = finalItems.find((item) => item.status === 'blocked')
+  if (finalBlocker) {
+    throw new Error(`Parallel child ${finalBlocker.id} blocked: ${finalBlocker.blocker}`)
+  }
+  if (!launched && !finalItems.every((item) => ['integrated', 'cancelled'].includes(item.status))) {
+    throw new Error(`Mission wave ${waveNumber} did not launch or recover any child`)
+  }
+  if (!finalItems.every((item) => ['integrated', 'cancelled'].includes(item.status))) {
+    throw new Error(`Mission wave ${waveNumber} is incomplete after child execution`)
+  }
+  return { number: waveNumber, children: finalItems.map((item) => item.id) }
+}
+
+async function executeMissionWaveSequentialFallback(context, queue, waveNumber) {
+  const { targetDir, specdevPath, missionPath, mission } = context
+  const children = queue.assignments.filter((item) => item.wave === waveNumber)
+  for (const child of children) {
+    if (['integrated', 'cancelled'].includes(child.status)) continue
+    const workflowRoot = workflowRootFor(targetDir)
+    const current = getState({ workflowRoot })
+    if (current.status === 'ok' && current.run?.status === 'active') {
+      suspendRun({ workflowRoot, note: `sequential fallback child ${child.id}` })
+    }
+    const existing = await findAssignmentFolder(specdevPath, child.id, { allowMissing: true })
+    let existingStatus = null
+    if (!existing) {
+      const created = await withSuppressedOutput(() =>
+        assignmentCommand([child.title], {
+          target: targetDir,
+          mission: mission.id,
+          id: child.id,
+          kind: child.kind || 'change',
+          slug: slugify(child.title),
+          json: true,
+          'mission-root': true,
+          'internal-mission-child': true,
+          'brainstorm-review': 'required',
+          'implementation-review': 'required',
+        })
+      )
+      if (!created) throw new Error(`Could not create fallback child Assignment ${child.id}`)
+    } else {
+      existingStatus = await fse.readJson(join(existing.path, 'status.json')).catch(() => null)
+      const run = listRuns({ workflowRoot }).runs.find(
+        (candidate) => candidate.id === existingStatus?.run_id
+      )
+      if (run?.status === 'suspended') {
+        resumeRun({ workflowRoot, runId: existingStatus.run_id })
+      }
+    }
+    child.status = 'running'
+    child.started_at ||= new Date().toISOString()
+    await writeMissionQueue(missionPath, queue)
+    const delivered =
+      existingStatus?.status === 'completed'
+        ? { child: { ...child, folder: existing.name }, assignmentPath: existing.path }
+        : await runMissionChild(
+            { ...context, childReviewOverrideId: null },
+            { childId: child.id, parallelRoot: true }
+          )
+    const refreshed = await readMissionQueue(missionPath)
+    const item = refreshed.assignments.find((candidate) => candidate.id === child.id)
+    item.folder = delivered.child.folder
+    item.outcome = `.specdev/assignments/${delivered.child.folder}/outcome.md`
+    item.follow_up = await childFollowUp(specdevPath, item)
+    item.status = 'integrated'
+    item.completed_at = new Date().toISOString()
+    item.integrated_at = item.completed_at
+    item.execution = 'sequential-fallback'
+    await writeMissionQueue(missionPath, refreshed)
+    const missionRun = listRuns({ workflowRoot }).runs.find(
+      (candidate) => candidate.id === mission.run_id
+    )
+    if (missionRun?.status === 'suspended') resumeRun({ workflowRoot, runId: mission.run_id })
+    await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
+    const checkpoint = await withSuppressedOutput(() =>
+      checkpointMission(mission.id, { target: targetDir, json: true })
+    )
+    if (!checkpoint?.revision) {
+      throw new Error(`Could not checkpoint sequential fallback child ${child.id}`)
+    }
+    queue = refreshed
+  }
+  return { number: waveNumber, children: children.map((item) => item.id), fallback: true }
+}
+
+async function leaseMissionChildWorktree(context, child, active) {
+  const { targetDir, specdevPath, mission } = context
+  const branch = child.branch || missionChildBranch(mission.id, child.id)
+  const registered = await listMissionWorktrees(targetDir, specdevPath)
+  const recovered = registered.find((item) => item.branch === branch)
+  let slot
+  if (recovered) {
+    slot = recovered.worktree.split('/').at(-1)
+  } else {
+    const occupied = new Set([
+      ...registered.map((item) => item.worktree.split('/').at(-1)),
+      ...[...active.values()].map((item) => item.worktree.path.split('/').at(-1)),
+    ])
+    slot = Array.from(
+      { length: MAX_PARALLEL_MISSION_CHILDREN },
+      (_, index) => `slot-${String(index + 1).padStart(2, '0')}`
+    ).find((candidate) => !occupied.has(candidate))
+  }
+  if (!slot) throw new Error('No safe Mission worktree slot is available')
+  return ensureMissionWorktree({
+    projectRoot: targetDir,
+    specdevPath,
+    slot,
+    branch,
+    baseRevision: child.base_revision,
+  })
+}
+
+async function releaseIntegratedMissionWorktrees(context, queue, waveNumber) {
+  const { targetDir, specdevPath, mission } = context
+  const registered = await listMissionWorktrees(targetDir, specdevPath)
+  for (const child of queue.assignments.filter(
+    (item) => item.wave === waveNumber && item.status === 'integrated' && item.branch
+  )) {
+    const worktree = registered.find((item) => item.branch === child.branch)
+    if (worktree) {
+      try {
+        await removeMissionWorktree({
+          projectRoot: targetDir,
+          specdevPath,
+          worktreePath: worktree.worktree,
+        })
+      } catch (error) {
+        process.stderr.write(
+          `SpecDev ${child.id}: integrated delivery is safe, but its worktree remains: ${error.message}\n`
+        )
+        continue
+      }
+    }
+    const integration = await missionChildIntegrationRevision(targetDir, mission, child)
+    if (
+      integration &&
+      (await gitSucceeds(targetDir, [
+        'show-ref',
+        '--verify',
+        '--quiet',
+        `refs/heads/${child.branch}`,
+      ]))
+    ) {
+      try {
+        await execFile('git', ['branch', '-D', child.branch], { cwd: targetDir })
+      } catch (error) {
+        process.stderr.write(
+          `SpecDev ${child.id}: integrated delivery is safe, but its local branch remains: ${error.message}\n`
+        )
+      }
+    }
+  }
+}
+
+async function launchMissionChildProcess(context, child, worktree) {
+  const { targetDir, specdevPath, mission } = context
+  const previous = (
+    await listAttemptRecords(specdevPath, {
+      kind: 'mission-child',
+      mission: mission.id,
+      assignment: child.id,
+      status: 'running',
+    })
+  ).at(-1)
+  if (previous && (await attemptLiveness(specdevPath, previous.id)).state === 'live_local') {
+    process.stderr.write(`SpecDev ${child.id}: reattaching to live child ${previous.id}.\n`)
+    return {
+      worktree,
+      promise: waitForExistingMissionChild(specdevPath, previous, worktree.path, child.id),
+    }
+  }
+  if (previous) {
+    await updateAttemptRecord(specdevPath, previous.id, {
+      status: 'interrupted',
+      error: 'recovered by a new Mission controller',
+    })
+    await clearLocalProcessMarker(specdevPath, previous.id)
+  }
+
+  const attempt = await createAttemptRecord(specdevPath, {
+    kind: 'mission-child',
+    mission: mission.id,
+    assignment: child.id,
+    workspace: worktree.relativePath,
+    base_revision: child.base_revision,
+  })
+  const logDir = join(specdevPath, 'cache', 'missions', mission.id, `wave-${child.wave}`)
+  await fse.ensureDir(logDir)
+  const stdoutLog = createWriteStream(join(logDir, `${child.id}.stdout.log`), { flags: 'a' })
+  const stderrLog = createWriteStream(join(logDir, `${child.id}.stderr.log`), { flags: 'a' })
+  const processChild = spawn(
+    process.execPath,
+    [
+      LOCAL_SPECDEV_BIN,
+      'mission',
+      'child',
+      mission.id,
+      child.id,
+      `--target=${worktree.path}`,
+      '--json',
+    ],
+    {
+      cwd: worktree.path,
+      env: {
+        ...process.env,
+        SPECDEV_PARALLEL_CHILD: '1',
+        SPECDEV_ATTEMPT_NAMESPACE: child.id,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  )
+  await writeLocalProcessMarker(specdevPath, attempt.id, {
+    pid: processChild.pid,
+    cwd: worktree.path,
+  })
+  process.stderr.write(
+    `SpecDev ${child.id}: parallel Assignment started in ${worktree.relativePath}.\n`
+  )
+  processChild.stdout.pipe(stdoutLog)
+  processChild.stderr.on('data', (chunk) => {
+    stderrLog.write(chunk)
+    if (process.env.SPECDEV_AGENT_STREAM === '1') process.stderr.write(`[${child.id}] ${chunk}`)
+  })
+  const promise = new Promise((resolvePromise) => {
+    let settled = false
+    processChild.on('error', async (error) => {
+      if (settled) return
+      settled = true
+      stdoutLog.end()
+      stderrLog.end()
+      await clearLocalProcessMarker(specdevPath, attempt.id)
+      await updateAttemptRecord(specdevPath, attempt.id, {
+        status: 'failed',
+        error: error.message,
+      })
+      resolvePromise({ exitCode: 1, error: error.message })
+    })
+    processChild.on('close', async (code) => {
+      if (settled) return
+      settled = true
+      stdoutLog.end()
+      stderrLog.end()
+      await clearLocalProcessMarker(specdevPath, attempt.id)
+      await updateAttemptRecord(specdevPath, attempt.id, {
+        status: code === 0 ? 'completed' : 'failed',
+        ...(code === 0 ? {} : { error: `child command exited with status ${code ?? 1}` }),
+      })
+      process.stderr.write(
+        `SpecDev ${child.id}: parallel Assignment ${code === 0 ? 'finished' : 'failed'}.\n`
+      )
+      resolvePromise({
+        exitCode: code ?? 1,
+        ...(code === 0 ? {} : { error: `child command exited with status ${code ?? 1}` }),
+      })
+    })
+  })
+  return { attempt, worktree, promise }
+}
+
+async function waitForExistingMissionChild(specdevPath, attempt, worktreePath, childId) {
+  while ((await attemptLiveness(specdevPath, attempt.id)).state === 'live_local') {
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1_000))
+  }
+  const resolved = await findAssignmentFolder(join(worktreePath, '.specdev'), childId, {
+    allowMissing: true,
+  })
+  const status = resolved
+    ? await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
+    : null
+  await updateAttemptRecord(specdevPath, attempt.id, {
+    status: status?.status === 'completed' ? 'completed' : 'interrupted',
+    ...(status?.status === 'completed'
+      ? {}
+      : { error: 'live child ended without a completed Assignment status' }),
+  })
+  return status?.status === 'completed'
+    ? { exitCode: 0 }
+    : { exitCode: 1, error: 'live child ended without a completed Assignment status' }
+}
+
+async function integrateCompletedMissionChildren(context, queue, waveNumber) {
+  const { targetDir, missionPath, mission } = context
+  await reconcileMissionWaveIntegrations(context, queue, waveNumber)
+  for (const child of integratableMissionPrefix(queue, waveNumber)) {
+    if (!child.delivery_revision) {
+      throw new Error(`Completed child ${child.id} has no delivery revision`)
+    }
+    const existingRevision = await missionChildIntegrationRevision(targetDir, mission, child)
+    if (existingRevision) {
+      await recordIntegratedMissionChild(context, queue, child, existingRevision)
+      continue
+    }
+    const snapshot = await gitSnapshot(targetDir)
+    const productChanges = snapshot.dirty_paths.filter((path) => !path.startsWith('.specdev/'))
+    if (productChanges.length > 0) {
+      throw new Error(
+        `Cannot integrate child ${child.id} while the Mission worktree has product changes: ${productChanges.join(', ')}`
+      )
+    }
+    const stagedPaths = await gitOutputLines(targetDir, ['diff', '--cached', '--name-only'])
+    if (stagedPaths.length > 0) {
+      throw new Error(
+        `Cannot integrate child ${child.id} while unrelated paths are staged: ${stagedPaths.join(', ')}`
+      )
+    }
+    await beginMissionChildIntegration(context, queue, child, waveNumber)
+    try {
+      await execFile('git', ['cherry-pick', '--no-commit', child.delivery_revision], {
+        cwd: targetDir,
+      })
+    } catch (error) {
+      child.status = 'blocked'
+      const conflict = Boolean(await gitRevision(targetDir, 'CHERRY_PICK_HEAD'))
+      child.blocker = conflict
+        ? `integration conflict for ${child.delivery_revision}`
+        : `integration failed for ${child.delivery_revision}: ${error.message}`
+      await writeMissionQueue(missionPath, queue)
+      throw new Error(
+        conflict
+          ? `Integration conflict for child ${child.id}; resolve and stage the files, then rerun the Mission, or abort the Git cherry-pick to retry`
+          : `Integration failed for child ${child.id}: ${error.message}`
+      )
+    }
+    child.integration.phase = 'committing'
+    child.integration.updated_at = new Date().toISOString()
+    await writeMissionQueue(missionPath, queue)
+    await finishMissionChildIntegration(context, queue, child, waveNumber)
+  }
+}
+
+async function reconcileMissionWaveIntegrations(context, queue, waveNumber) {
+  const { targetDir, mission } = context
+  const cherryPickHead = await gitRevision(targetDir, 'CHERRY_PICK_HEAD')
+  if (cherryPickHead) {
+    const child = queue.assignments.find(
+      (item) =>
+        item.wave === waveNumber &&
+        item.delivery_revision === cherryPickHead &&
+        String(item.blocker || '').startsWith('integration conflict')
+    )
+    if (!child) {
+      throw new Error(
+        'An unrelated Git cherry-pick is in progress; finish or abort it before resuming the Mission'
+      )
+    }
+    const unmerged = await gitOutputLines(targetDir, ['diff', '--name-only', '--diff-filter=U'])
+    if (unmerged.length > 0) {
+      throw new Error(
+        `Integration conflict for child ${child.id} is unresolved in: ${unmerged.join(', ')}. Resolve and stage those files, then rerun the Mission; or abort the cherry-pick to retry.`
+      )
+    }
+    await finishMissionChildIntegration(context, queue, child, waveNumber)
+  }
+
+  const pendingCommit = queue.assignments.find(
+    (item) =>
+      item.wave === waveNumber &&
+      item.delivery_revision &&
+      item.status === 'blocked' &&
+      String(item.blocker || '').startsWith('integration commit failed')
+  )
+  if (pendingCommit) {
+    const unmerged = await gitOutputLines(targetDir, ['diff', '--name-only', '--diff-filter=U'])
+    if (unmerged.length > 0) {
+      throw new Error(
+        `Integration for child ${pendingCommit.id} still has unresolved files: ${unmerged.join(', ')}`
+      )
+    }
+    await finishMissionChildIntegration(context, queue, pendingCommit, waveNumber)
+  }
+
+  for (const child of queue.assignments.filter((item) => item.wave === waveNumber)) {
+    if (!child.delivery_revision) continue
+    const integratedRevision = await missionChildIntegrationRevision(targetDir, mission, child)
+    if (integratedRevision) {
+      await recordIntegratedMissionChild(context, queue, child, integratedRevision)
+      continue
+    }
+    if (child.integration) {
+      await recoverPendingMissionChildIntegration(context, queue, child, waveNumber)
+      continue
+    }
+    if (child.status === 'blocked' && String(child.blocker || '').startsWith('integration ')) {
+      child.status = 'completed'
+      delete child.blocker
+      await writeMissionQueue(context.missionPath, queue)
+    }
+  }
+}
+
+async function beginMissionChildIntegration(context, queue, child, waveNumber) {
+  child.integration = {
+    delivery_revision: child.delivery_revision,
+    wave: waveNumber,
+    phase: 'applying',
+    started_at: new Date().toISOString(),
+  }
+  await writeMissionQueue(context.missionPath, queue)
+}
+
+async function recoverPendingMissionChildIntegration(context, queue, child, waveNumber) {
+  const { targetDir, missionPath } = context
+  if (
+    child.integration.delivery_revision !== child.delivery_revision ||
+    Number(child.integration.wave) !== Number(waveNumber)
+  ) {
+    throw new Error(`Child ${child.id} has inconsistent pending integration metadata`)
+  }
+  const unmerged = await gitOutputLines(targetDir, ['diff', '--name-only', '--diff-filter=U'])
+  if (unmerged.length > 0) {
+    throw new Error(
+      `Integration for child ${child.id} still has unresolved files: ${unmerged.join(', ')}`
+    )
+  }
+  const stagedPaths = await gitOutputLines(targetDir, ['diff', '--cached', '--name-only'])
+  const action = await missionIntegrationRecoveryActionForIndex(context, child, stagedPaths)
+  if (action === 'commit') {
+    child.integration.phase = 'committing'
+    child.integration.updated_at = new Date().toISOString()
+    await writeMissionQueue(missionPath, queue)
+    await finishMissionChildIntegration(context, queue, child, waveNumber)
+    return
+  }
+
+  child.status = 'completed'
+  delete child.blocker
+  delete child.integrated_at
+  delete child.integration_revision
+  delete child.integration
+  await writeMissionQueue(missionPath, queue)
+}
+
+async function missionIntegrationRecoveryActionForIndex(context, child, stagedPaths) {
+  const { targetDir, missionPath } = context
+  const missionPrefix = relativeToRepo(targetDir, missionPath)
+  const deliveryPaths = await gitOutputLines(targetDir, [
+    'diff-tree',
+    '--no-commit-id',
+    '--name-only',
+    '-r',
+    child.delivery_revision,
+  ])
+  try {
+    return missionIntegrationRecoveryAction({
+      phase: child.integration.phase,
+      stagedPaths,
+      deliveryPaths,
+      missionPrefix,
+    })
+  } catch (error) {
+    throw new Error(`Cannot recover integration for child ${child.id}: ${error.message}`)
+  }
+}
+
+async function finishMissionChildIntegration(context, queue, child, waveNumber) {
+  const { targetDir, mission, missionPath } = context
+  child.integration = {
+    ...child.integration,
+    delivery_revision: child.delivery_revision,
+    wave: waveNumber,
+    phase: 'committing',
+    started_at: child.integration?.started_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+  await recordIntegratedMissionChild(context, queue, child)
+  await execFile('git', ['add', '-A', '--', relativeToRepo(targetDir, missionPath)], {
+    cwd: targetDir,
+  })
+  let integrationRevision
+  try {
+    await execFile(
+      'git',
+      [
+        'commit',
+        '-m',
+        `specdev(${mission.id}): integrate ${child.id}`,
+        '-m',
+        `SpecDev-Mission: ${mission.id}\nSpecDev-Assignment: ${child.id}\nSpecDev-Wave: ${waveNumber}\nSpecDev-Delivery: ${child.delivery_revision}`,
+      ],
+      { cwd: targetDir }
+    )
+    integrationRevision = await gitRevision(targetDir, 'HEAD')
+  } catch (error) {
+    child.status = 'blocked'
+    child.blocker = `integration commit failed for ${child.delivery_revision}: ${error.message}`
+    delete child.integrated_at
+    delete child.integration_revision
+    await writeMissionQueue(context.missionPath, queue)
+    throw new Error(`Could not commit integration for child ${child.id}: ${error.message}`)
+  }
+  child.integration_revision = integrationRevision
+  delete child.integration
+  await writeMissionQueue(missionPath, queue)
+}
+
+async function recordIntegratedMissionChild(context, queue, child, integrationRevision = null) {
+  const resolved = await findAssignmentFolder(context.specdevPath, child.id)
+  child.folder = resolved.name
+  child.outcome = `.specdev/assignments/${resolved.name}/outcome.md`
+  child.follow_up = await childFollowUp(context.specdevPath, child)
+  child.status = 'integrated'
+  child.integrated_at ||= new Date().toISOString()
+  if (integrationRevision) {
+    child.integration_revision = integrationRevision
+    delete child.integration
+  }
+  delete child.blocker
+  await writeMissionQueue(context.missionPath, queue)
+}
+
+async function missionChildIntegrationRevision(targetDir, mission, child) {
+  for (const message of [
+    `SpecDev-Delivery: ${child.delivery_revision}`,
+    `specdev(${mission.id}): deliver ${child.id}`,
+  ]) {
+    try {
+      const { stdout } = await execFile(
+        'git',
+        ['log', 'HEAD', '-1', '--format=%H', '--fixed-strings', `--grep=${message}`],
+        { cwd: targetDir }
+      )
+      if (stdout.trim()) return stdout.trim()
+    } catch {
+      // An unborn Mission branch cannot contain an integrated child.
+    }
+  }
+  return null
+}
+
+async function gitRevision(cwd, ref) {
+  try {
+    const { stdout } = await execFile('git', ['rev-parse', '--verify', ref], { cwd })
+    return stdout.trim() || null
+  } catch {
+    return null
+  }
+}
+
+async function gitOutputLines(cwd, args) {
+  const { stdout } = await execFile('git', args, { cwd })
+  return stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 async function authorChildContract(context, child, assignmentPath) {
@@ -767,7 +1627,8 @@ async function authorChildContract(context, child, assignmentPath) {
       ),
       `Child contract to replace: ${relativeToRepo(targetDir, join(assignmentPath, 'brainstorm', 'contract.md'))}`,
       'Write a concise delta contract. Reference the Mission path and approved hash; inherit unchanged constraints, non-goals, behavior, and reserved authority instead of restating them.',
-      'Use one short paragraph or list per required section. Include only the child objective and scope, prerequisite outcome references, child-specific decisions and risks, focused verification authority, and the fewest independent observable acceptance criteria (normally 1-3 for a bounded child).',
+      'Keep every exact required Assignment heading: ## Objective and context; ## Scope and non-goals; ## Expected behavior; ## Important decisions; ## Constraints and invariants; ## Delegated and reserved authority; ## Risks and assumptions; ## Verification authority; and ## Acceptance criteria. Do not rename, combine, or omit these headings.',
+      'Use one short paragraph or list under each heading. Put prerequisite outcome references in Objective and context or Risks and assumptions instead of creating another heading. Include only the child objective and scope, child-specific decisions and risks, focused verification authority, and the fewest independent observable acceptance criteria (normally 1-3 for a bounded child).',
       'Do not turn implementation tasks, file lists, repository conventions, or generic code quality into acceptance criteria. Keep the child wholly within Mission authority.',
     ]
       .filter(Boolean)
@@ -800,7 +1661,12 @@ async function deriveSingleChildContract(context, child, assignmentPath) {
 async function completedOutcomeLines(missionPath, currentChildId) {
   const queue = await readMissionQueue(missionPath)
   const paths = queue.assignments
-    .filter((item) => item.id !== currentChildId && item.status === 'completed' && item.outcome)
+    .filter(
+      (item) =>
+        item.id !== currentChildId &&
+        ['completed', 'integrated'].includes(item.status) &&
+        item.outcome
+    )
     .map((item) => `- ${item.id}: ${item.outcome}`)
   return paths.length > 0 ? ['Completed prerequisite outcomes:', ...paths] : []
 }
@@ -975,14 +1841,14 @@ async function replanMission(context) {
     resultPath,
     resultKind: 'worker',
     prompt: [
-      'Replan only the remaining sequential Mission queue; do not modify product code.',
+      'Replan only the remaining Mission queue; do not modify product code.',
       `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Queue to edit in place: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
       `Trigger: ${trigger.reason}`,
       trigger.artifact ? `Trigger artifact: ${trigger.artifact}` : null,
-      'Preserve every completed or running entry exactly. Existing pending entries may change title or kind but must retain their IDs. New entries must omit IDs and use status: pending; SpecDev allocates identity.',
+      'Preserve every completed, integrated, or running entry exactly. Existing pending entries may change title or kind but must retain their IDs. New entries must omit IDs and use status: pending; SpecDev allocates identity and appends sequential repair waves.',
       `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
-      'Preserve final_verification exactly. Keep the plan sequential and small. If the needed route changes approved scope, behavior, constraints, or reserved authority, return blocked without changing the queue.',
+      'Preserve final_verification exactly. Keep repair work sequential and small. If the needed route changes approved scope, behavior, constraints, or reserved authority, return blocked without changing the queue.',
     ]
       .filter(Boolean)
       .join('\n'),
@@ -1100,16 +1966,17 @@ async function validateAndReserveQueue(specdevPath, missionPath) {
   }
 
   const assignments = []
-  for (const item of queue.assignments) {
+  for (const item of normalizeMissionWaves(queue.assignments)) {
     assignments.push({
       id: item.id ? String(item.id) : await reserveEntityId(specdevPath, 'assignment'),
       title: String(item.title).trim(),
       kind: item.kind || 'change',
+      wave: item.wave,
       status: 'pending',
     })
   }
   return {
-    version: 1,
+    version: 2,
     design_mode: 'planned',
     assignments,
     final_verification: {
@@ -1255,14 +2122,30 @@ async function focusMissionRun({ targetDir, mission }) {
   const workflowRoot = workflowRootFor(targetDir)
   const current = getState({ workflowRoot })
   if (current.status === 'ok' && current.run?.status === 'active') {
-    if (current.run.id !== mission.run_id)
+    if (current.run.id === mission.run_id) return
+    if (!(await isMissionOwnedAssignmentRun(targetDir, mission, current.run.id))) {
       throw new Error('Another focused workflow is active; finish or suspend it first')
-    return
+    }
+    suspendRun({ workflowRoot, note: `resume Mission controller ${mission.id}` })
   }
   const run = listRuns({ workflowRoot }).runs.find((candidate) => candidate.id === mission.run_id)
   if (!run) throw new Error(`Mission RippleGraph run not found: ${mission.run_id}`)
   if (run.status !== 'suspended') throw new Error(`Mission run is not resumable: ${run.status}`)
   resumeRun({ workflowRoot, runId: mission.run_id })
+}
+
+async function isMissionOwnedAssignmentRun(targetDir, mission, runId) {
+  const specdevPath = join(targetDir, '.specdev')
+  const resolved = await resolveMissionSelector(specdevPath, mission.id)
+  if (!resolved || resolved.ambiguous) return false
+  const queue = await readMissionQueue(resolved.path).catch(() => null)
+  for (const child of queue?.assignments || []) {
+    const assignment = await findAssignmentFolder(specdevPath, child.id, { allowMissing: true })
+    if (!assignment) continue
+    const status = await fse.readJson(join(assignment.path, 'status.json')).catch(() => null)
+    if (status?.mission === mission.id && status.run_id === runId) return true
+  }
+  return false
 }
 
 async function claimMissionController(context, flags) {
@@ -1374,7 +2257,9 @@ async function missionStatus(selector, flags) {
     Boolean(liveController),
     interruptedController
   )
-  const lastChild = [...assignments].reverse().find((item) => item.status === 'completed') || null
+  const lastChild =
+    [...assignments].reverse().find((item) => ['completed', 'integrated'].includes(item.status)) ||
+    null
   const currentGit = await gitSnapshot(context.targetDir)
   const lastCheckpoint = context.mission.last_checkpoint
     ? {
@@ -1399,9 +2284,13 @@ async function missionStatus(selector, flags) {
     checked_out_branch: currentGit.branch,
     dirty_paths: currentGit.dirty_paths,
     current_child: assignments.find((item) => item.status === 'running')?.id || null,
+    current_children: assignments
+      .filter((item) => item.status === 'running')
+      .map((item) => item.id),
+    current_wave: currentMissionWave(queue),
     last_child: lastChild?.id || null,
     counts: Object.fromEntries(
-      ['pending', 'running', 'completed', 'blocked', 'cancelled'].map((status) => [
+      ['pending', 'running', 'completed', 'integrated', 'blocked', 'cancelled'].map((status) => [
         status,
         assignments.filter((item) => item.status === status).length,
       ])

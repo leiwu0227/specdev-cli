@@ -122,13 +122,22 @@ export function installWorkspaceEngine(projectRoot) {
   }
 
   fse.ensureDirSync(join(workflowRoot, '.ripplegraph'))
+  const existingRegistry = readRegistry(workflowRoot)
   const registered = []
   for (const packagePath of packagePaths) {
-    const entry = registerGraphPackage({
-      workflowRoot,
-      packageRoot: join(workflowRoot, 'workflows', packagePath),
-      force: true,
-    })
+    const packageRoot = join(workflowRoot, 'workflows', packagePath)
+    const graphPackage = loadGraphPackage(packageRoot)
+    const existing = existingRegistry.graphs[graphPackage.manifest.id]
+    const expectedPath = `workflows/${packagePath}`
+    if (
+      existing?.version === graphPackage.manifest.version &&
+      existing.kind === graphPackage.manifest.kind &&
+      existing.path === expectedPath
+    ) {
+      registered.push(graphPackage.manifest.id)
+      continue
+    }
+    const entry = registerGraphPackage({ workflowRoot, packageRoot, force: true })
     registered.push(entry.id)
   }
 
