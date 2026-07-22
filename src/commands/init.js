@@ -213,6 +213,10 @@ user to choose a reviewer per execution and do not pass \`--autocontinue\`.
   and same-reviewer verification are automatic.
 - Discussion: \`specdev reviewloop discussion --discussion=D00001\`.
 
+Only \`specdev reviewloop\` produces a transition-authorizing strict result
+envelope. Native coding-CLI review sessions are advisory and cannot advance
+SpecDev state.
+
 Announce every subtask with "Specdev: <action>".
 `,
 }

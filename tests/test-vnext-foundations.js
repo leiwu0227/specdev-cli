@@ -11,7 +11,11 @@ import {
 } from 'ripplegraph'
 import { resolveAgentProfile, validateProfile } from '../src/utils/agent-profiles.js'
 import { buildProviderInvocation } from '../src/utils/provider-adapters.js'
-import { parseResultEnvelope } from '../src/utils/result-envelope.js'
+import {
+  parseResultEnvelope,
+  resultEnvelopeBlockedFallback,
+  resultEnvelopeInstructions,
+} from '../src/utils/result-envelope.js'
 import { reserveEntityId } from '../src/utils/id-reservation.js'
 import {
   buildKnowledgeIndex,
@@ -167,6 +171,48 @@ try {
   )
   assert.equal(result.frontmatter.verdict, 'approved')
   assert.throws(() => parseResultEnvelope('approved', 'reviewer'), /frontmatter/)
+  assert.throws(
+    () =>
+      parseResultEnvelope(
+        '\n---\nverdict: approved\nmaterial_divergence: false\n---\n\n## Findings\n\nClear.\n',
+        'reviewer'
+      ),
+    /must start with YAML frontmatter/
+  )
+  assert.throws(
+    () => parseResultEnvelope('---\nverdict: approved\n---\n\n## Findings\n\nClear.\n', 'reviewer'),
+    /material_divergence/
+  )
+  assert.throws(
+    () =>
+      parseResultEnvelope(
+        '---\nverdict: approved\nmaterial_divergence: false\nconfidence: high\n---\n\n## Findings\n\nClear.\n',
+        'reviewer'
+      ),
+    /unknown key: confidence/
+  )
+  assert.throws(
+    () =>
+      parseResultEnvelope(
+        '---\nverdict: approved\nmaterial_divergence: false\n---\n\n## Findings\n',
+        'reviewer'
+      ),
+    /empty ## Findings/
+  )
+  assert.throws(
+    () => parseResultEnvelope('---\nstatus: completed\n---\n\n## Changes\n\nDone.\n', 'worker'),
+    /follow_up/
+  )
+  assert.doesNotMatch(resultEnvelopeInstructions('reviewer'), /approved \| needs_changes/)
+  assert.match(resultEnvelopeInstructions('reviewer'), /first byte/)
+  assert.equal(
+    parseResultEnvelope(resultEnvelopeBlockedFallback('reviewer'), 'reviewer').frontmatter.verdict,
+    'blocked'
+  )
+  assert.equal(
+    parseResultEnvelope(resultEnvelopeBlockedFallback('worker'), 'worker').frontmatter.status,
+    'blocked'
+  )
   assert.equal(durableAttemptStatusForResult('worker', { status: 'completed' }), 'completed')
   assert.equal(durableAttemptStatusForResult('worker', { status: 'blocked' }), 'blocked')
   assert.equal(durableAttemptStatusForResult('reviewer', { verdict: 'needs_changes' }), 'completed')

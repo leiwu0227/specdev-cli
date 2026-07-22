@@ -43,6 +43,8 @@ does not approve or complete the Discussion.
 ## Rules
 
 - Do not pass `--autocontinue` or choose a reviewer per execution.
+- Use `specdev reviewloop` for an authoritative verdict. Native coding-CLI
+  review sessions are advisory and cannot advance SpecDev state.
 - Reviewers do not repair code.
 - Reuse receipts and prefer narrow checks; never run a full suite without exact
   authority.

@@ -63,6 +63,9 @@ workflow before any test is changed.
 timeout. Ignored `cache/agents.local.yaml` overrides it on one machine. Prompts
 and up to three selected guides define temporary work; there are no permanent
 reviewer personas.
+Only `specdev reviewloop` produces a transition-authorizing result envelope.
+Native Codex, Claude, or Cursor review sessions remain advisory and their plain
+Markdown must not be treated as a SpecDev verdict.
 
 ## Knowledge
 

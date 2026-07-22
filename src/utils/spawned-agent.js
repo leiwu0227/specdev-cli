@@ -6,7 +6,11 @@ import { dirname, join, relative } from 'node:path'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
 import { buildProviderInvocation } from './provider-adapters.js'
-import { parseResultEnvelope } from './result-envelope.js'
+import {
+  parseResultEnvelope,
+  resultEnvelopeBlockedFallback,
+  resultEnvelopeInstructions,
+} from './result-envelope.js'
 import { parseGitPorcelainPaths, workspaceChangeSummaryLines } from './workspace-changes.js'
 import {
   attemptLiveness,
@@ -96,11 +100,13 @@ export async function runSpawnedAgent(options) {
     return { ...primary, attempt, result: parsed }
   } catch (error) {
     if (!allowFormatCorrection) {
+      const artifact = repoRelative(targetDir, resultPath) || resultPath
+      const validationError = `invalid result envelope at ${artifact}: ${error.message}`
       await updateAttemptRecord(specdevPath, primary.attempt.id, {
         status: 'failed',
-        error: error.message,
+        error: validationError,
       })
-      return { ...primary, status: 'failed', error: error.message }
+      return { ...primary, status: 'failed', error: validationError }
     }
 
     await updateAttemptRecord(specdevPath, primary.attempt.id, {
@@ -154,11 +160,13 @@ export async function runSpawnedAgent(options) {
       }
       return { ...correction, attempt, corrected_attempt: primary.attempt.id, result: parsed }
     } catch (correctionError) {
+      const artifact = repoRelative(targetDir, resultPath) || resultPath
+      const validationError = `corrected result is still invalid at ${artifact}: ${correctionError.message}`
       await updateAttemptRecord(specdevPath, correction.attempt.id, {
         status: 'failed',
-        error: correctionError.message,
+        error: validationError,
       })
-      return { ...correction, status: 'failed', error: correctionError.message }
+      return { ...correction, status: 'failed', error: validationError }
     }
   }
 }
@@ -476,23 +484,15 @@ function appendResultContract(prompt, kind, guides) {
     guides.length > 0
       ? guides.map((guide) => `- ${guide.id}@${guide.version}: ${guide.path}`).join('\n')
       : '- none'
-  const envelope =
-    kind === 'reviewer'
-      ? `---\nverdict: approved | needs_changes | blocked\nmaterial_divergence: false\n---\n\n## Findings\n\n<concise findings>`
-      : `---\nstatus: completed | blocked\nrevision: <git revision, working-tree@HEAD, or null>\nfollow_up: none | required\n---\n\n## Changes\n\n<concise result>`
   const inspectionNote =
     kind === 'reviewer'
       ? 'Use `git status` and read relevant untracked files directly; `git diff` alone may omit an untracked candidate.\n'
       : ''
-  return `${prompt.trim()}\n\nKeep tool output narrow. Do not repeatedly print full files or full diffs; inspect targeted ranges and return as soon as the required evidence and artifacts are complete.\n${inspectionNote}\nGuides supplied by the host for this invocation:\n${guideLines}\n\nReturn only this compact Markdown result shape:\n\n${envelope}\n`
+  return `${prompt.trim()}\n\nKeep tool output narrow. Do not repeatedly print full files or full diffs; inspect targeted ranges and return as soon as the required evidence and artifacts are complete.\n${inspectionNote}\nGuides supplied by the host for this invocation:\n${guideLines}\n\nReturn only the strict result envelope below. Invalid formatting cannot advance the workflow.\n\n${resultEnvelopeInstructions(kind)}\n`
 }
 
 function formattingCorrectionPrompt(malformed, kind, error) {
-  const envelope =
-    kind === 'reviewer'
-      ? 'Reviewer frontmatter requires verdict and optional boolean material_divergence, followed by ## Findings.'
-      : 'Worker frontmatter requires status and optional revision/follow_up, followed by ## Changes.'
-  return `Reformat the result below. Do not inspect the repository, rerun work, or change its meaning.\n\nValidation error: ${error}\n${envelope}\n\nOriginal result:\n\n${malformed}`
+  return `Reformat the result below. Do not inspect the repository, rerun work, or change its meaning. Copy semantic values only when the original states them explicitly and unambiguously. If any required semantic value is absent or ambiguous, return the blocked fallback exactly and explain the ambiguity in its required section.\n\nValidation error: ${error}\n\nStrict result contract:\n\n${resultEnvelopeInstructions(kind)}\n\nSafe blocked fallback:\n\n${resultEnvelopeBlockedFallback(kind)}\n\nOriginal result:\n\n${malformed}`
 }
 
 async function trackedStateDigest(targetDir, exclusions = []) {

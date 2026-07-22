@@ -109,6 +109,13 @@ as Adhoc. Successful standalone delivery creates one host-owned commit carrying
 `SpecDev-Assignment` and `SpecDev-Commit-Type: delivery` trailers; Mission child
 commits remain owned by the Mission controller.
 
+Only reviews launched through `specdev reviewloop` can authorize SpecDev
+transitions. Native Codex, Claude, or Cursor review sessions remain useful
+advice, but their ordinary Markdown is not treated as a workflow verdict. Agent
+results must begin with the strict YAML-frontmatter envelope and contain a
+non-empty required section; one format-only resubmission is allowed, after
+which the workflow remains blocked.
+
 ```text
 .specdev/assignments/00042_keyword-search/
   brainstorm/contract.md

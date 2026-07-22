@@ -108,6 +108,10 @@ assert(continueSkill.includes('specdev next'), 'continue skill references durabl
 
 const reviewloopSkill = readFileSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md'), 'utf-8')
 assert(reviewloopSkill.includes('agents.yaml'), 'reviewloop skill references repository profiles')
+assert(
+  reviewloopSkill.includes('review sessions are advisory'),
+  'reviewloop skill distinguishes native advisory reviews from authoritative reviewloop verdicts'
+)
 
 // ---- Test hook installation ----
 console.log('\nhook installation:')

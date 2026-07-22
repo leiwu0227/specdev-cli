@@ -86,6 +86,9 @@ a scheduler, but only one may be active in a worktree.
   standalone Assignment create one final delivery commit; Mission checkpoints,
   child deliveries, integrations, and completion identify their commit type.
 - Reviewers inspect and report; they never repair tracked code.
+- Only a review launched through `specdev reviewloop` can authorize a workflow
+  transition. A coding CLI's native review command is advisory because it does
+  not receive or validate the strict SpecDev result envelope.
 - Never run a full suite when narrower evidence answers the current question.
   Repository confirmation rules always take precedence.
 - Do not create worktrees for normal Assignments, sequential Mission children,
