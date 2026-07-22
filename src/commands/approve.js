@@ -107,6 +107,7 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
   await writeAssignmentStatus(assignmentPath, {
     review_policy: reviewPolicy,
     review_policy_frozen_at: decision.approved_at,
+    approved_at: decision.approved_at,
   })
   await retireTransientArtifact(
     targetDir,

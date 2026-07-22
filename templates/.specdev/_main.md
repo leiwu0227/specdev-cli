@@ -11,10 +11,18 @@ artifacts. Fall back to `specdev` on PATH only when the wrapper is absent.
 ## Start here
 
 1. Read `.specdev/project_notes/big_picture.md` and repository instructions.
-2. Run `specdev next --json` for the focused RippleGraph workflow.
-3. For explicit identities use `specdev mission status M00001` or `specdev
+2. Classify the user's request before creating anything: Direct, Adhoc,
+   Discussion, Assignment, or Mission. Recommend a lane when useful, but let the
+   user select it. Never silently turn every request into an Assignment.
+3. Run `specdev next --json` only when resuming a focused RippleGraph workflow.
+4. For explicit identities use `specdev mission status M00001` or `specdev
 discussion D00001`.
-4. Announce every subtask with `Specdev: <action>`.
+5. Announce every subtask with `Specdev: <action>`.
+
+Questions, explanations, status checks, and read-only inspection are **Direct**:
+answer them without a graph or log. A user instruction such as “directly”, “just
+do it”, “skip SpecDev”, or “no assignment” rules out an Assignment unless the
+user later chooses one.
 
 Do not edit `.ripplegraph/` manually. Lifecycle state and approval events belong
 to RippleGraph while work is non-terminal; revisions and diffs belong to Git;
@@ -39,6 +47,11 @@ itself.
 
 ## Work types
 
+- **Direct:** questions, explanations, status, and read-only inspection. No
+  workflow and no durable receipt.
+- **Adhoc:** one user-selected bounded repository change with no graph,
+  scheduler, subagent, worktree, or approval gate. It records one concise
+  receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.
 - **Assignment:** one readable contract, one user approval, then automatic
   Design + Implementation + evidence + review.
 - **Mission:** a foreground controller on a dedicated branch. It uses the
@@ -51,7 +64,8 @@ itself.
   pruning and a ready Assignment contract; it never removes tests itself.
 
 Only one focused Assignment or Mission scheduler exists. Discussion and Test
-Audit callables may coexist because their checkpoints are isolated.
+Audit callables may coexist because their checkpoints are isolated. Adhoc is not
+a scheduler, but only one may be active in a worktree.
 
 ## Hard rules
 
@@ -65,6 +79,12 @@ Audit callables may coexist because their checkpoints are isolated.
   single child reuses the approved parent authority without another Brainstorm
   author or reviewer.
 - Approval binds the exact final contract hash. Editing it invalidates approval.
+- Adhoc refuses a dirty start until the user inspects, separately checkpoints,
+  or explicitly adopts every existing change. Assignment enforces the same
+  product-tree decision immediately before implementation.
+- SpecDev-owned delivery commits carry `SpecDev-*` trailers. Adhoc and
+  standalone Assignment create one final delivery commit; Mission checkpoints,
+  child deliveries, integrations, and completion identify their commit type.
 - Reviewers inspect and report; they never repair tracked code.
 - Never run a full suite when narrower evidence answers the current question.
   Repository confirmation rules always take precedence.

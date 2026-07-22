@@ -59,6 +59,7 @@ console.log('\ndefault init installs Claude extras:')
 const skillsDir = join(TEST_DIR, '.claude', 'skills')
 assert(existsSync(skillsDir), '.claude/skills/ directory created')
 assert(existsSync(join(skillsDir, 'specdev-start', 'SKILL.md')), 'specdev-start/SKILL.md installed')
+assert(existsSync(join(skillsDir, 'specdev-adhoc', 'SKILL.md')), 'specdev-adhoc/SKILL.md installed')
 assert(
   existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')),
   'specdev-assignment/SKILL.md installed'

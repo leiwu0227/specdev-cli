@@ -55,6 +55,13 @@ if [ -n "$NEXT_JSON" ]; then
       const phase = state.phase || state.state;
       const command = state.next_action.command_line;
       const instructions = state.instructions || state.prompt || "";
+      if (state.state === "idle" || workflow === "none") {
+        process.stdout.write(
+          "SpecDev installed. Classify the user request before creating state: Direct for questions/read-only inspection, or user-selected Adhoc, Discussion, Assignment, or Mission. Never silently create an Assignment for every request." +
+          "\n\nAnnounce every subtask with \"Specdev: <action>\"."
+        );
+        process.exit(0);
+      }
       process.stdout.write(
         "SpecDev active. Workflow: " + workflow + " | State: " + state.state + " | Phase: " + phase +
         "\n\nNext: " + command +
@@ -170,7 +177,7 @@ case "$PHASE" in
     CONTEXT="${CONTEXT}Rules:\n- TDD: write failing test -> make it pass -> refactor\n- No completion claims without running tests\n- One task at a time via subagents\n- Per-task review: spec compliance then code quality\n\nNext: Complete remaining tasks, get user approval\n\nPhase commands: specdev checkpoint implementation, specdev reviewloop implementation, specdev approve implementation"
     ;;
   *)
-    CONTEXT="${CONTEXT}Run specdev do \"start an assignment\" to start a new assignment."
+    CONTEXT="${CONTEXT}Classify the request first: Direct needs no state; use Adhoc, Discussion, Assignment, or Mission only when the user selects it."
     ;;
 esac
 

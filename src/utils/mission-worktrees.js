@@ -143,7 +143,8 @@ export async function createMissionChildDelivery({
     if (
       message.includes(`SpecDev-Mission: ${missionId}`) &&
       message.includes(`SpecDev-Assignment: ${childId}`) &&
-      message.includes(`SpecDev-Wave: ${wave}`)
+      message.includes(`SpecDev-Wave: ${wave}`) &&
+      message.includes('SpecDev-Commit-Type: child-delivery')
     ) {
       const { stdout } = await execFile('git', ['rev-parse', 'HEAD'], { cwd: worktreePath })
       return stdout.trim()
@@ -157,7 +158,7 @@ export async function createMissionChildDelivery({
       '-m',
       `specdev(${missionId}): deliver ${childId}`,
       '-m',
-      `SpecDev-Mission: ${missionId}\nSpecDev-Assignment: ${childId}\nSpecDev-Wave: ${wave}`,
+      `SpecDev-Mission: ${missionId}\nSpecDev-Assignment: ${childId}\nSpecDev-Wave: ${wave}\nSpecDev-Commit-Type: child-delivery`,
     ],
     { cwd: worktreePath }
   )

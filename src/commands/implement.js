@@ -16,31 +16,58 @@ import {
   assertReviewWaiverEvidence,
   validateDeliveryArtifacts,
 } from '../utils/delivery-artifacts.js'
-import {
-  attemptActivitySummary,
-  listAttemptRecords,
-  updateAttemptRecord,
-} from '../utils/process-record.js'
+import { listAttemptRecords, updateAttemptRecord } from '../utils/process-record.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { reviewImplementation } from './reviewloop.js'
+import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import {
-  compactCompletedWorkflowRuntime,
-  retireTransientArtifact,
-} from '../utils/artifact-retention.js'
+  completeStandaloneAssignmentDelivery,
+  ensureAssignmentGitBoundary,
+  findPendingStandaloneAssignmentDelivery,
+} from '../utils/assignment-delivery.js'
 
 export async function implementCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
-  const assignmentPath = await resolveAssignmentPath(flags)
+  const pending = flags.assignment
+    ? null
+    : await findPendingStandaloneAssignmentDelivery(targetDir, specdevPath)
+  const assignmentPath = pending?.path || (await resolveAssignmentPath(flags))
   const name = assignmentName(assignmentPath)
   const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => null)
 
   try {
+    if (assignmentStatus?.status === 'completed' && !assignmentStatus.mission) {
+      const completion = await completeStandaloneAssignmentDelivery({
+        targetDir,
+        specdevPath,
+        assignmentPath,
+      })
+      return emit(flags, {
+        command: 'implement',
+        version: 2,
+        status: 'completed',
+        assignment: name,
+        recovered: true,
+        ...completion,
+      })
+    }
     const { contract, approval } = await assertApprovedContract(targetDir, assignmentPath)
     const reviewPolicy = normalizeReviewPolicy(approval.review_policy)
     let graph = await currentAssignmentNode(targetDir)
     if (!graph) throw new Error('The focused workflow is not an Assignment')
+
+    const boundary = await ensureAssignmentGitBoundary({
+      targetDir,
+      specdevPath,
+      assignmentPath,
+      assignmentStatus,
+      adoptDirty: Boolean(flags['adopt-dirty']),
+    })
+    if (!boundary.ok) {
+      return emitBoundaryBlocked(flags, { assignment: name, ...boundary })
+    }
 
     if (graph.position.node === 'design') {
       const resultPath = join(assignmentPath, 'implementation', 'worker-result.md')
@@ -172,53 +199,51 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         status: 'completed',
         completed_at: completedAt,
       })
-      const activity = assignmentStatus?.mission
-        ? null
-        : await attemptActivitySummary(
-            specdevPath,
-            { assignment: name },
-            {
-              startedAt: assignmentStatus?.approved_at || assignmentStatus?.created_at,
-              endedAt: completedAt,
-            }
-          )
-      if (activity) await writeAssignmentStatus(assignmentPath, { activity })
-      await retireTransientArtifact(
-        targetDir,
-        specdevPath,
-        join(assignmentPath, 'implementation', 'worker-result.md')
-      )
-      await retireTransientArtifact(
-        targetDir,
-        specdevPath,
-        join(assignmentPath, 'implementation', 'repair-result.md')
-      )
-      const runtime = assignmentStatus?.mission
-        ? null
-        : await compactCompletedWorkflowRuntime(specdevPath, {
-            runId: assignmentStatus.run_id,
-            attemptFilter: { assignment: name },
-            focus: { kind: 'assignment', id: assignmentStatus.id },
-          })
+      let completion = null
+      if (assignmentStatus?.mission) {
+        await retireTransientArtifact(
+          targetDir,
+          specdevPath,
+          join(assignmentPath, 'implementation', 'worker-result.md')
+        )
+        await retireTransientArtifact(
+          targetDir,
+          specdevPath,
+          join(assignmentPath, 'implementation', 'repair-result.md')
+        )
+      } else {
+        completion = await completeStandaloneAssignmentDelivery({
+          targetDir,
+          specdevPath,
+          assignmentPath,
+        })
+      }
       return emit(flags, {
         command: 'implement',
         version: 2,
         status: 'completed',
         assignment: name,
         review: 'waived',
-        ...(activity ? { activity } : {}),
-        ...(runtime ? { runtime_compaction: runtime } : {}),
+        ...(completion || {}),
       })
     }
     if (['implementation-review', 'repair'].includes(graph.position.node)) {
       return reviewImplementation(flags)
     }
     if (graph.run?.status === 'completed' || graph.position.node === 'done') {
+      const completion = assignmentStatus?.mission
+        ? null
+        : await completeStandaloneAssignmentDelivery({
+            targetDir,
+            specdevPath,
+            assignmentPath,
+          })
       return emit(flags, {
         command: 'implement',
         version: 2,
         status: 'completed',
         assignment: name,
+        ...(completion || {}),
       })
     }
     throw new Error(`Assignment cannot be implemented from ${graph.position.node}`)
@@ -304,6 +329,28 @@ function emitBlockedWorker(flags, payload) {
     if (payload.attempt) console.error(`Attempt: ${payload.attempt}`)
     console.error(`Result: ${payload.result}`)
     console.error(`Next: ${payload.next_action}`)
+  }
+  process.exitCode = 1
+  return payload
+}
+
+function emitBoundaryBlocked(flags, details) {
+  const payload = {
+    command: 'implement',
+    version: 2,
+    status: 'blocked',
+    ...details,
+  }
+  if (flags.json) console.log(JSON.stringify(payload, null, 2))
+  else {
+    console.error(`Assignment blocked at Git boundary: ${details.state}`)
+    if (details.working_tree) {
+      console.error(`Existing product paths: ${details.working_tree.count}`)
+      for (const path of details.working_tree.preview) console.error(`  - ${path}`)
+      if (details.working_tree.omitted)
+        console.error(`  - +${details.working_tree.omitted} more path(s)`)
+    }
+    if (details.next_action) console.error(`Next: ${details.next_action}`)
   }
   process.exitCode = 1
   return payload

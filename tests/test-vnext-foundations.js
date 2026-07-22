@@ -374,6 +374,13 @@ try {
   assert.match(deliveryPaths, /\.specdev\/assignments\/00031_fixture\/outcome\.md/)
   assert.doesNotMatch(deliveryPaths, /\.specdev\/\.current/)
   assert.doesNotMatch(deliveryPaths, /\.specdev\/missions\//)
+  const deliveryMessage = execFileSync('git', ['show', '-s', '--format=%B', deliveryRevision], {
+    cwd: leased.path,
+    encoding: 'utf-8',
+  })
+  assert.match(deliveryMessage, /SpecDev-Mission: M00001/)
+  assert.match(deliveryMessage, /SpecDev-Assignment: 00031/)
+  assert.match(deliveryMessage, /SpecDev-Commit-Type: child-delivery/)
   assert.equal(
     await createMissionChildDelivery({
       worktreePath: leased.path,
@@ -481,8 +488,14 @@ try {
     join(specdevPath, 'project_notes.md'),
     '# Outside indexed roots\n\nThis file should not be indexed.\n'
   )
+  mkdirSync(join(specdevPath, 'adhoc', '2026-07'), { recursive: true })
+  writeFileSync(
+    join(specdevPath, 'adhoc', '2026-07', 'AH-fixture.md'),
+    '# Adhoc AH-fixture\n\nReceipt-only marker: unindexedadhocsecret.\n'
+  )
   const rebuilt = await buildKnowledgeIndex(specdevPath)
   assert.equal(rebuilt.documentCount, 4)
+  assert.deepEqual(await searchKnowledgeIndex(specdevPath, 'unindexedadhocsecret'), [])
   const search = await searchKnowledgeIndex(specdevPath, 'unmatched router API')
   assert.equal(search[0].path, 'knowledge/architecture/parser.md')
   assert.equal(search[0].coverage, 2 / 3)

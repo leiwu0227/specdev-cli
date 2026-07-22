@@ -3,6 +3,10 @@
 Core skills are compact reference guidance. Static RippleGraph packages and
 semantic CLI commands own lifecycle transitions and durable state.
 
+Request routing is deliberately outside the graph: Direct work creates no
+state, while user-selected Adhoc work creates one receipt and final commit but
+no RippleGraph run.
+
 - `brainstorming`: interactive contract or Discussion authoring.
 - `reviewloop`: configured reviewer protocol and bounded rerun policy.
 - `systematic-debugging`, `diagnosis`, `investigation`: optional problem-solving

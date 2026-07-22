@@ -20,6 +20,7 @@ import { contextCommand } from './context.js'
 import { engineCommand } from './engine.js'
 import { missionCommand } from './mission.js'
 import { testAuditCommand } from './test-audit.js'
+import { adhocCommand } from './adhoc.js'
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -39,6 +40,7 @@ const commandHandlers = {
   discussion: ({ positionalArgs, flags }) => discussCommand(positionalArgs, flags),
   mission: ({ positionalArgs, flags }) => missionCommand(positionalArgs, flags),
   'test-audit': ({ positionalArgs, flags }) => testAuditCommand(positionalArgs, flags),
+  adhoc: ({ positionalArgs, flags }) => adhocCommand(positionalArgs, flags),
   context: ({ flags }) => contextCommand(flags),
 }
 

@@ -517,10 +517,14 @@ async function driveMission(context) {
         focus: { kind: 'mission', id: mission.id },
       })
       const checkpoint = await withSuppressedOutput(() =>
-        checkpointMission(mission.id, {
-          target: targetDir,
-          json: true,
-        })
+        checkpointMission(
+          mission.id,
+          {
+            target: targetDir,
+            json: true,
+          },
+          { commitType: 'completion' }
+        )
       )
       if (!checkpoint || checkpoint.status !== 'ok' || !checkpoint.revision) {
         throw new Error(checkpoint?.error || 'Mission completion checkpoint failed')
@@ -1125,7 +1129,11 @@ async function executeMissionWaveSequentialFallback(context, queue, waveNumber) 
     if (missionRun?.status === 'suspended') resumeRun({ workflowRoot, runId: mission.run_id })
     await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
     const checkpoint = await withSuppressedOutput(() =>
-      checkpointMission(mission.id, { target: targetDir, json: true })
+      checkpointMission(
+        mission.id,
+        { target: targetDir, json: true },
+        { commitType: 'integration', assignmentId: child.id }
+      )
     )
     if (!checkpoint?.revision) {
       throw new Error(`Could not checkpoint sequential fallback child ${child.id}`)
@@ -1528,7 +1536,7 @@ async function finishMissionChildIntegration(context, queue, child, waveNumber) 
         '-m',
         `specdev(${mission.id}): integrate ${child.id}`,
         '-m',
-        `SpecDev-Mission: ${mission.id}\nSpecDev-Assignment: ${child.id}\nSpecDev-Wave: ${waveNumber}\nSpecDev-Delivery: ${child.delivery_revision}`,
+        `SpecDev-Mission: ${mission.id}\nSpecDev-Assignment: ${child.id}\nSpecDev-Wave: ${waveNumber}\nSpecDev-Delivery: ${child.delivery_revision}\nSpecDev-Commit-Type: integration`,
       ],
       { cwd: targetDir }
     )
@@ -2310,7 +2318,7 @@ async function missionStatus(selector, flags) {
   })
 }
 
-async function checkpointMission(selector, flags) {
+async function checkpointMission(selector, flags, metadata = {}) {
   const context = await missionContext(selector, flags)
   if (!context) return null
   const git = await gitSnapshot(context.targetDir)
@@ -2332,9 +2340,18 @@ async function checkpointMission(selector, flags) {
       ['add', '--', relativeToRepo(context.targetDir, join(context.missionPath, 'mission.yaml'))],
       { cwd: context.targetDir }
     )
-    await execFile('git', ['commit', '-m', `specdev: checkpoint ${context.mission.id}`], {
-      cwd: context.targetDir,
-    })
+    const trailers = [
+      `SpecDev-Mission: ${context.mission.id}`,
+      metadata.assignmentId ? `SpecDev-Assignment: ${metadata.assignmentId}` : null,
+      `SpecDev-Commit-Type: ${metadata.commitType || 'checkpoint'}`,
+    ]
+      .filter(Boolean)
+      .join('\n')
+    await execFile(
+      'git',
+      ['commit', '-m', `specdev: checkpoint ${context.mission.id}`, '-m', trailers],
+      { cwd: context.targetDir }
+    )
   }
   if (flags.push) {
     await execFile('git', ['push', '-u', 'origin', context.mission.branch], {

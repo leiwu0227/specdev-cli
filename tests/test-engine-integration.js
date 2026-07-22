@@ -43,6 +43,17 @@ function runGit(root, args) {
   assert.equal(result.status, 0, `git ${args.join(' ')} failed:\n${result.stderr}`)
 }
 
+function gitText(root, args) {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' })
+  assert.equal(result.status, 0, `git ${args.join(' ')} failed:\n${result.stderr}`)
+  return result.stdout.trim()
+}
+
+function configureGit(root) {
+  runGit(root, ['config', 'user.name', 'SpecDev Test'])
+  runGit(root, ['config', 'user.email', 'specdev@example.test'])
+}
+
 function writeBigPicture(root) {
   writeFileSync(
     join(root, '.specdev', 'project_notes', 'big_picture.md'),
@@ -132,14 +143,65 @@ function writeRecoveredDelivery(path) {
 }
 
 try {
+  const adhocRoot = tempProject('adhoc')
+  runGit(adhocRoot, ['init', '--quiet'])
+  configureGit(adhocRoot)
+  runJson(adhocRoot, ['init', '--platform=none', '--json'])
+  writeFileSync(join(adhocRoot, 'README.md'), '# Adhoc fixture\n', 'utf8')
+  runGit(adhocRoot, ['add', '--all'])
+  runGit(adhocRoot, ['commit', '--quiet', '-m', 'initial fixture'])
+  const adhocStartRevision = gitText(adhocRoot, ['rev-parse', 'HEAD'])
+
+  writeFileSync(join(adhocRoot, 'existing.txt'), 'adopt this change\n', 'utf8')
+  const dirtyAdhoc = runJson(adhocRoot, ['adhoc', 'start', 'Repair one help message', '--json'], 1)
+  assert.equal(dirtyAdhoc.state, 'dirty_worktree')
+  assert.equal(dirtyAdhoc.working_tree.count, 1)
+  const adhoc = runJson(adhocRoot, [
+    'adhoc',
+    'start',
+    'Repair one help message',
+    '--adopt-dirty',
+    '--json',
+  ])
+  assert.match(adhoc.id, /^AH-\d{8}T\d{9}Z-[a-f0-9]{4}$/)
+  assert.equal(adhoc.starting_worktree, 'adopted')
+  assert.equal(runJson(adhocRoot, ['adhoc', 'status', '--json']).status, 'active')
+  writeFileSync(join(adhocRoot, 'help.txt'), 'corrected help\n', 'utf8')
+  const adhocFinished = runJson(adhocRoot, [
+    'adhoc',
+    'finish',
+    '--outcome=Corrected the help text',
+    '--verification=Inspected the rendered help',
+    '--json',
+  ])
+  assert.equal(adhocFinished.status, 'completed')
+  assert.equal(adhocFinished.starting_git_commit_hash, adhocStartRevision)
+  assert.equal(adhocFinished.ending_git_commit_hash, gitText(adhocRoot, ['rev-parse', 'HEAD']))
+  assert.match(
+    gitText(adhocRoot, ['log', '-1', '--format=%B']),
+    new RegExp(`SpecDev-Adhoc: ${adhoc.id}`)
+  )
+  assert.match(gitText(adhocRoot, ['log', '-1', '--format=%B']), /SpecDev-Commit-Type: delivery/)
+  const adhocReceipt = readFileSync(join(adhocRoot, adhocFinished.receipt), 'utf8')
+  assert.doesNotMatch(adhocReceipt, /git_commit_hash/)
+  const shownAdhoc = runJson(adhocRoot, ['adhoc', 'show', adhoc.id, '--json'])
+  assert.equal(shownAdhoc.starting_git_commit_hash, adhocStartRevision)
+  assert.equal(shownAdhoc.ending_git_commit_hash, adhocFinished.ending_git_commit_hash)
+  assert.equal(runJson(adhocRoot, ['adhoc', 'status', '--json']).status, 'idle')
+
   const root = tempProject('main')
   runGit(root, ['init', '--quiet'])
+  configureGit(root)
   const init = runJson(root, ['init', '--platform=none', '--json'])
   assert.equal(init.status, 'ok')
   assert.equal(init.guided_workflows, 6)
   assert.equal(existsSync(join(root, '.specdev', 'workflow.json')), true)
   assert.equal(existsSync(join(root, '.specdev', 'workflow.yaml')), false)
   assert.equal(existsSync(join(root, '.specdev', 'agents.yaml')), true)
+  assert.equal(
+    existsSync(join(root, '.specdev', 'knowledge', 'workflow', 'adhoc-history.md')),
+    true
+  )
 
   const registryPath = join(root, '.specdev', '.ripplegraph', 'registry.json')
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
@@ -165,8 +227,9 @@ try {
   )
   assert.equal(hookResult.status, 0, hookResult.stderr)
   const hookPayload = JSON.parse(hookResult.stdout)
-  assert.match(hookPayload.hookSpecificOutput.additionalContext, /Workflow: none/)
-  assert.match(hookPayload.hookSpecificOutput.additionalContext, /State: idle/)
+  assert.match(hookPayload.hookSpecificOutput.additionalContext, /Classify the user request/)
+  assert.match(hookPayload.hookSpecificOutput.additionalContext, /Never silently create/)
+  rmSync(shimDir, { recursive: true, force: true })
 
   const orientation = runJson(root, ['do', 'project orientation'])
   assert.equal(orientation.workflow, 'Project orientation')
@@ -180,6 +243,8 @@ try {
   ])
   run(root, ['start'])
   assert.equal(runJson(root, ['next', '--json']).state, 'idle')
+  runGit(root, ['add', '--all'])
+  runGit(root, ['commit', '--quiet', '-m', 'initialize SpecDev fixture'])
 
   runJson(root, ['do', 'start an assignment'])
   const assignment = runJson(root, [
@@ -319,10 +384,26 @@ try {
   const compactedStatus = JSON.parse(
     readFileSync(join(compactedAssignmentPath, 'status.json'), 'utf8')
   )
+  const compactedStartRevision = gitText(root, ['rev-parse', 'HEAD'])
   writeRecoveredDelivery(compactedAssignmentPath)
+  writeFileSync(join(root, 'adopted-product.txt'), 'existing approved product work\n', 'utf8')
+  const dirtyBoundary = runJson(root, ['implement', '--json'], 1)
+  assert.equal(dirtyBoundary.state, 'dirty_worktree')
+  assert.deepEqual(dirtyBoundary.working_tree.preview, ['adopted-product.txt'])
+  const failOnceMarker = join(root, '.git', 'specdev-fail-once')
+  writeFileSync(failOnceMarker, 'fail the first delivery commit\n', 'utf8')
+  writeFileSync(
+    join(root, '.git', 'hooks', 'pre-commit'),
+    '#!/bin/sh\nif [ -f .git/specdev-fail-once ]; then rm .git/specdev-fail-once; exit 1; fi\n',
+    { mode: 0o755 }
+  )
+  const failedDelivery = runJson(root, ['implement', '--adopt-dirty', '--json'], 1)
+  assert.equal(failedDelivery.status, 'error')
+  assert.match(failedDelivery.error, /Git command failed/)
   const compacted = runJson(root, ['implement', '--json'])
   assert.equal(compacted.status, 'completed')
-  assert.equal(compacted.runtime_compaction.compacted, true)
+  assert.equal(compacted.recovered, true)
+  assert.equal(compacted.runtime_compaction.compacted, false)
   assert.deepEqual(compacted.activity.provider_attempts, {
     total: 0,
     completed: 0,
@@ -341,6 +422,11 @@ try {
   )
   assert.equal(existsSync(join(root, '.specdev', '.current')), false)
   assert.equal(runJson(root, ['next', '--json']).state, 'idle')
+  assert.equal(compacted.delivery.starting_git_commit_hash, compactedStartRevision)
+  assert.equal(compacted.delivery.ending_git_commit_hash, gitText(root, ['rev-parse', 'HEAD']))
+  const assignmentCommit = gitText(root, ['log', '-1', '--format=%B'])
+  assert.match(assignmentCommit, new RegExp(`SpecDev-Assignment: ${compactedAssignment.id}`))
+  assert.match(assignmentCommit, /SpecDev-Commit-Type: delivery/)
 
   const distillationBrief = runJson(root, ['knowledge', 'distill', '--json'])
   assert.equal(

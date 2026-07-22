@@ -5,17 +5,23 @@ tracked `.specdev/` folder is portable state; the current coding CLI is the
 interactive worker, while configured subprocess agents perform bounded
 automatic work and review.
 
-The workflow is deliberately small at the project boundary:
+The workflow is deliberately small at the project boundary. SpecDev first
+classifies the request; it does not silently turn every user message into an
+Assignment:
 
+- no state for questions, explanations, status, or read-only inspection;
+- one receipt and final commit for a user-selected bounded Adhoc change;
 - one readable contract and one explicit user approval before code changes;
-- one Assignment by default instead of speculative decomposition;
+- one Assignment when contracted delivery is needed, instead of speculative decomposition;
 - automatic implementation and review with durable, restartable evidence;
 - static-wave Mission parallelism only for already-independent children; and
 - authoritative Markdown knowledge with a disposable SQLite search index.
 
 | Work type  | Purpose                                | Product writes | Concurrency                                             |
 | ---------- | -------------------------------------- | -------------- | ------------------------------------------------------- |
-| Assignment | Deliver one approved change            | Yes            | One focused workflow                                    |
+| Direct     | Answer, explain, inspect, or report    | No             | No workflow or log                                      |
+| Adhoc      | Deliver one bounded user-selected edit | Yes            | One active per worktree; no graph                       |
+| Assignment | Deliver one approved contracted change | Yes            | One focused workflow                                    |
 | Mission    | Deliver a larger user-chosen objective | Yes            | Foreground controller; up to three independent children |
 | Discussion | Explore and preserve a future design   | No             | May coexist with focused work                           |
 | Test Audit | Propose safe test pruning              | No             | May coexist with focused work                           |
@@ -38,6 +44,30 @@ RippleGraph packages, and preserves project-owned notes, guides, and work.
 After initialization/update, coding agents should prefer the generated ignored
 `.specdev/cache/bin/specdev` wrapper for workflow commands; it prevents a stale
 global executable from driving the workspace.
+
+## Direct and Adhoc work
+
+Questions, explanations, status requests, and read-only inspection are Direct:
+answer them without a graph or durable log. For a concrete bounded edit where a
+contract and review loop would be ceremony, the user may select Adhoc:
+
+```bash
+specdev adhoc start "repair one help message"
+# make the bounded change directly
+specdev adhoc finish --outcome="Corrected the help text" --verification="Inspected CLI output"
+specdev adhoc show AH-20260722T120000000Z-abcd
+```
+
+Adhoc requires an existing Git HEAD. A dirty start blocks until the user
+inspects it, commits it separately, or explicitly reruns with `--adopt-dirty`.
+It has no RippleGraph run, scheduler, worktree, subagent, or approval gate.
+Finish refuses an intervening HEAD change, writes one concise immutable receipt
+under `.specdev/adhoc/`, and creates one commit with `SpecDev-Adhoc` and
+`SpecDev-Commit-Type: delivery` trailers. `specdev adhoc cancel` removes only
+the ignored active marker and leaves source changes untouched.
+Individual receipts are not indexed into `knowledge.sqlite`; the indexed
+`knowledge/workflow/adhoc-history.md` note teaches agents to search them with
+`rg`, Git commit messages/trailers, and `specdev adhoc show` when needed.
 
 ## Assignment
 
@@ -73,6 +103,11 @@ call: complete the preserved delivery artifacts and rerun to reuse them, or use
 `specdev implement --retry-worker` to explicitly launch a fresh worker.
 If review findings changed the contract after checkpoint, run `specdev
 checkpoint brainstorm` once more to present the final hash before approval.
+Immediately before implementation, SpecDev records a Git boundary. Existing
+product changes require the same inspect/checkpoint/explicit-adoption decision
+as Adhoc. Successful standalone delivery creates one host-owned commit carrying
+`SpecDev-Assignment` and `SpecDev-Commit-Type: delivery` trailers; Mission child
+commits remain owned by the Mission controller.
 
 ```text
 .specdev/assignments/00042_keyword-search/
@@ -258,6 +293,12 @@ records. Checkpoints and Attempt records remain portable only while work may
 need recovery, then are compacted after successful Mission or standalone
 Assignment completion. Raw provider logs, PIDs, SQLite, and future worktree slots
 stay under ignored `cache/` or `worktrees/`.
+
+SpecDev-owned authoritative commits use `SpecDev-*` trailers. Adhoc and
+standalone Assignment use delivery commits; Mission uses checkpoint,
+child-delivery, integration, and completion commit types. Hashes are derived
+from Git when needed rather than embedded into artifacts inside their own
+commit.
 
 Run `specdev help` for the compact command list.
 

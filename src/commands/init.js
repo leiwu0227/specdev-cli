@@ -16,6 +16,10 @@ export function adapterContent(heading) {
 
 Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
 
+Classify each request before creating workflow state. Questions and read-only
+inspection are Direct. Use Adhoc, Discussion, Assignment, or Mission only when
+the user selects that lane; never silently make every request an Assignment.
+
 IMPORTANT: Before starting any subtask, announce "Specdev: <what you're doing>".
 If you stop announcing subtasks, the user will assume you've stopped following the workflow.
 `
@@ -28,6 +32,23 @@ export const ADAPTERS = {
 }
 
 export const SKILL_FILES = {
+  'specdev-adhoc': `---
+name: specdev-adhoc
+description: Make one bounded change without a RippleGraph workflow
+---
+
+Use Adhoc only when the user selects a concrete bounded repository change and
+does not want an Assignment. Start with \`specdev adhoc start "<scope>"\`.
+
+If the worktree is dirty, show the bounded summary and wait for the user to
+inspect, separately checkpoint, or explicitly adopt every existing change with
+\`--adopt-dirty\`. Make the change directly without a scheduler, worktree,
+subagent, or SpecDev approval gate. Finish with \`specdev adhoc finish
+--outcome="..." --verification="..."\`; the host writes one receipt and one
+final commit. \`specdev adhoc cancel\` leaves source changes untouched.
+
+Announce every subtask with "Specdev: <action>".
+`,
   'specdev-start': `---
 name: specdev-start
 description: Interactive Q&A to fill in your project's big_picture.md
@@ -391,8 +412,8 @@ export async function initCommand(flags = {}) {
     printSection('📖 Next steps:')
     printLines([
       '   1. Use specdev-start (or run specdev start) to fill in your project context',
-      '   2. Run specdev do "start an assignment" to start a change',
-      '   3. Run specdev next --json to resume where you left off',
+      '   2. Classify work as Direct, Adhoc, Discussion, Assignment, or Mission',
+      '   3. Run specdev next --json only to resume a focused workflow',
     ])
     blankLine()
     printSection('Platform adapters created:')
@@ -407,6 +428,7 @@ export async function initCommand(flags = {}) {
       '   .claude/skills/       Claude Code',
       '   .codex/skills/        Codex',
       '   specdev-start         Interactive project context setup',
+      '   specdev-adhoc         Bounded change without a workflow graph',
       '   specdev-assignment    Reserve ID and start brainstorm',
       '   specdev-continue      Resume from current phase',
       '   specdev-discussion    Concurrent code-read-only exploration',

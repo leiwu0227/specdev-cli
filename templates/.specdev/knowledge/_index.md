@@ -13,6 +13,11 @@ Discussion designs not cited by active knowledge, plus stale FAQs. The current
 coding CLI classifies and edits Markdown; there is no spawned distillation
 agent, confidence engine, processed ledger, or automatic rewrite.
 
+Adhoc receipts are intentionally outside the knowledge index. They are concise,
+high-volume historical evidence rather than curated guidance. See
+`workflow/adhoc-history.md` for bounded receipt and Git searches; promote only a
+reusable finding into living knowledge.
+
 `specdev knowledge rebuild` derives ignored `cache/knowledge.sqlite` from
 Markdown. Search rebuilds it synchronously when missing or stale. Default search
 uses authoritative current notes, fresh FAQs, and verified outcomes. Use

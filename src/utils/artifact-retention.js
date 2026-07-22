@@ -49,12 +49,12 @@ export async function compactCompletedWorkflowRuntime(specdevPath, options) {
   const ownerFilter = { [filterEntries[0][0]]: String(filterEntries[0][1]).trim() }
 
   const path = runDir(specdevPath, runId)
-  if (!(await fse.pathExists(path))) {
-    return { compacted: false, run_id: runId, attempts_removed: 0 }
-  }
-  const checkpoint = readCheckpoint(specdevPath, runId)
-  if (checkpoint.status !== 'completed') {
-    throw new Error(`cannot compact non-terminal RippleGraph run ${runId}: ${checkpoint.status}`)
+  const runExists = await fse.pathExists(path)
+  if (runExists) {
+    const checkpoint = readCheckpoint(specdevPath, runId)
+    if (checkpoint.status !== 'completed') {
+      throw new Error(`cannot compact non-terminal RippleGraph run ${runId}: ${checkpoint.status}`)
+    }
   }
 
   const attempts = await listAttemptRecords(specdevPath, ownerFilter)
@@ -69,7 +69,7 @@ export async function compactCompletedWorkflowRuntime(specdevPath, options) {
   if (current.focusedRunId === runId) {
     writeRippleCurrent(specdevPath, { focusedRunId: null })
   }
-  await fse.remove(path)
+  if (runExists) await fse.remove(path)
 
   for (const attempt of attempts) {
     await clearLocalProcessMarker(specdevPath, attempt.id)
@@ -84,7 +84,7 @@ export async function compactCompletedWorkflowRuntime(specdevPath, options) {
   }
 
   return {
-    compacted: true,
+    compacted: runExists,
     run_id: runId,
     attempts_removed: attempts.length,
   }

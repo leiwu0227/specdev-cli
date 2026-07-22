@@ -8,6 +8,7 @@
   guides/review.md                    common reviewer contract
   guides/library/catalog.yaml         managed curated guides
   guides/project/catalog.yaml         repository-owned guides
+  adhoc/YYYY-MM/AH-<id>_<slug>.md     immutable bounded-change receipts
   assignments/<id>_<slug>/            bounded delivery records
   missions/M<id>_<slug>/              static-wave foreground orchestration
   discussions/D<id>_<slug>/           concurrent thought work
@@ -21,6 +22,11 @@
 ## Main commands
 
 ```bash
+specdev adhoc start "<scope>"
+specdev adhoc finish --outcome="<result>" --verification="<evidence>"
+specdev adhoc status
+specdev adhoc show AH-<id>
+
 specdev assignment "<objective>"
 specdev checkpoint brainstorm
 specdev reviewloop brainstorm          # optional
@@ -46,6 +52,9 @@ specdev knowledge distill
 
 ## Recovery
 
+- `specdev adhoc status`: active machine-local marker and bounded diff summary.
+- `specdev adhoc show <ID>`: derive the start/end commits from the immutable
+  receipt and Git trailer rather than storing self-referential hashes.
 - `specdev next --json`: focused Assignment/Mission position.
 - `specdev discussion --list`: isolated callable positions.
 - `specdev test-audit --list`: isolated test-audit callable positions.

@@ -307,6 +307,8 @@ export async function collectKnowledgeDocuments(specdevPath) {
 
 async function collectKnowledgeSourceStats(specdevPath) {
   const files = []
+  // Adhoc receipts are intentionally excluded. They are high-volume historical
+  // evidence searched through rg/Git; indexed workflow knowledge explains how.
   for (const root of [
     'project_notes',
     'knowledge',

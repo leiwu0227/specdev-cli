@@ -1,7 +1,7 @@
 # Quick Start
 
-This guide takes a repository from installation to its first completed SpecDev
-Assignment. SpecDev is a Node.js CLI; do not install or run it with Python,
+This guide takes a repository from installation to its first completed change.
+SpecDev is a Node.js CLI; do not install or run it with Python,
 `pip`, or `pipx`.
 
 ## 1. Install and initialize
@@ -31,7 +31,7 @@ After initialization or update, coding agents should prefer the generated
 from driving a newer repository workflow. Commands below use `specdev` for
 readability.
 
-## 2. Record project context
+## 2. Record context and choose a lane
 
 In a new repository, ask the coding agent to run:
 
@@ -39,8 +39,16 @@ In a new repository, ask the coding agent to run:
 specdev start
 ```
 
-This interactively fills `.specdev/project_notes/big_picture.md`. Check the
-current workflow at any time with:
+This interactively fills `.specdev/project_notes/big_picture.md`. Then classify
+each request instead of assuming it needs an Assignment:
+
+- Direct for questions, explanations, status, or read-only inspection.
+- Adhoc for one user-selected bounded edit without a workflow graph.
+- Discussion for durable code-read-only exploration.
+- Assignment for a contracted implementation.
+- Mission for user-selected coordinated delivery.
+
+Check an already-focused workflow with:
 
 ```bash
 specdev next --json
@@ -48,9 +56,26 @@ specdev status --json
 specdev continue
 ```
 
-## 3. Deliver one Assignment
+## 3. Make a bounded Adhoc change
 
-An Assignment is the default unit of code-changing work.
+```bash
+specdev adhoc start "repair one help message"
+# make the change directly
+specdev adhoc finish --outcome="Corrected the help text" --verification="Inspected CLI output"
+```
+
+Adhoc has no RippleGraph run, scheduler, subagent, or approval gate. A dirty
+start requires an explicit inspect/checkpoint/adopt decision; use
+`--adopt-dirty` only when every existing change belongs to this work. Finish
+requires the same HEAD, writes a concise `.specdev/adhoc/` receipt, and creates
+one final delivery commit. Use `specdev adhoc status`, `show <ID>`, or `cancel`
+for recovery. Receipts stay outside `knowledge.sqlite`; an indexed workflow note
+explains how to search them through `rg`, Git, and `adhoc show`.
+
+## 4. Deliver one Assignment
+
+An Assignment is the normal unit for code-changing work that needs a durable
+contract, user approval, and automatic review.
 
 ```bash
 specdev assignment "add bounded retry handling"
@@ -79,6 +104,9 @@ Set policy when creating an Assignment with
 `--brainstorm-review=required|optional` and
 `--implementation-review=required|waived`. Approval freezes it. There is no
 routine final user gate after an approved implementation.
+Immediately before implementation, existing product changes require an
+inspect/checkpoint/explicit-adoption decision. Successful standalone completion
+creates one host-owned delivery commit with the Assignment ID in its trailers.
 
 The durable result is intentionally compact:
 
@@ -96,7 +124,7 @@ If a worker blocks, rerunning `specdev implement` reuses preserved artifacts
 instead of silently launching another worker. Use `--retry-worker` only when a
 fresh worker Attempt is intentional.
 
-## 4. Use a Mission for a larger objective
+## 5. Use a Mission for a larger objective
 
 The user—not SpecDev—chooses when work is a Mission.
 
@@ -132,7 +160,7 @@ PIDs, and worktree slots remain local and ignored. Restart recovery recognizes
 live children, delivery commits, integration conflicts, and interrupted
 two-phase integrations without treating unrelated staged files as its own.
 
-## 5. Explore concurrently without touching code
+## 6. Explore concurrently without touching code
 
 A Discussion may run while an Assignment or Mission is active:
 
@@ -155,7 +183,7 @@ specdev test-audit TA00001 --complete
 specdev assignment --from-test-audit=TA00001
 ```
 
-## 6. Search and distill knowledge
+## 7. Search and distill knowledge
 
 Markdown under `.specdev/knowledge/` is authoritative. SQLite is only a local,
 rebuildable FTS cache.
@@ -179,6 +207,8 @@ completed work and stale FAQs that may deserve curated knowledge updates.
 | `specdev update`                       | Refresh managed runtime files and graph packages |
 | `specdev start`                        | Fill or review project context                   |
 | `specdev next --json`                  | Show the canonical focused-workflow action       |
+| `specdev adhoc start "<scope>"`        | Start one bounded change without a graph         |
+| `specdev adhoc finish ...`             | Write its receipt and final delivery commit      |
 | `specdev assignment "<objective>"`     | Create one bounded code change                   |
 | `specdev checkpoint brainstorm`        | Validate the editable contract                   |
 | `specdev approve brainstorm`           | Approve the exact contract hash                  |
@@ -196,9 +226,9 @@ completed work and stale FAQs that may deserve curated knowledge updates.
 
 ## What is committed
 
-Commit project-facing state such as Assignments, Missions, Discussions,
-knowledge Markdown, and installed workflows or skills according to your
-repository policy. Keep `.specdev/cache/`, `.specdev/worktrees/`,
+Commit project-facing state such as Adhoc receipts, Assignments, Missions,
+Discussions, knowledge Markdown, and installed workflows or skills according to
+your repository policy. Keep `.specdev/cache/`, `.specdev/worktrees/`,
 `knowledge.sqlite`, local provider logs, and process markers ignored.
 
 For the detailed behavior and recovery model, see [README.md](README.md).

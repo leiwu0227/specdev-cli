@@ -22,14 +22,11 @@ import { stepGuidedNode } from '../utils/engine-sync.js'
 import { validateDeliveryArtifacts } from '../utils/delivery-artifacts.js'
 import { workflowRootFor } from '../utils/engine.js'
 import { resolveGuides } from '../utils/guides.js'
-import { attemptActivitySummary } from '../utils/process-record.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { readMission, resolveMissionSelector } from '../utils/mission.js'
-import {
-  compactCompletedWorkflowRuntime,
-  retireTransientArtifact,
-} from '../utils/artifact-retention.js'
+import { retireTransientArtifact } from '../utils/artifact-retention.js'
+import { completeStandaloneAssignmentDelivery } from '../utils/assignment-delivery.js'
 
 const execFile = promisify(execFileCallback)
 
@@ -584,21 +581,12 @@ export async function reviewImplementation(flags = {}) {
     next_action: approved ? 'Assignment complete.' : 'User direction is required.',
   }
   if (approved && !mission) {
-    const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
-    payload.activity = await attemptActivitySummary(
+    const completion = await completeStandaloneAssignmentDelivery({
+      targetDir,
       specdevPath,
-      { assignment: name },
-      {
-        startedAt: assignmentStatus.approved_at || assignmentStatus.created_at,
-        endedAt: assignmentStatus.completed_at,
-      }
-    )
-    await writeAssignmentStatus(assignmentPath, { activity: payload.activity })
-    payload.runtime_compaction = await compactCompletedWorkflowRuntime(specdevPath, {
-      runId: assignmentStatus.run_id,
-      attemptFilter: { assignment: name },
-      focus: { kind: 'assignment', id: assignmentStatus.id },
+      assignmentPath,
     })
+    Object.assign(payload, completion)
   }
   emit(flags, payload)
   if (!approved) process.exitCode = 1
