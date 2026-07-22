@@ -4,7 +4,7 @@ import { parse, stringify } from 'yaml'
 import { reserveEntityId } from './id-reservation.js'
 
 const DURABLE_STATUSES = new Set(['running', 'completed', 'interrupted', 'failed', 'blocked'])
-const ATTEMPT_ID_PATTERN = /^ATT-(?:\d+|\d{5}-\d+)$/
+const ATTEMPT_ID_PATTERN = /^(?:Attempt|ATT)-(?:\d+|\d{5}-\d+)$/
 
 export async function createAttemptRecord(specdevPath, input) {
   const id = await reserveEntityId(specdevPath, 'attempt')

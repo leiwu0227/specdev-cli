@@ -29,6 +29,9 @@ to RippleGraph while work is non-terminal; revisions and diffs belong to Git;
 contracts, outcomes, and receipts are the small durable human record. Successful
 Mission and standalone Assignment completion removes the terminal run and its
 owned Attempt records after their compact activity summary has been preserved.
+Attempt execution records use IDs such as `Attempt-00001`; they are temporary
+worker, reviewer, or controller invocations, not Assignment identities. Legacy
+`ATT-*` records may remain while older in-flight work resumes.
 Assignment and Mission transitions are owned by their semantic commands;
 generic `specdev step`, `decide`, and `action` cannot advance those graphs.
 
@@ -79,6 +82,9 @@ a scheduler, but only one may be active in a worktree.
   single child reuses the approved parent authority without another Brainstorm
   author or reviewer.
 - Approval binds the exact final contract hash. Editing it invalidates approval.
+- Before requesting Assignment or Mission contract approval, show the exact
+  contract path and hash plus a concise 2-4 bullet preview covering objective,
+  scope, and key acceptance criteria. The preview never replaces the contract.
 - Adhoc refuses a dirty start until the user inspects, separately checkpoints,
   or explicitly adopts every existing change. Assignment enforces the same
   product-tree decision immediately before implementation.

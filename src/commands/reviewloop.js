@@ -11,6 +11,7 @@ import {
   assertApprovedContract,
   assertCurrentAssignmentPath,
   checkpointedContractFor,
+  contractPreview,
   currentAssignmentNode,
   hashText,
   relativeToRepo,
@@ -715,6 +716,7 @@ function missionBrainstormPayload({
     mission: mission.id,
     round,
     verdict: relativeToRepo(targetDir, verdictPath),
+    contract: relativeToRepo(targetDir, contract.path),
     material_divergence: materialDivergence,
     divergence_classification: !divergence
       ? 'none'
@@ -722,12 +724,13 @@ function missionBrainstormPayload({
         ? 'material'
         : 'clarifying',
     contract_hash: contract.hash,
+    contract_preview: contractPreview(contract.content),
     textual_changes: divergence,
     next_action:
       status === 'approved'
         ? requiresCheckpoint
-          ? `Run specdev mission run ${mission.id} to checkpoint this final hash, then show the verdict/hash and wait for explicit user agreement.`
-          : `Show the verdict and exact hash to the user. Only after explicit agreement run specdev mission run ${mission.id} --approve.`
+          ? `Run specdev mission run ${mission.id} to checkpoint this final hash, then show the contract preview, verdict, and hash before waiting for explicit user agreement.`
+          : `Show the contract preview, verdict, and exact hash to the user. Only after explicit agreement run specdev mission run ${mission.id} --approve.`
         : canRerun
           ? `Address findings, then rerun specdev reviewloop mission --mission=${mission.id}.`
           : 'User direction is required.',
@@ -754,6 +757,7 @@ function assignmentBrainstormPayload({
     assignment: name,
     round,
     verdict: relativeToRepo(targetDir, verdictPath),
+    contract: relativeToRepo(targetDir, contract.path),
     material_divergence: materialDivergence,
     divergence_classification: !divergence
       ? 'none'
@@ -761,12 +765,13 @@ function assignmentBrainstormPayload({
         ? 'material'
         : 'clarifying',
     contract_hash: contract.hash,
+    contract_preview: contractPreview(contract.content),
     textual_changes: divergence,
     next_action:
       status === 'approved'
         ? requiresCheckpoint
-          ? 'Run specdev checkpoint brainstorm to present this final hash, then show the verdict/hash and wait for explicit user agreement.'
-          : 'Show this verdict and exact hash to the user, then run specdev approve brainstorm only after explicit agreement.'
+          ? 'Run specdev checkpoint brainstorm to present this final hash, then show the contract preview, verdict, and hash before waiting for explicit user agreement.'
+          : 'Show the contract preview, verdict, and exact hash to the user, then run specdev approve brainstorm only after explicit agreement.'
         : canRerun
           ? 'Address the findings in the contract, then rerun specdev reviewloop brainstorm.'
           : 'User direction is required.',
@@ -814,7 +819,12 @@ function emit(flags, payload) {
   else {
     console.log(`${payload.phase} review: ${payload.status}`)
     console.log(`Verdict: ${payload.verdict}`)
+    if (payload.contract) console.log(`Contract: ${payload.contract}`)
     if (payload.contract_hash) console.log(`Contract hash: ${payload.contract_hash}`)
+    if (payload.contract_preview?.length > 0) {
+      console.log('Contract preview:')
+      for (const line of payload.contract_preview) console.log(`  - ${line}`)
+    }
     if (payload.material_divergence !== undefined) {
       console.log(
         `Divergence: ${payload.divergence_classification || (payload.material_divergence ? 'material' : 'none')}`

@@ -30,5 +30,8 @@ read-only. A Discussion has no approval contract or implementation plan.
 
 After Assignment Brainstorm run `specdev checkpoint brainstorm`. Review is
 optional via `specdev reviewloop brainstorm`; approval always waits for explicit
-user agreement after the final verdict and hash are shown. If review changes the
-contract, run the checkpoint once more before requesting approval.
+user agreement after the exact contract path, final hash, and a concise 2-4
+bullet contract preview are shown. The preview must cover the objective, scope,
+and key acceptance criteria; it supplements rather than replaces the exact
+contract. If review changes the contract, run the checkpoint once more before
+requesting approval.

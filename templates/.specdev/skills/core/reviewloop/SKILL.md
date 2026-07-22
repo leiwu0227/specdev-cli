@@ -18,7 +18,8 @@ runs the configured reviewer, and reports the final verdict, textual changes,
 material-divergence classification, and exact contract hash. If findings remain,
 the current coding CLI edits the contract and reruns the same command once.
 
-Never approve automatically. Show the verdict to the user and run `specdev
+Never approve automatically. Show the verdict, exact contract path and hash,
+and the command's concise contract-preview bullets to the user. Run `specdev
 approve brainstorm` only after explicit agreement.
 
 ## Mission Brainstorm
@@ -26,7 +27,7 @@ approve brainstorm` only after explicit agreement.
 Run `specdev reviewloop mission --mission=M00001`. This optional review has the
 same visible baseline, divergence, and exact-hash rules as Assignment Brainstorm
 review. It never approves the Mission; approval remains `specdev mission run
-M00001 --approve` after explicit user agreement.
+M00001 --approve` after the same contract preview and explicit user agreement.
 
 ## Implementation
 

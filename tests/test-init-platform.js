@@ -99,6 +99,16 @@ assert(
   'assignment skill references specdev assignment command'
 )
 assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix instruction')
+assert(
+  assignmentSkill.includes('contract-preview bullets'),
+  'assignment skill requires a contract preview before approval'
+)
+
+const missionSkill = readFileSync(join(skillsDir, 'specdev-mission', 'SKILL.md'), 'utf-8')
+assert(
+  missionSkill.includes('contract-preview bullets'),
+  'mission skill requires a contract preview before approval'
+)
 
 const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
@@ -111,6 +121,10 @@ assert(reviewloopSkill.includes('agents.yaml'), 'reviewloop skill references rep
 assert(
   reviewloopSkill.includes('review sessions are advisory'),
   'reviewloop skill distinguishes native advisory reviews from authoritative reviewloop verdicts'
+)
+assert(
+  reviewloopSkill.includes('contract-preview bullets'),
+  'reviewloop skill requires a contract preview before approval'
 )
 
 // ---- Test hook installation ----

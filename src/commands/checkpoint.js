@@ -5,6 +5,7 @@ import { resolveTargetDir } from '../utils/command-context.js'
 import {
   assertCurrentAssignmentPath,
   checkpointedContractFor,
+  contractPreview,
   normalizeReviewPolicy,
   relativeToRepo,
   validateAssignmentContract,
@@ -96,6 +97,7 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
     assignment: name,
     contract: relativeToRepo(targetDir, contract.path),
     contract_hash: contract.hash,
+    contract_preview: contractPreview(contract.content),
     acceptance_criteria: contract.acceptanceIds,
     next_actions: {
       optional_review: 'specdev reviewloop brainstorm',
@@ -105,7 +107,10 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
   else {
     console.log(`Brainstorm contract ready: ${name}`)
+    console.log(`Contract: ${payload.contract}`)
     console.log(`Contract hash: ${contract.hash}`)
+    console.log('Contract preview:')
+    for (const line of payload.contract_preview) console.log(`  - ${line}`)
     console.log('Optional review: specdev reviewloop brainstorm')
     console.log('When the user explicitly agrees: specdev approve brainstorm')
   }

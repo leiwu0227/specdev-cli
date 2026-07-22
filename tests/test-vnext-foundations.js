@@ -29,6 +29,7 @@ import {
 import { loadGuideCatalog, resolveGuides } from '../src/utils/guides.js'
 import { readCurrentFocus, writeCurrentFocus } from '../src/utils/current.js'
 import { validateAndReserveReplannedQueue } from '../src/utils/mission.js'
+import { contractPreview } from '../src/utils/assignment-vnext.js'
 import {
   currentMissionWave,
   integratableMissionPrefix,
@@ -165,6 +166,33 @@ try {
   assert.equal(cursorReview.args.includes('plan'), true)
   assert.equal(cursorReview.args.includes('--yolo'), false)
 
+  const preview = contractPreview(`## Objective and context
+
+[Repair routing](https://example.test) while keeping
+the existing API stable.
+
+## Scope and non-goals
+
+- In scope: **fallback routing**
+- Non-goals: provider billing
+
+## Acceptance criteria
+
+- AC-1: Requests use the first healthy endpoint.
+- AC-2: Failed endpoints fall back deterministically.
+- AC-3: Existing response shapes remain stable.
+`)
+  assert.deepEqual(preview, [
+    'Objective: Repair routing while keeping the existing API stable.',
+    'In scope: fallback routing',
+    'Acceptance AC-1: Requests use the first healthy endpoint.',
+    'Acceptance AC-2: Failed endpoints fall back deterministically.',
+  ])
+  assert.equal(
+    preview.every((line) => line.length <= 180),
+    true
+  )
+
   const result = parseResultEnvelope(
     `---\nverdict: approved\nmaterial_divergence: false\n---\n\n## Findings\n\nNo blocking findings.\n`,
     'reviewer'
@@ -281,11 +309,17 @@ try {
     mission: 'M00001',
     assignment: '00031',
   })
-  assert.equal(namespacedAttempt.id, 'ATT-00031-00001')
+  assert.equal(namespacedAttempt.id, 'Attempt-00031-00001')
   assert.equal((await readAttemptRecord(specdevPath, namespacedAttempt.id)).assignment, '00031')
   await updateAttemptRecord(specdevPath, namespacedAttempt.id, { status: 'completed' })
   if (previousAttemptNamespace === undefined) delete process.env.SPECDEV_ATTEMPT_NAMESPACE
   else process.env.SPECDEV_ATTEMPT_NAMESPACE = previousAttemptNamespace
+
+  writeFileSync(
+    join(specdevPath, 'processes', 'ATT-00007.yaml'),
+    'id: ATT-00007\nkind: reviewer\nstatus: interrupted\nworkspace: .\nstarted_at: 2026-07-22T00:00:00.000Z\n'
+  )
+  assert.equal((await readAttemptRecord(specdevPath, 'ATT-00007')).status, 'interrupted')
 
   const waveQueue = {
     version: 2,
@@ -492,6 +526,7 @@ try {
     model: 'opus',
     guides: [{ id: 'api-security', version: '1' }],
   })
+  assert.equal(attempt.id, 'Attempt-00008')
   const persistedAttempt = await readAttemptRecord(specdevPath, attempt.id)
   assert.equal(persistedAttempt.discussion, 'D00001')
   assert.equal(persistedAttempt.network, false)

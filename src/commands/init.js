@@ -121,10 +121,13 @@ Review policy may be set at creation or approval with
 \`--implementation-review=required|waived\`; approval freezes it. A waiver never
 waives acceptance evidence.
 
-Show any verdict, textual changes, divergence classification, and exact hash.
-If review changed the contract, run \`specdev checkpoint brainstorm\` once more
-to present the final hash. Only after explicit user agreement run \`specdev
-approve brainstorm\`, then \`specdev implement\` for the automatic section.
+Before requesting agreement, show the exact contract path and hash plus the
+command's concise contract-preview bullets covering objective, scope, and key
+acceptance criteria. Also show any verdict, textual changes, and divergence
+classification. If review changed the contract, run \`specdev checkpoint
+brainstorm\` once more to present the final hash. Only after explicit user
+agreement run \`specdev approve brainstorm\`, then \`specdev implement\` for the
+automatic section.
 
 Announce every subtask with "Specdev: <action>".
 `,
@@ -163,8 +166,9 @@ description: Create and run a foreground Mission with automatic bounded waves
 Run \`specdev mission create "<objective>"\` and collaborate on the Mission
 contract, including its exact final integrated verification command. Run
 \`specdev mission run M00001\` to validate it, and run it again if review changed
-the contract. Only after explicit agreement run \`specdev mission run M00001
---approve\`.
+the contract. Before requesting agreement, show the exact contract path and hash
+plus the command's concise contract-preview bullets. Only after explicit
+agreement run \`specdev mission run M00001 --approve\`.
 
 Keep the Mission contract proportional just like an Assignment contract. Do not
 restate big-picture notes or turn implementation tasks into acceptance criteria.
@@ -212,6 +216,10 @@ user to choose a reviewer per execution and do not pass \`--autocontinue\`.
 - Implementation: normally invoked by \`specdev implement\`; one worker repair
   and same-reviewer verification are automatic.
 - Discussion: \`specdev reviewloop discussion --discussion=D00001\`.
+
+For Assignment or Mission Brainstorm approval, show the exact contract path and
+hash plus the command's concise contract-preview bullets before asking the user
+to agree.
 
 Only \`specdev reviewloop\` produces a transition-authorizing strict result
 envelope. Native coding-CLI review sessions are advisory and cannot advance

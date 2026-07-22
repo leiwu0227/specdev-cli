@@ -13,7 +13,12 @@ const ENTITY_CONFIG = {
   mission: { root: 'missions', prefix: 'M', pattern: /^M(\d+)_/, entryType: 'directory' },
   discussion: { root: 'discussions', prefix: 'D', pattern: /^D(\d+)_/, entryType: 'directory' },
   test_audit: { root: 'test-audits', prefix: 'TA', pattern: /^TA(\d+)_/, entryType: 'directory' },
-  attempt: { root: 'processes', prefix: 'ATT-', pattern: /^ATT-(\d+)\.yaml$/, entryType: 'file' },
+  attempt: {
+    root: 'processes',
+    prefix: 'Attempt-',
+    pattern: /^(?:Attempt|ATT)-(\d+)\.yaml$/,
+    entryType: 'file',
+  },
 }
 
 export async function reserveEntityId(specdevPath, kind) {
@@ -29,8 +34,8 @@ export async function reserveEntityId(specdevPath, kind) {
     const effectiveConfig = attemptNamespace
       ? {
           ...config,
-          prefix: `ATT-${attemptNamespace}-`,
-          pattern: new RegExp(`^ATT-${attemptNamespace}-(\\d+)\\.yaml$`),
+          prefix: `Attempt-${attemptNamespace}-`,
+          pattern: new RegExp(`^(?:Attempt|ATT)-${attemptNamespace}-(\\d+)\\.yaml$`),
         }
       : config
     const scannedNext = await nextFromFolders(specdevPath, effectiveConfig)

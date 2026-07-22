@@ -258,6 +258,11 @@ try {
   const checkpoint = runJson(root, ['checkpoint', 'brainstorm', '--json'])
   assert.equal(checkpoint.status, 'pass')
   assert.match(checkpoint.contract_hash, /^[a-f0-9]{64}$/)
+  assert.deepEqual(checkpoint.contract_preview, [
+    'Objective: Exercise the graph lifecycle',
+    'In scope: graph integration',
+    'Acceptance AC-1: One contract approval reaches automatic Design.',
+  ])
   assert.equal(runJson(root, ['next', '--json']).state, 'awaiting_decision')
   const bypassedApproval = runJson(
     root,
@@ -293,7 +298,7 @@ try {
   assert.equal(runJson(root, ['next', '--json']).phase, 'design')
   const bypassedDesign = runJson(
     root,
-    ['step', `--json=${JSON.stringify({ plan: 'invalid', attempt: 'ATT-bypass' })}`],
+    ['step', `--json=${JSON.stringify({ plan: 'invalid', attempt: 'Attempt-bypass' })}`],
     1
   )
   assert.equal(bypassedDesign.state, 'semantic_command_required')
@@ -468,6 +473,11 @@ try {
   writeMissionContract(join(root, mission.path))
   const awaitingMissionApproval = runJson(root, ['mission', 'run', mission.id, '--json'])
   assert.equal(awaitingMissionApproval.status, 'awaiting_approval')
+  assert.deepEqual(awaitingMissionApproval.contract_preview, [
+    'Objective: Exercise sequential orchestration',
+    'In scope: graph integration',
+    'Acceptance AC-1: One contract approval reaches automatic Design.',
+  ])
   const missionStatus = runJson(root, ['mission', 'status', mission.id, '--json'])
   assert.equal(missionStatus.mission, mission.id)
   assert.deepEqual(missionStatus.activity.provider_attempts, {

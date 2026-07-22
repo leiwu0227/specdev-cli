@@ -103,6 +103,9 @@ call: complete the preserved delivery artifacts and rerun to reuse them, or use
 `specdev implement --retry-worker` to explicitly launch a fresh worker.
 If review findings changed the contract after checkpoint, run `specdev
 checkpoint brainstorm` once more to present the final hash before approval.
+Before asking for approval, show the exact contract path and hash plus the
+bounded CLI preview: objective, in-scope change, and up to two acceptance
+criteria. The preview helps the user decide but does not replace the contract.
 Immediately before implementation, SpecDev records a Git boundary. Existing
 product changes require the same inspect/checkpoint/explicit-adoption decision
 as Adhoc. Successful standalone delivery creates one host-owned commit carrying
@@ -186,6 +189,8 @@ completion, SpecDev records terminal state and aggregate activity in
 the Mission/Assignment artifacts, then removes the completed run and its owned
 Attempt records before the completion commit. Completed work therefore remains
 portable as project documents rather than retained execution infrastructure.
+New execution IDs use the explicit `Attempt-00001` form. Legacy `ATT-*` records
+remain readable so interrupted work can resume after an update.
 For an already-justified multi-child plan, Mission Design assigns static waves.
 Semantically independent children in one wave automatically run in up to three
 validated `.specdev/worktrees/slot-N` worktrees. Completed branches integrate

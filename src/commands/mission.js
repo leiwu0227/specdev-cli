@@ -11,6 +11,7 @@ import { parseResultEnvelope } from '../utils/result-envelope.js'
 import {
   ASSIGNMENT_KINDS,
   assignmentContractTemplate,
+  contractPreview,
   discussionArtifactHash,
   gitSnapshot,
   relativeToRepo,
@@ -260,7 +261,9 @@ async function runMission(selector, flags) {
           version: 1,
           status: 'awaiting_approval',
           mission: mission.id,
+          contract: relativeToRepo(targetDir, contract.path),
           contract_hash: contract.hash,
+          contract_preview: contractPreview(contract.content),
           branch: mission.branch,
           dirty_paths: git.dirty_paths,
           review: review
@@ -2632,9 +2635,14 @@ function emit(flags, payload) {
   else {
     console.log(`Mission ${payload.mission || payload.id}: ${payload.status}`)
     if (payload.path) console.log(`Path: ${payload.path}`)
+    if (payload.contract) console.log(`Contract: ${payload.contract}`)
     if (payload.phase) console.log(`Phase: ${payload.phase}`)
     if (payload.branch) console.log(`Branch: ${payload.branch}`)
     if (payload.contract_hash) console.log(`Contract hash: ${payload.contract_hash}`)
+    if (payload.contract_preview?.length > 0) {
+      console.log('Contract preview:')
+      for (const line of payload.contract_preview) console.log(`  - ${line}`)
+    }
     if (payload.review?.verdict) console.log(`Review verdict: ${payload.review.verdict}`)
     if (payload.review?.stale)
       console.log(

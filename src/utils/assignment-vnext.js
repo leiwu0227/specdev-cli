@@ -121,6 +121,57 @@ export async function validateContractPath(path) {
   }
 }
 
+export function contractPreview(content) {
+  const objective = firstContractParagraph(contractSection(content, 'Objective and context'))
+  const scope = contractSection(content, 'Scope and non-goals')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => /^[-*]\s+In scope\s*:/i.test(line))
+  const acceptance = contractSection(content, 'Acceptance criteria')
+    .split(/\r?\n/)
+    .map((line) => line.trim().match(/^[-*]\s+(AC-\d+\s*:\s*.+)$/i)?.[1])
+    .filter(Boolean)
+
+  return [
+    objective ? `Objective: ${objective}` : null,
+    scope ? scope.replace(/^[-*]\s+/, '') : null,
+    ...acceptance.slice(0, 2).map((criterion) => `Acceptance ${criterion}`),
+  ]
+    .filter(Boolean)
+    .map((line) => truncateContractPreviewLine(cleanContractPreviewLine(line)))
+}
+
+function contractSection(content, heading) {
+  const source = String(content || '')
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = new RegExp(`^##\\s+${escaped}\\s*$`, 'mi').exec(source)
+  if (!match) return ''
+  const remainder = source.slice(match.index + match[0].length).replace(/^\r?\n/, '')
+  const nextHeading = /^##\s+/m.exec(remainder)
+  return nextHeading ? remainder.slice(0, nextHeading.index) : remainder
+}
+
+function firstContractParagraph(section) {
+  return String(section || '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split(/\r?\n\s*\r?\n/)
+    .map((paragraph) => paragraph.trim())
+    .find(Boolean)
+}
+
+function cleanContractPreviewLine(line) {
+  return String(line || '')
+    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function truncateContractPreviewLine(line, limit = 180) {
+  if (line.length <= limit) return line
+  return `${line.slice(0, limit - 3).trimEnd()}...`
+}
+
 export async function approvedContractFor(targetDir) {
   return assignmentOutputFor(targetDir, 'approve-contract')
 }
