@@ -39,7 +39,7 @@ export const COMMANDS = [
   {
     name: 'reviewloop',
     usage: 'reviewloop <phase>',
-    description: 'Run configured reviewer with one verification rerun',
+    description: 'Run interactive review or bounded automatic convergence',
   },
   {
     name: 'discussion',

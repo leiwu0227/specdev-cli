@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "./node_modules/.bin/prettier --write package.json src/commands/implement.js src/commands/init.js src/commands/mission.js src/commands/reviewloop.js src/utils/commands.js src/utils/review-convergence.js templates/.specdev/skills/core/reviewloop/SKILL.md templates/.specdev/workflows/assignment-lifecycle/graph.json templates/.specdev/workflows/mission-lifecycle/graph.json tests/test-engine-graphpackages.js tests/test-review-convergence.js .specdev/assignments/00026_implement-interactive-versus-automatic-review-co/design/plan.md",
+      "revision": "working-tree@da14e92888cab014b0a6e6e4d2f051cddfea9deb",
+      "scope": "Changed JavaScript, JSON, Markdown, package metadata, and workflow manifests parsed and formatted successfully",
+      "status": "passed",
+      "duration_ms": 400
+    },
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@da14e92888cab014b0a6e6e4d2f051cddfea9deb",
+      "scope": "Working-tree whitespace integrity",
+      "status": "passed",
+      "duration_ms": 100
+    },
+    {
+      "command": "node ./tests/test-review-convergence.js && node ./tests/test-engine-graphpackages.js",
+      "revision": "working-tree@da14e92888cab014b0a6e6e4d2f051cddfea9deb",
+      "scope": "Review modes, progress, stalling, blocked resolver, arbitration, restart, bounded replanning, immutable graph versions, and terminal dispositions",
+      "status": "passed",
+      "duration_ms": 20
+    },
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@da14e92888cab014b0a6e6e4d2f051cddfea9deb",
+      "scope": "Command-level interactive Assignment and Discussion reruns, interactive Mission Brainstorm review, and automatic Mission-child Brainstorm convergence",
+      "status": "passed",
+      "duration_ms": 3500
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

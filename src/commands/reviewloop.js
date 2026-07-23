@@ -20,7 +20,10 @@ import {
   writeAssignmentStatus,
 } from '../utils/assignment-vnext.js'
 import { stepGuidedNode } from '../utils/engine-sync.js'
-import { validateDeliveryArtifacts } from '../utils/delivery-artifacts.js'
+import {
+  assertReviewWaiverEvidence,
+  validateDeliveryArtifacts,
+} from '../utils/delivery-artifacts.js'
 import { workflowRootFor } from '../utils/engine.js'
 import { resolveGuides } from '../utils/guides.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
@@ -28,6 +31,13 @@ import { readGuidedCall } from '../utils/callable-sync.js'
 import { readMission, resolveMissionSelector } from '../utils/mission.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import { completeStandaloneAssignmentDelivery } from '../utils/assignment-delivery.js'
+import {
+  initialAutomaticReviewState,
+  recordArbitration,
+  recordPrimaryReview,
+  recordResolver,
+  reviewExecutionMode,
+} from '../utils/review-convergence.js'
 
 const execFile = promisify(execFileCallback)
 
@@ -113,11 +123,6 @@ export async function reviewMissionBrainstorm(flags = {}) {
     reviewState = { version: 1, round: 0, status: 'started' }
   } else if (reviewState.status === 'approved') {
     reviewState = { ...reviewState, round: 0, status: 'started' }
-  } else if (reviewState.round >= 2) {
-    return fail(
-      flags,
-      'Mission Brainstorm review already failed its verification rerun; user direction is required'
-    )
   }
 
   const profile = await reviewProfile(specdevPath, flags, reviewState.profile)
@@ -156,12 +161,7 @@ export async function reviewMissionBrainstorm(flags = {}) {
   reviewState = {
     version: 1,
     round,
-    status:
-      verdict.verdict === 'approved'
-        ? 'approved'
-        : blocked || round >= 2
-          ? 'blocked'
-          : 'needs_changes',
+    status: verdict.verdict === 'approved' ? 'approved' : blocked ? 'blocked' : 'needs_changes',
     profile,
     guide_ids: guideIds,
     baseline_hash: hashText(await fse.readFile(baselinePath, 'utf-8')),
@@ -197,7 +197,7 @@ export async function reviewMissionBrainstorm(flags = {}) {
     materialDivergence: verdict.material_divergence ?? false,
     divergence,
     status: verdict.verdict === 'approved' ? 'approved' : reviewState.status,
-    canRerun: !blocked && round < 2,
+    canRerun: verdict.verdict !== 'approved',
     requiresCheckpoint: checkpointed?.contract_hash !== contract.hash,
   })
   emit(flags, payload)
@@ -230,12 +230,6 @@ export async function reviewDiscussion(flags = {}) {
     version: 1,
     round: 0,
     status: 'started',
-  }
-  if (reviewState.round >= 2 && reviewState.status !== 'approved') {
-    return fail(
-      flags,
-      'Discussion review already failed its verification rerun; user direction is required'
-    )
   }
   const profile = await reviewProfile(specdevPath, flags, reviewState.profile)
   const guideIds = guideIdsFromFlags(flags, reviewState.guide_ids)
@@ -271,7 +265,7 @@ export async function reviewDiscussion(flags = {}) {
   reviewState = {
     version: 1,
     round,
-    status: approved ? 'approved' : blocked || round >= 2 ? 'blocked' : 'needs_changes',
+    status: approved ? 'approved' : blocked ? 'blocked' : 'needs_changes',
     profile,
     guide_ids: guideIds,
     attempt: result.attempt.id,
@@ -288,9 +282,9 @@ export async function reviewDiscussion(flags = {}) {
     verdict: relativeToRepo(targetDir, verdictPath),
     next_action: approved
       ? `Complete when satisfied: specdev discussion ${id} --complete.`
-      : !blocked && round < 2
+      : !approved
         ? `Address findings, then rerun specdev reviewloop discussion --discussion=${id}.`
-        : 'User direction is required.',
+        : 'Discussion review complete.',
   }
   emit(flags, payload)
   if (!approved) process.exitCode = 1
@@ -340,11 +334,6 @@ export async function reviewBrainstorm(flags = {}) {
     reviewState = { version: 1, round: 0, status: 'started' }
   } else if (reviewState.status === 'approved') {
     reviewState = { ...reviewState, round: 0, status: 'started' }
-  } else if (reviewState.round >= 2 && reviewState.status !== 'approved') {
-    return fail(
-      flags,
-      'Brainstorm review already failed its verification rerun; user direction is required'
-    )
   }
 
   const profile = await reviewProfile(specdevPath, flags, reviewState.profile)
@@ -353,8 +342,28 @@ export async function reviewBrainstorm(flags = {}) {
     specdevPath,
     await resolveGuides(specdevPath, guideIds, { phase: 'brainstorm' })
   )
-  const round = reviewState.round + 1
   const missionAuthority = await childMissionReviewLines(targetDir, specdevPath, assignmentPath)
+  const mode = reviewExecutionMode({
+    phase: 'brainstorm',
+    missionChild: missionAuthority.length > 0,
+  })
+  if (mode === 'automatic') {
+    return reviewAutomaticBrainstorm({
+      ...context,
+      flags,
+      contract,
+      baselinePath,
+      verdictPath,
+      statePath,
+      reviewState,
+      profile,
+      guideIds,
+      guides,
+      missionAuthority,
+    })
+  }
+
+  const round = reviewState.round + 1
   const prompt = [
     'Review the Assignment contract. Do not modify tracked files.',
     `Contract: ${relativeToRepo(targetDir, contract.path)}`,
@@ -391,12 +400,7 @@ export async function reviewBrainstorm(flags = {}) {
   reviewState = {
     version: 1,
     round,
-    status:
-      verdict.verdict === 'approved'
-        ? 'approved'
-        : blocked || round >= 2
-          ? 'blocked'
-          : 'needs_changes',
+    status: verdict.verdict === 'approved' ? 'approved' : blocked ? 'blocked' : 'needs_changes',
     profile,
     guide_ids: guideIds,
     baseline_hash: hashFromContract(await fse.readFile(baselinePath, 'utf-8')),
@@ -432,7 +436,7 @@ export async function reviewBrainstorm(flags = {}) {
     materialDivergence: verdict.material_divergence ?? false,
     divergence,
     status: verdict.verdict === 'approved' ? 'approved' : reviewState.status,
-    canRerun: !blocked && round < 2,
+    canRerun: verdict.verdict !== 'approved',
     requiresCheckpoint: checkpointed?.contract_hash !== contract.hash,
   })
   emit(flags, payload)
@@ -440,11 +444,273 @@ export async function reviewBrainstorm(flags = {}) {
   return payload
 }
 
+async function reviewAutomaticBrainstorm(options) {
+  const {
+    targetDir,
+    specdevPath,
+    assignmentPath,
+    name,
+    mission,
+    flags,
+    baselinePath,
+    verdictPath,
+    statePath,
+    profile,
+    guideIds,
+    guides,
+    missionAuthority,
+  } = options
+  let state = {
+    ...initialAutomaticReviewState(options.reviewState),
+    profile,
+    guide_ids: guideIds,
+    baseline_hash: hashFromContract(await fse.readFile(baselinePath, 'utf-8')),
+  }
+
+  for (let transition = 0; transition < 8; transition += 1) {
+    let contract = await validateAssignmentContract(assignmentPath)
+    if (!contract.valid)
+      return fail(
+        flags,
+        `Contract repair produced an invalid contract: ${contract.errors.join('; ')}`
+      )
+
+    if (state.stage === 'failed') {
+      return emitAutomaticBrainstormResult({
+        targetDir,
+        name,
+        contract,
+        verdictPath,
+        baselinePath,
+        state,
+        flags,
+        status: 'blocked',
+      })
+    }
+    if (state.stage === 'resolver') {
+      const resolved = await runContractResolutionWorker({
+        targetDir,
+        specdevPath,
+        assignmentPath,
+        name,
+        mission,
+        flags,
+        verdictPath,
+        missionAuthority,
+        resolver: true,
+      })
+      if (!resolved) return null
+      state = {
+        ...recordResolver(state, {
+          attempt: resolved.attempt.id,
+          status: resolved.result.frontmatter.status,
+        }),
+        contract_hash: contract.hash,
+      }
+      await writeJsonAtomic(statePath, state)
+      continue
+    }
+
+    const arbitration = state.stage === 'arbiter'
+    const round = state.round + 1
+    const result = await runSpawnedAgent({
+      targetDir,
+      specdevPath,
+      role: 'reviewer',
+      profile,
+      prompt: [
+        arbitration
+          ? 'Arbitrate the automatic Mission-child contract review. Do not modify files.'
+          : 'Review the automatic Mission-child Assignment contract. Do not modify files.',
+        `Contract: ${relativeToRepo(targetDir, contract.path)}`,
+        `Frozen baseline: ${relativeToRepo(targetDir, baselinePath)}`,
+        ...missionAuthority,
+        `Previous findings: ${relativeToRepo(targetDir, verdictPath)}`,
+        arbitration
+          ? 'Return approved only when no blocking finding remains; use needs_changes only for a nonblocking reviewer disagreement, and blocked for an objective authority, validity, or feasibility failure.'
+          : 'Identify blocking or materially useful findings only. Verify that authority and acceptance remain wholly inside the approved Mission contract and queue entry.',
+        'Never run a full suite.',
+      ].join('\n'),
+      resultPath: verdictPath,
+      resultKind: 'reviewer',
+      assignment: name,
+      mission,
+      guides,
+    })
+    if (result.status !== 'completed') return fail(flags, result.error || 'Reviewer failed')
+    const findings = await fse.readFile(verdictPath, 'utf-8')
+    const verdict = result.result.frontmatter
+
+    if (arbitration) {
+      const arbitrationResult = recordArbitration(state, {
+        verdict: verdict.verdict,
+        attempt: result.attempt.id,
+        candidateDigest: contract.hash,
+        findings,
+      })
+      state = {
+        ...arbitrationResult.state,
+        contract_hash: contract.hash,
+        material_divergence: verdict.material_divergence ?? false,
+      }
+      if (arbitrationResult.disposition === 'nonblocking-disagreement') {
+        state = {
+          ...state,
+          stage: 'failed',
+          status: 'failed',
+          disposition: 'objective-failure',
+          override_rejected:
+            'Pre-implementation contract review has no completed delivery evidence for the strict host override gate.',
+        }
+      }
+      await writeJsonAtomic(statePath, state)
+      return emitAutomaticBrainstormResult({
+        targetDir,
+        name,
+        contract,
+        verdictPath,
+        baselinePath,
+        state,
+        flags,
+        status: state.status === 'approved' ? 'approved' : 'blocked',
+      })
+    }
+
+    const primary = recordPrimaryReview(state, {
+      verdict: verdict.verdict,
+      candidateDigest: contract.hash,
+      findings,
+      attempt: result.attempt.id,
+    })
+    state = {
+      ...primary.state,
+      contract_hash: contract.hash,
+      material_divergence: verdict.material_divergence ?? false,
+    }
+    await writeJsonAtomic(statePath, state)
+    if (primary.disposition === 'approved') {
+      return emitAutomaticBrainstormResult({
+        targetDir,
+        name,
+        contract,
+        verdictPath,
+        baselinePath,
+        state,
+        flags,
+        status: 'approved',
+      })
+    }
+    if (primary.disposition === 'resolver') continue
+
+    const repaired = await runContractResolutionWorker({
+      targetDir,
+      specdevPath,
+      assignmentPath,
+      name,
+      mission,
+      flags,
+      verdictPath,
+      missionAuthority,
+      resolver: false,
+    })
+    if (!repaired) return null
+    state = {
+      ...state,
+      repair_attempt: repaired.attempt.id,
+      repair_status: repaired.result.frontmatter.status,
+      updated_at: new Date().toISOString(),
+    }
+    if (repaired.result.frontmatter.status !== 'completed') state.stage = 'resolver'
+    await writeJsonAtomic(statePath, state)
+  }
+  return fail(flags, 'Automatic Mission-child review exceeded its finite transition contract')
+}
+
+async function runContractResolutionWorker({
+  targetDir,
+  specdevPath,
+  assignmentPath,
+  name,
+  mission,
+  flags,
+  verdictPath,
+  missionAuthority,
+  resolver,
+}) {
+  const profile = await resolveAgentProfile(specdevPath, 'worker', profileOverrides(flags))
+  const resultPath = join(
+    assignmentPath,
+    'review',
+    resolver ? 'brainstorm-resolver-result.md' : 'brainstorm-repair-result.md'
+  )
+  const result = await runSpawnedAgent({
+    targetDir,
+    specdevPath,
+    role: 'worker',
+    profile,
+    assignment: name,
+    mission,
+    resultPath,
+    resultKind: 'worker',
+    prompt: [
+      resolver
+        ? 'Resolve the remaining automatic Mission-child contract findings in one final bounded Attempt.'
+        : 'Repair the Mission-child Assignment contract for the next primary review.',
+      `Contract to edit: ${relativeToRepo(targetDir, join(assignmentPath, 'brainstorm', 'contract.md'))}`,
+      `Review findings: ${relativeToRepo(targetDir, verdictPath)}`,
+      ...missionAuthority,
+      'Edit only the child contract. Preserve approved Mission scope, reserved authority, and verification authority.',
+      'If the findings require any top-level authority change, return blocked without making that change.',
+    ].join('\n'),
+  })
+  if (result.status !== 'completed') {
+    fail(flags, result.error || 'Contract convergence worker failed')
+    return null
+  }
+  return result
+}
+
+async function emitAutomaticBrainstormResult({
+  targetDir,
+  name,
+  contract,
+  verdictPath,
+  baselinePath,
+  state,
+  flags,
+  status,
+}) {
+  const divergence = await contractDiff(baselinePath, contract.path)
+  const checkpointed = await checkpointedContractFor(targetDir)
+  const payload = assignmentBrainstormPayload({
+    targetDir,
+    name,
+    contract,
+    verdictPath,
+    round: state.round,
+    materialDivergence: state.material_divergence ?? false,
+    divergence,
+    status,
+    canRerun: false,
+    requiresCheckpoint: checkpointed?.contract_hash !== contract.hash,
+  })
+  payload.mode = 'automatic'
+  payload.disposition =
+    state.disposition || (status === 'approved' ? 'approved' : 'objective-failure')
+  if (status !== 'approved') {
+    payload.next_action =
+      'Automatic Mission-child review reached an objective terminal failure inside the approved authority.'
+    process.exitCode = 1
+  }
+  emit(flags, payload)
+  return payload
+}
+
 export async function reviewImplementation(flags = {}) {
   const context = await assignmentContext(flags)
   const { targetDir, specdevPath, assignmentPath, name, mission } = context
   const { contract } = await assertApprovedContract(targetDir, assignmentPath)
-  const graph = await currentAssignmentNode(targetDir)
+  let graph = await currentAssignmentNode(targetDir)
   if (!graph || !['implementation-review', 'repair'].includes(graph.position.node)) {
     return fail(
       flags,
@@ -461,17 +727,7 @@ export async function reviewImplementation(flags = {}) {
   const verdictPath = join(reviewDir, 'implementation-verdict.md')
   const statePath = join(reviewDir, 'implementation-state.json')
   await fse.ensureDir(reviewDir)
-  let reviewState = (await readJsonIfPresent(statePath)) || {
-    version: 1,
-    round: 0,
-    status: 'started',
-  }
-  if (reviewState.round >= 2 && reviewState.status !== 'approved') {
-    return fail(
-      flags,
-      'Implementation review already failed its one verification rerun; user direction is required'
-    )
-  }
+  let reviewState = initialAutomaticReviewState((await readJsonIfPresent(statePath)) || {})
 
   const profile = await reviewProfile(specdevPath, flags, reviewState.profile)
   const guideIds = guideIdsFromFlags(
@@ -482,6 +738,7 @@ export async function reviewImplementation(flags = {}) {
     specdevPath,
     await resolveGuides(specdevPath, guideIds, { phase: 'implementation' })
   )
+  reviewState = { ...reviewState, profile, guide_ids: guideIds, contract_hash: contract.hash }
 
   if (graph.position.node === 'repair') {
     const repaired = await runRepairWorker({
@@ -491,24 +748,60 @@ export async function reviewImplementation(flags = {}) {
       guides: delivery.implementationGuides,
     })
     if (!repaired) return null
-    await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+    delivery = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
     stepGuidedNode(targetDir, 'repair', {
       attempt: repaired.attempt.id,
       result: relativeToRepo(targetDir, repaired.resultPath),
     })
+    graph = await currentAssignmentNode(targetDir)
+    reviewState = {
+      ...reviewState,
+      stage: 'primary',
+      repair_attempt: repaired.attempt.id,
+      updated_at: new Date().toISOString(),
+    }
+    await writeJsonAtomic(statePath, reviewState)
   }
 
+  if (reviewState.stage === 'resolver') {
+    const resolved = await runImplementationResolver({
+      ...context,
+      flags,
+      verdictPath,
+      guides: delivery.implementationGuides,
+    })
+    if (!resolved) return null
+    if (resolved.result.frontmatter.status === 'completed') {
+      delivery = await validateDeliveryArtifacts(
+        specdevPath,
+        assignmentPath,
+        contract.acceptanceIds
+      )
+    }
+    reviewState = recordResolver(reviewState, {
+      attempt: resolved.attempt.id,
+      status: resolved.result.frontmatter.status,
+    })
+    await writeJsonAtomic(statePath, reviewState)
+    return reviewImplementation(flags)
+  }
+
+  const arbitration = reviewState.stage === 'arbiter'
   const round = reviewState.round + 1
   const prompt = [
-    'Review the frozen Assignment candidate. Do not modify tracked files.',
+    arbitration
+      ? 'Arbitrate the automatic Assignment review in one final Attempt. Do not modify tracked files.'
+      : 'Review the frozen Assignment candidate. Do not modify tracked files.',
     `Approved contract: ${relativeToRepo(targetDir, join(assignmentPath, 'brainstorm', 'contract.md'))}`,
     `Design plan: ${relativeToRepo(targetDir, join(assignmentPath, 'design', 'plan.md'))}`,
     `Progress and verification receipts: ${relativeToRepo(targetDir, join(assignmentPath, 'implementation', 'progress.json'))}`,
     `Outcome: ${relativeToRepo(targetDir, join(assignmentPath, 'outcome.md'))}`,
-    round > 1 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
+    reviewState.round > 0 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
     'Inspect the current Git diff or revision. Reuse existing receipts and never run a full suite without explicit authority.',
     'If the candidate adds or upgrades an external dependency, require execution-time package-manager/registry version evidence and inspect available lockfile/audit evidence. An unresolved direct high/critical advisory is blocking unless the approved contract explicitly accepts it. A lockfile-only update does not prove installation or entry-point startup; do not credit evidence the receipts do not contain.',
-    'Approve only when every acceptance criterion has a final result and no blocking contract defect remains.',
+    arbitration
+      ? 'Return approved when the candidate satisfies the contract, needs_changes only for a nonblocking disagreement that may advance solely if the host validates the strict delivery-evidence gate, and blocked for objective acceptance, verification, authority, or safety failure.'
+      : 'Approve only when every acceptance criterion has a final result and no blocking contract defect remains.',
   ]
     .filter(Boolean)
     .join('\n')
@@ -526,62 +819,156 @@ export async function reviewImplementation(flags = {}) {
   })
   if (result.status !== 'completed') return fail(flags, result.error || 'Reviewer failed')
   const verdict = result.result.frontmatter.verdict
-  const approved = verdict === 'approved'
-  const blocked = verdict === 'blocked'
-  reviewState = {
-    version: 1,
-    round,
-    status: approved ? 'approved' : blocked || round >= 2 ? 'blocked' : 'needs_changes',
-    profile,
-    guide_ids: guideIds,
-    attempt: result.attempt.id,
-    contract_hash: contract.hash,
-    candidate_digest: await productStateDigest(targetDir),
-    updated_at: new Date().toISOString(),
-  }
-  await writeJsonAtomic(statePath, reviewState)
+  const findings = await fse.readFile(verdictPath, 'utf-8')
+  const candidateDigest = await productStateDigest(targetDir)
 
-  if (approved) {
-    stepGuidedNode(targetDir, 'implementation-review', {
-      approved: true,
-      verdict: relativeToRepo(targetDir, verdictPath),
+  if (arbitration) {
+    const arbitrationResult = recordArbitration(reviewState, {
+      verdict,
       attempt: result.attempt.id,
+      candidateDigest,
+      findings,
     })
-    const completedAt = new Date().toISOString()
-    await writeAssignmentStatus(assignmentPath, {
-      status: 'completed',
-      completed_at: completedAt,
-    })
-    await retireTransientArtifact(
-      targetDir,
-      specdevPath,
-      join(assignmentPath, 'implementation', 'worker-result.md')
-    )
-    await retireTransientArtifact(
-      targetDir,
-      specdevPath,
-      join(assignmentPath, 'implementation', 'repair-result.md')
-    )
-  } else if (!blocked && round === 1) {
+    reviewState = { ...arbitrationResult.state, profile, guide_ids: guideIds }
+    let approved = arbitrationResult.disposition === 'approved'
+    if (arbitrationResult.disposition === 'nonblocking-disagreement') {
+      try {
+        delivery = await validateDeliveryArtifacts(
+          specdevPath,
+          assignmentPath,
+          contract.acceptanceIds
+        )
+        assertReviewWaiverEvidence(delivery, contract.acceptanceIds)
+        approved = true
+        reviewState = {
+          ...reviewState,
+          status: 'approved',
+          disposition: 'nonblocking-override',
+          evidence_override: true,
+        }
+      } catch (error) {
+        reviewState = {
+          ...reviewState,
+          stage: 'failed',
+          status: 'failed',
+          disposition: 'objective-failure',
+          override_rejected: error.message,
+        }
+      }
+    }
+    await writeJsonAtomic(statePath, reviewState)
+    if (approved) {
+      return completeImplementationReview({
+        ...context,
+        flags,
+        contract,
+        verdictPath,
+        attempt: result.attempt.id,
+        round,
+        disposition: reviewState.disposition,
+      })
+    }
     stepGuidedNode(targetDir, 'implementation-review', {
       approved: false,
       verdict: relativeToRepo(targetDir, verdictPath),
       attempt: result.attempt.id,
+      disposition: 'objective-failure',
     })
-    return reviewImplementation(flags)
+    await writeAssignmentStatus(assignmentPath, {
+      status: 'failed',
+      failed_at: new Date().toISOString(),
+      blocker: reviewState.override_rejected || 'Automatic review found an objective failure.',
+    })
+    const payload = {
+      command: 'reviewloop',
+      version: 2,
+      status: 'failed',
+      phase: 'implementation',
+      assignment: name,
+      round,
+      verdict: relativeToRepo(targetDir, verdictPath),
+      disposition: 'objective-failure',
+      next_action: 'Assignment terminated with objective review failure.',
+    }
+    emit(flags, payload)
+    process.exitCode = 1
+    return payload
   }
 
+  const primary = recordPrimaryReview(reviewState, {
+    verdict,
+    attempt: result.attempt.id,
+    candidateDigest,
+    findings,
+  })
+  reviewState = { ...primary.state, profile, guide_ids: guideIds }
+  await writeJsonAtomic(statePath, reviewState)
+  if (primary.disposition === 'approved') {
+    return completeImplementationReview({
+      ...context,
+      flags,
+      contract,
+      verdictPath,
+      attempt: result.attempt.id,
+      round,
+      disposition: 'approved',
+    })
+  }
+  if (primary.disposition === 'resolver') return reviewImplementation(flags)
+
+  stepGuidedNode(targetDir, 'implementation-review', {
+    approved: false,
+    verdict: relativeToRepo(targetDir, verdictPath),
+    attempt: result.attempt.id,
+    disposition: 'repair',
+  })
+  return reviewImplementation(flags)
+}
+
+async function completeImplementationReview({
+  targetDir,
+  specdevPath,
+  assignmentPath,
+  name,
+  mission,
+  flags,
+  verdictPath,
+  attempt,
+  round,
+  disposition,
+}) {
+  stepGuidedNode(targetDir, 'implementation-review', {
+    approved: true,
+    verdict: relativeToRepo(targetDir, verdictPath),
+    attempt,
+    disposition,
+  })
+  await writeAssignmentStatus(assignmentPath, {
+    status: 'completed',
+    completed_at: new Date().toISOString(),
+  })
+  await retireTransientArtifact(
+    targetDir,
+    specdevPath,
+    join(assignmentPath, 'implementation', 'worker-result.md')
+  )
+  await retireTransientArtifact(
+    targetDir,
+    specdevPath,
+    join(assignmentPath, 'implementation', 'repair-result.md')
+  )
   const payload = {
     command: 'reviewloop',
     version: 2,
-    status: approved ? 'approved' : 'blocked',
+    status: 'approved',
     phase: 'implementation',
     assignment: name,
     round,
     verdict: relativeToRepo(targetDir, verdictPath),
-    next_action: approved ? 'Assignment complete.' : 'User direction is required.',
+    disposition,
+    next_action: 'Assignment complete.',
   }
-  if (approved && !mission) {
+  if (!mission) {
     const completion = await completeStandaloneAssignmentDelivery({
       targetDir,
       specdevPath,
@@ -590,8 +977,45 @@ export async function reviewImplementation(flags = {}) {
     Object.assign(payload, completion)
   }
   emit(flags, payload)
-  if (!approved) process.exitCode = 1
   return payload
+}
+
+async function runImplementationResolver({
+  targetDir,
+  specdevPath,
+  assignmentPath,
+  name,
+  mission,
+  flags,
+  verdictPath,
+  guides,
+}) {
+  const profile = await resolveAgentProfile(specdevPath, 'worker', profileOverrides(flags))
+  const resultPath = join(assignmentPath, 'implementation', 'resolver-result.md')
+  const result = await runSpawnedAgent({
+    targetDir,
+    specdevPath,
+    role: 'worker',
+    profile,
+    prompt: [
+      'Resolve the remaining automatic implementation-review findings in one final bounded Attempt.',
+      `Approved contract: ${relativeToRepo(targetDir, join(assignmentPath, 'brainstorm', 'contract.md'))}`,
+      `Plan: ${relativeToRepo(targetDir, join(assignmentPath, 'design', 'plan.md'))}`,
+      `Findings: ${relativeToRepo(targetDir, verdictPath)}`,
+      'Stay inside approved scope and authority. Reuse receipts; run only explicitly authorized focused verification.',
+      'Update progress.json and outcome.md honestly. If a finding requires expanded authority or cannot be satisfied, return blocked.',
+    ].join('\n'),
+    resultPath,
+    resultKind: 'worker',
+    assignment: name,
+    mission,
+    guides,
+  })
+  if (result.status !== 'completed') {
+    fail(flags, result.error || 'Implementation resolver failed')
+    return null
+  }
+  return result
 }
 
 async function runRepairWorker({

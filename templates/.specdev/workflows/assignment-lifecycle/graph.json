@@ -1,6 +1,6 @@
 {
   "id": "assignment-lifecycle",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "kind": "workflow",
   "title": "Assignment lifecycle",
   "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",
@@ -131,11 +131,15 @@
       "instructions": "Required review runs `specdev reviewloop implementation`; a policy waiver completes only after strict host evidence checks.",
       "outputSchema": {
         "type": "object",
-        "required": ["approved", "verdict", "attempt"],
+        "required": ["approved", "verdict", "attempt", "disposition"],
         "properties": {
           "approved": { "type": "boolean" },
           "verdict": { "type": "string" },
-          "attempt": { "type": "string" }
+          "attempt": { "type": "string" },
+          "disposition": {
+            "type": "string",
+            "enum": ["approved", "nonblocking-override", "repair", "objective-failure"]
+          }
         }
       },
       "operatorContext": {
@@ -144,7 +148,11 @@
       },
       "edges": [
         { "to": "done", "when": { "approved": true } },
-        { "to": "repair", "when": { "approved": false } }
+        { "to": "repair", "when": { "approved": false, "disposition": "repair" } },
+        {
+          "to": "failed",
+          "when": { "approved": false, "disposition": "objective-failure" }
+        }
       ]
     },
     "repair": {
@@ -163,6 +171,10 @@
     },
     "done": {
       "purpose": "Assignment lifecycle is complete.",
+      "terminal": true
+    },
+    "failed": {
+      "purpose": "Assignment delivery ended with an objective terminal failure.",
       "terminal": true
     }
   }

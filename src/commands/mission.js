@@ -70,6 +70,17 @@ import {
   retireTransientArtifact,
 } from '../utils/artifact-retention.js'
 import { workspaceChangeSummaryLines } from '../utils/workspace-changes.js'
+import {
+  initialAutomaticReviewState,
+  missionReplanDisposition,
+  recordArbitration,
+  recordPrimaryReview,
+  recordResolver,
+} from '../utils/review-convergence.js'
+import {
+  assertReviewWaiverEvidence,
+  validateDeliveryArtifacts,
+} from '../utils/delivery-artifacts.js'
 
 const execFile = promisify(execFileCallback)
 const LOCAL_SPECDEV_BIN = fileURLToPath(new URL('../../bin/specdev.js', import.meta.url))
@@ -181,6 +192,16 @@ async function runMission(selector, flags) {
       outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
     })
   }
+  if (mission.status === 'failed') {
+    return emit(flags, {
+      command: 'mission run',
+      version: 1,
+      status: 'failed',
+      mission: mission.id,
+      disposition: 'objective-failure',
+      outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
+    })
+  }
   try {
     await focusMissionRun(context)
     await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
@@ -195,15 +216,6 @@ async function runMission(selector, flags) {
         throw new Error(`Could not recover Mission ${mission.id} creation`)
       graph = getState({ workflowRoot: workflowRootFor(targetDir) })
     }
-    const childReviewOverrideRequested =
-      Boolean(flags['override-review']) &&
-      graph.position?.graph === 'assignment-lifecycle' &&
-      graph.position?.node === 'approve-contract'
-    const childReviewOverrideId = childReviewOverrideRequested
-      ? (await readMissionQueue(missionPath))?.assignments?.find(
-          (item) => item.status === 'running'
-        )?.id || null
-      : null
     if (graph.position.node === 'brainstorm') {
       const contract = await validateMissionContract(missionPath)
       if (!contract.valid) return fail(flags, contract.errors.join('; '))
@@ -346,11 +358,12 @@ async function runMission(selector, flags) {
         ...context,
         mission,
         flags,
-        childReviewOverrideId,
         controller,
       })
       if (payload?.status !== 'completed') {
-        await updateAttemptRecord(specdevPath, controller.id, { status: 'blocked' })
+        await updateAttemptRecord(specdevPath, controller.id, {
+          status: payload?.status === 'failed' ? 'failed' : 'blocked',
+        })
       }
       return payload
     } catch (error) {
@@ -461,29 +474,50 @@ async function driveMission(context) {
       continue
     }
     if (node === 'mission-review') {
-      const approved = await reviewMission(context)
-      if (!approved) {
-        const reviewState = await fse.readJson(join(missionPath, 'review', 'mission-state.json'))
-        if (reviewState.round >= 2)
-          throw new Error(
-            'Mission review failed its verification rerun; user direction is required'
-          )
+      const review = await reviewMission(context)
+      if (review.disposition === 'approved' || review.disposition === 'nonblocking-override') {
+        stepGuidedNode(targetDir, 'mission-review', {
+          approved: true,
+          verdict: review.verdict,
+          attempt: review.attempt,
+          disposition: review.disposition,
+        })
+        continue
+      }
+      if (review.disposition === 'repair' || review.disposition === 'resolver') {
         mission.pending_replan = {
           reason: 'mission_review',
-          artifact: relativeToRepo(targetDir, join(missionPath, 'review', 'mission-verdict.md')),
+          review_stage: review.disposition,
+          artifact: review.verdict,
           created_at: new Date().toISOString(),
         }
         await writeMission(missionPath, mission)
         stepGuidedNode(targetDir, 'mission-review', {
           approved: false,
-          verdict:
-            '.specdev/' +
-            relativeToRepo(specdevPath, join(missionPath, 'review', 'mission-verdict.md')),
-          attempt: reviewState.attempt,
+          verdict: review.verdict,
+          attempt: review.attempt,
+          disposition: 'repair',
         })
         continue
       }
-      continue
+      stepGuidedNode(targetDir, 'mission-review', {
+        approved: false,
+        verdict: review.verdict,
+        attempt: review.attempt,
+        disposition: 'objective-failure',
+      })
+      await completeMissionFailure(
+        context,
+        'Mission convergence review found an objective failure.'
+      )
+      return emit(flags, {
+        command: 'mission run',
+        version: 1,
+        status: 'failed',
+        mission: mission.id,
+        disposition: 'objective-failure',
+        outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
+      })
     }
     if (node === 'replan') {
       const replanned = await replanMission(context)
@@ -491,25 +525,53 @@ async function driveMission(context) {
         queue: relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml')),
         reason: replanned.reason,
         attempt: replanned.attempt.id,
+        disposition: replanned.disposition,
       })
+      if (replanned.disposition === 'objective-failure') {
+        await completeMissionFailure(context, replanned.error || 'Mission replanning failed.')
+        return emit(flags, {
+          command: 'mission run',
+          version: 1,
+          status: 'failed',
+          mission: mission.id,
+          disposition: 'objective-failure',
+          outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
+        })
+      }
       continue
     }
     if (node === 'final-verification') {
       const result = await runFinalVerification(context)
+      mission.verification_failures = result.passed
+        ? mission.verification_failures || 0
+        : (mission.verification_failures || 0) + 1
+      const recoverable = result.passed || mission.verification_failures <= 1
       stepGuidedNode(targetDir, 'final-verification', {
         passed: result.passed,
         receipt: relativeToRepo(targetDir, result.path),
+        recoverable,
       })
       if (!result.passed) {
-        mission.verification_failures = (mission.verification_failures || 0) + 1
+        if (!recoverable) {
+          await completeMissionFailure(
+            context,
+            'Final integrated verification failed after its bounded automatic recovery.'
+          )
+          return emit(flags, {
+            command: 'mission run',
+            version: 1,
+            status: 'failed',
+            mission: mission.id,
+            disposition: 'objective-failure',
+            outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
+          })
+        }
         mission.pending_replan = {
           reason: 'final_verification',
           artifact: relativeToRepo(targetDir, result.path),
           created_at: new Date().toISOString(),
         }
         await writeMission(missionPath, mission)
-        if (mission.verification_failures > 1)
-          throw new Error('Final verification failed again; user direction is required')
         continue
       }
       await completeMission(context)
@@ -636,7 +698,7 @@ async function designMission(context) {
 }
 
 async function runMissionChild(context, options = {}) {
-  const { targetDir, specdevPath, missionPath, mission, childReviewOverrideId } = context
+  const { targetDir, specdevPath, missionPath, mission } = context
   const queue = await readMissionQueue(missionPath)
   let child = options.childId
     ? queue.assignments.find((item) => item.id === options.childId)
@@ -695,7 +757,6 @@ async function runMissionChild(context, options = {}) {
     await writeMissionQueue(missionPath, queue)
   }
   const assignmentPath = join(specdevPath, 'assignments', child.folder)
-  const childReviewOverride = childReviewOverrideId === child.id
   graph = getState({ workflowRoot: workflowRootFor(targetDir) })
   const singleFullScope = queue.design_mode === 'single' && queue.assignments.length === 1
   if (graph.position.node === 'brainstorm') {
@@ -712,42 +773,13 @@ async function runMissionChild(context, options = {}) {
   graph = getState({ workflowRoot: workflowRootFor(targetDir) })
   if (graph.position.node === 'approve-contract') {
     if (!singleFullScope) {
-      const savedReview = await fse
-        .readJson(join(assignmentPath, 'review', 'brainstorm-state.json'))
-        .catch(() => null)
-      let review
-      if (savedReview?.status === 'blocked') {
-        review = {
-          status: 'blocked',
-          material_divergence: savedReview.material_divergence ?? false,
-        }
-      } else if (savedReview?.status === 'needs_changes') {
-        await reviseChildContract(context, child, assignmentPath)
-        review = await withSuppressedOutput(() =>
-          reviewBrainstorm({ target: targetDir, assignment: child.id, json: true })
-        )
-      } else {
-        review = await withSuppressedOutput(() =>
-          reviewBrainstorm({ target: targetDir, assignment: child.id, json: true })
-        )
-      }
-      if (review?.status === 'needs_changes') {
-        await reviseChildContract(context, child, assignmentPath)
-        review = await withSuppressedOutput(() =>
-          reviewBrainstorm({ target: targetDir, assignment: child.id, json: true })
-        )
-      }
+      const review = await withSuppressedOutput(() =>
+        reviewBrainstorm({ target: targetDir, assignment: child.id, json: true })
+      )
       if (!review)
         throw new Error(`Child ${child.id} Brainstorm review did not produce a durable verdict`)
-      if (review?.status !== 'approved' && !childReviewOverride) {
-        throw new Error(
-          `Child ${child.id} Brainstorm review blocked; after explicit user direction, rerun with --override-review`
-        )
-      }
-      if (review?.material_divergence === true && !childReviewOverride) {
-        throw new Error(
-          `Child ${child.id} Brainstorm materially diverges from its reviewed baseline; after explicit user direction, rerun with --override-review`
-        )
+      if (review.status !== 'approved') {
+        throw new Error(`Child ${child.id} Brainstorm review reached objective terminal failure`)
       }
     }
     await assertApprovedMissionContract(missionPath, mission)
@@ -776,7 +808,7 @@ async function runMissionChild(context, options = {}) {
       actor: `mission:${mission.id}`,
       approved_at: approvedAt,
       revision: (await gitSnapshot(targetDir)).revision || 'unborn',
-      review_override: childReviewOverride,
+      review_override: false,
       review_policy: reviewPolicy,
     })
     if (!approval.synchronized)
@@ -872,10 +904,7 @@ async function runParallelMissionChild(selector, childId, flags) {
       await writeCurrentFocus(specdevPath, { kind: 'assignment', id: child.id })
     }
 
-    const delivered = await runMissionChild(
-      { ...context, childReviewOverrideId: null },
-      { childId: child.id, parallelRoot: true }
-    )
+    const delivered = await runMissionChild(context, { childId: child.id, parallelRoot: true })
     return emit(flags, {
       command: 'mission child',
       version: 1,
@@ -1112,10 +1141,7 @@ async function executeMissionWaveSequentialFallback(context, queue, waveNumber) 
     const delivered =
       existingStatus?.status === 'completed'
         ? { child: { ...child, folder: existing.name }, assignmentPath: existing.path }
-        : await runMissionChild(
-            { ...context, childReviewOverrideId: null },
-            { childId: child.id, parallelRoot: true }
-          )
+        : await runMissionChild(context, { childId: child.id, parallelRoot: true })
     const refreshed = await readMissionQueue(missionPath)
     const item = refreshed.assignments.find((candidate) => candidate.id === child.id)
     item.folder = delivered.child.folder
@@ -1701,30 +1727,6 @@ async function childFollowUp(specdevPath, child) {
   return 'none'
 }
 
-async function reviseChildContract(context, child, assignmentPath) {
-  const { targetDir, specdevPath, mission } = context
-  const profile = withoutNetwork(await resolveAgentProfile(specdevPath, 'worker'))
-  const result = await runSpawnedAgent({
-    targetDir,
-    specdevPath,
-    role: 'worker',
-    profile,
-    mission: mission.id,
-    assignment: child.id,
-    resultPath: join(assignmentPath, 'review', 'brainstorm-revision-result.md'),
-    resultKind: 'worker',
-    prompt: [
-      'Revise only the child Assignment contract in response to the reviewer; do not modify product code.',
-      `Contract: ${relativeToRepo(targetDir, join(assignmentPath, 'brainstorm', 'contract.md'))}`,
-      `Findings: ${relativeToRepo(targetDir, join(assignmentPath, 'review', 'brainstorm-verdict.md'))}`,
-      'Stay within approved Mission authority. If findings require material Mission authority changes, return blocked.',
-    ].join('\n'),
-  })
-  if (result.status !== 'completed' || result.result.frontmatter.status !== 'completed') {
-    throw new Error(result.error || `Child ${child.id} contract revision blocked`)
-  }
-}
-
 async function reviewMission(context) {
   const { targetDir, specdevPath, missionPath, mission } = context
   const reviewDir = join(missionPath, 'review')
@@ -1736,9 +1738,12 @@ async function reviewMission(context) {
     await fse.writeJson(
       statePath,
       {
-        version: 1,
+        version: 2,
+        mode: 'automatic',
+        stage: 'complete',
         round: 0,
         status: 'approved',
+        disposition: 'approved',
         evidence_reused: true,
         child: reused.child.id,
         attempt: reused.state.attempt,
@@ -1748,20 +1753,20 @@ async function reviewMission(context) {
       },
       { spaces: 2 }
     )
-    stepGuidedNode(targetDir, 'mission-review', {
-      approved: true,
+    return {
+      disposition: 'approved',
       verdict: relativeToRepo(targetDir, reused.verdictPath),
       attempt: reused.state.attempt,
-    })
-    return true
+    }
   }
-  const state = await fse.readJson(statePath).catch(() => ({ version: 1, round: 0 }))
+  let state = initialAutomaticReviewState(await fse.readJson(statePath).catch(() => ({})))
   const profile = state.profile
     ? await resolveAgentProfile(specdevPath, 'reviewer', {
         ...state.profile,
         timeout: state.profile.timeout_ms,
       })
     : await resolveAgentProfile(specdevPath, 'reviewer')
+  const arbitration = state.stage === 'arbiter'
   const result = await runSpawnedAgent({
     targetDir,
     specdevPath,
@@ -1774,37 +1779,99 @@ async function reviewMission(context) {
       { id: 'specdev-review', version: '1', path: join(specdevPath, 'guides', 'review.md') },
     ],
     prompt: [
-      'Review Mission convergence from existing evidence first; do not re-review every child from scratch and do not modify tracked files.',
+      arbitration
+        ? 'Arbitrate Mission convergence in one final Attempt; do not modify tracked files.'
+        : 'Review Mission convergence from existing evidence first; do not re-review every child from scratch and do not modify tracked files.',
       `Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Ordered queue and child outcomes: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
       state.round > 0 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
       'Check acceptance coverage, integration seams, unresolved risks, and whether final verification is ready. Reuse receipts; never run the full suite.',
+      arbitration
+        ? 'Return approved for satisfied convergence, needs_changes only for a nonblocking disagreement eligible for strict host evidence validation, and blocked for objective acceptance, verification, authority, or safety failure.'
+        : null,
     ]
       .filter(Boolean)
       .join('\n'),
   })
   if (result.status !== 'completed') throw new Error(result.error || 'Mission reviewer failed')
   const verdict = result.result.frontmatter.verdict
-  const approved = verdict === 'approved'
-  const nextState = {
-    version: 1,
-    round: state.round + 1,
-    status: approved ? 'approved' : verdict === 'blocked' ? 'blocked' : 'needs_changes',
-    profile,
-    attempt: result.attempt.id,
-    updated_at: new Date().toISOString(),
-  }
-  await fse.writeJson(statePath, nextState, { spaces: 2 })
-  if (verdict === 'blocked')
-    throw new Error('Mission reviewer is blocked; user direction is required')
-  if (approved) {
-    stepGuidedNode(targetDir, 'mission-review', {
-      approved: true,
-      verdict: relativeToRepo(targetDir, verdictPath),
+  const findings = await fse.readFile(verdictPath, 'utf-8')
+  const candidateDigest = await productStateDigest(targetDir)
+  const verdictRelative = relativeToRepo(targetDir, verdictPath)
+  if (arbitration) {
+    const arbitrationResult = recordArbitration(state, {
+      verdict,
       attempt: result.attempt.id,
+      candidateDigest,
+      findings,
     })
+    state = { ...arbitrationResult.state, profile }
+    let disposition = arbitrationResult.disposition
+    if (disposition === 'nonblocking-disagreement') {
+      try {
+        await assertMissionOverrideEvidence(specdevPath, missionPath)
+        disposition = 'nonblocking-override'
+        state = {
+          ...state,
+          status: 'approved',
+          disposition,
+          evidence_override: true,
+        }
+      } catch (error) {
+        disposition = 'objective-failure'
+        state = {
+          ...state,
+          stage: 'failed',
+          status: 'failed',
+          disposition,
+          override_rejected: error.message,
+        }
+      }
+    }
+    await fse.writeJson(statePath, state, { spaces: 2 })
+    return {
+      disposition,
+      verdict: verdictRelative,
+      attempt: result.attempt.id,
+    }
   }
-  return approved
+
+  const primary = recordPrimaryReview(state, {
+    verdict,
+    attempt: result.attempt.id,
+    candidateDigest,
+    findings,
+  })
+  state = { ...primary.state, profile }
+  await fse.writeJson(statePath, state, { spaces: 2 })
+  return {
+    disposition:
+      primary.disposition === 'approved'
+        ? 'approved'
+        : primary.disposition === 'resolver'
+          ? 'resolver'
+          : 'repair',
+    verdict: verdictRelative,
+    attempt: result.attempt.id,
+  }
+}
+
+async function assertMissionOverrideEvidence(specdevPath, missionPath) {
+  const queue = await readMissionQueue(missionPath)
+  for (const child of queue.assignments || []) {
+    if (!['completed', 'integrated'].includes(child.status) || child.follow_up === 'required') {
+      throw new Error(`Mission child ${child.id} is not a complete evidence-safe delivery`)
+    }
+    const assignmentPath = join(specdevPath, 'assignments', child.folder || '')
+    const contract = await validateContractPath(join(assignmentPath, 'brainstorm', 'contract.md'))
+    if (!contract.valid) throw new Error(`Mission child ${child.id} contract is invalid`)
+    const delivery = await validateDeliveryArtifacts(
+      specdevPath,
+      assignmentPath,
+      contract.acceptanceIds
+    )
+    assertReviewWaiverEvidence(delivery, contract.acceptanceIds)
+  }
 }
 
 async function reusableSingleChildReview(context) {
@@ -1841,6 +1908,21 @@ async function replanMission(context) {
   const { targetDir, specdevPath, missionPath, mission } = context
   const original = await readMissionQueue(missionPath)
   const trigger = mission.pending_replan || { reason: 'mission_convergence', artifact: null }
+  const attempts = mission.replan_attempts || {}
+  const previousAttempts = Number(attempts[trigger.reason] || 0)
+  if (
+    missionReplanDisposition({
+      reason: trigger.reason,
+      previousAttempts,
+    }) === 'objective-failure'
+  ) {
+    return {
+      reason: trigger.reason,
+      disposition: 'objective-failure',
+      attempt: { id: 'replan-budget-exhausted' },
+      error: `Mission ${trigger.reason} recovery exhausted its bounded replan allowance.`,
+    }
+  }
   const profile = withoutNetwork(await resolveAgentProfile(specdevPath, 'worker'))
   const resultPath = join(missionPath, 'design', `replan-${Date.now()}-result.md`)
   const result = await runSpawnedAgent({
@@ -1852,7 +1934,9 @@ async function replanMission(context) {
     resultPath,
     resultKind: 'worker',
     prompt: [
-      'Replan only the remaining Mission queue; do not modify product code.',
+      trigger.review_stage === 'resolver'
+        ? 'Resolve the remaining Mission convergence findings in one final bounded replanning Attempt; do not modify product code.'
+        : 'Replan only the remaining Mission queue; do not modify product code.',
       `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Queue to edit in place: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
       `Trigger: ${trigger.reason}`,
@@ -1866,7 +1950,12 @@ async function replanMission(context) {
   })
   if (result.status !== 'completed' || result.result.frontmatter.status !== 'completed') {
     await writeMissionQueue(missionPath, original)
-    throw new Error(result.error || 'Mission replanning requires user direction')
+    return {
+      reason: trigger.reason,
+      disposition: 'objective-failure',
+      attempt: result.attempt || { id: 'replan-failed' },
+      error: result.error || 'Mission replanning could not stay inside approved authority.',
+    }
   }
 
   let revised
@@ -1881,10 +1970,26 @@ async function replanMission(context) {
     throw error
   }
   await writeMissionQueue(missionPath, revised)
+  mission.replan_attempts = {
+    ...attempts,
+    [trigger.reason]: previousAttempts + 1,
+  }
+  if (trigger.reason === 'mission_review' && trigger.review_stage === 'resolver') {
+    const reviewStatePath = join(missionPath, 'review', 'mission-state.json')
+    const reviewState = await fse.readJson(reviewStatePath).catch(() => ({}))
+    await fse.writeJson(
+      reviewStatePath,
+      recordResolver(reviewState, {
+        attempt: result.attempt.id,
+        status: result.result.frontmatter.status,
+      }),
+      { spaces: 2 }
+    )
+  }
   delete mission.pending_replan
   await writeMission(missionPath, mission)
   await retireTransientArtifact(targetDir, specdevPath, resultPath)
-  return { reason: trigger.reason, attempt: result.attempt }
+  return { reason: trigger.reason, disposition: 'replanned', attempt: result.attempt }
 }
 
 async function runFinalVerification(context) {
@@ -1937,6 +2042,35 @@ async function completeMission(context) {
     join(missionPath, 'status.json'),
     { version: 1, status: 'completed', completed_at: mission.completed_at },
     { spaces: 2 }
+  )
+}
+
+async function completeMissionFailure(context, reason) {
+  const { missionPath, mission } = context
+  const queue = await readMissionQueue(missionPath)
+  const lines = (queue.assignments || []).map(
+    (item) => `- ${item.id}: ${item.title} — ${item.status}`
+  )
+  mission.status = 'failed'
+  mission.failed_at = new Date().toISOString()
+  mission.blocker = reason
+  mission.next_action = null
+  await writeMission(missionPath, mission)
+  await fse.writeJson(
+    join(missionPath, 'status.json'),
+    {
+      version: 1,
+      status: 'failed',
+      failed_at: mission.failed_at,
+      disposition: 'objective-failure',
+      reason,
+    },
+    { spaces: 2 }
+  )
+  await fse.writeFile(
+    join(missionPath, 'outcome.md'),
+    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Assignments\n\n${lines.join('\n') || '- none'}\n\n## Delivery\n\nObjective terminal failure: ${reason}\n`,
+    'utf-8'
   )
 }
 

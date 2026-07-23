@@ -193,6 +193,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         approved: true,
         verdict: relativeToRepo(targetDir, verdictPath),
         attempt: 'policy-waiver',
+        disposition: 'approved',
       })
       const completedAt = new Date().toISOString()
       await writeAssignmentStatus(assignmentPath, {

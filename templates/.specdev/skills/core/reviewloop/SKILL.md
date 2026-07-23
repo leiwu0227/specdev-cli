@@ -1,6 +1,6 @@
 ---
 name: reviewloop
-description: Run the configured reviewer with one repair and one verification rerun
+description: Run interactive reviews or bounded automatic review convergence
 type: core
 phase: brainstorm, implementation, discussion, mission
 ---
@@ -14,9 +14,10 @@ guides define the temporary review task; there is no reviewer persona picker.
 ## Brainstorm
 
 Run `specdev reviewloop brainstorm`. The command freezes the contract baseline,
-runs the configured reviewer, and reports the final verdict, textual changes,
-material-divergence classification, and exact contract hash. If findings remain,
-the current coding CLI edits the contract and reruns the same command once.
+runs the configured reviewer once, and reports the verdict, textual changes,
+material-divergence classification, and exact contract hash. Findings return
+control to the user; a later explicit invocation may review again without a
+round lockout.
 
 Never approve automatically. Show the verdict, exact contract path and hash,
 and the command's concise contract-preview bullets to the user. Run `specdev
@@ -32,14 +33,17 @@ M00001 --approve` after the same contract preview and explicit user agreement.
 ## Implementation
 
 `specdev implement` normally starts implementation review automatically. Direct
-resume is `specdev reviewloop implementation`. A blocking first verdict starts
-one worker continuation, then the same reviewer verifies once. A second failure
-blocks for the user.
+resume is `specdev reviewloop implementation`. Automatic review uses two primary
+rounds, a conditional third round only while the candidate and findings are
+changing, one resolver, and one final arbiter. Approved results and
+host-validated nonblocking disagreements may advance; objective failures
+terminate explicitly.
 
 ## Discussion
 
 Run `specdev reviewloop discussion --discussion=D00001`. Review is optional and
-does not approve or complete the Discussion.
+does not approve or complete the Discussion. Each invocation runs once and
+returns control without a round lockout.
 
 ## Rules
 

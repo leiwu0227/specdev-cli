@@ -1,6 +1,6 @@
 {
   "id": "mission-lifecycle",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "kind": "workflow",
   "title": "Mission lifecycle",
   "description": "Deliver a larger approved objective through static Assignment waves with bounded parallel execution.",
@@ -176,51 +176,72 @@
       "purpose": "Reuse exact full-scope child review evidence or review Mission convergence when scopes differ.",
       "outputSchema": {
         "type": "object",
-        "required": ["approved", "verdict", "attempt"],
+        "required": ["approved", "verdict", "attempt", "disposition"],
         "properties": {
           "approved": { "type": "boolean" },
           "verdict": { "type": "string" },
-          "attempt": { "type": "string" }
+          "attempt": { "type": "string" },
+          "disposition": {
+            "type": "string",
+            "enum": ["approved", "nonblocking-override", "repair", "objective-failure"]
+          }
         }
       },
       "operatorContext": { "phase": "mission-review" },
       "edges": [
         { "to": "final-verification", "when": { "approved": true } },
-        { "to": "replan", "when": { "approved": false } }
+        { "to": "replan", "when": { "approved": false, "disposition": "repair" } },
+        {
+          "to": "failed",
+          "when": { "approved": false, "disposition": "objective-failure" }
+        }
       ]
     },
     "replan": {
       "purpose": "Append one bounded repair Assignment within approved Mission authority.",
       "outputSchema": {
         "type": "object",
-        "required": ["queue", "reason", "attempt"],
+        "required": ["queue", "reason", "attempt", "disposition"],
         "properties": {
           "queue": { "type": "string" },
           "reason": { "type": "string" },
-          "attempt": { "type": "string" }
+          "attempt": { "type": "string" },
+          "disposition": {
+            "type": "string",
+            "enum": ["replanned", "objective-failure"]
+          }
         }
       },
       "operatorContext": { "phase": "replan" },
-      "edges": [{ "to": "child-assignment" }]
+      "edges": [
+        { "to": "child-assignment", "when": { "disposition": "replanned" } },
+        { "to": "failed", "when": { "disposition": "objective-failure" } }
+      ]
     },
     "final-verification": {
       "purpose": "Run the one exact integrated verification authorized by the Mission contract.",
       "outputSchema": {
         "type": "object",
-        "required": ["passed", "receipt"],
+        "required": ["passed", "receipt", "recoverable"],
         "properties": {
           "passed": { "type": "boolean" },
-          "receipt": { "type": "string" }
+          "receipt": { "type": "string" },
+          "recoverable": { "type": "boolean" }
         }
       },
       "operatorContext": { "phase": "verification" },
       "edges": [
         { "to": "done", "when": { "passed": true } },
-        { "to": "replan", "when": { "passed": false } }
+        { "to": "replan", "when": { "passed": false, "recoverable": true } },
+        { "to": "failed", "when": { "passed": false, "recoverable": false } }
       ]
     },
     "done": {
       "purpose": "Mission lifecycle is complete on its Mission branch.",
+      "terminal": true
+    },
+    "failed": {
+      "purpose": "Mission delivery ended with an objective terminal failure.",
       "terminal": true
     }
   }

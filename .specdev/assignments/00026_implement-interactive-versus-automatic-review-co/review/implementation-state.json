@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "round": 2,
+  "status": "approved",
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "high",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "attempt": "Attempt-00005",
+  "contract_hash": "131ee8ad665a18bd777d45f8b4b74f758f69a19b94fa8f81daae6283031e3da2",
+  "candidate_digest": "aae85901eaa9f5fffd5ace33883afb3be34d14519886601cc414a702adb1f86e",
+  "updated_at": "2026-07-23T14:18:01.204Z"
+}
