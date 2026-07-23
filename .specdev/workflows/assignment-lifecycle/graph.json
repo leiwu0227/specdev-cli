@@ -1,0 +1,283 @@
+{
+  "id": "assignment-lifecycle",
+  "version": "1.0.0",
+  "kind": "workflow",
+  "title": "Assignment lifecycle",
+  "description": "Guide a SpecDev assignment from creation through brainstorm, breakdown, implementation, review, and completion.",
+  "activationHints": [
+    "assignment",
+    "new assignment",
+    "start feature",
+    "start bugfix",
+    "start refactor",
+    "implement feature",
+    "continue assignment"
+  ],
+  "entry": "create-assignment",
+  "nodes": {
+    "create-assignment": {
+      "purpose": "Create and focus the assignment with an explicit type and slug.",
+      "instructions": "Run `specdev assignment \"<description>\" --type=<type> --slug=<slug> --json` and submit its JSON result.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["name", "path", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "assignment", "command": "specdev assignment" },
+      "edges": [{ "to": "brainstorm" }]
+    },
+    "brainstorm": {
+      "purpose": "Produce and validate the assignment proposal and design with the user.",
+      "instructions": "Follow `.specdev/skills/core/brainstorming/SKILL.md`. Write `brainstorm/proposal.md` and `brainstorm/design.md`, then submit their paths and a summary.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["proposal", "design", "summary"],
+        "properties": {
+          "proposal": { "type": "string" },
+          "design": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      },
+      "sideChannelActions": [
+        {
+          "id": "research",
+          "purpose": "Run `specdev research <topic>` and record research without advancing the assignment."
+        }
+      ],
+      "operatorContext": { "phase": "brainstorm" },
+      "edges": [{ "to": "brainstorm-checkpoint" }]
+    },
+    "brainstorm-checkpoint": {
+      "purpose": "Validate the brainstorm artifacts before review or approval.",
+      "instructions": "Run `specdev checkpoint brainstorm --json` and submit `{\"passed\":true}` only after it succeeds.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["passed"],
+        "properties": { "passed": { "enum": [true] } }
+      },
+      "operatorContext": {
+        "phase": "brainstorm",
+        "command": "specdev checkpoint brainstorm --json"
+      },
+      "edges": [{ "to": "brainstorm-review-choice" }]
+    },
+    "brainstorm-review-choice": {
+      "purpose": "Choose how to review and approve the brainstorm.",
+      "interaction": {
+        "id": "brainstorm-review-choice",
+        "kind": "choice",
+        "prompt": "How should the brainstorm be reviewed?",
+        "choices": [
+          {
+            "label": "Automated review, then continue if approved",
+            "value": "reviewloop_autocontinue"
+          },
+          { "label": "Automated review only", "value": "reviewloop_only" },
+          { "label": "Manual review", "value": "manual_review" },
+          { "label": "Skip review and approve", "value": "approve_skip_review" }
+        ]
+      },
+      "gate": {
+        "type": "external_decision",
+        "decisionSchema": {
+          "type": "object",
+          "required": ["choice"],
+          "properties": {
+            "choice": {
+              "enum": [
+                "reviewloop_autocontinue",
+                "reviewloop_only",
+                "manual_review",
+                "approve_skip_review"
+              ]
+            }
+          }
+        }
+      },
+      "operatorContext": {
+        "phase": "brainstorm",
+        "commands": {
+          "reviewloop_autocontinue": "specdev reviewloop brainstorm --reviewer=<name> --autocontinue",
+          "reviewloop_only": "specdev reviewloop brainstorm --reviewer=<name>",
+          "manual_review": "specdev review brainstorm",
+          "approve_skip_review": "specdev approve brainstorm"
+        }
+      },
+      "edges": [
+        { "to": "brainstorm-review", "when": { "choice": "reviewloop_autocontinue" } },
+        { "to": "brainstorm-review", "when": { "choice": "reviewloop_only" } },
+        { "to": "brainstorm-review", "when": { "choice": "manual_review" } },
+        { "to": "approve-brainstorm", "when": { "choice": "approve_skip_review" } }
+      ]
+    },
+    "brainstorm-review": {
+      "purpose": "Complete the selected brainstorm review and resolve all findings.",
+      "instructions": "Run the selected review command from the preceding choice. Use `specdev check-review` and revise artifacts until the review is approved, then submit completion evidence.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["review_complete"],
+        "properties": { "review_complete": { "enum": [true] } }
+      },
+      "operatorContext": { "phase": "brainstorm" },
+      "edges": [{ "to": "approve-brainstorm" }]
+    },
+    "approve-brainstorm": {
+      "purpose": "Ensure the brainstorm gate is approved.",
+      "instructions": "Run `specdev approve brainstorm --json` if the selected review did not already approve it. Submit the successful approval result.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["approved"],
+        "properties": { "approved": { "type": "boolean" } }
+      },
+      "operatorContext": { "phase": "brainstorm", "command": "specdev approve brainstorm --json" },
+      "edges": [
+        { "to": "breakdown", "when": { "approved": true } },
+        { "to": "brainstorm-review-choice", "when": { "approved": false } }
+      ]
+    },
+    "breakdown": {
+      "purpose": "Create the implementation plan from the approved design.",
+      "instructions": "Follow `.specdev/skills/core/breakdown/SKILL.md`, write `breakdown/plan.md`, and submit its path and task count.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["plan", "task_count"],
+        "properties": {
+          "plan": { "type": "string" },
+          "task_count": { "type": "number" }
+        }
+      },
+      "operatorContext": { "phase": "breakdown" },
+      "edges": [{ "to": "implementation" }]
+    },
+    "implementation": {
+      "purpose": "Execute the approved implementation plan and record task progress.",
+      "instructions": "Run `specdev implement`, follow `.specdev/skills/core/implementing/SKILL.md`, complete the plan, and submit the progress path and summary.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["progress", "summary"],
+        "properties": {
+          "progress": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      },
+      "sideChannelActions": [
+        {
+          "id": "check-review",
+          "purpose": "Read and address external review feedback without advancing implementation."
+        }
+      ],
+      "operatorContext": { "phase": "implementation", "command": "specdev implement" },
+      "edges": [{ "to": "implementation-checkpoint" }]
+    },
+    "implementation-checkpoint": {
+      "purpose": "Validate completed implementation evidence before review or approval.",
+      "instructions": "Run `specdev checkpoint implementation --json` and submit `{\"passed\":true}` only after it succeeds.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["passed"],
+        "properties": { "passed": { "enum": [true] } }
+      },
+      "operatorContext": {
+        "phase": "implementation",
+        "command": "specdev checkpoint implementation --json"
+      },
+      "edges": [{ "to": "implementation-review-choice" }]
+    },
+    "implementation-review-choice": {
+      "purpose": "Choose how to review and approve the implementation.",
+      "interaction": {
+        "id": "implementation-review-choice",
+        "kind": "choice",
+        "prompt": "How should the implementation be reviewed?",
+        "choices": [
+          {
+            "label": "Automated review, then continue if approved",
+            "value": "reviewloop_autocontinue"
+          },
+          { "label": "Automated review only", "value": "reviewloop_only" },
+          { "label": "Manual review", "value": "manual_review" },
+          { "label": "Skip review and approve", "value": "approve_skip_review" }
+        ]
+      },
+      "gate": {
+        "type": "external_decision",
+        "decisionSchema": {
+          "type": "object",
+          "required": ["choice"],
+          "properties": {
+            "choice": {
+              "enum": [
+                "reviewloop_autocontinue",
+                "reviewloop_only",
+                "manual_review",
+                "approve_skip_review"
+              ]
+            }
+          }
+        }
+      },
+      "operatorContext": {
+        "phase": "implementation",
+        "commands": {
+          "reviewloop_autocontinue": "specdev reviewloop implementation --reviewer=<name> --autocontinue",
+          "reviewloop_only": "specdev reviewloop implementation --reviewer=<name>",
+          "manual_review": "specdev review implementation",
+          "approve_skip_review": "specdev approve implementation"
+        }
+      },
+      "edges": [
+        { "to": "implementation-review", "when": { "choice": "reviewloop_autocontinue" } },
+        { "to": "implementation-review", "when": { "choice": "reviewloop_only" } },
+        { "to": "implementation-review", "when": { "choice": "manual_review" } },
+        { "to": "approve-implementation", "when": { "choice": "approve_skip_review" } }
+      ]
+    },
+    "implementation-review": {
+      "purpose": "Complete the selected implementation review and resolve all findings.",
+      "instructions": "Run the selected review command, address findings with `specdev check-review`, and submit completion evidence only when review is approved.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["review_complete"],
+        "properties": { "review_complete": { "enum": [true] } }
+      },
+      "operatorContext": { "phase": "implementation" },
+      "edges": [{ "to": "approve-implementation" }]
+    },
+    "approve-implementation": {
+      "purpose": "Ensure the implementation gate is approved.",
+      "instructions": "Run `specdev approve implementation --json` if needed and submit the approval result.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["approved"],
+        "properties": { "approved": { "type": "boolean" } }
+      },
+      "operatorContext": {
+        "phase": "implementation",
+        "command": "specdev approve implementation --json"
+      },
+      "edges": [
+        { "to": "knowledge-capture", "when": { "approved": true } },
+        { "to": "implementation-review-choice", "when": { "approved": false } }
+      ]
+    },
+    "knowledge-capture": {
+      "purpose": "Capture durable project and workflow knowledge from the completed assignment.",
+      "instructions": "Follow `.specdev/skills/core/knowledge-capture/SKILL.md`. Submit a short summary, including `none` when no durable update is warranted.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["summary"],
+        "properties": { "summary": { "type": "string" } }
+      },
+      "operatorContext": { "phase": "capture" },
+      "edges": [{ "to": "done" }]
+    },
+    "done": {
+      "purpose": "Assignment lifecycle is complete.",
+      "terminal": true
+    }
+  }
+}

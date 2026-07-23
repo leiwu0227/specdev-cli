@@ -1,0 +1,227 @@
+{
+  "id": "mission-lifecycle",
+  "version": "1.2.0",
+  "kind": "workflow",
+  "title": "Mission lifecycle",
+  "description": "Deliver a larger approved objective through static Assignment waves with bounded parallel execution.",
+  "activationHints": ["mission", "large objective", "multi assignment change"],
+  "entry": "create-mission",
+  "nodes": {
+    "create-mission": {
+      "purpose": "Create the Mission identity and contract scaffold.",
+      "instructions": "Run `specdev mission create \"<objective>\"`.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["id", "path", "objective"],
+        "properties": {
+          "id": { "type": "string" },
+          "path": { "type": "string" },
+          "objective": { "type": "string" }
+        }
+      },
+      "operatorContext": {
+        "phase": "mission",
+        "command": "specdev mission create \"<objective>\""
+      },
+      "edges": [{ "to": "brainstorm" }]
+    },
+    "brainstorm": {
+      "purpose": "Collaborate with the user on the Mission contract.",
+      "instructions": "Finish brainstorm/contract.md. Optional review is available; after explicit agreement run `specdev mission run <id> --approve`.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["contract", "contract_hash"],
+        "properties": {
+          "contract": { "type": "string" },
+          "contract_hash": { "type": "string" }
+        }
+      },
+      "sideChannelActions": [
+        {
+          "id": "mission-brainstorm-review",
+          "purpose": "Run optional Mission contract review without advancing approval."
+        }
+      ],
+      "operatorContext": { "phase": "brainstorm", "command": "specdev mission run <id>" },
+      "edges": [{ "to": "approve-mission" }]
+    },
+    "approve-mission": {
+      "purpose": "Approve the exact Mission authority and establish its branch.",
+      "sideChannelActions": [
+        {
+          "id": "mission-brainstorm-review",
+          "purpose": "Record optional Mission contract review before approval."
+        }
+      ],
+      "gate": {
+        "type": "external_decision",
+        "decisionSchema": {
+          "type": "object",
+          "required": [
+            "approved",
+            "contract_hash",
+            "actor",
+            "approved_at",
+            "base_revision",
+            "branch"
+          ],
+          "properties": {
+            "approved": { "type": "boolean" },
+            "contract_hash": { "type": "string" },
+            "actor": { "type": "string" },
+            "approved_at": { "type": "string" },
+            "review_override": { "type": "boolean" },
+            "base_revision": { "type": "string" },
+            "branch": { "type": "string" }
+          }
+        }
+      },
+      "operatorContext": { "phase": "brainstorm", "command": "specdev mission run <id> --approve" },
+      "edges": [
+        { "to": "design", "when": { "approved": true } },
+        { "to": "brainstorm", "when": { "approved": false } }
+      ]
+    },
+    "design": {
+      "purpose": "Derive one full-scope child by default, or write a justified ordered Assignment queue.",
+      "instructions": "Single-child Design is deterministic; a planned split invokes the worker profile and writes design/assignments.yaml.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["queue", "attempt", "parallel"],
+        "properties": {
+          "queue": { "type": "string" },
+          "attempt": { "type": "string" },
+          "parallel": { "type": "boolean" }
+        }
+      },
+      "operatorContext": { "phase": "design" },
+      "edges": [
+        { "to": "execute-wave", "when": { "parallel": true } },
+        { "to": "child-assignment", "when": { "parallel": false } }
+      ]
+    },
+    "child-assignment": {
+      "purpose": "Run the next pending child through the normal Assignment lifecycle.",
+      "workflowRef": { "graphId": "assignment-lifecycle" },
+      "operatorContext": { "phase": "child-assignment" },
+      "edges": [{ "to": "advance-queue", "when": { "approved": true } }]
+    },
+    "advance-queue": {
+      "purpose": "Record the completed child and choose the next pending queue item.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["remaining", "completed", "follow_up_required", "parallel"],
+        "properties": {
+          "remaining": { "type": "boolean" },
+          "completed": { "type": "string" },
+          "follow_up_required": { "type": "boolean" },
+          "parallel": { "type": "boolean" }
+        }
+      },
+      "operatorContext": { "phase": "mission" },
+      "edges": [
+        { "to": "replan", "when": { "follow_up_required": true } },
+        {
+          "to": "execute-wave",
+          "when": { "remaining": true, "parallel": true }
+        },
+        {
+          "to": "child-assignment",
+          "when": { "remaining": true, "parallel": false }
+        },
+        { "to": "mission-review", "when": { "remaining": false } }
+      ]
+    },
+    "execute-wave": {
+      "purpose": "Run the current independent Assignment wave in bounded isolated worktrees.",
+      "instructions": "The foreground Mission controller launches up to three child Assignment runs, creates reviewed delivery commits, and integrates them in declared order.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["wave", "completed"],
+        "properties": {
+          "wave": { "type": "number" },
+          "completed": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "operatorContext": { "phase": "parallel-wave" },
+      "edges": [{ "to": "advance-wave" }]
+    },
+    "advance-wave": {
+      "purpose": "Record the integrated wave and select the next sequential or parallel stage.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["remaining", "completed", "follow_up_required", "parallel"],
+        "properties": {
+          "remaining": { "type": "boolean" },
+          "completed": { "type": "string" },
+          "follow_up_required": { "type": "boolean" },
+          "parallel": { "type": "boolean" }
+        }
+      },
+      "operatorContext": { "phase": "mission" },
+      "edges": [
+        { "to": "replan", "when": { "follow_up_required": true } },
+        {
+          "to": "execute-wave",
+          "when": { "remaining": true, "parallel": true }
+        },
+        {
+          "to": "child-assignment",
+          "when": { "remaining": true, "parallel": false }
+        },
+        { "to": "mission-review", "when": { "remaining": false } }
+      ]
+    },
+    "mission-review": {
+      "purpose": "Reuse exact full-scope child review evidence or review Mission convergence when scopes differ.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["approved", "verdict", "attempt"],
+        "properties": {
+          "approved": { "type": "boolean" },
+          "verdict": { "type": "string" },
+          "attempt": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "mission-review" },
+      "edges": [
+        { "to": "final-verification", "when": { "approved": true } },
+        { "to": "replan", "when": { "approved": false } }
+      ]
+    },
+    "replan": {
+      "purpose": "Append one bounded repair Assignment within approved Mission authority.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["queue", "reason", "attempt"],
+        "properties": {
+          "queue": { "type": "string" },
+          "reason": { "type": "string" },
+          "attempt": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "replan" },
+      "edges": [{ "to": "child-assignment" }]
+    },
+    "final-verification": {
+      "purpose": "Run the one exact integrated verification authorized by the Mission contract.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["passed", "receipt"],
+        "properties": {
+          "passed": { "type": "boolean" },
+          "receipt": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "verification" },
+      "edges": [
+        { "to": "done", "when": { "passed": true } },
+        { "to": "replan", "when": { "passed": false } }
+      ]
+    },
+    "done": {
+      "purpose": "Mission lifecycle is complete on its Mission branch.",
+      "terminal": true
+    }
+  }
+}

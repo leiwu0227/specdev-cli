@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "id": "00025",
+  "kind": "change",
+  "description": "Implement interactive versus automatic review convergence with bounded escalation",
+  "run_id": "assignment-lifecycle-20260723T12211510",
+  "created_at": "2026-07-23T12:21:15.116Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-07-23T12:21:15.116Z"
+}

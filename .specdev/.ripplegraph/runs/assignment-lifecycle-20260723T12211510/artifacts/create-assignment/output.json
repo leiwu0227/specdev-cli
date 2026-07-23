@@ -1,0 +1,10 @@
+{
+  "id": "00025",
+  "name": "00025_automatic-review-convergence",
+  "path": ".specdev/assignments/00025_automatic-review-convergence",
+  "description": "Implement interactive versus automatic review convergence with bounded escalation",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

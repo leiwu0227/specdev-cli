@@ -1,0 +1,32 @@
+{
+  "runId": "project-orientation-20260718T16083252",
+  "status": "completed",
+  "rootGraph": "project-orientation",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "project-orientation",
+    "node": "done"
+  },
+  "createdAt": "2026-07-18T16:08:32.523Z",
+  "updatedAt": "2026-07-18T16:08:32.770Z",
+  "outputs": {
+    "inspect-context": {
+      "ready": true
+    }
+  },
+  "gateDecisions": {},
+  "graphSource": {
+    "kind": "package",
+    "graphId": "project-orientation",
+    "graphVersion": "1.0.0",
+    "packagePath": "workflows/project-orientation"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "ready": true
+  }
+}

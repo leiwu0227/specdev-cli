@@ -1,0 +1,25 @@
+{
+  "runId": "assignment-lifecycle-20260718T16083310",
+  "status": "abandoned",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "create-assignment"
+  },
+  "createdAt": "2026-07-18T16:08:33.109Z",
+  "updatedAt": "2026-07-18T16:08:33.340Z",
+  "outputs": {},
+  "gateDecisions": {},
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "1.0.0",
+    "packagePath": "workflows/assignment-lifecycle"
+  },
+  "stack": [],
+  "frameCounter": 0
+}

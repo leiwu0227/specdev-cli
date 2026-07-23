@@ -1,0 +1,36 @@
+{
+  "runId": "assignment-lifecycle-20260723T12211510",
+  "status": "abandoned",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "brainstorm"
+  },
+  "createdAt": "2026-07-23T12:21:15.110Z",
+  "updatedAt": "2026-07-23T13:40:15.701Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00025",
+      "name": "00025_automatic-review-convergence",
+      "path": ".specdev/assignments/00025_automatic-review-convergence",
+      "description": "Implement interactive versus automatic review convergence with bounded escalation",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    }
+  },
+  "gateDecisions": {},
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "1.0.0",
+    "packagePath": "workflows/assignment-lifecycle"
+  },
+  "stack": [],
+  "frameCounter": 0
+}

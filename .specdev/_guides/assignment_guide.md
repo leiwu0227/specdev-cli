@@ -1,46 +1,57 @@
-## How to complete a proposed assignment
+# Assignment guide
 
-## Setup rules
+```text
+interactive Brainstorm
+  -> optional configured review
+  -> one hash-bound user approval
+  -> one normal worker Attempt for Design + Implementation
+  -> focused evidence
+  -> required reviewer or evidence-safe policy waiver
+  -> one repair continuation and same-reviewer verification when needed
+  -> complete
+```
 
-- User must provide an assignment description. If missing, ask for it.
-- Run `specdev assignment "<description>"` to reserve the next ID. This sets `.specdev/.current` automatically.
-  - To supply type and slug explicitly (e.g., in automated flows): add `--type=<type> --slug=<slug>`
-  - To promote an existing discussion to a full assignment: add `--discussion=<id>`
-- Create `.specdev/assignments/#####_type_name/`.
-  - `#####` is the next 5-digit assignment number from `project_notes/assignment_progress.md`.
-  - `type` is `feature`, `refactor`, `bugfix`, `familiarization`, etc.
-  - `name` is kebab-case.
-- Copy `.specdev/_templates/gate_checklist.md` to `review/validation_checklist.md`.
+The single `brainstorm/contract.md` records objective, scope/non-goals,
+behavior, decisions, constraints, authority, risks, verification authority, and
+inline acceptance IDs. Do not create a parallel YAML projection.
 
-## Switching assignments
+Keep the contract proportional to the change. Reference existing project notes
+and repository rules instead of restating them, and state only decisions or
+constraints specific to this work. Use the fewest independent observable
+acceptance criteria: normally 1-3 for a small change and rarely more than 5.
+Implementation tasks, file lists, generic quality expectations, and repeated
+project conventions belong in the plan or existing guidance, not acceptance
+criteria. A required section may say that no change-specific item exists.
 
-Run `specdev focus <id>` to change the active assignment. This updates `.specdev/.current` and is the only supported way to switch — do not edit `.current` manually.
+`design/plan.md` uses ordered Task IDs and acceptance references. Tasks run
+inline by default; they do not imply subagents, worktrees, commits, reviews, or
+full suites. `implementation/progress.json` owns compact Task state, selected
+guide IDs and versions, verification receipts, structured `deviations`, and
+`follow_up`. `outcome.md` maps every acceptance ID to evidence and a final
+result. A waived implementation review completes only when every acceptance
+criterion is Passed, all receipts passed, deviations are empty, and follow-up
+is `none`.
 
-## Before starting
+When the worker returns blocked, its partial code and artifacts remain in
+place. A normal rerun reports the same blocker instead of launching another
+provider call. Once the current coding session has completed the artifacts and
+changed `worker-result.md` to `status: completed`, rerun `specdev implement` to
+reuse them. Use `specdev implement --retry-worker` only when a fresh automatic
+Attempt is intended.
 
-Read always-apply skills: `skills/core/verification-before-completion.md` and `skills/core/receiving-code-review.md`. These apply to every assignment throughout.
+Review policy is separate from behavior authority:
 
-## Workflow
+```yaml
+brainstorm: optional # optional | required
+implementation: required # required | waived
+```
 
-All assignments follow the same 3 required phases. See `_guides/workflow.md` for the full guide.
+Set it at Assignment creation with `--brainstorm-review` and
+`--implementation-review`, or on `specdev approve brainstorm`. Approval freezes
+it with the contract hash.
 
-1. **Brainstorm** — interactive Q&A → validated design
-2. **Breakdown** — design → concise implementation plan with coherent tasks and verification guidance
-3. **Implement** — plan execution mode with task-level verification/review
-
-Optional phase-end knowledge capture records reusable knowledge only when useful.
-
-## Assignment folder structure
-
-`.specdev/assignments/[#####_type_name]/`
-
-- `brainstorm/proposal.md` (user-approved)
-- `brainstorm/design.md`
-- `breakdown/plan.md`
-- `implementation/implementation.md` (optional narrative)
-- `implementation/progress.json`
-- `review/validation_checklist.md`
-- `review/{brainstorm,implementation}-feedback.md` (per-phase reviewer feedback)
-- `review/{brainstorm,implementation}-changelog.md` (per-phase changelog when changes are made after review)
-- `context/` (assignment-scoped research, notes, and supporting material)
-- `status.json` (gate state)
+Standalone Brainstorm review is optional by default. Multi-child Mission
+contracts receive it because the Mission supplies child approval. A single
+full-scope Mission child is derived from the approved parent and skips duplicate
+contract author/reviewer calls, while its implementation review remains
+required.

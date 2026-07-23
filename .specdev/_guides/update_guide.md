@@ -1,6 +1,18 @@
 # SpecDev Update Guide
 
-After running `specdev update`, apply these manual patches to files that `specdev update` does not overwrite.
+`specdev update` replaces managed workflow files and installs versioned graph
+packages while preserving project-owned notes, work items, profiles, knowledge,
+project guides, custom tool skills, and existing platform adapters.
+
+Legacy files under `knowledge/_workflow_feedback/` move to
+`knowledge/workflow_feedback/`. The update stops rather than overwriting a
+different destination file with the same name. Custom files in the retired
+`project_scaffolding/` directory remain in place, although new workflows do not
+consume them.
+
+Completed historical Assignments remain documents and do not need rewriting.
+For unfinished legacy work, run `specdev migrate` and inspect the generated
+inventory before approving any layout change.
 
 ## CLAUDE.md
 
@@ -11,15 +23,3 @@ Ensure your project's `CLAUDE.md` contains the following line near the top (befo
 ```
 
 If this line is missing, add it.
-
-## Review artifacts (v0.0.5+)
-
-Review feedback files are now per-phase: `review/{phase}-feedback.md` and `review/{phase}-changelog.md` (e.g. `brainstorm-feedback.md`, `implementation-changelog.md`).
-
-If you have active assignments with a `review/review-feedback.md` or `review/changelog.md`, rename them to match the current phase:
-
-```bash
-# Example: assignment in implementation phase
-mv review/review-feedback.md review/implementation-feedback.md
-mv review/changelog.md review/implementation-changelog.md
-```

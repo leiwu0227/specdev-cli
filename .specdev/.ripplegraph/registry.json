@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "graphs": {
+    "assignment-lifecycle": {
+      "id": "assignment-lifecycle",
+      "version": "2.1.1",
+      "kind": "workflow",
+      "title": "Assignment lifecycle",
+      "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",
+      "activationHints": [
+        "assignment",
+        "new assignment",
+        "start feature",
+        "start bugfix",
+        "implement change"
+      ],
+      "requires": [],
+      "effects": [],
+      "path": "workflows/assignment-lifecycle@2.1.1",
+      "registeredAt": "2026-07-23T13:11:17.765Z"
+    },
+    "discussion-lifecycle": {
+      "id": "discussion-lifecycle",
+      "version": "2.0.0",
+      "kind": "callable",
+      "title": "Discussion lifecycle",
+      "description": "Isolated code-read-only exploration that may coexist with a focused workflow.",
+      "activationHints": [
+        "discussion",
+        "brainstorm discussion",
+        "explore idea"
+      ],
+      "requires": [],
+      "effects": [],
+      "path": "workflows/discussion-lifecycle@2.0.0",
+      "registeredAt": "2026-07-23T13:11:17.767Z"
+    },
+    "layout-migration": {
+      "id": "layout-migration",
+      "version": "1.0.0",
+      "kind": "workflow",
+      "title": "Layout migration",
+      "description": "Inspect, plan, approve, apply, and verify a guided .specdev layout migration.",
+      "activationHints": [
+        "migrate",
+        "layout migration",
+        "upgrade layout",
+        "reorganize specdev",
+        "legacy layout"
+      ],
+      "requires": [],
+      "effects": [],
+      "path": "workflows/layout-migration@1.0.0",
+      "registeredAt": "2026-07-23T13:11:17.768Z"
+    },
+    "mission-lifecycle": {
+      "id": "mission-lifecycle",
+      "version": "1.2.0",
+      "kind": "workflow",
+      "title": "Mission lifecycle",
+      "description": "Deliver a larger approved objective through static Assignment waves with bounded parallel execution.",
+      "activationHints": [
+        "mission",
+        "large objective",
+        "multi assignment change"
+      ],
+      "requires": [],
+      "effects": [],
+      "path": "workflows/mission-lifecycle@1.2.0",
+      "registeredAt": "2026-07-23T13:11:17.769Z"
+    },
+    "project-orientation": {
+      "id": "project-orientation",
+      "version": "1.0.0",
+      "kind": "workflow",
+      "title": "Project orientation",
+      "description": "Inspect and complete the durable SpecDev project context.",
+      "activationHints": [
+        "start",
+        "project context",
+        "orient project",
+        "big picture",
+        "set up project"
+      ],
+      "requires": [],
+      "effects": [],
+      "path": "workflows/project-orientation@1.0.0",
+      "registeredAt": "2026-07-23T13:11:17.770Z"
+    },
+    "test-audit-lifecycle": {
+      "id": "test-audit-lifecycle",
+      "version": "1.0.0",
+      "kind": "callable",
+      "title": "Test maintenance audit",
+      "description": "Concurrent code-read-only analysis of redundant tests with explicit Assignment promotion.",
+      "activationHints": [
+        "test audit",
+        "remove redundant tests",
+        "test maintenance"
+      ],
+      "requires": [],
+      "effects": [],
+      "path": "workflows/test-audit-lifecycle@1.0.0",
+      "registeredAt": "2026-07-23T13:11:17.771Z"
+    },
+    "workspace-dispatcher": {
+      "id": "workspace-dispatcher",
+      "version": "1.0.0",
+      "kind": "dispatcher",
+      "title": "SpecDev workspace dispatcher",
+      "description": "Route a user request to the appropriate SpecDev guided workflow.",
+      "activationHints": [
+        "route specdev work"
+      ],
+      "requires": [],
+      "effects": [],
+      "path": "workflows/workspace-dispatcher@1.0.0",
+      "registeredAt": "2026-07-23T13:11:17.772Z"
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "id": "discussion-lifecycle",
+  "version": "1.0.0",
+  "kind": "workflow",
+  "title": "Discussion lifecycle",
+  "description": "Guide a parallel SpecDev brainstorming discussion and optional review.",
+  "activationHints": [
+    "discussion",
+    "brainstorm discussion",
+    "explore idea",
+    "parallel brainstorm",
+    "design discussion"
+  ],
+  "entry": "create-discussion",
+  "nodes": {
+    "create-discussion": {
+      "purpose": "Create a discussion workspace for the requested topic.",
+      "instructions": "Run `specdev discussion \"<description>\" --json` and submit its JSON result.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["id", "path", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "path": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "discussion", "command": "specdev discussion" },
+      "edges": [{ "to": "brainstorm" }]
+    },
+    "brainstorm": {
+      "purpose": "Explore and validate the discussion topic with the user.",
+      "instructions": "Follow `.specdev/skills/core/brainstorming/SKILL.md` for understand, explore, and design. Write the discussion proposal and design, then submit their paths.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["proposal", "design"],
+        "properties": {
+          "proposal": { "type": "string" },
+          "design": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "discussion" },
+      "edges": [{ "to": "checkpoint" }]
+    },
+    "checkpoint": {
+      "purpose": "Validate the discussion artifacts.",
+      "instructions": "Run `specdev checkpoint discussion --discussion=<id> --json` and submit `{\"passed\":true}` after it succeeds.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["passed"],
+        "properties": { "passed": { "enum": [true] } }
+      },
+      "operatorContext": { "phase": "discussion", "command": "specdev checkpoint discussion" },
+      "edges": [{ "to": "review-choice" }]
+    },
+    "review-choice": {
+      "purpose": "Choose whether and how to review the discussion.",
+      "interaction": {
+        "id": "discussion-review-choice",
+        "kind": "choice",
+        "prompt": "How should this discussion be reviewed?",
+        "choices": [
+          { "label": "Automated review", "value": "reviewloop" },
+          { "label": "Manual review", "value": "manual_review" },
+          { "label": "Finish without review", "value": "finish" }
+        ]
+      },
+      "gate": {
+        "type": "external_decision",
+        "decisionSchema": {
+          "type": "object",
+          "required": ["choice"],
+          "properties": { "choice": { "enum": ["reviewloop", "manual_review", "finish"] } }
+        }
+      },
+      "operatorContext": {
+        "phase": "discussion",
+        "commands": {
+          "reviewloop": "specdev reviewloop discussion --discussion=<id> --reviewer=<name>",
+          "manual_review": "specdev review discussion --discussion=<id>"
+        }
+      },
+      "edges": [
+        { "to": "review", "when": { "choice": "reviewloop" } },
+        { "to": "review", "when": { "choice": "manual_review" } },
+        { "to": "done", "when": { "choice": "finish" } }
+      ]
+    },
+    "review": {
+      "purpose": "Complete the selected discussion review and resolve findings.",
+      "instructions": "Run the selected review command and submit completion evidence after findings are resolved.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["review_complete"],
+        "properties": { "review_complete": { "enum": [true] } }
+      },
+      "operatorContext": { "phase": "discussion" },
+      "edges": [{ "to": "done" }]
+    },
+    "done": {
+      "purpose": "Discussion lifecycle is complete.",
+      "terminal": true
+    }
+  }
+}

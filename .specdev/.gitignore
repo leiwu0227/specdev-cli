@@ -1,1 +1,6 @@
 cache/
+
+# BEGIN specdev managed
+cache/
+worktrees/
+# END specdev managed

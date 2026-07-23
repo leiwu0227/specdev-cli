@@ -1,0 +1,10 @@
+{
+  "id": "00026",
+  "name": "00026_implement-interactive-versus-automatic-review-co",
+  "path": ".specdev/assignments/00026_implement-interactive-versus-automatic-review-co",
+  "description": "Implement interactive versus automatic review convergence with bounded escalation",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

@@ -12,32 +12,32 @@ type: core
 - A plan task declares `Mode: standard` AND introduces or changes behavior
   (new function, new branch, fixed bug) — test-first is mandatory.
 - A plan task declares `Mode: lightweight` (trivial scaffold/config with no
-  executable behavior) — TDD does not apply; the lightweight verification
-  steps in `implementing/SKILL.md` govern.
+  executable behavior) — TDD does not apply; use the lightweight verification
+  authorized by the Assignment contract and recorded in its plan.
 
 ## Contract
 
 - **Input:** A task to implement (from a plan or assignment)
 - **Process:** RED → GREEN → REFACTOR for every change in scope above
-- **Output:** Tested, committed code with evidence of the RED-GREEN-REFACTOR cycle
+- **Output:** Tested code with compact evidence of the RED-GREEN-REFACTOR cycle
 - **Next skill:** verification-before-completion
 
 ## Scripts
 
-| Script | Purpose | When to run |
-|--------|---------|-------------|
+| Script                                                                 | Purpose                                                                          | When to run                                                               |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `.specdev/skills/core/test-driven-development/scripts/verify-tests.sh` | Run a project test command (scoped or full) and return structured pass/fail JSON | After writing a test (RED), after writing code (GREEN), after refactoring |
 
-The script accepts an optional second argument: `verify-tests.sh <project-root> [test-command]`. **Default to a scoped command that only runs the test files this task touches** — do NOT run the full suite per RED/GREEN/REFACTOR cycle. The full suite runs once at the end of the phase as part of `verification-before-completion`.
+The script accepts an optional second argument: `verify-tests.sh <project-root> [test-command]`. **Always provide the scoped command authorized by the Assignment contract and repository policy.** Omitting the command auto-detects a full suite and is allowed only when that full suite was explicitly authorized.
 
 Scoping examples:
 
-| Stack | Per-task scoped command | Full-suite command (end of phase only) |
-|-------|------------------------|----------------------------------------|
-| Node (mocha / vitest / node:test) | `node --test tests/test-<feature>.js` or `npx vitest run tests/<feature>.test.ts` | `npm test` |
-| Python (pytest) | `pytest tests/test_<feature>.py::test_<name> -x` | `pytest` |
-| Rust (cargo) | `cargo test <feature>::<name>` | `cargo test` |
-| Go | `go test ./<pkg> -run Test<Name>` | `go test ./...` |
+| Stack                             | Per-task scoped command                                                           | Full-suite command (only when authorized) |
+| --------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------- |
+| Node (mocha / vitest / node:test) | `node --test tests/test-<feature>.js` or `npx vitest run tests/<feature>.test.ts` | `npm test`                                |
+| Python (pytest)                   | `pytest tests/test_<feature>.py::test_<name> -x`                                  | `pytest`                                  |
+| Rust (cargo)                      | `cargo test <feature>::<name>`                                                    | `cargo test`                              |
+| Go                                | `go test ./<pkg> -run Test<Name>`                                                 | `go test ./...`                           |
 
 If the plan does not name a scoped command for a task, infer one from the test file(s) created in that task's Step 1.
 
@@ -79,25 +79,25 @@ If the plan does not name a scoped command for a task, infer one from the test f
 4. Confirm the scoped tests still pass — refactoring must not change behavior
 5. If tests fail after refactoring, you changed behavior — undo and try again
 
-### Step 6: Commit
+### Step 6: Record progress
 
-1. Commit the test + implementation together
-2. The commit message should describe the behavior, not the implementation
+1. Update the Assignment's Task status and verification receipt.
+2. Do not create a commit unless the approved contract explicitly delegates that authority.
 
-### Step 7: End-of-Phase Full Verification
+### Step 7: End-of-Phase Verification
 
-Once **all** tasks in the plan are complete, run `verify-tests.sh` once
-with no scope argument (or with the project's full-suite command). The
-full-suite run belongs to verification-before-completion, not to each
-task. Per-batch full-suite runs are an anti-pattern — they multiply
-suite cost by the task count.
+Once **all** tasks in the plan are complete, run the narrowest command that
+proves the Assignment acceptance criteria and remains inside repository and
+contract authority. Run a full suite at most once, and only when broad scope or
+the approved contract requires it. Reuse a receipt for the same command on the
+same revision.
 
 ## Red Flags
 
 - Writing production code before the test — STOP, delete it, write the test first
 - Test passes immediately on first run — the test is wrong or the behavior exists
 - Skipping the verify step — always run verify-tests.sh, never assume
-- Running the **full suite** per RED/GREEN/REFACTOR cycle — scope to the task's test files; the full suite runs at end-of-phase only
+- Running the **full suite** without explicit need and authority — scope to the changed behavior by default
 - Writing more code than needed to pass the test — minimal means minimal
 - Modifying the test to make it pass — fix the code, not the test
 - Refactoring without verifying — always run scoped tests after refactoring
@@ -105,5 +105,5 @@ suite cost by the task count.
 ## Integration
 
 - **Before this skill:** planning or executing (provides the task to implement)
-- **After this skill:** verification-before-completion (runs the end-of-phase full suite)
+- **After this skill:** verification-before-completion (checks the authorized evidence envelope)
 - **Always paired with:** systematic-debugging (when tests fail unexpectedly)

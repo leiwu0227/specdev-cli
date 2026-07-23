@@ -1,0 +1,63 @@
+{
+  "id": "project-orientation",
+  "version": "1.0.0",
+  "kind": "workflow",
+  "title": "Project orientation",
+  "description": "Inspect and complete the durable SpecDev project context.",
+  "activationHints": [
+    "start",
+    "project context",
+    "orient project",
+    "big picture",
+    "set up project"
+  ],
+  "entry": "inspect-context",
+  "nodes": {
+    "inspect-context": {
+      "purpose": "Inspect whether project_notes/big_picture.md contains usable project context.",
+      "instructions": "Run `specdev start`, inspect `.specdev/project_notes/big_picture.md`, then submit whether the context is already ready.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["ready"],
+        "properties": { "ready": { "type": "boolean" } }
+      },
+      "operatorContext": { "phase": "orientation", "command": "specdev start" },
+      "edges": [
+        { "to": "done", "when": { "ready": true } },
+        { "to": "collect-context", "when": { "ready": false } }
+      ]
+    },
+    "collect-context": {
+      "purpose": "Collect the project's purpose, users, stack, architecture, and constraints.",
+      "instructions": "Use the installed `specdev-start` skill to interview the user and update `.specdev/project_notes/big_picture.md`. Submit the updated path and a short summary.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["path", "summary"],
+        "properties": {
+          "path": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "orientation" },
+      "edges": [{ "to": "verify-context" }]
+    },
+    "verify-context": {
+      "purpose": "Verify that the project context is now complete.",
+      "instructions": "Run `specdev start` again and submit `ready: true` only when it reports durable project context rather than the blank template.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["ready"],
+        "properties": { "ready": { "type": "boolean" } }
+      },
+      "operatorContext": { "phase": "orientation", "command": "specdev start" },
+      "edges": [
+        { "to": "done", "when": { "ready": true } },
+        { "to": "collect-context", "when": { "ready": false } }
+      ]
+    },
+    "done": {
+      "purpose": "Project orientation is complete.",
+      "terminal": true
+    }
+  }
+}

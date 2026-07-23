@@ -1,0 +1,111 @@
+{
+  "id": "layout-migration",
+  "version": "1.0.0",
+  "kind": "workflow",
+  "title": "Layout migration",
+  "description": "Inspect, plan, approve, apply, and verify a guided .specdev layout migration.",
+  "activationHints": [
+    "migrate",
+    "layout migration",
+    "upgrade layout",
+    "reorganize specdev",
+    "legacy layout"
+  ],
+  "entry": "inventory",
+  "nodes": {
+    "inventory": {
+      "purpose": "Inventory the current .specdev layout without modifying it.",
+      "instructions": "Run `specdev migrate`, follow the installed layout-migration skill, and submit the inventory path plus a summary of legacy or ambiguous content.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["inventory", "summary"],
+        "properties": {
+          "inventory": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "inventory", "command": "specdev migrate" },
+      "edges": [{ "to": "plan" }]
+    },
+    "plan": {
+      "purpose": "Write a migration plan with proposed moves and open questions.",
+      "instructions": "Write `.specdev/migration/layout-plan.md`. Do not move, rename, overwrite, or delete files yet. Submit the plan path and a concise summary.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["plan", "summary"],
+        "properties": {
+          "plan": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "plan" },
+      "edges": [{ "to": "approval" }]
+    },
+    "approval": {
+      "purpose": "Obtain explicit user approval before changing the layout.",
+      "interaction": {
+        "id": "migration-approval",
+        "kind": "choice",
+        "prompt": "Apply the proposed layout migration?",
+        "choices": [
+          { "label": "Apply the approved plan", "value": "apply" },
+          { "label": "Revise the plan", "value": "revise" },
+          { "label": "Cancel without changes", "value": "cancel" }
+        ]
+      },
+      "gate": {
+        "type": "external_decision",
+        "decisionSchema": {
+          "type": "object",
+          "required": ["choice"],
+          "properties": { "choice": { "enum": ["apply", "revise", "cancel"] } }
+        }
+      },
+      "operatorContext": { "phase": "approval" },
+      "edges": [
+        { "to": "apply", "when": { "choice": "apply" } },
+        { "to": "plan", "when": { "choice": "revise" } },
+        { "to": "cancelled", "when": { "choice": "cancel" } }
+      ]
+    },
+    "apply": {
+      "purpose": "Apply only the user-approved filesystem changes.",
+      "instructions": "Apply the approved plan conservatively. Submit the changed paths and confirm that no unapproved path was modified.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["changed_paths", "approved_only"],
+        "properties": {
+          "changed_paths": { "type": "array" },
+          "approved_only": { "enum": [true] }
+        }
+      },
+      "operatorContext": { "phase": "apply" },
+      "edges": [{ "to": "verify" }]
+    },
+    "verify": {
+      "purpose": "Verify the migrated project and document remaining issues.",
+      "instructions": "Run `specdev status --json`, inspect the resulting layout, and submit whether verification passed plus any warnings.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["passed"],
+        "properties": {
+          "passed": { "type": "boolean" },
+          "warnings": { "type": "array" }
+        }
+      },
+      "operatorContext": { "phase": "verify", "command": "specdev status --json" },
+      "edges": [
+        { "to": "done", "when": { "passed": true } },
+        { "to": "plan", "when": { "passed": false } }
+      ]
+    },
+    "cancelled": {
+      "purpose": "Layout migration was cancelled without applying changes.",
+      "terminal": true
+    },
+    "done": {
+      "purpose": "Layout migration is complete and verified.",
+      "terminal": true
+    }
+  }
+}
