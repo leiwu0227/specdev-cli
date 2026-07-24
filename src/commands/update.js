@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import {
   updateSpecdevSystem,
   isValidSpecdevInstallation,
+  prepareCommandSkillDirectories,
   updateSkillFiles,
   updateHookScript,
   backfillAdapters,
@@ -95,6 +96,7 @@ export async function updateCommand(flags = {}) {
       blankLine()
     }
 
+    const repairedSkillRoots = prepareCommandSkillDirectories(targetDir, COMMAND_SKILL_DIRS)
     const updatedPaths = await updateSpecdevSystem(templatePath, specdevPath)
     const engine = installWorkspaceEngine(targetDir)
 
@@ -135,6 +137,7 @@ export async function updateCommand(flags = {}) {
             cli_version: pkg.default.version,
             release_date: pkg.default.releaseDate || null,
             updated: updatedPaths,
+            repaired_skill_roots: repairedSkillRoots,
             skill_updates: skillUpdates.map((u) => ({ path: u.path, count: u.count })),
             hook_updated: hookUpdated > 0,
             adapters_created: createdAdapters,
@@ -169,6 +172,10 @@ export async function updateCommand(flags = {}) {
 
     for (const update of skillUpdates) {
       console.log(`   ✓ ${update.path}/ (${update.count} skill files)`)
+    }
+
+    for (const path of repairedSkillRoots) {
+      console.log(`   ✓ ${path} (empty file migrated to directory)`)
     }
 
     if (hookUpdated > 0) {

@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'fs'
 import { dirname, join } from 'path'
 import fse from 'fs-extra'
 import { installGraphPackages } from './engine.js'
@@ -255,14 +263,11 @@ export async function isValidSpecdevInstallation(specdevPath) {
  */
 export function updateSkillFiles(targetDir, skillFiles, skillDirs = [join('.claude', 'skills')]) {
   const updates = []
-  const hasAnyManagedSkills = skillDirs.some((skillDirRoot) => {
-    const skillsDir = join(targetDir, skillDirRoot)
-    return COMMAND_SKILL_MARKERS.some((marker) => existsSync(join(skillsDir, marker)))
-  })
-
-  if (!hasAnyManagedSkills) {
+  if (!hasManagedCommandSkills(targetDir, skillDirs)) {
     return updates
   }
+
+  prepareCommandSkillDirectories(targetDir, skillDirs)
 
   for (const skillDirRoot of skillDirs) {
     const skillsDir = join(targetDir, skillDirRoot)
@@ -291,6 +296,91 @@ export function updateSkillFiles(targetDir, skillFiles, skillDirs = [join('.clau
   }
 
   return updates
+}
+
+/**
+ * Validates command-skill directory roots before an update mutates managed
+ * SpecDev files. Empty regular-file placeholders are safe to replace with the
+ * directory the agent expects; non-empty files and non-directory symlinks are
+ * preserved and reported as actionable conflicts.
+ *
+ * @param {string} targetDir - Project root directory
+ * @param {Array<string>} skillDirs - Agent skill directories relative to targetDir
+ * @returns {Array<string>} Empty placeholder paths replaced with directories
+ */
+export function prepareCommandSkillDirectories(
+  targetDir,
+  skillDirs = [join('.claude', 'skills')]
+) {
+  if (!hasManagedCommandSkills(targetDir, skillDirs)) return []
+
+  const repairable = []
+  const conflicts = []
+
+  for (const skillDirRoot of skillDirs) {
+    const platformRoot = dirname(skillDirRoot)
+    const platformState = commandSkillPathState(targetDir, platformRoot)
+    if (platformState === 'empty-file') {
+      repairable.push(platformRoot)
+      continue
+    }
+    if (platformState !== 'missing' && platformState !== 'directory') {
+      conflicts.push(platformRoot)
+      continue
+    }
+
+    const skillsState = commandSkillPathState(targetDir, skillDirRoot)
+    if (skillsState === 'empty-file') repairable.push(skillDirRoot)
+    else if (skillsState !== 'missing' && skillsState !== 'directory') {
+      conflicts.push(skillDirRoot)
+    }
+  }
+
+  if (conflicts.length > 0) {
+    const paths = conflicts.map((path) => `'${path}'`).join(', ')
+    throw new Error(
+      `Cannot install SpecDev command skills because ${paths} must be a directory. ` +
+        'Move or rename the existing non-empty file or non-directory symlink, then rerun specdev update.'
+    )
+  }
+
+  for (const relativePath of repairable) {
+    rmSync(join(targetDir, relativePath))
+  }
+  for (const skillDirRoot of skillDirs) {
+    mkdirSync(join(targetDir, skillDirRoot), { recursive: true })
+  }
+
+  return repairable
+}
+
+function hasManagedCommandSkills(targetDir, skillDirs) {
+  return skillDirs.some((skillDirRoot) => {
+    const skillsDir = join(targetDir, skillDirRoot)
+    return COMMAND_SKILL_MARKERS.some((marker) => existsSync(join(skillsDir, marker)))
+  })
+}
+
+function commandSkillPathState(targetDir, relativePath) {
+  const absolutePath = join(targetDir, relativePath)
+  let entry
+  try {
+    entry = lstatSync(absolutePath)
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return 'missing'
+    throw error
+  }
+
+  if (entry.isDirectory()) return 'directory'
+  if (entry.isFile()) return entry.size === 0 ? 'empty-file' : 'file'
+  if (entry.isSymbolicLink()) {
+    try {
+      return statSync(absolutePath).isDirectory() ? 'directory' : 'symlink'
+    } catch {
+      return 'symlink'
+    }
+  }
+  return 'other'
 }
 
 /**
