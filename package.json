@@ -14,8 +14,9 @@
     "hooks/"
   ],
   "scripts": {
-    "test": "node ./tests/test-review-convergence.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-vnext-foundations.js && node ./tests/test-engine-integration.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
+    "test": "node ./tests/test-review-convergence.js && node ./tests/test-mission-gaps.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-vnext-foundations.js && node ./tests/test-engine-integration.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
     "test:review-convergence": "node ./tests/test-review-convergence.js",
+    "test:mission-gaps": "node ./tests/test-mission-gaps.js",
     "test:reviewloop-modes": "node ./tests/test-reviewloop-modes.js",
     "test:update-skill-roots": "node ./tests/test-update-skill-roots.js",
     "test:engine-graphpackages": "node ./tests/test-engine-graphpackages.js",

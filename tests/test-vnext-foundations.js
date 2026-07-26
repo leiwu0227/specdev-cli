@@ -28,7 +28,13 @@ import {
 } from '../src/utils/knowledge.js'
 import { loadGuideCatalog, resolveGuides } from '../src/utils/guides.js'
 import { readCurrentFocus, writeCurrentFocus } from '../src/utils/current.js'
-import { validateAndReserveReplannedQueue } from '../src/utils/mission.js'
+import {
+  assertMissionTransitionRecorded,
+  bindReplannedQueueToGap,
+  missionGapTransitionDisposition,
+  normalizeMissionGapResolutionForGraph,
+  validateAndReserveReplannedQueue,
+} from '../src/utils/mission.js'
 import { contractPreview } from '../src/utils/assignment-vnext.js'
 import {
   currentMissionWave,
@@ -792,7 +798,15 @@ the existing API stable.
         status: 'completed',
         outcome: '.specdev/assignments/00009_done/outcome.md',
       },
-      { id: '00010', title: 'Pending child', kind: 'change', wave: 2, status: 'pending' },
+      {
+        id: '00010',
+        title: 'Pending child',
+        kind: 'change',
+        wave: 2,
+        status: 'pending',
+        gap_id: 'gap-earlier',
+        gap_stage: 'resolution',
+      },
     ],
     final_verification: { command: 'node focused-check.js', scope: 'integrated' },
   }
@@ -807,8 +821,25 @@ the existing API stable.
     ],
   })
   assert.equal(replanned.assignments[1].id, '00010')
+  assert.equal(replanned.assignments[1].gap_id, 'gap-earlier')
+  assert.equal(replanned.assignments[1].gap_stage, 'resolution')
   assert.equal(replanned.assignments[2].id, '00011')
   assert.equal(replanned.assignments[2].wave, 3)
+  const gapChild = bindReplannedQueueToGap(originalQueue, replanned, {
+    gapId: 'gap-stable',
+    stage: 'resolver',
+  })
+  assert.equal(gapChild.id, '00011')
+  assert.equal(gapChild.gap_id, 'gap-stable')
+  assert.equal(gapChild.gap_stage, 'resolver')
+  assert.throws(
+    () =>
+      bindReplannedQueueToGap(originalQueue, originalQueue, {
+        gapId: 'gap-empty',
+        stage: 'resolution',
+      }),
+    /exactly one focused Assignment/
+  )
   await assert.rejects(
     validateAndReserveReplannedQueue(specdevPath, originalQueue, {
       ...originalQueue,
@@ -818,6 +849,34 @@ the existing API stable.
       ],
     }),
     /changed protected Assignment/
+  )
+
+  const legacyGraph = {
+    node: {
+      outputSchema: {
+        properties: { disposition: { enum: ['replanned', 'objective-failure'] } },
+      },
+    },
+  }
+  const closedGap = {
+    gap: { id: 'gap-legacy' },
+    disposition: 'evidence-closed',
+    attempt: { id: 'Attempt-legacy' },
+  }
+  const legacyOutcome = normalizeMissionGapResolutionForGraph(legacyGraph, closedGap)
+  assert.equal(legacyOutcome.disposition, 'infrastructure-failure')
+  assert.equal(
+    missionGapTransitionDisposition(legacyGraph, legacyOutcome.disposition),
+    'objective-failure'
+  )
+  assert.match(legacyOutcome.error, /explicit infrastructure failure/)
+  assert.throws(
+    () =>
+      assertMissionTransitionRecorded(
+        { synchronized: true, state: { status: 'validation_error' } },
+        'replan'
+      ),
+    /Invalid durable Mission transition/
   )
 
   console.log('vNext foundation tests passed.')

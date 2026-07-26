@@ -97,7 +97,19 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
       assignments.push(
         ['completed', 'integrated', 'running', 'blocked', 'cancelled'].includes(item.status)
           ? item
-          : { id: item.id, title, kind, wave: item.wave, status: 'pending' }
+          : {
+              id: item.id,
+              title,
+              kind,
+              wave: item.wave,
+              status: 'pending',
+              ...(originalById.get(item.id).gap_id
+                ? { gap_id: originalById.get(item.id).gap_id }
+                : {}),
+              ...(originalById.get(item.id).gap_stage
+                ? { gap_stage: originalById.get(item.id).gap_stage }
+                : {}),
+            }
       )
     } else {
       if (item.status && item.status !== 'pending')
@@ -120,6 +132,52 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
     assignments,
     final_verification: original.final_verification,
   }
+}
+
+export function bindReplannedQueueToGap(original, revised, { gapId, stage }) {
+  const originalIds = new Set((original.assignments || []).map((item) => item.id))
+  const added = (revised.assignments || []).filter((item) => !originalIds.has(item.id))
+  if (added.length !== 1) {
+    throw new Error(`Mission gap ${gapId} resolution must add exactly one focused Assignment`)
+  }
+  added[0].gap_id = gapId
+  added[0].gap_stage = stage
+  return added[0]
+}
+
+export function normalizeMissionGapResolutionForGraph(graph, resolved) {
+  const allowed = graph.node?.outputSchema?.properties?.disposition?.enum || []
+  if (resolved.disposition !== 'evidence-closed' || allowed.includes('evidence-closed')) {
+    return resolved
+  }
+  return {
+    ...resolved,
+    disposition: 'infrastructure-failure',
+    error: `Pinned Mission graph cannot route evidence closure for gap ${resolved.gap.id}; ending with an explicit infrastructure failure.`,
+  }
+}
+
+export function missionGapTransitionDisposition(graph, disposition) {
+  const allowed = graph.node?.outputSchema?.properties?.disposition?.enum || []
+  if (allowed.includes(disposition)) return disposition
+  if (disposition === 'resolution-added' && allowed.includes('replanned')) return 'replanned'
+  if (
+    ['semantic-failure', 'authority-failure', 'infrastructure-failure'].includes(disposition) &&
+    allowed.includes('objective-failure')
+  ) {
+    return 'objective-failure'
+  }
+  return disposition
+}
+
+export function assertMissionTransitionRecorded(stepped, node, action = 'record') {
+  if (!stepped.synchronized) {
+    throw new Error(`Could not ${action} durable Mission transition from ${node}`)
+  }
+  if (stepped.state?.status === 'validation_error') {
+    throw new Error(`Invalid durable Mission transition from ${node}`)
+  }
+  return stepped
 }
 
 async function readYaml(path) {

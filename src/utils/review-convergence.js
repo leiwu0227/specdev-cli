@@ -137,11 +137,6 @@ export function normalizedFindingsDigest(markdown) {
   return createHash('sha256').update(normalized).digest('hex')
 }
 
-export function missionReplanDisposition({ reason, previousAttempts = 0 }) {
-  const limit = reason === 'final_verification' ? 1 : reason === 'mission_review' ? 3 : 1
-  return previousAttempts < limit ? 'replan' : 'objective-failure'
-}
-
 function automaticStage(stage) {
   return ['primary', 'resolver', 'arbiter', 'complete', 'failed'].includes(stage)
     ? stage

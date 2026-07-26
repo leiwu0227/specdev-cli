@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@6ca95d3a95d5aa630cb5be8393073a12d285e094",
+      "scope": "changed files",
+      "status": "passed",
+      "duration_ms": 1
+    },
+    {
+      "command": "node --check src/commands/mission.js && node --check src/utils/mission.js && node --check src/utils/mission-gaps.js && node --check src/utils/review-convergence.js",
+      "revision": "working-tree@6ca95d3a95d5aa630cb5be8393073a12d285e094",
+      "scope": "changed Mission modules",
+      "status": "passed",
+      "duration_ms": 100
+    },
+    {
+      "command": "node tests/test-mission-gaps.js && node tests/test-review-convergence.js && node tests/test-engine-graphpackages.js && node tests/test-vnext-foundations.js",
+      "revision": "working-tree@6ca95d3a95d5aa630cb5be8393073a12d285e094",
+      "scope": "focused Mission gap, convergence, graph-package, and queue fixtures",
+      "status": "passed",
+      "duration_ms": 960
+    },
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@6ca95d3a95d5aa630cb5be8393073a12d285e094",
+      "scope": "blocking review repair",
+      "status": "passed",
+      "duration_ms": 18
+    },
+    {
+      "command": "node --check src/utils/mission.js && node --check src/utils/mission-gaps.js && node --check src/commands/mission.js && node --check tests/test-mission-gaps.js && node --check tests/test-vnext-foundations.js",
+      "revision": "working-tree@6ca95d3a95d5aa630cb5be8393073a12d285e094",
+      "scope": "blocking repair modules and fixtures",
+      "status": "passed",
+      "duration_ms": 264
+    },
+    {
+      "command": "node tests/test-mission-gaps.js && node tests/test-vnext-foundations.js && node tests/test-engine-graphpackages.js",
+      "revision": "working-tree@6ca95d3a95d5aa630cb5be8393073a12d285e094",
+      "scope": "repair lineage, legacy adoption/routing, durable transition validation, and graph package",
+      "status": "passed",
+      "duration_ms": 1512
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

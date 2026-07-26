@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import {
   initialAutomaticReviewState,
-  missionReplanDisposition,
   normalizedFindingsDigest,
   recordArbitration,
   recordPrimaryReview,
@@ -88,19 +87,5 @@ for (const [verdict, disposition] of [
     disposition
   )
 }
-
-assert.equal(missionReplanDisposition({ reason: 'mission_review', previousAttempts: 2 }), 'replan')
-assert.equal(
-  missionReplanDisposition({ reason: 'mission_review', previousAttempts: 3 }),
-  'objective-failure'
-)
-assert.equal(
-  missionReplanDisposition({ reason: 'final_verification', previousAttempts: 0 }),
-  'replan'
-)
-assert.equal(
-  missionReplanDisposition({ reason: 'final_verification', previousAttempts: 1 }),
-  'objective-failure'
-)
 
 console.log('Review convergence tests passed.')

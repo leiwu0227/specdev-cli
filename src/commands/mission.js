@@ -26,6 +26,10 @@ import { decideGuidedNode, startGuidedRun, stepGuidedNode } from '../utils/engin
 import { workflowRootFor } from '../utils/engine.js'
 import { reserveEntityId } from '../utils/id-reservation.js'
 import {
+  assertMissionTransitionRecorded,
+  bindReplannedQueueToGap,
+  missionGapTransitionDisposition,
+  normalizeMissionGapResolutionForGraph,
   readMission,
   readMissionQueue,
   resolveMissionSelector,
@@ -71,8 +75,21 @@ import {
 } from '../utils/artifact-retention.js'
 import { workspaceChangeSummaryLines } from '../utils/workspace-changes.js'
 import {
+  actionableMissionGap,
+  adoptLegacyMissionReplan,
+  advanceMissionGap,
+  attachMissionGapAssignment,
+  awaitMissionGapValidation,
+  closeMissionGap,
+  compactMissionGaps,
+  failMissionGap,
+  missionGap,
+  missionGapForSource,
+  openMissionGap,
+  recordMissionSourceGap,
+} from '../utils/mission-gaps.js'
+import {
   initialAutomaticReviewState,
-  missionReplanDisposition,
   recordArbitration,
   recordPrimaryReview,
   recordResolver,
@@ -198,7 +215,7 @@ async function runMission(selector, flags) {
       version: 1,
       status: 'failed',
       mission: mission.id,
-      disposition: 'objective-failure',
+      disposition: mission.disposition || 'semantic-failure',
       outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
     })
   }
@@ -397,6 +414,14 @@ async function driveMission(context) {
     await assertApprovedMissionContract(missionPath, mission)
     const graph = getState({ workflowRoot: workflowRootFor(targetDir) })
     const node = graph.position?.node
+    if (mission.pending_transition?.node === node) {
+      await replayMissionTransition(context)
+      continue
+    }
+    if (mission.pending_transition) {
+      delete mission.pending_transition
+      await writeMission(missionPath, mission)
+    }
     if (graph.position?.graph === 'assignment-lifecycle') {
       await runMissionChild(context, graph)
       continue
@@ -423,24 +448,19 @@ async function driveMission(context) {
       if (!Number.isSafeInteger(wave) || completed.length === 0) {
         throw new Error('Mission has no completed parallel wave to advance')
       }
-      const followUpRequired = completed.some((item) => item.follow_up === 'required')
       const remaining = missionQueueHasRemaining(queue)
-      if (followUpRequired) {
-        mission.pending_replan = {
-          reason: 'parallel_wave_follow_up',
-          wave,
-          children: completed
-            .filter((item) => item.follow_up === 'required')
-            .map((item) => item.id),
-          created_at: new Date().toISOString(),
-        }
+      for (const child of completed) {
+        await recordMissionChildGap(context, child)
       }
       delete mission.completed_wave
       await writeMission(missionPath, mission)
-      stepGuidedNode(targetDir, 'advance-wave', {
+      const gap = actionableMissionGap(mission)
+      await durableMissionStep(context, 'advance-wave', {
         remaining,
         completed: `wave-${wave}`,
-        follow_up_required: followUpRequired,
+        follow_up_required: Boolean(gap),
+        gap_open: Boolean(gap),
+        ...(gap ? { gap_id: gap.id } : {}),
         parallel: remaining ? missionWaveIsParallel(queue) : false,
       })
       continue
@@ -455,20 +475,15 @@ async function driveMission(context) {
       running.follow_up = await childFollowUp(specdevPath, running)
       await writeMissionQueue(missionPath, queue)
       const remaining = missionQueueHasRemaining(queue)
-      const followUpRequired = running.follow_up === 'required'
-      if (followUpRequired) {
-        mission.pending_replan = {
-          reason: 'child_follow_up',
-          child: running.id,
-          artifact: running.outcome,
-          created_at: new Date().toISOString(),
-        }
-        await writeMission(missionPath, mission)
-      }
-      stepGuidedNode(targetDir, 'advance-queue', {
+      await recordMissionChildGap(context, running)
+      const gap = actionableMissionGap(mission)
+      await writeMission(missionPath, mission)
+      await durableMissionStep(context, 'advance-queue', {
         remaining,
         completed: running.id,
-        follow_up_required: followUpRequired,
+        follow_up_required: Boolean(gap),
+        gap_open: Boolean(gap),
+        ...(gap ? { gap_id: gap.id } : {}),
         parallel: remaining ? missionWaveIsParallel(queue) : false,
       })
       continue
@@ -476,7 +491,9 @@ async function driveMission(context) {
     if (node === 'mission-review') {
       const review = await reviewMission(context)
       if (review.disposition === 'approved' || review.disposition === 'nonblocking-override') {
-        stepGuidedNode(targetDir, 'mission-review', {
+        closeValidatingGap(mission, 'mission-review', 'convergence', review.verdict)
+        await writeMission(missionPath, mission)
+        await durableMissionStep(context, 'mission-review', {
           approved: true,
           verdict: review.verdict,
           attempt: review.attempt,
@@ -485,14 +502,20 @@ async function driveMission(context) {
         continue
       }
       if (review.disposition === 'repair' || review.disposition === 'resolver') {
-        mission.pending_replan = {
-          reason: 'mission_review',
-          review_stage: review.disposition,
+        const gap = recordMissionSourceGap(mission, {
+          kind: 'mission-review',
+          sourceId: 'convergence',
+          signalId: `mission-review:${review.attempt}`,
           artifact: review.verdict,
-          created_at: new Date().toISOString(),
+        })
+        if (review.disposition === 'resolver' && gap.stage === 'resolution') {
+          advanceMissionGap(mission, gap.id, {
+            signalId: `mission-review:${review.attempt}:resolver`,
+            artifact: review.verdict,
+          })
         }
         await writeMission(missionPath, mission)
-        stepGuidedNode(targetDir, 'mission-review', {
+        await durableMissionStep(context, 'mission-review', {
           approved: false,
           verdict: review.verdict,
           attempt: review.attempt,
@@ -500,41 +523,80 @@ async function driveMission(context) {
         })
         continue
       }
-      stepGuidedNode(targetDir, 'mission-review', {
+      const reviewGap =
+        missionGapForSource(mission, 'mission-review', 'convergence') ||
+        recordMissionSourceGap(mission, {
+          kind: 'mission-review',
+          sourceId: 'convergence',
+          signalId: `mission-review:${review.attempt}:failure`,
+          artifact: review.verdict,
+        })
+      failMissionGap(mission, reviewGap.id, 'semantic-failure', {
+        reason: 'Mission convergence review found an objective failure.',
+        evidence: review.verdict,
+      })
+      await writeMission(missionPath, mission)
+      await durableMissionStep(context, 'mission-review', {
         approved: false,
         verdict: review.verdict,
         attempt: review.attempt,
-        disposition: 'objective-failure',
+        disposition: missionGapTransitionDisposition(graph, 'semantic-failure'),
       })
       await completeMissionFailure(
         context,
-        'Mission convergence review found an objective failure.'
+        'Mission convergence review found an objective failure.',
+        'semantic-failure'
       )
       return emit(flags, {
         command: 'mission run',
         version: 1,
         status: 'failed',
         mission: mission.id,
-        disposition: 'objective-failure',
+        disposition: 'semantic-failure',
         outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
       })
     }
-    if (node === 'replan') {
-      const replanned = await replanMission(context)
-      stepGuidedNode(targetDir, 'replan', {
+    if (node === 'replan' || node === 'resolve-gap') {
+      const gapResolution = await resolveMissionGap(context)
+      const resolved = normalizeMissionGapResolutionForGraph(graph, gapResolution)
+      if (resolved !== gapResolution) {
+        failMissionGap(mission, resolved.gap.id, resolved.disposition, {
+          reason: resolved.error,
+          evidence: resolved.attempt?.id || null,
+        })
+        await writeMission(missionPath, mission)
+      }
+      const resolutionQueue = await readMissionQueue(missionPath)
+      const remaining = missionQueueHasRemaining(resolutionQueue)
+      const nextGap = actionableMissionGap(mission)
+      const transitionDisposition = missionGapTransitionDisposition(graph, resolved.disposition)
+      await durableMissionStep(context, node, {
         queue: relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml')),
-        reason: replanned.reason,
-        attempt: replanned.attempt.id,
-        disposition: replanned.disposition,
+        reason: resolved.reason,
+        gap_id: resolved.gap.id,
+        stage: resolved.stage,
+        attempt: resolved.attempt?.id || 'none',
+        disposition: transitionDisposition,
+        gap_open: Boolean(nextGap),
+        remaining,
+        parallel: remaining ? missionWaveIsParallel(resolutionQueue) : false,
       })
-      if (replanned.disposition === 'objective-failure') {
-        await completeMissionFailure(context, replanned.error || 'Mission replanning failed.')
+      if (
+        ['semantic-failure', 'authority-failure', 'infrastructure-failure'].includes(
+          resolved.disposition
+        )
+      ) {
+        await completeMissionFailure(
+          context,
+          resolved.error || 'Mission gap resolution failed.',
+          resolved.disposition
+        )
         return emit(flags, {
           command: 'mission run',
           version: 1,
           status: 'failed',
           mission: mission.id,
-          disposition: 'objective-failure',
+          disposition: resolved.disposition,
           outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
         })
       }
@@ -542,38 +604,29 @@ async function driveMission(context) {
     }
     if (node === 'final-verification') {
       const result = await runFinalVerification(context)
-      mission.verification_failures = result.passed
-        ? mission.verification_failures || 0
-        : (mission.verification_failures || 0) + 1
-      const recoverable = result.passed || mission.verification_failures <= 1
-      stepGuidedNode(targetDir, 'final-verification', {
+      let verificationGap = missionGapForSource(mission, 'final-verification', 'authorized-command')
+      if (result.passed && verificationGap) {
+        closeMissionGap(mission, verificationGap.id, {
+          evidence: relativeToRepo(targetDir, result.path),
+        })
+        await writeMission(missionPath, mission)
+      }
+      if (!result.passed) {
+        verificationGap = recordMissionSourceGap(mission, {
+          kind: 'final-verification',
+          sourceId: 'authorized-command',
+          signalId: `final-verification:${result.receipt.completed_at}`,
+          artifact: relativeToRepo(targetDir, result.path),
+        })
+        await writeMission(missionPath, mission)
+      }
+      await durableMissionStep(context, 'final-verification', {
         passed: result.passed,
         receipt: relativeToRepo(targetDir, result.path),
-        recoverable,
+        recoverable: !result.passed,
+        disposition: result.passed ? 'evidence-closed' : 'gap-open',
       })
-      if (!result.passed) {
-        if (!recoverable) {
-          await completeMissionFailure(
-            context,
-            'Final integrated verification failed after its bounded automatic recovery.'
-          )
-          return emit(flags, {
-            command: 'mission run',
-            version: 1,
-            status: 'failed',
-            mission: mission.id,
-            disposition: 'objective-failure',
-            outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
-          })
-        }
-        mission.pending_replan = {
-          reason: 'final_verification',
-          artifact: relativeToRepo(targetDir, result.path),
-          created_at: new Date().toISOString(),
-        }
-        await writeMission(missionPath, mission)
-        continue
-      }
+      if (!result.passed) continue
       await completeMission(context)
       await updateAttemptRecord(specdevPath, context.controller.id, { status: 'completed' })
       const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
@@ -619,6 +672,27 @@ async function driveMission(context) {
     }
     throw new Error(`Mission controller cannot handle workflow node: ${node}`)
   }
+}
+
+async function durableMissionStep(context, node, output) {
+  const { targetDir, missionPath, mission } = context
+  mission.pending_transition = { node, output }
+  await writeMission(missionPath, mission)
+  const stepped = stepGuidedNode(targetDir, node, output)
+  assertMissionTransitionRecorded(stepped, node)
+  delete mission.pending_transition
+  await writeMission(missionPath, mission)
+  return stepped
+}
+
+async function replayMissionTransition(context) {
+  const { targetDir, missionPath, mission } = context
+  const transition = mission.pending_transition
+  const stepped = stepGuidedNode(targetDir, transition.node, transition.output)
+  assertMissionTransitionRecorded(stepped, transition.node, 'replay')
+  delete mission.pending_transition
+  await writeMission(missionPath, mission)
+  return stepped
 }
 
 async function designMission(context) {
@@ -1651,6 +1725,14 @@ async function authorChildContract(context, child, assignmentPath) {
       `Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Approved Mission contract hash: ${mission.approved_contract_hash}`,
       `Queue entry: ${child.title}`,
+      child.gap_id ? `Durable Mission gap: ${child.gap_id}` : null,
+      child.gap_id ? `Gap stage: ${child.gap_stage}` : null,
+      child.gap_id
+        ? `Gap source: ${missionGap(mission, child.gap_id)?.source?.key || 'unknown'}`
+        : null,
+      child.gap_id && missionGap(mission, child.gap_id)?.artifact
+        ? `Gap evidence: ${missionGap(mission, child.gap_id).artifact}`
+        : null,
       ...(await completedOutcomeLines(missionPath, child.id)),
       await optionalArtifactLine(
         targetDir,
@@ -1877,7 +1959,12 @@ async function assertMissionOverrideEvidence(specdevPath, missionPath) {
 async function reusableSingleChildReview(context) {
   const { targetDir, specdevPath, missionPath, mission } = context
   const queue = await readMissionQueue(missionPath)
-  if (queue?.design_mode !== 'single' || queue.assignments?.length !== 1 || mission.pending_replan)
+  if (
+    queue?.design_mode !== 'single' ||
+    queue.assignments?.length !== 1 ||
+    mission.pending_replan ||
+    mission.gaps?.items?.some((gap) => gap.status !== 'closed')
+  )
     return null
   const child = queue.assignments[0]
   if (child.status !== 'completed' || child.follow_up === 'required' || !child.folder) return null
@@ -1904,27 +1991,54 @@ async function reusableSingleChildReview(context) {
   return { child, state, verdictPath }
 }
 
-async function replanMission(context) {
+async function recordMissionChildGap(context, child) {
+  const { mission } = context
+  const signalId = `child:${child.id}:${child.follow_up === 'required' ? 'follow-up' : 'complete'}`
+  if (child.gap_id) {
+    const gap = missionGap(mission, child.gap_id)
+    if (!gap) throw new Error(`Mission child ${child.id} references unknown gap ${child.gap_id}`)
+    if (child.follow_up === 'required') {
+      advanceMissionGap(mission, gap.id, {
+        signalId,
+        artifact: child.outcome,
+      })
+    } else if (['mission-review', 'final-verification'].includes(gap.source.kind)) {
+      awaitMissionGapValidation(mission, gap.id, { artifact: child.outcome })
+    } else {
+      closeMissionGap(mission, gap.id, { evidence: child.outcome })
+    }
+    return gap
+  }
+  if (child.follow_up !== 'required') return null
+  return openMissionGap(mission, {
+    kind: 'child',
+    sourceId: child.id,
+    signalId,
+    artifact: child.outcome,
+  }).gap
+}
+
+function closeValidatingGap(mission, kind, sourceId, evidence) {
+  const gap = missionGapForSource(mission, kind, sourceId)
+  if (gap?.status === 'validating') closeMissionGap(mission, gap.id, { evidence })
+}
+
+async function adoptLegacyPendingReplan(context) {
+  const { missionPath, mission } = context
+  if (adoptLegacyMissionReplan(mission)) await writeMission(missionPath, mission)
+}
+
+async function resolveMissionGap(context) {
   const { targetDir, specdevPath, missionPath, mission } = context
   const original = await readMissionQueue(missionPath)
-  const trigger = mission.pending_replan || { reason: 'mission_convergence', artifact: null }
-  const attempts = mission.replan_attempts || {}
-  const previousAttempts = Number(attempts[trigger.reason] || 0)
-  if (
-    missionReplanDisposition({
-      reason: trigger.reason,
-      previousAttempts,
-    }) === 'objective-failure'
-  ) {
-    return {
-      reason: trigger.reason,
-      disposition: 'objective-failure',
-      attempt: { id: 'replan-budget-exhausted' },
-      error: `Mission ${trigger.reason} recovery exhausted its bounded replan allowance.`,
-    }
-  }
+  await adoptLegacyPendingReplan(context)
+  const gap = actionableMissionGap(mission)
+  if (!gap) throw new Error('Mission gap resolution has no actionable durable gap')
+  const stage = gap.stage
+  if (stage === 'arbiter') return arbitrateMissionGap(context, gap)
+
   const profile = withoutNetwork(await resolveAgentProfile(specdevPath, 'worker'))
-  const resultPath = join(missionPath, 'design', `replan-${Date.now()}-result.md`)
+  const resultPath = join(missionPath, 'design', `${gap.id}-${stage}-result.md`)
   const result = await runSpawnedAgent({
     targetDir,
     specdevPath,
@@ -1934,27 +2048,52 @@ async function replanMission(context) {
     resultPath,
     resultKind: 'worker',
     prompt: [
-      trigger.review_stage === 'resolver'
-        ? 'Resolve the remaining Mission convergence findings in one final bounded replanning Attempt; do not modify product code.'
-        : 'Replan only the remaining Mission queue; do not modify product code.',
+      stage === 'resolver'
+        ? 'Act as the resolver for one durable Mission gap. Add one final focused resolution Assignment to the remaining queue; do not modify product code.'
+        : 'Add one focused resolution Assignment for one durable Mission gap; do not modify product code.',
       `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Queue to edit in place: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
-      `Trigger: ${trigger.reason}`,
-      trigger.artifact ? `Trigger artifact: ${trigger.artifact}` : null,
+      `Gap: ${gap.id}`,
+      `Stable source: ${gap.source.key}`,
+      `Resolution stage: ${stage}`,
+      gap.artifact ? `Trigger artifact: ${gap.artifact}` : null,
       'Preserve every completed, integrated, or running entry exactly. Existing pending entries may change title or kind but must retain their IDs. New entries must omit IDs and use status: pending; SpecDev allocates identity and appends sequential repair waves.',
       `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
-      'Preserve final_verification exactly. Keep repair work sequential and small. If the needed route changes approved scope, behavior, constraints, or reserved authority, return blocked without changing the queue.',
+      'Preserve final_verification exactly. Keep the resolution sequential and small. Do not broaden approved scope, behavior, constraints, reserved authority, or verification authority. If the gap cannot be resolved inside that authority, return blocked without changing the queue.',
     ]
       .filter(Boolean)
       .join('\n'),
   })
-  if (result.status !== 'completed' || result.result.frontmatter.status !== 'completed') {
+  if (result.status !== 'completed') {
     await writeMissionQueue(missionPath, original)
+    failMissionGap(mission, gap.id, 'infrastructure-failure', {
+      reason: result.error || 'Mission gap resolution provider failed.',
+      evidence: result.attempt?.id || null,
+    })
+    await writeMission(missionPath, mission)
     return {
-      reason: trigger.reason,
-      disposition: 'objective-failure',
-      attempt: result.attempt || { id: 'replan-failed' },
-      error: result.error || 'Mission replanning could not stay inside approved authority.',
+      reason: gap.source.key,
+      gap,
+      stage,
+      disposition: 'infrastructure-failure',
+      attempt: result.attempt,
+      error: result.error || 'Mission gap resolution provider failed.',
+    }
+  }
+  if (result.result.frontmatter.status !== 'completed') {
+    await writeMissionQueue(missionPath, original)
+    failMissionGap(mission, gap.id, 'authority-failure', {
+      reason: 'Mission gap cannot be resolved inside approved authority.',
+      evidence: result.attempt.id,
+    })
+    await writeMission(missionPath, mission)
+    return {
+      reason: gap.source.key,
+      gap,
+      stage,
+      disposition: 'authority-failure',
+      attempt: result.attempt,
+      error: 'Mission gap cannot be resolved inside approved authority.',
     }
   }
 
@@ -1969,12 +2108,16 @@ async function replanMission(context) {
     await writeMissionQueue(missionPath, original)
     throw error
   }
-  await writeMissionQueue(missionPath, revised)
-  mission.replan_attempts = {
-    ...attempts,
-    [trigger.reason]: previousAttempts + 1,
+  let added
+  try {
+    added = bindReplannedQueueToGap(original, revised, { gapId: gap.id, stage })
+  } catch (error) {
+    await writeMissionQueue(missionPath, original)
+    throw error
   }
-  if (trigger.reason === 'mission_review' && trigger.review_stage === 'resolver') {
+  await writeMissionQueue(missionPath, revised)
+  attachMissionGapAssignment(mission, gap.id, added.id, { stage })
+  if (gap.source.kind === 'mission-review' && stage === 'resolver') {
     const reviewStatePath = join(missionPath, 'review', 'mission-state.json')
     const reviewState = await fse.readJson(reviewStatePath).catch(() => ({}))
     await fse.writeJson(
@@ -1986,10 +2129,90 @@ async function replanMission(context) {
       { spaces: 2 }
     )
   }
+  delete mission.pending_gap
   delete mission.pending_replan
+  delete mission.replan_attempts
   await writeMission(missionPath, mission)
   await retireTransientArtifact(targetDir, specdevPath, resultPath)
-  return { reason: trigger.reason, disposition: 'replanned', attempt: result.attempt }
+  return {
+    reason: gap.source.key,
+    gap,
+    stage,
+    disposition: 'resolution-added',
+    attempt: result.attempt,
+  }
+}
+
+async function arbitrateMissionGap(context, gap) {
+  const { targetDir, specdevPath, missionPath, mission } = context
+  const profile = withoutNetwork(await resolveAgentProfile(specdevPath, 'reviewer'))
+  const resultPath = join(missionPath, 'review', `${gap.id}-arbiter-result.md`)
+  const result = await runSpawnedAgent({
+    targetDir,
+    specdevPath,
+    role: 'reviewer',
+    profile,
+    mission: mission.id,
+    resultPath,
+    resultKind: 'reviewer',
+    prompt: [
+      'Arbitrate one unresolved Mission gap in a final read-only Attempt. Do not modify tracked files or expand Mission authority.',
+      `Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
+      `Mission queue: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
+      `Gap: ${gap.id}`,
+      `Stable source: ${gap.source.key}`,
+      gap.artifact ? `Latest evidence: ${gap.artifact}` : null,
+      'Return approved only when existing acceptance or verification evidence safely closes the gap. Return needs_changes when evidence proves a semantic objective failure. Return blocked when closure would require authority outside the approved Mission.',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+  })
+  if (result.status !== 'completed') {
+    failMissionGap(mission, gap.id, 'infrastructure-failure', {
+      reason: result.error || 'Mission gap arbiter provider failed.',
+      evidence: result.attempt?.id || null,
+    })
+    await writeMission(missionPath, mission)
+    return {
+      reason: gap.source.key,
+      gap,
+      stage: 'arbiter',
+      disposition: 'infrastructure-failure',
+      attempt: result.attempt,
+      error: result.error || 'Mission gap arbiter provider failed.',
+    }
+  }
+
+  const verdict = result.result.frontmatter.verdict
+  if (verdict === 'approved') {
+    closeMissionGap(mission, gap.id, { evidence: relativeToRepo(targetDir, resultPath) })
+    await writeMission(missionPath, mission)
+    return {
+      reason: gap.source.key,
+      gap,
+      stage: 'arbiter',
+      disposition: 'evidence-closed',
+      attempt: result.attempt,
+    }
+  }
+  const disposition = verdict === 'needs_changes' ? 'semantic-failure' : 'authority-failure'
+  const error =
+    disposition === 'semantic-failure'
+      ? `Mission gap ${gap.id} has an arbitrated objective failure.`
+      : `Mission gap ${gap.id} cannot be closed inside approved authority.`
+  failMissionGap(mission, gap.id, disposition, {
+    reason: error,
+    evidence: relativeToRepo(targetDir, resultPath),
+  })
+  await writeMission(missionPath, mission)
+  return {
+    reason: gap.source.key,
+    gap,
+    stage: 'arbiter',
+    disposition,
+    attempt: result.attempt,
+    error,
+  }
 }
 
 async function runFinalVerification(context) {
@@ -2027,12 +2250,15 @@ async function completeMission(context) {
   mission.status = 'completed'
   mission.completed_at = new Date().toISOString()
   const activity = await missionActivitySummary(specdevPath, mission)
+  const gaps = compactMissionGaps(mission)
   await fse.writeFile(
     join(missionPath, 'outcome.md'),
-    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Base\n\n- Branch: ${mission.base_branch || 'unknown'}\n- Revision: ${mission.base_revision || 'unborn'}\n\n## Assignments\n\n${lines.join('\n')}\n\n## Activity\n\n- Orchestration Attempts: ${activity.orchestration_attempt_count}\n- Provider agent Attempts: ${formatProviderAttemptOutcomes(activity.provider_attempts)}\n- Elapsed: ${formatDuration(activity.elapsed_ms)}\n- Provider-reported tokens: ${activity.provider_reported_tokens ?? 'not reported'}\n\n## Delivery\n\nFinal verification passed. The Mission completion commit on branch \`${mission.branch}\` is the durable final checkpoint.\n`,
+    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Base\n\n- Branch: ${mission.base_branch || 'unknown'}\n- Revision: ${mission.base_revision || 'unborn'}\n\n## Assignments\n\n${lines.join('\n')}\n\n## Gap convergence\n\n- Opened: ${gaps.opened}\n- Evidence-closed: ${gaps.closed}\n- Failed: ${gaps.failed}\n\n## Activity\n\n- Orchestration Attempts: ${activity.orchestration_attempt_count}\n- Provider agent Attempts: ${formatProviderAttemptOutcomes(activity.provider_attempts)}\n- Elapsed: ${formatDuration(activity.elapsed_ms)}\n- Provider-reported tokens: ${activity.provider_reported_tokens ?? 'not reported'}\n\n## Delivery\n\nFinal verification passed. The Mission completion commit on branch \`${mission.branch}\` is the durable final checkpoint.\n`,
     'utf-8'
   )
   mission.activity = activity
+  mission.gap_summary = gaps
+  delete mission.gaps
   mission.next_action = null
   delete mission.blocker
   delete mission.final_revision
@@ -2045,13 +2271,16 @@ async function completeMission(context) {
   )
 }
 
-async function completeMissionFailure(context, reason) {
+async function completeMissionFailure(context, reason, disposition = 'semantic-failure') {
   const { missionPath, mission } = context
   const queue = await readMissionQueue(missionPath)
   const lines = (queue.assignments || []).map(
     (item) => `- ${item.id}: ${item.title} — ${item.status}`
   )
+  const gaps = compactMissionGaps(mission)
   mission.status = 'failed'
+  mission.disposition = disposition
+  mission.gap_summary = gaps
   mission.failed_at = new Date().toISOString()
   mission.blocker = reason
   mission.next_action = null
@@ -2062,14 +2291,14 @@ async function completeMissionFailure(context, reason) {
       version: 1,
       status: 'failed',
       failed_at: mission.failed_at,
-      disposition: 'objective-failure',
+      disposition,
       reason,
     },
     { spaces: 2 }
   )
   await fse.writeFile(
     join(missionPath, 'outcome.md'),
-    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Assignments\n\n${lines.join('\n') || '- none'}\n\n## Delivery\n\nObjective terminal failure: ${reason}\n`,
+    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Assignments\n\n${lines.join('\n') || '- none'}\n\n## Gap convergence\n\n- Opened: ${gaps.opened}\n- Evidence-closed: ${gaps.closed}\n- Failed: ${gaps.failed}\n\n## Delivery\n\n${formatMissionFailure(disposition)}: ${reason}\n`,
     'utf-8'
   )
 }
@@ -2717,6 +2946,12 @@ function withoutNetwork(profile) {
 function candidateRevision(snapshot) {
   const revision = snapshot.revision || 'unborn'
   return snapshot.dirty_paths.length > 0 ? `working-tree@${revision}` : revision
+}
+
+function formatMissionFailure(disposition) {
+  if (disposition === 'authority-failure') return 'Authority terminal failure'
+  if (disposition === 'infrastructure-failure') return 'Infrastructure terminal failure'
+  return 'Semantic terminal failure'
 }
 
 function missionNextAction(mission, phase, liveController, interruptedController = null) {
