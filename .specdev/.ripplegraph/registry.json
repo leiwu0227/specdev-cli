@@ -3,7 +3,7 @@
   "graphs": {
     "assignment-lifecycle": {
       "id": "assignment-lifecycle",
-      "version": "2.1.1",
+      "version": "2.2.0",
       "kind": "workflow",
       "title": "Assignment lifecycle",
       "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",
@@ -16,8 +16,8 @@
       ],
       "requires": [],
       "effects": [],
-      "path": "workflows/assignment-lifecycle@2.1.1",
-      "registeredAt": "2026-07-23T13:11:17.765Z"
+      "path": "workflows/assignment-lifecycle@2.2.0",
+      "registeredAt": "2026-07-26T02:25:57.455Z"
     },
     "discussion-lifecycle": {
       "id": "discussion-lifecycle",
@@ -55,7 +55,7 @@
     },
     "mission-lifecycle": {
       "id": "mission-lifecycle",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "kind": "workflow",
       "title": "Mission lifecycle",
       "description": "Deliver a larger approved objective through static Assignment waves with bounded parallel execution.",
@@ -66,8 +66,8 @@
       ],
       "requires": [],
       "effects": [],
-      "path": "workflows/mission-lifecycle@1.2.0",
-      "registeredAt": "2026-07-23T13:11:17.769Z"
+      "path": "workflows/mission-lifecycle@1.3.0",
+      "registeredAt": "2026-07-26T02:25:57.459Z"
     },
     "project-orientation": {
       "id": "project-orientation",
