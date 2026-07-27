@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00029",
+  "kind": "change",
+  "description": "Reuse completed preserved artifacts after a blocked implementation worker instead of launching a replacement worker unless retry is explicitly requested",
+  "run_id": "assignment-lifecycle-20260727T02553512",
+  "created_at": "2026-07-27T02:55:35.131Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-07-27T03:14:17.648Z",
+  "review_policy_frozen_at": "2026-07-27T03:01:24.259Z",
+  "approved_at": "2026-07-27T03:01:24.259Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "c2f0f57bd8afe8f1574381573e4805c86830568b",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-07-27T03:01:29.467Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-07-27T03:14:17.637Z",
+  "activity": {
+    "attempt_count": 3,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 3,
+    "provider_attempts": {
+      "total": 3,
+      "completed": 2,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 773378,
+    "agent_duration_ms": 557676,
+    "provider_reported_tokens": 90258
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-07-27T03:14:17.648Z"
+}

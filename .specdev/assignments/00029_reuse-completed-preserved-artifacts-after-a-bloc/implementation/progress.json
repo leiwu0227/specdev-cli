@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:implement-recovery",
+      "revision": "working-tree@c2f0f57bd8afe8f1574381573e4805c86830568b",
+      "scope": "Focused preserved implementation-worker recovery regression",
+      "status": "passed",
+      "duration_ms": 1708
+    }
+  ],
+  "deviations": [
+    "The first focused run stopped during fixture setup because its Big Picture note lacked the required Overview and Architecture sections; the isolated fixture was corrected before the passing final run."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

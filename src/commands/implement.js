@@ -77,11 +77,13 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         resultPath,
         acceptanceIds: contract.acceptanceIds,
       })
-      if (recovery?.status === 'blocked' && !flags['retry-worker']) {
-        const attempts = await listAttemptRecords(specdevPath, { assignment: name })
-        const blockedAttempt = attempts
-          .filter((attempt) => attempt.kind === 'worker' && attempt.status === 'blocked')
-          .at(-1)
+      if (['blocked', 'malformed', 'invalid'].includes(recovery.status) && !flags['retry-worker']) {
+        const blockedAttempt =
+          recovery.status === 'blocked'
+            ? (await listAttemptRecords(specdevPath, { assignment: name }))
+                .filter((attempt) => attempt.kind === 'worker' && attempt.status === 'blocked')
+                .at(-1)
+            : null
         return emitBlockedWorker(flags, {
           command: 'implement',
           version: 2,
@@ -89,10 +91,12 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           assignment: name,
           ...(blockedAttempt ? { attempt: blockedAttempt.id } : {}),
           result: relativeToRepo(targetDir, resultPath),
-          next_action: `Resolve the blocker using the preserved work. If the current coding session completes the delivery artifacts and changes worker-result.md to status: completed, rerun specdev implement; SpecDev will reuse those artifacts without launching another worker. To ask SpecDev for a fresh automatic worker instead, run specdev implement --retry-worker.`,
+          recovery: recovery.status,
+          diagnostic: recovery.diagnostic,
+          next_action: `Repair the preserved result and delivery artifacts, then rerun specdev implement to resume without launching another worker. To explicitly replace the non-reusable result with a fresh automatic worker, run specdev implement --retry-worker.`,
         })
       }
-      let artifacts = recovery?.status === 'completed' ? recovery.artifacts : null
+      let artifacts = recovery.status === 'completed' ? recovery.artifacts : null
       let attemptId = 'recovered-artifacts'
       if (!artifacts) {
         const profile = await resolveAgentProfile(specdevPath, 'worker', profileOverrides(flags))
@@ -258,16 +262,32 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
 }
 
 async function recoverWorkerArtifacts({ specdevPath, assignmentPath, resultPath, acceptanceIds }) {
-  if (!(await fse.pathExists(resultPath))) return null
+  if (!(await fse.pathExists(resultPath))) return { status: 'absent' }
+  let result
   try {
-    const result = parseResultEnvelope(await fse.readFile(resultPath, 'utf-8'), 'worker')
-    if (result.frontmatter.status === 'blocked') return { status: 'blocked' }
+    result = parseResultEnvelope(await fse.readFile(resultPath, 'utf-8'), 'worker')
+  } catch (error) {
+    return {
+      status: 'malformed',
+      diagnostic: `Preserved worker result is malformed: ${error.message}`,
+    }
+  }
+  if (result.frontmatter.status === 'blocked') {
+    return {
+      status: 'blocked',
+      diagnostic: 'Preserved worker result reports status: blocked and requires resolution.',
+    }
+  }
+  try {
     return {
       status: 'completed',
       artifacts: await validateDeliveryArtifacts(specdevPath, assignmentPath, acceptanceIds),
     }
-  } catch {
-    return null
+  } catch (error) {
+    return {
+      status: 'invalid',
+      diagnostic: `Preserved completed delivery artifacts are invalid: ${error.message}`,
+    }
   }
 }
 
@@ -329,6 +349,8 @@ function emitBlockedWorker(flags, payload) {
     console.error(`Assignment blocked: ${payload.assignment}`)
     if (payload.attempt) console.error(`Attempt: ${payload.attempt}`)
     console.error(`Result: ${payload.result}`)
+    if (payload.recovery) console.error(`Recovery: ${payload.recovery}`)
+    if (payload.diagnostic) console.error(`Diagnostic: ${payload.diagnostic}`)
     console.error(`Next: ${payload.next_action}`)
   }
   process.exitCode = 1
