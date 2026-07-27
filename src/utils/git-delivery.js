@@ -2,6 +2,7 @@ import { execFile as execFileCallback } from 'node:child_process'
 import { promisify } from 'node:util'
 
 const execFile = promisify(execFileCallback)
+const CONCURRENT_CALLABLE_ROOTS = ['.specdev/discussions', '.specdev/test-audits']
 
 export async function requireGitHead(targetDir) {
   const head = await gitText(targetDir, ['rev-parse', '--verify', 'HEAD'])
@@ -44,8 +45,32 @@ export function summarizeGitPaths(paths, limit = 12) {
   }
 }
 
-export async function stageAll(targetDir) {
-  await gitRun(targetDir, ['add', '--all'])
+export function isConcurrentCallablePath(path) {
+  const normalized = normalizePath(path)
+  return CONCURRENT_CALLABLE_ROOTS.some(
+    (root) => normalized === root || normalized.startsWith(`${root}/`)
+  )
+}
+
+export async function stageOwnedChanges(targetDir) {
+  const exclusions = CONCURRENT_CALLABLE_ROOTS.map((root) => `:(exclude,glob)${root}/**`)
+  await gitRun(targetDir, ['add', '--all', '--', '.', ...exclusions])
+
+  const staged = (
+    await gitOutput(targetDir, [
+      'diff',
+      '--cached',
+      '--name-only',
+      '--no-renames',
+      '-z',
+    ])
+  )
+    .split('\0')
+    .map(normalizePath)
+    .filter(isConcurrentCallablePath)
+  if (staged.length > 0) {
+    await gitRun(targetDir, ['restore', '--staged', '--', ...new Set(staged)])
+  }
 }
 
 export async function commitDelivery(targetDir, { subject, trailers }) {

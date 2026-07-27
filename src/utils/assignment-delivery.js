@@ -6,7 +6,7 @@ import {
   findCommitByTrailer,
   gitStatusPaths,
   requireGitHead,
-  stageAll,
+  stageOwnedChanges,
   summarizeGitPaths,
 } from './git-delivery.js'
 import { writeAssignmentStatus } from './assignment-vnext.js'
@@ -114,7 +114,7 @@ export async function finalizeStandaloneAssignmentDelivery({
     )
   }
 
-  await stageAll(targetDir)
+  await stageOwnedChanges(targetDir)
   const endingGitCommitHash = await commitDelivery(targetDir, {
     subject: `specdev(assignment): deliver ${id}`,
     trailers: {

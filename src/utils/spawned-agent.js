@@ -51,8 +51,12 @@ export async function runSpawnedAgent(options) {
   }
 
   const digestExclusions = [repoRelative(targetDir, resultPath)].filter(Boolean)
+  const reviewCandidate =
+    role === 'reviewer' ? reviewerCandidateRoot(targetDir, resultPath) : null
   const beforeReview =
-    role === 'reviewer' ? await trackedStateDigest(targetDir, digestExclusions) : null
+    role === 'reviewer'
+      ? await reviewerStateDigest(targetDir, reviewCandidate, digestExclusions)
+      : null
   const primary = await executeInvocation({
     targetDir,
     specdevPath,
@@ -75,6 +79,7 @@ export async function runSpawnedAgent(options) {
       specdevPath,
       attempt: primary.attempt,
       beforeReview,
+      reviewCandidate,
       digestExclusions,
     })
     if (violation) return { ...primary, ...violation }
@@ -115,7 +120,11 @@ export async function runSpawnedAgent(options) {
     })
 
     const malformed = await fse.readFile(resultPath, 'utf-8')
-    const beforeCorrection = await trackedStateDigest(targetDir, digestExclusions)
+    const beforeCorrection = await reviewerStateDigest(
+      targetDir,
+      reviewCandidate,
+      digestExclusions
+    )
     const correction = await executeInvocation({
       targetDir,
       specdevPath,
@@ -137,6 +146,7 @@ export async function runSpawnedAgent(options) {
         specdevPath,
         attempt: correction.attempt,
         beforeReview: beforeCorrection,
+        reviewCandidate,
         digestExclusions,
       })
       if (violation) return { ...correction, ...violation }
@@ -495,16 +505,16 @@ function formattingCorrectionPrompt(malformed, kind, error) {
   return `Reformat the result below. Do not inspect the repository, rerun work, or change its meaning. Copy semantic values only when the original states them explicitly and unambiguously. If any required semantic value is absent or ambiguous, return the blocked fallback exactly and explain the ambiguity in its required section.\n\nValidation error: ${error}\n\nStrict result contract:\n\n${resultEnvelopeInstructions(kind)}\n\nSafe blocked fallback:\n\n${resultEnvelopeBlockedFallback(kind)}\n\nOriginal result:\n\n${malformed}`
 }
 
-async function trackedStateDigest(targetDir, exclusions = []) {
+async function trackedStateDigest(targetDir, { includes = ['.'], exclusions = [] } = {}) {
   try {
     const excluded = ['.specdev/cache/**', '.specdev/.id-counters.json', ...exclusions]
     const pathspecs = excluded.map((path) => `:(exclude)${path}`)
     const hasHead = await gitHasHead(targetDir)
     const diffCommands = hasHead
-      ? [['diff', '--binary', '--no-ext-diff', 'HEAD', '--', '.', ...pathspecs]]
+      ? [['diff', '--binary', '--no-ext-diff', 'HEAD', '--', ...includes, ...pathspecs]]
       : [
-          ['diff', '--binary', '--no-ext-diff', '--cached', '--', '.', ...pathspecs],
-          ['diff', '--binary', '--no-ext-diff', '--', '.', ...pathspecs],
+          ['diff', '--binary', '--no-ext-diff', '--cached', '--', ...includes, ...pathspecs],
+          ['diff', '--binary', '--no-ext-diff', '--', ...includes, ...pathspecs],
         ]
     const [diffs, { stdout: untracked }] = await Promise.all([
       Promise.all(
@@ -518,7 +528,7 @@ async function trackedStateDigest(targetDir, exclusions = []) {
       ),
       execFile(
         'git',
-        ['ls-files', '--others', '--exclude-standard', '-z', '--', '.', ...pathspecs],
+        ['ls-files', '--others', '--exclude-standard', '-z', '--', ...includes, ...pathspecs],
         {
           cwd: targetDir,
           maxBuffer: 8 * 1024 * 1024,
@@ -542,7 +552,37 @@ async function trackedStateDigest(targetDir, exclusions = []) {
 }
 
 export async function productStateDigest(targetDir) {
-  return trackedStateDigest(targetDir, ['.specdev/**'])
+  return trackedStateDigest(targetDir, { exclusions: ['.specdev/**'] })
+}
+
+async function reviewerStateDigest(targetDir, candidateRoot, exclusions) {
+  const [product, candidate] = await Promise.all([
+    trackedStateDigest(targetDir, { exclusions: ['.specdev/**'] }),
+    trackedStateDigest(targetDir, {
+      includes: [candidateRoot],
+      exclusions,
+    }),
+  ])
+  if (!product || !candidate) return null
+  return createHash('sha256')
+    .update('product\0')
+    .update(product)
+    .update('\0candidate\0')
+    .update(candidate)
+    .digest('hex')
+}
+
+function reviewerCandidateRoot(targetDir, resultPath) {
+  const relativeResult = repoRelative(targetDir, resultPath)
+  const match = relativeResult?.match(
+    /^\.specdev\/(assignments|missions|discussions)\/([^/]+)(?:\/|$)/
+  )
+  if (!match) {
+    throw new Error(
+      'Reviewer result must belong to an Assignment, Mission, or Discussion candidate'
+    )
+  }
+  return `.specdev/${match[1]}/${match[2]}`
 }
 
 async function gitHasHead(targetDir) {
@@ -559,11 +599,13 @@ async function reviewerWriteViolation({
   specdevPath,
   attempt,
   beforeReview,
+  reviewCandidate,
   digestExclusions,
 }) {
   const attemptPath = repoRelative(targetDir, join(specdevPath, 'processes', `${attempt.id}.yaml`))
-  const afterReview = await trackedStateDigest(
+  const afterReview = await reviewerStateDigest(
     targetDir,
+    reviewCandidate,
     [...digestExclusions, attemptPath].filter(Boolean)
   )
   if (afterReview === beforeReview) return null

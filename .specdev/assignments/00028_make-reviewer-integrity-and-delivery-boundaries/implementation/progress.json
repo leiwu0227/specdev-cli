@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@ebd6ee0b0df3d7bdb2e1bc14c1e98ca41da2ec48",
+      "scope": "Assignment, Mission, and Discussion reviewer integrity boundaries",
+      "status": "passed",
+      "duration_ms": 1000
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@ebd6ee0b0df3d7bdb2e1bc14c1e98ca41da2ec48",
+      "scope": "Adhoc and standalone Assignment dirty and delivery boundaries",
+      "status": "passed",
+      "duration_ms": 7100
+    },
+    {
+      "command": "node -e \"const p=require('./package.json'); if(p.releaseDate!=='2026-07-27') throw new Error('releaseDate mismatch'); console.log(p.releaseDate)\"",
+      "revision": "working-tree@ebd6ee0b0df3d7bdb2e1bc14c1e98ca41da2ec48",
+      "scope": "Blocking review repair: package releaseDate matches the current date",
+      "status": "passed",
+      "duration_ms": 100
+    },
+    {
+      "command": "git diff --check -- package.json",
+      "revision": "working-tree@ebd6ee0b0df3d7bdb2e1bc14c1e98ca41da2ec48",
+      "scope": "Blocking review repair: package.json patch formatting",
+      "status": "passed",
+      "duration_ms": 100
+    }
+  ],
+  "deviations": [
+    "The first focused runs exposed stale fixture assumptions rather than product failures: the synthetic concurrent Discussion ID forced a six-digit allocation, and engine integration expected older installed graph versions. The fixtures were corrected before the passing final runs.",
+    "The blocking implementation review found that package.json releaseDate had not been advanced for the pending repository change. The repair updates it to 2026-07-27; no acceptance implementation changed and the completed focused acceptance suites were not rerun."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

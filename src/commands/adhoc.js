@@ -9,8 +9,9 @@ import {
   findCommitByTrailer,
   firstParent,
   gitStatusPaths,
+  isConcurrentCallablePath,
   requireGitHead,
-  stageAll,
+  stageOwnedChanges,
   summarizeGitPaths,
 } from '../utils/git-delivery.js'
 import { relativeToRepo } from '../utils/assignment-vnext.js'
@@ -52,7 +53,9 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
 
   const startingGitCommitHash = await requireGitHead(targetDir)
   const branch = await currentGitBranch(targetDir)
-  const paths = await gitStatusPaths(targetDir)
+  const paths = (await gitStatusPaths(targetDir)).filter(
+    (path) => !isConcurrentCallablePath(path)
+  )
   const summary = summarizeGitPaths(paths)
   if (paths.length > 0 && !flags['adopt-dirty']) {
     return blocked(flags, {
@@ -140,7 +143,9 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
     return fail(flags, 'Both --outcome="..." and --verification="..." are required')
   }
 
-  const currentPaths = await gitStatusPaths(targetDir)
+  const currentPaths = (await gitStatusPaths(targetDir)).filter(
+    (path) => !isConcurrentCallablePath(path)
+  )
   if (currentPaths.length === 0) {
     return blocked(flags, {
       state: 'no_changes',
@@ -160,7 +165,7 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
     )
   }
 
-  await stageAll(targetDir)
+  await stageOwnedChanges(targetDir)
   const endingGitCommitHash = await commitDelivery(targetDir, {
     subject: stringFlag(flags.message) || `specdev(adhoc): ${active.scope.slice(0, 68)}`,
     trailers: {

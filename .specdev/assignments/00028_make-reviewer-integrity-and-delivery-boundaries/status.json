@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00028",
+  "kind": "change",
+  "description": "Make reviewer integrity and delivery boundaries tolerate unrelated concurrent Discussion and Test Audit artifacts while preserving active-candidate and product protections",
+  "run_id": "assignment-lifecycle-20260727T02295797",
+  "created_at": "2026-07-27T02:29:57.986Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-07-27T02:53:44.473Z",
+  "review_policy_frozen_at": "2026-07-27T02:33:32.692Z",
+  "approved_at": "2026-07-27T02:33:32.692Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "ebd6ee0b0df3d7bdb2e1bc14c1e98ca41da2ec48",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-07-27T02:33:46.538Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-07-27T02:53:44.458Z",
+  "activity": {
+    "attempt_count": 6,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 6,
+    "provider_attempts": {
+      "total": 6,
+      "completed": 5,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1211766,
+    "agent_duration_ms": 1091647,
+    "provider_reported_tokens": 212292
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-07-27T02:53:44.473Z"
+}

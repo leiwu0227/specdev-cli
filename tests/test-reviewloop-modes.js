@@ -113,6 +113,10 @@ function writeDiscussion(path) {
   )
 }
 
+function mutateDuringNextReview(relativePath) {
+  writeFileSync(join(root, '.git', 'specdev-review-mutation'), relativePath, 'utf8')
+}
+
 try {
   mkdirSync(fakeBin)
   const fakeClaude = join(fakeBin, 'claude')
@@ -125,6 +129,12 @@ count=0
 if [ -f "$count_file" ]; then count=$(cat "$count_file"); fi
 count=$((count + 1))
 printf '%s' "$count" >"$count_file"
+mutation_file="${root}/.git/specdev-review-mutation"
+if [ -f "$mutation_file" ]; then
+  mutation_path=$(cat "$mutation_file")
+  printf '%s\n' 'review-time mutation' >>"${root}/$mutation_path"
+  rm "$mutation_file"
+fi
 if [ "$count" -le 2 ]; then
   printf '%s\n' '---' 'verdict: needs_changes' 'material_divergence: false' '---' '' '## Findings' '' 'Focused fixture finding.'
 else
@@ -155,16 +165,35 @@ fi
     '--json',
   ])
   writeContract(join(root, topLevel.path), 'Exercise interactive Assignment Brainstorm review')
+  const unrelatedDiscussionPath = join(
+    root,
+    '.specdev',
+    'discussions',
+    'D90000_concurrent',
+    'brainstorm'
+  )
+  mkdirSync(unrelatedDiscussionPath, { recursive: true })
+  writeFileSync(
+    join(unrelatedDiscussionPath, 'proposal.md'),
+    '# Concurrent proposal\n',
+    'utf8'
+  )
+  mutateDuringNextReview('.specdev/discussions/D90000_concurrent/brainstorm/proposal.md')
   const first = runJson(['reviewloop', 'brainstorm', '--json'], 1)
   const second = runJson(['reviewloop', 'brainstorm', '--json'], 1)
   assert.equal(first.round, 1, JSON.stringify(first))
   assert.equal(second.round, 2, JSON.stringify(second))
   assert.match(second.next_action, /rerun specdev reviewloop brainstorm/)
+  mutateDuringNextReview('review-product-mutation.txt')
+  const assignmentProductMutation = runJson(['reviewloop', 'brainstorm', '--json'], 1)
+  assert.match(assignmentProductMutation.error, /Reviewer modified/)
+  rmSync(join(root, 'review-product-mutation.txt'), { force: true })
   runJson(['cancel', 'finish interactive Assignment fixture'])
 
   const discussion = runJson(['discussion', 'Exercise interactive Discussion review', '--json'])
   writeDiscussion(join(root, discussion.path))
   runJson(['discussion', discussion.id, '--json'])
+  mutateDuringNextReview('.specdev/discussions/D90000_concurrent/brainstorm/proposal.md')
   const firstDiscussion = runJson([
     'reviewloop',
     'discussion',
@@ -179,10 +208,33 @@ fi
   ])
   assert.equal(firstDiscussion.round, 1)
   assert.equal(secondDiscussion.round, 2)
+  mutateDuringNextReview(`${discussion.path}/brainstorm/proposal.md`)
+  const activeDiscussionMutation = runJson(
+    ['reviewloop', 'discussion', `--discussion=${discussion.id}`, '--json'],
+    1
+  )
+  assert.match(activeDiscussionMutation.error, /Reviewer modified/)
+  writeDiscussion(join(root, discussion.path))
+  mutateDuringNextReview('discussion-review-product-mutation.txt')
+  const discussionProductMutation = runJson(
+    ['reviewloop', 'discussion', `--discussion=${discussion.id}`, '--json'],
+    1
+  )
+  assert.match(discussionProductMutation.error, /Reviewer modified/)
+  rmSync(join(root, 'discussion-review-product-mutation.txt'), { force: true })
 
   const mission = runJson(['mission', 'create', 'Exercise interactive Mission review', '--json'])
   const missionPath = join(root, mission.path)
   writeMissionContract(missionPath)
+  const unrelatedAuditPath = join(
+    root,
+    '.specdev',
+    'test-audits',
+    'TA99999_concurrent'
+  )
+  mkdirSync(unrelatedAuditPath, { recursive: true })
+  writeFileSync(join(unrelatedAuditPath, 'audit.md'), '# Concurrent audit\n', 'utf8')
+  mutateDuringNextReview('.specdev/test-audits/TA99999_concurrent/audit.md')
   const missionReview = runJson(['reviewloop', 'mission', `--mission=${mission.id}`, '--json'])
   assert.equal(missionReview.status, 'approved')
   assert.equal(missionReview.phase, 'mission')

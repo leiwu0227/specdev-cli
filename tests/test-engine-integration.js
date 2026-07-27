@@ -152,6 +152,17 @@ try {
   runGit(adhocRoot, ['commit', '--quiet', '-m', 'initial fixture'])
   const adhocStartRevision = gitText(adhocRoot, ['rev-parse', 'HEAD'])
 
+  const adhocDiscussionRelative =
+    '.specdev/discussions/D99998_concurrent/brainstorm/proposal.md'
+  const adhocAuditRelative = '.specdev/test-audits/TA99998_concurrent/audit.md'
+  mkdirSync(join(adhocRoot, '.specdev', 'discussions', 'D99998_concurrent', 'brainstorm'), {
+    recursive: true,
+  })
+  mkdirSync(join(adhocRoot, '.specdev', 'test-audits', 'TA99998_concurrent'), {
+    recursive: true,
+  })
+  writeFileSync(join(adhocRoot, adhocDiscussionRelative), '# Concurrent proposal\n', 'utf8')
+  writeFileSync(join(adhocRoot, adhocAuditRelative), '# Concurrent audit\n', 'utf8')
   writeFileSync(join(adhocRoot, 'existing.txt'), 'adopt this change\n', 'utf8')
   const dirtyAdhoc = runJson(adhocRoot, ['adhoc', 'start', 'Repair one help message', '--json'], 1)
   assert.equal(dirtyAdhoc.state, 'dirty_worktree')
@@ -182,6 +193,25 @@ try {
     new RegExp(`SpecDev-Adhoc: ${adhoc.id}`)
   )
   assert.match(gitText(adhocRoot, ['log', '-1', '--format=%B']), /SpecDev-Commit-Type: delivery/)
+  const adhocCommittedPaths = gitText(adhocRoot, [
+    'show',
+    '--name-only',
+    '--format=',
+    'HEAD',
+  ]).split('\n')
+  assert.equal(adhocCommittedPaths.includes(adhocDiscussionRelative), false)
+  assert.equal(adhocCommittedPaths.includes(adhocAuditRelative), false)
+  const adhocRemainingPaths = gitText(adhocRoot, [
+    'status',
+    '--porcelain=v1',
+    '--untracked-files=all',
+  ])
+  assert.match(adhocRemainingPaths, new RegExp(adhocDiscussionRelative.replaceAll('/', '\\/')))
+  assert.match(adhocRemainingPaths, new RegExp(adhocAuditRelative.replaceAll('/', '\\/')))
+  assert.equal(
+    gitText(adhocRoot, ['diff', '--cached', '--name-only']).includes('D99998_concurrent'),
+    false
+  )
   const adhocReceipt = readFileSync(join(adhocRoot, adhocFinished.receipt), 'utf8')
   assert.doesNotMatch(adhocReceipt, /git_commit_hash/)
   const shownAdhoc = runJson(adhocRoot, ['adhoc', 'show', adhoc.id, '--json'])
@@ -206,8 +236,8 @@ try {
   const registryPath = join(root, '.specdev', '.ripplegraph', 'registry.json')
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
   assert.equal(Object.keys(registry.graphs).length, 7)
-  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.1\.1$/)
-  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.2\.0$/)
+  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.2\.0$/)
+  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.4\.0$/)
   assert.equal(registry.graphs['discussion-lifecycle'].kind, 'callable')
 
   assert.equal(runJson(root, ['next', '--json']).state, 'idle')
@@ -391,6 +421,17 @@ try {
   )
   const compactedStartRevision = gitText(root, ['rev-parse', 'HEAD'])
   writeRecoveredDelivery(compactedAssignmentPath)
+  const assignmentDiscussionRelative =
+    '.specdev/discussions/D99997_concurrent/brainstorm/proposal.md'
+  const assignmentAuditRelative = '.specdev/test-audits/TA99997_concurrent/audit.md'
+  mkdirSync(join(root, '.specdev', 'discussions', 'D99997_concurrent', 'brainstorm'), {
+    recursive: true,
+  })
+  mkdirSync(join(root, '.specdev', 'test-audits', 'TA99997_concurrent'), {
+    recursive: true,
+  })
+  writeFileSync(join(root, assignmentDiscussionRelative), '# Concurrent proposal\n', 'utf8')
+  writeFileSync(join(root, assignmentAuditRelative), '# Concurrent audit\n', 'utf8')
   writeFileSync(join(root, 'adopted-product.txt'), 'existing approved product work\n', 'utf8')
   const dirtyBoundary = runJson(root, ['implement', '--json'], 1)
   assert.equal(dirtyBoundary.state, 'dirty_worktree')
@@ -405,6 +446,9 @@ try {
   const failedDelivery = runJson(root, ['implement', '--adopt-dirty', '--json'], 1)
   assert.equal(failedDelivery.status, 'error')
   assert.match(failedDelivery.error, /Git command failed/)
+  const assignmentStagedAfterFailure = gitText(root, ['diff', '--cached', '--name-only'])
+  assert.doesNotMatch(assignmentStagedAfterFailure, /D99997_concurrent/)
+  assert.doesNotMatch(assignmentStagedAfterFailure, /TA99997_concurrent/)
   const compacted = runJson(root, ['implement', '--json'])
   assert.equal(compacted.status, 'completed')
   assert.equal(compacted.recovered, true)
@@ -432,6 +476,21 @@ try {
   const assignmentCommit = gitText(root, ['log', '-1', '--format=%B'])
   assert.match(assignmentCommit, new RegExp(`SpecDev-Assignment: ${compactedAssignment.id}`))
   assert.match(assignmentCommit, /SpecDev-Commit-Type: delivery/)
+  const assignmentCommittedPaths = gitText(root, [
+    'show',
+    '--name-only',
+    '--format=',
+    'HEAD',
+  ])
+  assert.doesNotMatch(assignmentCommittedPaths, /D99997_concurrent/)
+  assert.doesNotMatch(assignmentCommittedPaths, /TA99997_concurrent/)
+  const assignmentRemainingPaths = gitText(root, [
+    'status',
+    '--porcelain=v1',
+    '--untracked-files=all',
+  ])
+  assert.match(assignmentRemainingPaths, /D99997_concurrent/)
+  assert.match(assignmentRemainingPaths, /TA99997_concurrent/)
 
   const distillationBrief = runJson(root, ['knowledge', 'distill', '--json'])
   assert.equal(
