@@ -55,10 +55,10 @@
     },
     "mission-lifecycle": {
       "id": "mission-lifecycle",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "kind": "workflow",
       "title": "Mission lifecycle",
-      "description": "Deliver a larger approved objective through static Assignment waves with bounded parallel execution.",
+      "description": "Deliver an approved objective unattended through Assignment waves and durable gap convergence.",
       "activationHints": [
         "mission",
         "large objective",
@@ -66,8 +66,8 @@
       ],
       "requires": [],
       "effects": [],
-      "path": "workflows/mission-lifecycle@1.3.0",
-      "registeredAt": "2026-07-26T02:25:57.459Z"
+      "path": "workflows/mission-lifecycle@1.4.0",
+      "registeredAt": "2026-07-27T03:18:05.231Z"
     },
     "project-orientation": {
       "id": "project-orientation",

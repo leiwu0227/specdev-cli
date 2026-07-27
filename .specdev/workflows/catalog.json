@@ -21,9 +21,9 @@
     },
     "mission-lifecycle": {
       "id": "mission-lifecycle",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "kind": "workflow",
-      "path": "mission-lifecycle@1.3.0"
+      "path": "mission-lifecycle@1.4.0"
     },
     "project-orientation": {
       "id": "project-orientation",

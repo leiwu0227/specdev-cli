@@ -34,8 +34,13 @@ The Mission contract follows the same proportionality rule as an Assignment:
 reference project context, avoid plan details, and keep only independent
 observable acceptance criteria. Multi-child contracts are concise deltas that
 inherit parent authority rather than reproducing the Mission brainstorm.
-Replanning occurs only for blocking review/evidence or an explicit required
-follow-up. Children that do not depend on one another may share a wave. The
+After approval, blocking review/evidence and explicit required follow-up open
+stable durable gaps. Each gap receives a focused resolution Assignment and,
+when it remains unresolved, advances automatically through resolver and
+arbiter stages without sharing another child's recovery allowance. Repair
+descendants retain their parent gap identity, restarts deduplicate the same
+signal, and terminal semantic, authority, and infrastructure failures remain
+distinct. Children that do not depend on one another may share a wave. The
 foreground controller automatically runs up to three children in validated
 ignored worktrees and integrates reviewed deliveries in declared order. Users
 do not tune concurrency, and parallel speed is not a reason to split work.
