@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00030",
+  "kind": "change",
+  "description": "Safely land a completed Mission branch back onto its recorded originating branch, automatically when fast-forward is provably safe and otherwise with an explicit user decision",
+  "run_id": "assignment-lifecycle-20260727T08334617",
+  "created_at": "2026-07-27T08:33:46.184Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-07-27T13:51:30.326Z",
+  "review_policy_frozen_at": "2026-07-27T13:27:51.100Z",
+  "approved_at": "2026-07-27T13:27:51.100Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "fdc5a4246c5e31da0123a8c5cafdff50053d02e4",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-07-27T13:27:56.284Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-07-27T13:51:30.301Z",
+  "activity": {
+    "attempt_count": 5,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 5,
+    "provider_attempts": {
+      "total": 5,
+      "completed": 4,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1419201,
+    "agent_duration_ms": 1328390,
+    "provider_reported_tokens": 192748
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-07-27T13:51:30.326Z"
+}

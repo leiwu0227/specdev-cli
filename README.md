@@ -154,6 +154,7 @@ specdev mission run M00001
 specdev reviewloop mission --mission=M00001   # optional before approval
 specdev mission run M00001 --approve
 specdev mission status M00001
+specdev mission land M00001
 specdev mission pause M00001
 specdev mission run M00001 --takeover
 specdev mission checkpoint M00001 [--push]
@@ -183,7 +184,14 @@ before running an unrelated standalone Assignment. Checkpoints commit only when
 substantive portable changes exist; `--push` pushes only the Mission branch.
 Successful final verification creates one completion checkpoint automatically,
 so the reported final revision contains the verified product and portable
-Mission state. Active, paused, blocked, and interrupted work keeps its complete
+Mission state. SpecDev then returns to the recorded base branch and
+fast-forwards it exactly to that revision only when the worktree is clean, the
+Mission branch is checked out, the base exists locally, and the update is a
+fast-forward. `mission status` reports landed or a distinct pending reason with
+inspect, retry, and leave-as-is choices; `mission land <id>` safely retries the
+same idempotent operation. SpecDev never resolves divergence with a merge or
+rebase and never fetches, pushes, or deletes a branch while landing.
+Active, paused, blocked, and interrupted work keeps its complete
 RippleGraph checkpoint and Attempt records for recovery. After successful
 completion, SpecDev records terminal state and aggregate activity in
 the Mission/Assignment artifacts, then removes the completed run and its owned

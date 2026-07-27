@@ -34,5 +34,6 @@ export function helpCommand(flags = {}) {
     '  specdev mission create "<objective>"',
     '  specdev reviewloop mission --mission=M00001  # optional',
     '  specdev mission run M00001',
+    '  specdev mission land M00001',
   ])
 }

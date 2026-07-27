@@ -149,6 +149,7 @@ Useful Mission commands:
 
 ```bash
 specdev mission status M00001
+specdev mission land M00001
 specdev mission pause M00001
 specdev mission run M00001 --takeover
 specdev mission checkpoint M00001
@@ -217,6 +218,7 @@ completed work and stale FAQs that may deserve curated knowledge updates.
 | `specdev test-audit "<scope>"`         | Prepare a safe test-pruning proposal             |
 | `specdev mission create "<objective>"` | Create a user-chosen larger objective            |
 | `specdev mission run M00001`           | Run or resume its foreground controller          |
+| `specdev mission land M00001`          | Retry a completed Mission's safe fast-forward    |
 | `specdev reviewloop <phase>`           | Run the configured bounded reviewer loop         |
 | `specdev knowledge rebuild`            | Rebuild disposable SQLite search                 |
 | `specdev knowledge search "<terms>"`   | OR-search authoritative Markdown                 |

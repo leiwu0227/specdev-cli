@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
 import { getState, listRuns, resumeRun, suspendRun } from 'ripplegraph'
+import { parse as parseYaml } from 'yaml'
 import { resolveAgentProfile } from '../utils/agent-profiles.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
 import {
@@ -65,6 +66,7 @@ import {
   missionChildBranch,
   removeMissionWorktree,
 } from '../utils/mission-worktrees.js'
+import { inspectMissionLanding, landMission } from '../utils/mission-landing.js'
 import { assignmentCommand } from './assignment.js'
 import { checkpointCommand } from './checkpoint.js'
 import { implementCommand } from './implement.js'
@@ -111,9 +113,10 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
   if (subcommand === 'create') return createMission(rest, flags)
   if (subcommand === 'run') return runMission(rest[0], flags)
   if (subcommand === 'status') return missionStatus(rest[0], flags)
+  if (subcommand === 'land') return missionLand(rest[0], flags)
   if (subcommand === 'pause') return pauseMission(rest[0], flags)
   if (subcommand === 'checkpoint') return checkpointMission(rest[0], flags)
-  console.error('Usage: specdev mission <create | run | status | pause | checkpoint>')
+  console.error('Usage: specdev mission <create | run | status | land | pause | checkpoint>')
   process.exitCode = 1
 }
 
@@ -199,6 +202,7 @@ async function runMission(selector, flags) {
   if (!context) return null
   const { targetDir, specdevPath, missionPath, mission } = context
   if (mission.status === 'completed') {
+    const landing = await missionLanding(context, { attempt: true })
     return emit(flags, {
       command: 'mission run',
       version: 1,
@@ -206,6 +210,9 @@ async function runMission(selector, flags) {
       mission: mission.id,
       branch: mission.branch,
       base_branch: mission.base_branch,
+      final_revision: landing.final_revision,
+      landing,
+      next_action: landingNextAction(mission, landing),
       outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
     })
   }
@@ -648,7 +655,12 @@ async function driveMission(context) {
         throw new Error(checkpoint?.error || 'Mission completion checkpoint failed')
       }
       mission.final_revision = checkpoint.revision
-      mission.final_dirty_paths = (await gitSnapshot(targetDir)).dirty_paths
+      const landing = await missionLanding(context, {
+        attempt: true,
+        finalRevision: checkpoint.revision,
+      })
+      const finalGit = await gitSnapshot(targetDir)
+      mission.final_dirty_paths = finalGit.dirty_paths
       return emit(flags, {
         command: 'mission run',
         version: 1,
@@ -658,6 +670,9 @@ async function driveMission(context) {
         base_branch: mission.base_branch,
         final_revision: mission.final_revision,
         dirty_paths: mission.final_dirty_paths || [],
+        checked_out_branch: finalGit.branch,
+        landing,
+        next_action: landingNextAction(mission, landing),
         outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
         runtime_compaction: runtime,
       })
@@ -2253,7 +2268,7 @@ async function completeMission(context) {
   const gaps = compactMissionGaps(mission)
   await fse.writeFile(
     join(missionPath, 'outcome.md'),
-    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Base\n\n- Branch: ${mission.base_branch || 'unknown'}\n- Revision: ${mission.base_revision || 'unborn'}\n\n## Assignments\n\n${lines.join('\n')}\n\n## Gap convergence\n\n- Opened: ${gaps.opened}\n- Evidence-closed: ${gaps.closed}\n- Failed: ${gaps.failed}\n\n## Activity\n\n- Orchestration Attempts: ${activity.orchestration_attempt_count}\n- Provider agent Attempts: ${formatProviderAttemptOutcomes(activity.provider_attempts)}\n- Elapsed: ${formatDuration(activity.elapsed_ms)}\n- Provider-reported tokens: ${activity.provider_reported_tokens ?? 'not reported'}\n\n## Delivery\n\nFinal verification passed. The Mission completion commit on branch \`${mission.branch}\` is the durable final checkpoint.\n`,
+    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Base\n\n- Branch: ${mission.base_branch || 'unknown'}\n- Revision: ${mission.base_revision || 'unborn'}\n\n## Assignments\n\n${lines.join('\n')}\n\n## Gap convergence\n\n- Opened: ${gaps.opened}\n- Evidence-closed: ${gaps.closed}\n- Failed: ${gaps.failed}\n\n## Activity\n\n- Orchestration Attempts: ${activity.orchestration_attempt_count}\n- Provider agent Attempts: ${formatProviderAttemptOutcomes(activity.provider_attempts)}\n- Elapsed: ${formatDuration(activity.elapsed_ms)}\n- Provider-reported tokens: ${activity.provider_reported_tokens ?? 'not reported'}\n\n## Delivery\n\nFinal verification passed. The Mission completion commit on branch \`${mission.branch}\` is the durable final checkpoint. Landing onto \`${mission.base_branch}\` is derived separately and is always fast-forward-only.\n`,
     'utf-8'
   )
   mission.activity = activity
@@ -2594,8 +2609,30 @@ async function pauseMission(selector, flags) {
   })
 }
 
+async function missionLand(selector, flags) {
+  const context = await missionContext(selector, flags, { recoverCompleted: true })
+  if (!context) return null
+  if (context.mission.status !== 'completed') {
+    return fail(flags, `Mission ${context.mission.id} must be completed before it can land`)
+  }
+  const landing = await missionLanding(context, { attempt: true })
+  return emit(flags, {
+    command: 'mission land',
+    version: 1,
+    status: landing.status,
+    mission: context.mission.id,
+    branch: context.mission.branch,
+    base_branch: context.mission.base_branch,
+    final_revision: landing.final_revision,
+    checked_out_branch: landing.checked_out_branch,
+    dirty_paths: landing.dirty_paths || [],
+    landing,
+    next_action: landingNextAction(context.mission, landing),
+  })
+}
+
 async function missionStatus(selector, flags) {
-  const context = await missionContext(selector, flags)
+  const context = await missionContext(selector, flags, { recoverCompleted: true })
   if (!context) return null
   const queue = await readMissionQueue(context.missionPath).catch(() => null)
   const assignments = queue?.assignments || []
@@ -2625,12 +2662,6 @@ async function missionStatus(selector, flags) {
     (interruptedController
       ? `Controller ${interruptedController.id} is ${interruptedController.liveness.state}; inspect it before takeover.`
       : null)
-  const nextAction = missionNextAction(
-    context.mission,
-    phase,
-    Boolean(liveController),
-    interruptedController
-  )
   const lastChild =
     [...assignments].reverse().find((item) => ['completed', 'integrated'].includes(item.status)) ||
     null
@@ -2646,6 +2677,13 @@ async function missionStatus(selector, flags) {
       }
     : null
   const activity = await missionActivitySummary(context.specdevPath, context.mission)
+  const landing =
+    context.mission.status === 'completed'
+      ? await missionLanding(context, { attempt: false })
+      : null
+  const nextAction =
+    landingNextAction(context.mission, landing) ||
+    missionNextAction(context.mission, phase, Boolean(liveController), interruptedController)
   return emit(flags, {
     command: 'mission status',
     version: 1,
@@ -2676,6 +2714,7 @@ async function missionStatus(selector, flags) {
         : null,
     last_checkpoint: lastCheckpoint,
     activity,
+    landing,
     blocker,
     next_action: nextAction,
     outcome: (await fse.pathExists(join(context.missionPath, 'outcome.md')))
@@ -2789,16 +2828,96 @@ async function unstageIncompleteTestAudits(context) {
   }
 }
 
-async function missionContext(selector, flags) {
+async function missionContext(selector, flags, { recoverCompleted = false } = {}) {
   if (!selector) return fail(flags, 'Mission ID is required')
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
   const resolved = await resolveMissionSelector(specdevPath, selector)
-  if (!resolved || resolved.ambiguous)
+  if (resolved && !resolved.ambiguous) {
+    const mission = await readMission(resolved.path)
+    return { targetDir, specdevPath, missionPath: resolved.path, mission }
+  }
+  const recovered = recoverCompleted
+    ? await recoverCompletedMissionContext(targetDir, specdevPath, selector)
+    : null
+  if (!recovered || recovered.ambiguous || resolved?.ambiguous)
     return fail(flags, `Mission not found or ambiguous: ${selector}`)
-  const mission = await readMission(resolved.path)
-  return { targetDir, specdevPath, missionPath: resolved.path, mission }
+  return recovered
+}
+
+async function recoverCompletedMissionContext(targetDir, specdevPath, selector) {
+  const wanted = String(selector || '').trim()
+  if (!/^M\d{5}(?:_[^/\\]+)?$/.test(wanted)) return null
+  const missionId = wanted.slice(0, 6)
+  let revisions
+  try {
+    const { stdout } = await execFile(
+      'git',
+      ['log', '--all', '--format=%H', '--fixed-strings', `--grep=SpecDev-Mission: ${missionId}`],
+      { cwd: targetDir }
+    )
+    revisions = stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => /^[0-9a-f]{40,64}$/.test(line))
+  } catch {
+    return null
+  }
+
+  for (const revision of revisions) {
+    const { stdout: message } = await execFile('git', ['show', '-s', '--format=%B', revision], {
+      cwd: targetDir,
+    })
+    const trailers = message.split(/\r?\n/).map((line) => line.trim())
+    if (
+      !trailers.includes(`SpecDev-Mission: ${missionId}`) ||
+      !trailers.includes('SpecDev-Commit-Type: completion')
+    ) {
+      continue
+    }
+
+    const { stdout: tree } = await execFile(
+      'git',
+      ['ls-tree', '-r', '--name-only', revision, '--', '.specdev/missions'],
+      { cwd: targetDir }
+    )
+    const names = tree
+      .split(/\r?\n/)
+      .map((path) => path.match(/^\.specdev\/missions\/(M\d{5}_[^/\\]+)\/mission\.yaml$/)?.[1])
+      .filter(
+        (name) =>
+          name && name.startsWith(`${missionId}_`) && (!wanted.includes('_') || name === wanted)
+      )
+    if (names.length > 1) return { ambiguous: true }
+    if (names.length === 0) continue
+
+    const name = names[0]
+    const repoPath = `.specdev/missions/${name}/mission.yaml`
+    try {
+      const { stdout } = await execFile('git', ['show', `${revision}:${repoPath}`], {
+        cwd: targetDir,
+      })
+      const mission = parseYaml(stdout)
+      if (
+        !mission ||
+        mission.id !== missionId ||
+        mission.status !== 'completed' ||
+        typeof mission.branch !== 'string'
+      ) {
+        continue
+      }
+      return {
+        targetDir,
+        specdevPath,
+        missionPath: join(specdevPath, 'missions', name),
+        mission: { ...mission, final_revision: revision },
+      }
+    } catch {
+      // Ignore malformed or unreadable historical Mission records.
+    }
+  }
+  return null
 }
 
 async function resolveSourceDiscussion(targetDir, specdevPath, selector, flags) {
@@ -2897,7 +3016,7 @@ async function latestCheckpointRevision(cwd, branch, missionId) {
       'git',
       [
         'log',
-        branch,
+        `refs/heads/${branch}`,
         '-1',
         '--format=%H',
         '--fixed-strings',
@@ -2909,6 +3028,55 @@ async function latestCheckpointRevision(cwd, branch, missionId) {
   } catch {
     return null
   }
+}
+
+async function missionLanding(context, { attempt, finalRevision = null } = {}) {
+  const revision =
+    finalRevision ||
+    context.mission.final_revision ||
+    (await latestMissionCompletionRevision(
+      context.targetDir,
+      context.mission.branch,
+      context.mission.id
+    ))
+  const options = { finalRevision: revision }
+  return attempt
+    ? landMission(context.targetDir, context.mission, options)
+    : inspectMissionLanding(context.targetDir, context.mission, options)
+}
+
+async function latestMissionCompletionRevision(cwd, branch, missionId) {
+  try {
+    const { stdout } = await execFile(
+      'git',
+      [
+        'log',
+        `refs/heads/${branch}`,
+        '--format=%H',
+        '--fixed-strings',
+        `--grep=SpecDev-Mission: ${missionId}`,
+      ],
+      { cwd }
+    )
+    for (const revision of stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)) {
+      const { stdout: message } = await execFile('git', ['show', '-s', '--format=%B', revision], {
+        cwd,
+      })
+      const lines = message.split(/\r?\n/).map((line) => line.trim())
+      if (
+        lines.includes(`SpecDev-Mission: ${missionId}`) &&
+        lines.includes('SpecDev-Commit-Type: completion')
+      ) {
+        return revision
+      }
+    }
+  } catch {
+    // A missing local Mission branch is reported by the landing classifier.
+  }
+  return null
 }
 
 async function withSuppressedOutput(callback) {
@@ -2970,6 +3138,11 @@ function missionNextAction(mission, phase, liveController, interruptedController
   return mission.next_action || `Run specdev mission run ${mission.id}.`
 }
 
+function landingNextAction(mission, landing) {
+  if (!landing || landing.status !== 'pending') return null
+  return `Inspect landing reason ${landing.reason}, then run specdev mission land ${mission.id}.`
+}
+
 async function missionActivitySummary(specdevPath, mission) {
   if (mission.status === 'completed' && mission.activity) return mission.activity
   return attemptActivitySummary(
@@ -3020,6 +3193,16 @@ function emit(flags, payload) {
     for (const line of workspaceChangeSummaryLines(payload.dirty_paths)) console.log(line)
     if (payload.base_branch) console.log(`Base branch: ${payload.base_branch}`)
     if (payload.final_revision) console.log(`Final revision: ${payload.final_revision}`)
+    if (payload.landing) {
+      console.log(`Landing: ${payload.landing.status} (${payload.landing.reason})`)
+      if (payload.landing.detail) console.log(`Landing detail: ${payload.landing.detail}`)
+      if (payload.landing.choices?.length > 0) {
+        console.log('Landing choices:')
+        for (const choice of payload.landing.choices) {
+          console.log(`  - ${choice.action}: ${choice.command || 'leave Git state unchanged'}`)
+        }
+      }
+    }
     if (payload.blocker) console.log(`Blocker: ${payload.blocker}`)
     if (payload.last_checkpoint)
       console.log(

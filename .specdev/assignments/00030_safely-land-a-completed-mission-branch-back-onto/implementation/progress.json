@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@fdc5a4246c5e31da0123a8c5cafdff50053d02e4",
+      "scope": "changed files",
+      "status": "passed",
+      "duration_ms": 1
+    },
+    {
+      "command": "./node_modules/.bin/prettier --check src/commands/mission.js tests/test-mission-landing.js",
+      "revision": "working-tree@fdc5a4246c5e31da0123a8c5cafdff50053d02e4",
+      "scope": "changed implementation and focused test files",
+      "status": "passed",
+      "duration_ms": 105
+    },
+    {
+      "command": "npm run test:mission-landing",
+      "revision": "working-tree@fdc5a4246c5e31da0123a8c5cafdff50053d02e4",
+      "scope": "AC-1, AC-2, AC-3 focused Mission landing regression coverage, including CLI retry after switch-before-fast-forward interruption",
+      "status": "passed",
+      "duration_ms": 3206
+    }
+  ],
+  "deviations": [
+    "The first focused run correctly reported a dirty worktree because the CLI fixture committed only .specdev while initialization had created additional adapter files. The fixture now commits all initialization output before exercising landing; the final run passed.",
+    "The blocking review found that post-switch CLI retry could not resolve a Mission record absent from the base branch. The repair adds a completed-Mission-only fallback that validates the selector, exact completion trailers, historical mission.yaml path and contents, and then reuses the existing landing classifier.",
+    "An intermediate synthetic status assertion dirtied .specdev/.ripplegraph/current.json because the fixture did not contain a complete Mission runtime. The final fixture directly exercises the blocking `mission land` retry from the base branch; the focused final run passed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}
