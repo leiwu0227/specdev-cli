@@ -1,0 +1,169 @@
+{
+  "id": "assignment-lifecycle",
+  "version": "2.1.1",
+  "kind": "workflow",
+  "title": "Assignment lifecycle",
+  "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",
+  "activationHints": [
+    "assignment",
+    "new assignment",
+    "start feature",
+    "start bugfix",
+    "implement change"
+  ],
+  "entry": "create-assignment",
+  "nodes": {
+    "create-assignment": {
+      "purpose": "Create the Assignment identity and readable contract scaffold.",
+      "instructions": "Run `specdev assignment \"<description>\" --json` and submit its JSON result.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["id", "name", "path", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "assignment", "command": "specdev assignment" },
+      "edges": [{ "to": "brainstorm" }]
+    },
+    "brainstorm": {
+      "purpose": "Collaborate with the user and finish brainstorm/contract.md.",
+      "instructions": "Edit the single contract until the user is comfortable, then run `specdev checkpoint brainstorm`.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["contract", "contract_hash"],
+        "properties": {
+          "contract": { "type": "string" },
+          "contract_hash": { "type": "string" }
+        }
+      },
+      "sideChannelActions": [
+        {
+          "id": "brainstorm-review",
+          "purpose": "Run optional Brainstorm review without advancing the contract gate."
+        },
+        { "id": "research", "purpose": "Run focused research without advancing the Assignment." }
+      ],
+      "operatorContext": { "phase": "brainstorm", "command": "specdev checkpoint brainstorm" },
+      "edges": [{ "to": "approve-contract" }]
+    },
+    "approve-contract": {
+      "purpose": "Approve the exact final contract before automatic work begins.",
+      "instructions": "Review the final verdict, textual divergence, dirty paths, and exact contract hash. Run `specdev approve brainstorm` only after the user explicitly agrees.",
+      "interaction": {
+        "id": "approve-assignment-contract",
+        "kind": "choice",
+        "prompt": "Approve this exact Assignment contract for automatic delivery?",
+        "choices": [
+          { "label": "Approve contract", "value": "approve" },
+          { "label": "Revise contract", "value": "revise" }
+        ]
+      },
+      "gate": {
+        "type": "external_decision",
+        "decisionSchema": {
+          "type": "object",
+          "required": ["approved", "contract_hash", "actor", "approved_at", "review_policy"],
+          "properties": {
+            "approved": { "type": "boolean" },
+            "contract_hash": { "type": "string" },
+            "actor": { "type": "string" },
+            "approved_at": { "type": "string" },
+            "review_policy": {
+              "type": "object",
+              "required": ["brainstorm", "implementation"],
+              "properties": {
+                "brainstorm": { "type": "string", "enum": ["optional", "required"] },
+                "implementation": { "type": "string", "enum": ["required", "waived"] }
+              }
+            },
+            "review_override": { "type": "boolean" },
+            "revision": { "type": "string" }
+          }
+        }
+      },
+      "sideChannelActions": [
+        {
+          "id": "brainstorm-review",
+          "purpose": "Record optional Brainstorm review without approving the contract."
+        }
+      ],
+      "operatorContext": { "phase": "brainstorm", "command": "specdev approve brainstorm" },
+      "edges": [
+        { "to": "design", "when": { "approved": true } },
+        { "to": "brainstorm", "when": { "approved": false } }
+      ]
+    },
+    "design": {
+      "purpose": "Use the worker profile to write design/plan.md with Tasks, guide selections, and acceptance coverage.",
+      "instructions": "Run `specdev implement`; the same worker Attempt normally continues through Implementation.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["plan", "attempt"],
+        "properties": {
+          "plan": { "type": "string" },
+          "attempt": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "design", "command": "specdev implement" },
+      "edges": [{ "to": "implementation" }]
+    },
+    "implementation": {
+      "purpose": "Execute Tasks inline, collect authorized evidence, and write the concise outcome.",
+      "instructions": "The active `specdev implement` worker owns this transition and starts review when complete.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["progress", "outcome", "attempt"],
+        "properties": {
+          "progress": { "type": "string" },
+          "outcome": { "type": "string" },
+          "attempt": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "implementation", "command": "specdev implement" },
+      "edges": [{ "to": "implementation-review" }]
+    },
+    "implementation-review": {
+      "purpose": "Apply the frozen implementation review policy to the candidate and existing evidence.",
+      "instructions": "Required review runs `specdev reviewloop implementation`; a policy waiver completes only after strict host evidence checks.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["approved", "verdict", "attempt"],
+        "properties": {
+          "approved": { "type": "boolean" },
+          "verdict": { "type": "string" },
+          "attempt": { "type": "string" }
+        }
+      },
+      "operatorContext": {
+        "phase": "implementation",
+        "command": "specdev reviewloop implementation"
+      },
+      "edges": [
+        { "to": "done", "when": { "approved": true } },
+        { "to": "repair", "when": { "approved": false } }
+      ]
+    },
+    "repair": {
+      "purpose": "Continue from current repository state and repair the first blocking review findings.",
+      "instructions": "The implementation review loop starts one continuation worker and submits its result.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["attempt", "result"],
+        "properties": {
+          "attempt": { "type": "string" },
+          "result": { "type": "string" }
+        }
+      },
+      "operatorContext": { "phase": "repair" },
+      "edges": [{ "to": "implementation-review" }]
+    },
+    "done": {
+      "purpose": "Assignment lifecycle is complete.",
+      "terminal": true
+    }
+  }
+}

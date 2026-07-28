@@ -1,0 +1,62 @@
+{
+  "id": "test-audit-lifecycle",
+  "version": "1.0.0",
+  "kind": "callable",
+  "title": "Test maintenance audit",
+  "description": "Concurrent code-read-only analysis of redundant tests with explicit Assignment promotion.",
+  "activationHints": ["test audit", "remove redundant tests", "test maintenance"],
+  "inputSchema": {
+    "type": "object",
+    "required": ["id", "path", "scope", "start_revision"],
+    "properties": {
+      "id": { "type": "string" },
+      "path": { "type": "string" },
+      "scope": { "type": "string" },
+      "start_revision": { "type": "string" }
+    },
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": ["completed_revision", "artifact_hash"],
+    "properties": {
+      "completed_revision": { "type": "string" },
+      "artifact_hash": { "type": "string" }
+    },
+    "additionalProperties": false
+  },
+  "entry": "audit",
+  "nodes": {
+    "audit": {
+      "purpose": "Inspect tests read-only and prepare an exact pruning proposal and Assignment contract.",
+      "instructions": "Write only audit.md and assignment-contract.md inside this Test Audit. Do not change product code or tests.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["audit", "contract"],
+        "properties": {
+          "audit": { "type": "string" },
+          "contract": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "operatorContext": { "phase": "test-audit" },
+      "edges": [{ "to": "finalize" }]
+    },
+    "finalize": {
+      "purpose": "Freeze the proposal without granting write authority.",
+      "instructions": "Complete only after the proposal and exact promotion contract are ready.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["completed_revision", "artifact_hash"],
+        "properties": {
+          "completed_revision": { "type": "string" },
+          "artifact_hash": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "operatorContext": { "phase": "test-audit" },
+      "edges": [{ "to": "done" }]
+    },
+    "done": { "purpose": "Test Audit is complete and may be promoted.", "terminal": true }
+  }
+}

@@ -1,27 +1,25 @@
 ---
 name: specdev-reviewloop
-description: Automated external review loop — spawns an external reviewer CLI, reads verdict, auto-approves on pass
+description: Run the repository-configured reviewer with one verification rerun
 ---
 
-## For assignments
+Reviewer provider, model, effort, and timeout come from
+`.specdev/agents.yaml` plus optional ignored local overrides. Do not ask the
+user to choose a reviewer per execution and do not pass `--autocontinue`.
 
-Run `specdev reviewloop <phase>` where phase is `brainstorm` or `implementation`.
+- Brainstorm: `specdev reviewloop brainstorm`; never auto-approve.
+- Mission Brainstorm: `specdev reviewloop mission --mission=M00001`; never
+  auto-approve.
+- Implementation: normally invoked by `specdev implement`; one worker repair
+  and same-reviewer verification are automatic.
+- Discussion: `specdev reviewloop discussion --discussion=D00001`.
 
-Generic rendering rule (applies to every specdev command):
+For Assignment or Mission Brainstorm approval, show the exact contract path and
+hash plus the command's concise contract-preview bullets before asking the user
+to agree.
 
-- After any command that prints an `interaction` block, render it via `AskUserQuestion` (Claude Code) or its host equivalent, using the exact labels and order. Do not paraphrase, reorder, or drop options. If a chosen option has `requires_reviewer: true`, render the `follow_up` block as a second `AskUserQuestion`.
-- After any command that prints a `continuation` block with `interrupt: false`, invoke the printed command immediately without prompting the user. Sticky values (e.g. the carried reviewer) are persisted by the runtime in `.specdev/.session-state.json`.
+Only `specdev reviewloop` produces a transition-authorizing strict result
+envelope. Native coding-CLI review sessions are advisory and cannot advance
+SpecDev state.
 
-Flow:
-1. `specdev reviewloop <phase>` — lists reviewers and emits a reviewer-selection `interaction` block.
-2. `specdev reviewloop <phase> --reviewer=<name>` — runs the review and processes the result.
-3. On pass → command auto-approves the phase. **Do NOT ask the user to run `specdev approve` separately.** Honour the emitted `continuation` block; do not hardcode the next step here.
-4. On fail → run `specdev check-review <phase>` to address findings, then re-run reviewloop.
-
-## For discussions
-
-Run `specdev reviewloop discussion --discussion=<ID>` where ID is the discussion ID (e.g. D00001). The same generic rendering rule applies — render any `interaction` block exactly as printed and invoke any non-interrupting `continuation` block automatically.
-
-**Do NOT use `specdev reviewloop brainstorm` for discussions — that requires an assignment.**
-
-This is a Node.js CLI command — run it directly, never via pip/python.
+Announce every subtask with "Specdev: <action>".

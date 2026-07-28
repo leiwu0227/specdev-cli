@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "packages": {
+    "assignment-lifecycle": {
+      "id": "assignment-lifecycle",
+      "version": "2.1.1",
+      "kind": "workflow",
+      "path": "assignment-lifecycle@2.1.1"
+    },
+    "discussion-lifecycle": {
+      "id": "discussion-lifecycle",
+      "version": "2.0.0",
+      "kind": "callable",
+      "path": "discussion-lifecycle@2.0.0"
+    },
+    "layout-migration": {
+      "id": "layout-migration",
+      "version": "1.0.0",
+      "kind": "workflow",
+      "path": "layout-migration@1.0.0"
+    },
+    "mission-lifecycle": {
+      "id": "mission-lifecycle",
+      "version": "1.2.0",
+      "kind": "workflow",
+      "path": "mission-lifecycle@1.2.0"
+    },
+    "project-orientation": {
+      "id": "project-orientation",
+      "version": "1.0.0",
+      "kind": "workflow",
+      "path": "project-orientation@1.0.0"
+    },
+    "test-audit-lifecycle": {
+      "id": "test-audit-lifecycle",
+      "version": "1.0.0",
+      "kind": "callable",
+      "path": "test-audit-lifecycle@1.0.0"
+    },
+    "workspace-dispatcher": {
+      "id": "workspace-dispatcher",
+      "version": "1.0.0",
+      "kind": "dispatcher",
+      "path": "workspace-dispatcher@1.0.0"
+    }
+  }
+}
