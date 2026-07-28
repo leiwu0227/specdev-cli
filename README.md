@@ -53,8 +53,12 @@ specdev approve brainstorm
 specdev implement
 ```
 
-Approval is bound to the exact contract. Implementation records evidence and
-uses the configured worker and reviewer profiles.
+An Assignment begins with an interactive brainstorm: you and the coding agent
+shape a readable contract, an optional reviewer can challenge it, and you
+approve the exact final version. From there, `specdev implement` switches to
+automatic execution. A worker plans and implements the change, acceptance
+evidence is collected, a reviewer checks the delivery, and SpecDev records the
+outcome and final commit.
 
 ### Run a larger mission
 
@@ -66,8 +70,11 @@ specdev mission status M00001
 specdev mission land M00001
 ```
 
-A Mission runs on its own branch and can coordinate already-independent work
-while preserving durable checkpoints.
+Missions are designed for long-running executions that may outlive one agent
+session. A Mission runs on its own branch, advances a durable assignment queue,
+and checkpoints its progress so interrupted work can resume safely. Independent
+children may run concurrently; final verification and landing bring the
+integrated result back to the base branch.
 
 ## Learn more
 
