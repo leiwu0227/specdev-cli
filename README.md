@@ -1,15 +1,16 @@
 # SpecDev CLI
 
-SpecDev is a Node.js CLI for contract-governed coding-agent workflows. It keeps
-plans, approvals, outcomes, and recovery state in a tracked `.specdev/`
-directory so work can move safely between coding agents and machines.
+SpecDev turns coding-agent work into a durable, reviewable engineering
+workflow. It keeps scope, approvals, implementation evidence, and recovery
+state alongside your code in a tracked `.specdev/` directory. Work stays
+inspectable, restartable, and portable across agents and machines.
 
-Use SpecDev when you want more structure than an untracked chat:
+Choose the lightest workflow that fits the job:
 
 - **Direct** for questions and read-only inspection.
 - **Adhoc** for one small, bounded edit.
-- **Assignment** for one approved contract with implementation and review.
-- **Mission** for a larger objective that may contain multiple assignments.
+- **Assignment** for a contracted change with approval, implementation, and review.
+- **Mission** for a larger objective coordinated across multiple assignments.
 
 ## Install
 
