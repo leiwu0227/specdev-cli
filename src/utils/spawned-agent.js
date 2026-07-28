@@ -51,8 +51,7 @@ export async function runSpawnedAgent(options) {
   }
 
   const digestExclusions = [repoRelative(targetDir, resultPath)].filter(Boolean)
-  const reviewCandidate =
-    role === 'reviewer' ? reviewerCandidateRoot(targetDir, resultPath) : null
+  const reviewCandidate = role === 'reviewer' ? reviewerCandidateRoot(targetDir, resultPath) : null
   const beforeReview =
     role === 'reviewer'
       ? await reviewerStateDigest(targetDir, reviewCandidate, digestExclusions)
@@ -120,11 +119,7 @@ export async function runSpawnedAgent(options) {
     })
 
     const malformed = await fse.readFile(resultPath, 'utf-8')
-    const beforeCorrection = await reviewerStateDigest(
-      targetDir,
-      reviewCandidate,
-      digestExclusions
-    )
+    const beforeCorrection = await reviewerStateDigest(targetDir, reviewCandidate, digestExclusions)
     const correction = await executeInvocation({
       targetDir,
       specdevPath,

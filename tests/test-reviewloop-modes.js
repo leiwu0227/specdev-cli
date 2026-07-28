@@ -173,11 +173,7 @@ fi
     'brainstorm'
   )
   mkdirSync(unrelatedDiscussionPath, { recursive: true })
-  writeFileSync(
-    join(unrelatedDiscussionPath, 'proposal.md'),
-    '# Concurrent proposal\n',
-    'utf8'
-  )
+  writeFileSync(join(unrelatedDiscussionPath, 'proposal.md'), '# Concurrent proposal\n', 'utf8')
   mutateDuringNextReview('.specdev/discussions/D90000_concurrent/brainstorm/proposal.md')
   const first = runJson(['reviewloop', 'brainstorm', '--json'], 1)
   const second = runJson(['reviewloop', 'brainstorm', '--json'], 1)
@@ -226,12 +222,7 @@ fi
   const mission = runJson(['mission', 'create', 'Exercise interactive Mission review', '--json'])
   const missionPath = join(root, mission.path)
   writeMissionContract(missionPath)
-  const unrelatedAuditPath = join(
-    root,
-    '.specdev',
-    'test-audits',
-    'TA99999_concurrent'
-  )
+  const unrelatedAuditPath = join(root, '.specdev', 'test-audits', 'TA99999_concurrent')
   mkdirSync(unrelatedAuditPath, { recursive: true })
   writeFileSync(join(unrelatedAuditPath, 'audit.md'), '# Concurrent audit\n', 'utf8')
   mutateDuringNextReview('.specdev/test-audits/TA99999_concurrent/audit.md')

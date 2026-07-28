@@ -44,10 +44,7 @@ try {
   const payload = JSON.parse(repaired.stdout)
   assert.deepEqual(payload.repaired_skill_roots, ['.codex'])
   assert.equal(statSync(join(repairable, '.codex')).isDirectory(), true)
-  assert.equal(
-    existsSync(join(repairable, '.codex', 'skills', 'specdev-adhoc', 'SKILL.md')),
-    true
-  )
+  assert.equal(existsSync(join(repairable, '.codex', 'skills', 'specdev-adhoc', 'SKILL.md')), true)
   assert.equal(existsSync(join(repairable, '.specdev', 'workflow.json')), true)
 
   const protectedTarget = prepareFixture('protected', 'preserve this file\n')

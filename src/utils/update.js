@@ -1,12 +1,4 @@
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from 'fs'
+import { existsSync, lstatSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import fse from 'fs-extra'
 import { installGraphPackages } from './engine.js'
@@ -308,10 +300,7 @@ export function updateSkillFiles(targetDir, skillFiles, skillDirs = [join('.clau
  * @param {Array<string>} skillDirs - Agent skill directories relative to targetDir
  * @returns {Array<string>} Empty placeholder paths replaced with directories
  */
-export function prepareCommandSkillDirectories(
-  targetDir,
-  skillDirs = [join('.claude', 'skills')]
-) {
+export function prepareCommandSkillDirectories(targetDir, skillDirs = [join('.claude', 'skills')]) {
   if (!hasManagedCommandSkills(targetDir, skillDirs)) return []
 
   const repairable = []

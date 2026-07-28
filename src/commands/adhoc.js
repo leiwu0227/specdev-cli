@@ -53,9 +53,7 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
 
   const startingGitCommitHash = await requireGitHead(targetDir)
   const branch = await currentGitBranch(targetDir)
-  const paths = (await gitStatusPaths(targetDir)).filter(
-    (path) => !isConcurrentCallablePath(path)
-  )
+  const paths = (await gitStatusPaths(targetDir)).filter((path) => !isConcurrentCallablePath(path))
   const summary = summarizeGitPaths(paths)
   if (paths.length > 0 && !flags['adopt-dirty']) {
     return blocked(flags, {

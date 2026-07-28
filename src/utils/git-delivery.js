@@ -57,13 +57,7 @@ export async function stageOwnedChanges(targetDir) {
   await gitRun(targetDir, ['add', '--all', '--', '.', ...exclusions])
 
   const staged = (
-    await gitOutput(targetDir, [
-      'diff',
-      '--cached',
-      '--name-only',
-      '--no-renames',
-      '-z',
-    ])
+    await gitOutput(targetDir, ['diff', '--cached', '--name-only', '--no-renames', '-z'])
   )
     .split('\0')
     .map(normalizePath)

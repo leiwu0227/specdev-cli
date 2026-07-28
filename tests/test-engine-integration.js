@@ -152,8 +152,7 @@ try {
   runGit(adhocRoot, ['commit', '--quiet', '-m', 'initial fixture'])
   const adhocStartRevision = gitText(adhocRoot, ['rev-parse', 'HEAD'])
 
-  const adhocDiscussionRelative =
-    '.specdev/discussions/D99998_concurrent/brainstorm/proposal.md'
+  const adhocDiscussionRelative = '.specdev/discussions/D99998_concurrent/brainstorm/proposal.md'
   const adhocAuditRelative = '.specdev/test-audits/TA99998_concurrent/audit.md'
   mkdirSync(join(adhocRoot, '.specdev', 'discussions', 'D99998_concurrent', 'brainstorm'), {
     recursive: true,
@@ -476,12 +475,7 @@ try {
   const assignmentCommit = gitText(root, ['log', '-1', '--format=%B'])
   assert.match(assignmentCommit, new RegExp(`SpecDev-Assignment: ${compactedAssignment.id}`))
   assert.match(assignmentCommit, /SpecDev-Commit-Type: delivery/)
-  const assignmentCommittedPaths = gitText(root, [
-    'show',
-    '--name-only',
-    '--format=',
-    'HEAD',
-  ])
+  const assignmentCommittedPaths = gitText(root, ['show', '--name-only', '--format=', 'HEAD'])
   assert.doesNotMatch(assignmentCommittedPaths, /D99997_concurrent/)
   assert.doesNotMatch(assignmentCommittedPaths, /TA99997_concurrent/)
   const assignmentRemainingPaths = gitText(root, [

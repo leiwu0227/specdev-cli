@@ -218,10 +218,7 @@ try {
     assert.equal(pending.status, 'completed')
     assert.equal(pending.landing.status, 'ready')
     assert.equal(existsSync(currentPath), false)
-    assert.equal(
-      git(root, ['status', '--porcelain=v1', '--untracked-files=all']),
-      statusBefore
-    )
+    assert.equal(git(root, ['status', '--porcelain=v1', '--untracked-files=all']), statusBefore)
 
     const recovered = runCli(root, ['mission', 'land', 'M00001', '--json'])
     assert.equal(recovered.status, 'landed')
