@@ -29,11 +29,20 @@ specdev update
 
 ## Examples
 
-### Make a bounded edit
+In normal use, you do not drive SpecDev by memorizing commands. Tell your coding
+agent what you want in natural language. The agent discusses scope and
+approvals with you, then runs the workflow commands. The snippets below show
+what the agent does behind the scenes.
+
+### Ask for a bounded edit
+
+> Fix the confusing help text. Keep this as a small Adhoc change.
+
+The agent runs:
 
 ```bash
 specdev adhoc start "repair one help message"
-# make the change
+# the agent makes the change
 specdev adhoc finish \
   --outcome="Corrected the help text" \
   --verification="Inspected the CLI output"
@@ -42,13 +51,19 @@ specdev adhoc finish \
 Adhoc work skips the contract and review loop but still records one receipt and
 one final Git commit.
 
-### Deliver an approved change
+### Ask for an approved change
+
+> Keyword search is broken. Create an Assignment and work with me on the
+> contract before implementing it.
+
+The agent runs:
 
 ```bash
 specdev assignment "repair keyword search"
-# collaborate on the generated brainstorm/contract.md
+# the agent collaborates with you on brainstorm/contract.md
 specdev checkpoint brainstorm
 specdev reviewloop brainstorm   # optional
+# after you explicitly approve the contract
 specdev approve brainstorm
 specdev implement
 ```
@@ -60,11 +75,17 @@ automatic execution. A worker plans and implements the change, acceptance
 evidence is collected, a reviewer checks the delivery, and SpecDev records the
 outcome and final commit.
 
-### Run a larger mission
+### Ask for a larger mission
+
+> Use a Mission to repair search end to end. Keep it running through the
+> approved work and preserve progress if the session is interrupted.
+
+The agent runs:
 
 ```bash
 specdev mission create "repair search end to end"
 specdev mission run M00001
+# after you explicitly approve the Mission contract
 specdev mission run M00001 --approve
 specdev mission status M00001
 specdev mission land M00001
