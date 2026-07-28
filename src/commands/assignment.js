@@ -9,6 +9,7 @@ import { startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 import { reserveEntityId } from '../utils/id-reservation.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { resolveTestAuditSelector, testAuditArtifactHash } from '../utils/test-audit.js'
+import { shelfAssignmentCommand } from './assignment-shelf.js'
 import {
   ASSIGNMENT_KINDS,
   assignmentContractTemplate,
@@ -26,6 +27,9 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
+  if (positionalArgs[0] === 'shelf') {
+    return shelfAssignmentCommand(targetDir, specdevPath, positionalArgs.slice(1), flags)
+  }
   const parallelMissionRoot =
     Boolean(flags['mission-root']) &&
     Boolean(flags.mission) &&
@@ -45,8 +49,12 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
 
   const sourceSelector = flags['from-discussion'] || flags.discussion
   const testAuditSelector = flags['from-test-audit']
-  if (sourceSelector && testAuditSelector) {
-    return fail(flags, 'Choose only one promotion source: --from-discussion or --from-test-audit')
+  const assignmentSelector = flags['from-assignment']
+  if ([sourceSelector, testAuditSelector, assignmentSelector].filter(Boolean).length > 1) {
+    return fail(
+      flags,
+      'Choose only one promotion source: --from-discussion, --from-test-audit, or --from-assignment'
+    )
   }
   let sourceDiscussion = null
   if (sourceSelector) {
@@ -112,10 +120,61 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     }
   }
 
+  let sourceAssignment = null
+  if (assignmentSelector) {
+    const resolved = await resolveAssignmentSelector(specdevPath, String(assignmentSelector))
+    if (!resolved || resolved.ambiguous) {
+      return fail(flags, `Predecessor Assignment not found or ambiguous: ${assignmentSelector}`)
+    }
+    const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
+    if (status?.status !== 'shelved' || !status.shelf) {
+      return fail(
+        flags,
+        `Assignment ${assignmentSelector} is not shelved. Only an immutable shelf can create a successor.`
+      )
+    }
+    if (status.mission) {
+      return fail(flags, `Mission child Assignment ${status.id} cannot be used as a shelf source`)
+    }
+    const artifactPath = join(resolved.path, 'shelf.md')
+    const expectedArtifact = relativeToRepo(targetDir, artifactPath)
+    if (
+      status.shelf.artifact !== expectedArtifact ||
+      !/^[a-f0-9]{40}$/i.test(String(status.shelf.repository?.commit || '')) ||
+      !(await fse.pathExists(artifactPath))
+    ) {
+      return fail(
+        flags,
+        `Shelf ${status.id} is incomplete; restore its status.json and shelf.md before creating a successor`
+      )
+    }
+    const artifact = await fse.readFile(artifactPath, 'utf-8')
+    sourceAssignment = {
+      id: String(status.id),
+      name: resolved.name,
+      artifact: expectedArtifact,
+      commit: status.shelf.repository.commit,
+      objective: shelfSummary(artifact, 'Prior objective', status.description),
+      decisions: shelfSummary(artifact, 'Prior decisions', 'No prior decisions recorded.'),
+      completed: shelfSummary(artifact, 'Completed work', 'No completed work recorded.'),
+      unresolved: shelfSummary(
+        artifact,
+        'Unresolved work',
+        'Reassess from the current repository state.'
+      ),
+      verification: shelfSummary(
+        artifact,
+        'Historical verification',
+        'No historical verification recorded.'
+      ),
+    }
+  }
+
   const description =
     positionalArgs.join(' ').trim() ||
     (await descriptionFromTestAudit(sourceTestAudit)) ||
-    (await descriptionFromDiscussion(sourceDiscussion))
+    (await descriptionFromDiscussion(sourceDiscussion)) ||
+    descriptionFromAssignment(sourceAssignment)
   if (!description) {
     return fail(flags, 'No description provided. Usage: specdev assignment "Add user auth"')
   }
@@ -194,7 +253,7 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     join(assignmentPath, 'brainstorm', 'contract.md'),
     sourceTestAudit
       ? sourceTestAudit.contract.content
-      : assignmentContractTemplate({ description, kind, sourceDiscussion }),
+      : assignmentContractTemplate({ description, kind, sourceDiscussion, sourceAssignment }),
     'utf-8'
   )
   await writeAssignmentStatus(assignmentPath, {
@@ -211,6 +270,15 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     ...(sourceTestAudit
       ? { source_test_audit: { id: sourceTestAudit.id, hash: sourceTestAudit.hash } }
       : {}),
+    ...(sourceAssignment
+      ? {
+          predecessor_assignment: {
+            id: sourceAssignment.id,
+            artifact: sourceAssignment.artifact,
+            shelf_commit: sourceAssignment.commit,
+          },
+        }
+      : {}),
   })
   if (!flags.mission || parallelMissionRoot) {
     await writeCurrentFocus(specdevPath, { kind: 'assignment', id })
@@ -222,6 +290,15 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     path: relativeToRepo(targetDir, assignmentPath),
     description,
     review_policy: reviewPolicy,
+    ...(sourceAssignment
+      ? {
+          predecessor_assignment: {
+            id: sourceAssignment.id,
+            artifact: sourceAssignment.artifact,
+            shelf_commit: sourceAssignment.commit,
+          },
+        }
+      : {}),
   }
   const stepped = stepGuidedNode(targetDir, 'create-assignment', result)
   if (!stepped.synchronized)
@@ -282,6 +359,23 @@ async function descriptionFromTestAudit(source) {
   if (!source) return ''
   const audit = await fse.readFile(join(source.path, 'audit.md'), 'utf-8')
   return audit.match(/^#\s+Test Audit:\s*(.+)$/im)?.[1]?.trim() || `Apply Test Audit ${source.id}`
+}
+
+function descriptionFromAssignment(source) {
+  return source ? `Continue work from shelved Assignment ${source.id}` : ''
+}
+
+function shelfSummary(content, heading, fallback) {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = String(content).match(
+    new RegExp(`^##\\s+${escaped}\\s*$\\n([\\s\\S]*?)(?=^##\\s+|$)`, 'mi')
+  )
+  const value = String(match?.[1] || fallback || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replaceAll('`', "'")
+  if (!value) return fallback
+  return value.length > 360 ? `${value.slice(0, 357).trimEnd()}...` : value
 }
 
 function slugify(value) {

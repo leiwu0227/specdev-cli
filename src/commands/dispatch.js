@@ -45,6 +45,10 @@ const commandHandlers = {
 }
 
 export async function dispatchCommand(command, positionalArgs, flags) {
+  if (flags.help || flags.h) {
+    helpCommand(flags)
+    return
+  }
   if (['do', 'decide', 'step', 'action', 'cancel'].includes(command)) {
     await engineCommand(command, positionalArgs, flags)
     return

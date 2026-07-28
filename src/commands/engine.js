@@ -13,6 +13,8 @@ import { join } from 'path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { assertWorkspaceEngine, workflowRootFor } from '../utils/engine.js'
 import { graphTitle, toProductState, wrapDecision } from '../utils/engine-adapter.js'
+import { readFocusedAssignmentLifecycle } from '../utils/assignment-lifecycle.js'
+import { writeAssignmentStatus } from '../utils/assignment-vnext.js'
 
 export async function engineCommand(command, positionalArgs = [], flags = {}) {
   const projectRoot = resolveTargetDir(flags)
@@ -21,7 +23,31 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
   try {
     assertWorkspaceEngine(projectRoot)
     const workflowRoot = workflowRootFor(projectRoot)
+    const assignmentBefore =
+      command === 'cancel'
+        ? await readFocusedAssignmentLifecycle(join(projectRoot, '.specdev'))
+        : null
     const result = runEngineCommand(workflowRoot, command, positionalArgs, flags)
+    if (command === 'cancel' && result.state === 'cancelled' && assignmentBefore?.status) {
+      await writeAssignmentStatus(assignmentBefore.path, {
+        status: 'abandoned',
+        abandoned_at: new Date().toISOString(),
+        abandon_reason: positionalArgs.join(' ').trim(),
+      })
+    }
+    if (command === 'status') {
+      const assignment = await readFocusedAssignmentLifecycle(join(projectRoot, '.specdev'))
+      if (assignment) {
+        result.artifact_focus = {
+          kind: 'assignment',
+          id: assignment.id,
+          name: assignment.name,
+          lifecycle: assignment.lifecycle,
+          immutable: assignment.immutable,
+          next_action: assignment.next_action,
+        }
+      }
+    }
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
     if (result.status === 'blocked' || result.status === 'error') process.exitCode = 1
     return result
@@ -165,6 +191,14 @@ function statusCommand(workflowRoot) {
 }
 
 function cancelCommand(workflowRoot, reason) {
+  if (!String(reason || '').trim()) {
+    return {
+      status: 'blocked',
+      state: 'requires_reason',
+      problem: 'cancellation is irreversible and requires an explicit reason',
+      next_action: { command_line: 'specdev cancel "<reason>"' },
+    }
+  }
   const current = getState({ workflowRoot })
   if (current.status !== 'ok' || current.run?.status !== 'active') {
     return {
@@ -178,6 +212,7 @@ function cancelCommand(workflowRoot, reason) {
   return {
     status: 'ok',
     state: 'cancelled',
+    run_id: current.run.id,
     next_action: { command_line: 'specdev do "<intent>"' },
   }
 }

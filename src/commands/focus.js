@@ -4,6 +4,11 @@ import { resolveAssignmentSelector } from '../utils/assignment.js'
 import { resolveMissionSelector } from '../utils/mission.js'
 import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { writeCurrentFocus, clearCurrent } from '../utils/current.js'
+import {
+  assignmentLifecycle,
+  assignmentLifecycleNextAction,
+} from '../utils/assignment-lifecycle.js'
+import fse from 'fs-extra'
 
 export async function focusCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -33,6 +38,11 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
   if (!resolved || resolved.ambiguous || resolved.error)
     return fail(flags, `Work item not found or ambiguous: ${selector}`)
   await writeCurrentFocus(specdevPath, { kind, id: resolved.id })
+  const assignmentStatus =
+    kind === 'assignment'
+      ? await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
+      : null
+  const lifecycle = kind === 'assignment' ? assignmentLifecycle(assignmentStatus) : undefined
   return emit(flags, {
     command: 'focus',
     version: 2,
@@ -41,15 +51,27 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
     id: resolved.id,
     name: resolved.name,
     path: resolved.path,
+    ...(lifecycle
+      ? {
+          lifecycle,
+          immutable: lifecycle === 'shelved',
+          next_action: assignmentLifecycleNextAction(assignmentStatus, lifecycle),
+        }
+      : {}),
   })
 }
 
 function emit(flags, payload) {
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
-  else
+  else {
     console.log(
       payload.cleared ? 'Cleared foreground focus.' : `Focused on ${payload.kind}: ${payload.name}`
     )
+    if (payload.lifecycle && payload.lifecycle !== 'active') {
+      console.log(`Lifecycle: ${payload.lifecycle}${payload.immutable ? ' (immutable)' : ''}`)
+      console.log(`Next: ${payload.next_action}`)
+    }
+  }
   return payload
 }
 

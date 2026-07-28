@@ -34,17 +34,25 @@ export async function retireTransientArtifact(targetDir, specdevPath, path) {
 }
 
 export async function compactCompletedWorkflowRuntime(specdevPath, options) {
+  return compactTerminalWorkflowRuntime(specdevPath, options, new Set(['completed']))
+}
+
+export async function compactShelvedWorkflowRuntime(specdevPath, options) {
+  return compactTerminalWorkflowRuntime(specdevPath, options, new Set(['abandoned']))
+}
+
+async function compactTerminalWorkflowRuntime(specdevPath, options, allowedStatuses) {
   const runId = String(options?.runId || '').trim()
   const attemptFilter = options?.attemptFilter
   const focus = options?.focus
-  if (!runId) throw new Error('completed runtime compaction requires a run ID')
+  if (!runId) throw new Error('terminal runtime compaction requires a run ID')
   const filterEntries = Object.entries(attemptFilter || {})
   if (
     filterEntries.length !== 1 ||
     !['assignment', 'mission'].includes(filterEntries[0][0]) ||
     !String(filterEntries[0][1] || '').trim()
   ) {
-    throw new Error('completed runtime compaction requires one Attempt owner filter')
+    throw new Error('terminal runtime compaction requires one Attempt owner filter')
   }
   const ownerFilter = { [filterEntries[0][0]]: String(filterEntries[0][1]).trim() }
 
@@ -52,7 +60,7 @@ export async function compactCompletedWorkflowRuntime(specdevPath, options) {
   const runExists = await fse.pathExists(path)
   if (runExists) {
     const checkpoint = readCheckpoint(specdevPath, runId)
-    if (checkpoint.status !== 'completed') {
+    if (!allowedStatuses.has(checkpoint.status)) {
       throw new Error(`cannot compact non-terminal RippleGraph run ${runId}: ${checkpoint.status}`)
     }
   }

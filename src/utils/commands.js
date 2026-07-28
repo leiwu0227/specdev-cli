@@ -15,11 +15,11 @@ export const COMMANDS = [
   { name: 'next', usage: 'next', description: 'Show the canonical focused-workflow action' },
   { name: 'step', usage: 'step --json=<output>', description: 'Submit explicit workflow evidence' },
   { name: 'decide', usage: 'decide <value>', description: 'Submit an explicit workflow decision' },
-  { name: 'cancel', usage: 'cancel [reason]', description: 'Abandon the focused guided workflow' },
+  { name: 'cancel', usage: 'cancel <reason>', description: 'Abandon the focused guided workflow' },
   {
     name: 'assignment',
-    usage: 'assignment <objective>',
-    description: 'Create an Assignment and readable contract',
+    usage: 'assignment <objective>|shelf <id>',
+    description: 'Create, succeed, or shelf a standalone Assignment',
   },
   {
     name: 'checkpoint',
