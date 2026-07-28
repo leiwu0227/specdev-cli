@@ -5,7 +5,7 @@ import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
-import { getState, listRuns, resumeRun, suspendRun } from 'ripplegraph'
+import { getState, listRuns, readCheckpoint, resumeRun, suspendRun } from 'ripplegraph'
 import { parse as parseYaml } from 'yaml'
 import { resolveAgentProfile } from '../utils/agent-profiles.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
@@ -2636,10 +2636,7 @@ async function missionStatus(selector, flags) {
   if (!context) return null
   const queue = await readMissionQueue(context.missionPath).catch(() => null)
   const assignments = queue?.assignments || []
-  const graph = listRuns({ workflowRoot: workflowRootFor(context.targetDir) }).runs.find(
-    (run) => run.id === context.mission.run_id
-  )
-  const phase = graph?.position?.node || null
+  const phase = readMissionPhase(context.specdevPath, context.mission.run_id)
   const runningAttempts = await listAttemptRecords(context.specdevPath, {
     kind: 'mission-controller',
     mission: context.mission.id,
@@ -2773,6 +2770,15 @@ async function checkpointMission(selector, flags, metadata = {}) {
     pushed: Boolean(flags.push),
     revision,
   })
+}
+
+function readMissionPhase(specdevPath, runId) {
+  if (!runId) return null
+  try {
+    return readCheckpoint(specdevPath, runId).position?.node || null
+  } catch {
+    return null
+  }
 }
 
 async function unstageIncompleteDiscussions(context) {

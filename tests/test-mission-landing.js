@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -179,8 +179,10 @@ try {
     git(root, ['add', 'base.txt'])
     git(root, ['commit', '-m', 'base'])
     runCli(root, ['init', '--json'])
+    const currentPath = join(root, '.specdev', '.ripplegraph', 'current.json')
+    rmSync(currentPath, { force: true })
     git(root, ['add', '--all'])
-    git(root, ['commit', '-m', 'initialize specdev'])
+    git(root, ['commit', '-m', 'initialize specdev without current focus'])
     const baseRevision = git(root, ['rev-parse', 'HEAD'])
     const branch = 'specdev/M00001-land'
     git(root, ['switch', '-c', branch])
@@ -210,6 +212,16 @@ try {
     const finalRevision = git(root, ['rev-parse', 'HEAD'])
     git(root, ['switch', 'main'])
     assert.equal(git(root, ['rev-parse', 'main']), baseRevision)
+    assert.equal(existsSync(currentPath), false)
+    const statusBefore = git(root, ['status', '--porcelain=v1', '--untracked-files=all'])
+    const pending = runCli(root, ['mission', 'status', 'M00001', '--json'])
+    assert.equal(pending.status, 'completed')
+    assert.equal(pending.landing.status, 'ready')
+    assert.equal(existsSync(currentPath), false)
+    assert.equal(
+      git(root, ['status', '--porcelain=v1', '--untracked-files=all']),
+      statusBefore
+    )
 
     const recovered = runCli(root, ['mission', 'land', 'M00001', '--json'])
     assert.equal(recovered.status, 'landed')
