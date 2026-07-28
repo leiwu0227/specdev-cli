@@ -23,6 +23,9 @@ export function helpCommand(flags = {}) {
     '  specdev reviewloop brainstorm       # optional',
     '  specdev approve brainstorm          # only after explicit user agreement',
     '  specdev implement                   # automatic plan + code + evidence + review',
+    '  specdev assignment shelf 00001 --reason="pause useful unfinished work"',
+    '  specdev assignment --from-assignment=00001  # fresh successor from a shelf',
+    '  specdev cancel "work is no longer wanted"   # irreversible abandonment',
   ])
   blankLine()
   printSection('Parallel thought work and larger objectives:')

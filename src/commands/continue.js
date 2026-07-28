@@ -3,6 +3,7 @@ import { getState } from 'ripplegraph'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { hasWorkspaceEngine, workflowRootFor } from '../utils/engine.js'
 import { readCurrentFocus } from '../utils/current.js'
+import { readFocusedAssignmentLifecycle } from '../utils/assignment-lifecycle.js'
 import { engineCommand } from './engine.js'
 
 export async function continueCommand(flags = {}) {
@@ -17,6 +18,8 @@ export async function continueCommand(flags = {}) {
     return engineCommand('next', [], flags)
   }
   const focus = await readCurrentFocus(specdevPath)
+  const assignment =
+    focus?.kind === 'assignment' ? await readFocusedAssignmentLifecycle(specdevPath) : null
   const payload =
     focus?.kind === 'mission'
       ? {
@@ -36,14 +39,29 @@ export async function continueCommand(flags = {}) {
             id: focus.id,
             next_action: `specdev discussion ${focus.id}`,
           }
-        : {
-            command: 'continue',
-            version: 2,
-            status: 'idle',
-            kind: focus?.kind || null,
-            id: focus?.id || null,
-            next_action: 'specdev do "<intent>"',
-          }
+        : assignment
+          ? {
+              command: 'continue',
+              version: 2,
+              status: assignment.lifecycle === 'active' ? 'idle' : 'terminal',
+              kind: 'assignment',
+              id: assignment.id,
+              lifecycle: assignment.lifecycle,
+              immutable: assignment.immutable,
+              message:
+                assignment.lifecycle === 'shelved'
+                  ? 'This Assignment is shelved and immutable; continuing creates a fresh successor ID and contract.'
+                  : `This Assignment is ${assignment.lifecycle} and cannot resume its old execution run.`,
+              next_action: assignment.next_action,
+            }
+          : {
+              command: 'continue',
+              version: 2,
+              status: 'idle',
+              kind: focus?.kind || null,
+              id: focus?.id || null,
+              next_action: 'specdev do "<intent>"',
+            }
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
   else {
     console.log(`SpecDev: ${payload.status}`)

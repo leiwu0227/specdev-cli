@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node --check tests/test-assignment-shelf.js && node --check src/commands/assignment-shelf.js && node --check src/commands/assignment.js && node --check src/utils/assignment-vnext.js && node --check src/utils/assignment-lifecycle.js && node --check src/commands/continue.js && node --check src/commands/focus.js && node --check src/commands/engine.js && node --check src/commands/dispatch.js && node --check src/commands/help.js && node --check src/commands/init.js && node --check src/utils/artifact-retention.js",
+      "revision": "working-tree@c6fd8aaafd113f0935d0e74fe6aef968081bed6c",
+      "scope": "changed JavaScript syntax",
+      "status": "passed",
+      "duration_ms": 373
+    },
+    {
+      "command": "./node_modules/.bin/prettier --check package.json src/commands/assignment-shelf.js src/commands/assignment.js src/commands/continue.js src/commands/dispatch.js src/commands/engine.js src/commands/focus.js src/commands/help.js src/commands/init.js src/utils/artifact-retention.js src/utils/assignment-lifecycle.js src/utils/assignment-vnext.js src/utils/commands.js tests/test-assignment-shelf.js",
+      "revision": "working-tree@c6fd8aaafd113f0935d0e74fe6aef968081bed6c",
+      "scope": "changed-file formatting",
+      "status": "passed",
+      "duration_ms": 72
+    },
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@c6fd8aaafd113f0935d0e74fe6aef968081bed6c",
+      "scope": "working-tree whitespace",
+      "status": "passed",
+      "duration_ms": 0
+    },
+    {
+      "command": "npm run test:assignment-shelf",
+      "revision": "working-tree@c6fd8aaafd113f0935d0e74fe6aef968081bed6c",
+      "scope": "focused Assignment shelf, successor, lifecycle, help, and cancellation regression",
+      "status": "passed",
+      "duration_ms": 1106
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

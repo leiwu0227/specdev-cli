@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00026",
+  "kind": "change",
+  "description": "Add terminal Assignment shelving and successor creation from a shelved Assignment",
+  "run_id": "assignment-lifecycle-20260728T07014320",
+  "created_at": "2026-07-28T07:01:43.213Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-07-28T07:32:56.853Z",
+  "review_policy_frozen_at": "2026-07-28T07:05:52.279Z",
+  "approved_at": "2026-07-28T07:05:52.279Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "c6fd8aaafd113f0935d0e74fe6aef968081bed6c",
+    "starting_branch": "feature/ripplegraph-backbone",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-07-28T07:08:06.478Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-07-28T07:32:56.842Z",
+  "activity": {
+    "attempt_count": 4,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 4,
+    "provider_attempts": {
+      "total": 4,
+      "completed": 2,
+      "failed": 1,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1624563,
+    "agent_duration_ms": 1101396,
+    "provider_reported_tokens": 194561
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-07-28T07:32:56.853Z"
+}
