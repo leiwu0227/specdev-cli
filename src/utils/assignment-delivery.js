@@ -166,6 +166,7 @@ export async function completeStandaloneAssignmentDelivery({
   const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
     runId: status.run_id,
     attemptFilter: { assignment: name },
+    terminalOwner: { assignment: name, status: status.status },
     focus: { kind: 'assignment', id: status.id },
   })
   status = await writeAssignmentStatus(assignmentPath, {

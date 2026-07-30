@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@dab426766cd056a5c1eb08b759ca2f94df575cc9",
+      "scope": "Changed source, tests, and Assignment delivery artifacts",
+      "status": "passed",
+      "duration_ms": 1
+    },
+    {
+      "command": "node tests/test-assignment-shelf.js",
+      "revision": "working-tree@dab426766cd056a5c1eb08b759ca2f94df575cc9",
+      "scope": "AC-1, AC-2, and AC-3 command-level shelf and Assignment-creation recovery",
+      "status": "passed",
+      "duration_ms": 7138
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@dab426766cd056a5c1eb08b759ca2f94df575cc9",
+      "scope": "AC-2 and AC-3 focused terminal-compaction safety",
+      "status": "passed",
+      "duration_ms": 3968
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

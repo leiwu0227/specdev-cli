@@ -153,23 +153,26 @@ async function finalizeShelvedRuntime(specdevPath, assignmentName, status) {
   if (!(await fse.pathExists(path))) {
     return { compacted: false, run_id: status.run_id, attempts_removed: 0 }
   }
-  const checkpoint = readCheckpoint(specdevPath, status.run_id)
-  if (checkpoint.status !== 'abandoned') {
-    if (!['active', 'suspended'].includes(checkpoint.status)) {
-      throw new Error(`shelf record conflicts with run state ${checkpoint.status}`)
+  if (await fse.pathExists(join(path, 'checkpoint.json'))) {
+    const checkpoint = readCheckpoint(specdevPath, status.run_id)
+    if (checkpoint.status !== 'abandoned') {
+      if (!['active', 'suspended'].includes(checkpoint.status)) {
+        throw new Error(`shelf record conflicts with run state ${checkpoint.status}`)
+      }
+      const current = readRippleCurrent(specdevPath)
+      if (current.focusedRunId && current.focusedRunId !== status.run_id) {
+        throw new Error(`another run is focused: ${current.focusedRunId}`)
+      }
+      if (!current.focusedRunId) {
+        writeRippleCurrent(specdevPath, { focusedRunId: status.run_id })
+      }
+      abandonRun({ workflowRoot: specdevPath, reason: `Assignment ${status.id} shelved` })
     }
-    const current = readRippleCurrent(specdevPath)
-    if (current.focusedRunId && current.focusedRunId !== status.run_id) {
-      throw new Error(`another run is focused: ${current.focusedRunId}`)
-    }
-    if (!current.focusedRunId) {
-      writeRippleCurrent(specdevPath, { focusedRunId: status.run_id })
-    }
-    abandonRun({ workflowRoot: specdevPath, reason: `Assignment ${status.id} shelved` })
   }
   return compactShelvedWorkflowRuntime(specdevPath, {
     runId: status.run_id,
     attemptFilter: { assignment: assignmentName },
+    terminalOwner: { assignment: assignmentName, status: status.status },
   })
 }
 

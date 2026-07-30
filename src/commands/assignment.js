@@ -10,6 +10,7 @@ import { reserveEntityId } from '../utils/id-reservation.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { resolveTestAuditSelector, testAuditArtifactHash } from '../utils/test-audit.js'
 import { shelfAssignmentCommand } from './assignment-shelf.js'
+import { recoverTerminalAssignmentRuntimeResidue } from '../utils/artifact-retention.js'
 import {
   ASSIGNMENT_KINDS,
   assignmentContractTemplate,
@@ -29,6 +30,11 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   await requireSpecdevDirectory(specdevPath)
   if (positionalArgs[0] === 'shelf') {
     return shelfAssignmentCommand(targetDir, specdevPath, positionalArgs.slice(1), flags)
+  }
+  try {
+    await recoverTerminalAssignmentRuntimeResidue(specdevPath)
+  } catch (error) {
+    return fail(flags, `Cannot recover terminal Assignment runtime residue: ${error.message}`)
   }
   const parallelMissionRoot =
     Boolean(flags['mission-root']) &&

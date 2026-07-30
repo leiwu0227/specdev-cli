@@ -716,6 +716,61 @@ the existing API stable.
   assert.equal(readRippleCurrent(specdevPath).focusedRunId, null)
   assert.equal(await readCurrentFocus(specdevPath), null)
 
+  const checkpointlessRunId = 'mission-lifecycle-checkpointless-run'
+  const checkpointlessRunPath = join(
+    specdevPath,
+    '.ripplegraph',
+    'runs',
+    checkpointlessRunId
+  )
+  mkdirSync(checkpointlessRunPath, { recursive: true })
+  await assert.rejects(
+    compactCompletedWorkflowRuntime(specdevPath, {
+      runId: checkpointlessRunId,
+      attemptFilter: { mission: 'M00002' },
+      terminalOwner: { mission: 'M00002', status: 'active' },
+    }),
+    /without verified terminal owner authority/
+  )
+  assert.equal(existsSync(checkpointlessRunPath), true)
+
+  writeRippleCurrent(specdevPath, { focusedRunId: checkpointlessRunId })
+  await assert.rejects(
+    compactCompletedWorkflowRuntime(specdevPath, {
+      runId: checkpointlessRunId,
+      attemptFilter: { mission: 'M00002' },
+      terminalOwner: { mission: 'M00002', status: 'completed' },
+    }),
+    /cannot compact focused checkpoint-less/
+  )
+  assert.equal(existsSync(checkpointlessRunPath), true)
+  writeRippleCurrent(specdevPath, { focusedRunId: null })
+
+  const runningMissionAttempt = await createAttemptRecord(specdevPath, {
+    kind: 'mission-controller',
+    workspace: '.',
+    mission: 'M00002',
+  })
+  await assert.rejects(
+    compactCompletedWorkflowRuntime(specdevPath, {
+      runId: checkpointlessRunId,
+      attemptFilter: { mission: 'M00002' },
+      terminalOwner: { mission: 'M00002', status: 'completed' },
+    }),
+    new RegExp(`running Attempts: ${runningMissionAttempt.id}`)
+  )
+  assert.equal(existsSync(checkpointlessRunPath), true)
+  await updateAttemptRecord(specdevPath, runningMissionAttempt.id, { status: 'completed' })
+  assert.deepEqual(
+    await compactCompletedWorkflowRuntime(specdevPath, {
+      runId: checkpointlessRunId,
+      attemptFilter: { mission: 'M00002' },
+      terminalOwner: { mission: 'M00002', status: 'completed' },
+    }),
+    { compacted: true, run_id: checkpointlessRunId, attempts_removed: 1 }
+  )
+  assert.equal(existsSync(checkpointlessRunPath), false)
+
   const templateGuides = resolve('templates', '.specdev', 'guides')
   await fse.copy(templateGuides, join(specdevPath, 'guides'))
   const catalog = await loadGuideCatalog(specdevPath)

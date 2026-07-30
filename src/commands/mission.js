@@ -639,6 +639,7 @@ async function driveMission(context) {
       const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
         runId: mission.run_id,
         attemptFilter: { mission: mission.id },
+        terminalOwner: { mission: mission.id, status: mission.status },
         focus: { kind: 'mission', id: mission.id },
       })
       const checkpoint = await withSuppressedOutput(() =>

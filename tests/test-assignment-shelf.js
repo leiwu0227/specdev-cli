@@ -109,6 +109,30 @@ try {
   )
   assert.equal(runJson(cleanRoot, ['assignment', 'shelf', clean.id, '--json']).idempotent, true)
 
+  const residualRunPath = join(
+    cleanRoot,
+    '.specdev',
+    '.ripplegraph',
+    'runs',
+    shelf.shelf.run_id
+  )
+  mkdirSync(residualRunPath, { recursive: true })
+  writeFileSync(
+    join(processDir, 'ATT-998.yaml'),
+    `id: ATT-998\nkind: worker\nstatus: running\nworkspace: .\nstarted_at: 2026-07-28T00:00:00.000Z\nassignment: ${clean.name}\n`,
+    'utf8'
+  )
+  assert.match(
+    run(cleanRoot, ['assignment', 'shelf', clean.id], 1).stderr,
+    /running Attempts: ATT-998/
+  )
+  assert.equal(existsSync(residualRunPath), true)
+  rmSync(join(processDir, 'ATT-998.yaml'))
+  const recoveredShelf = runJson(cleanRoot, ['assignment', 'shelf', clean.id, '--json'])
+  assert.equal(recoveredShelf.idempotent, true)
+  assert.equal(recoveredShelf.runtime_compaction.compacted, true)
+  assert.equal(existsSync(residualRunPath), false)
+
   const continued = runJson(cleanRoot, ['continue', '--json'])
   assert.equal(continued.lifecycle, 'shelved')
   assert.equal(continued.next_action, `specdev assignment --from-assignment=${clean.id}`)
@@ -123,6 +147,7 @@ try {
   run(cleanRoot, ['assignment', 'shelf', clean.id, '--help'])
   assert.equal(readFileSync(join(cleanPath, 'status.json'), 'utf8'), beforeHelp)
 
+  mkdirSync(residualRunPath, { recursive: true })
   const successor = runJson(cleanRoot, [
     'assignment',
     `Continue ${clean.id}`,
@@ -131,6 +156,7 @@ try {
   ])
   assert.notEqual(successor.id, clean.id)
   assert.equal(successor.predecessor_assignment.id, clean.id)
+  assert.equal(existsSync(residualRunPath), false)
   const successorStatus = JSON.parse(
     readFileSync(join(cleanRoot, successor.path, 'status.json'), 'utf8')
   )

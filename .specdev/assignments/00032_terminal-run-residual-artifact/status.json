@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00032",
+  "kind": "bugfix",
+  "description": "Recover terminal checkpoint-less RippleGraph run residue without blocking new Assignments",
+  "run_id": "assignment-lifecycle-20260730T09520669",
+  "created_at": "2026-07-30T09:52:06.703Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-07-30T10:12:12.267Z",
+  "review_policy_frozen_at": "2026-07-30T09:59:04.576Z",
+  "approved_at": "2026-07-30T09:59:04.576Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "dab426766cd056a5c1eb08b759ca2f94df575cc9",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-07-30T09:59:10.382Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-07-30T10:12:12.259Z",
+  "activity": {
+    "attempt_count": 3,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 3,
+    "provider_attempts": {
+      "total": 3,
+      "completed": 2,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 787683,
+    "agent_duration_ms": 701910,
+    "provider_reported_tokens": 107992
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-07-30T10:12:12.267Z"
+}

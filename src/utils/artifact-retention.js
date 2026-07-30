@@ -34,14 +34,69 @@ export async function retireTransientArtifact(targetDir, specdevPath, path) {
 }
 
 export async function compactCompletedWorkflowRuntime(specdevPath, options) {
-  return compactTerminalWorkflowRuntime(specdevPath, options, new Set(['completed']))
+  return compactTerminalWorkflowRuntime(
+    specdevPath,
+    options,
+    new Set(['completed']),
+    new Set(['completed'])
+  )
 }
 
 export async function compactShelvedWorkflowRuntime(specdevPath, options) {
-  return compactTerminalWorkflowRuntime(specdevPath, options, new Set(['abandoned']))
+  return compactTerminalWorkflowRuntime(
+    specdevPath,
+    options,
+    new Set(['abandoned']),
+    new Set(['abandoned', 'shelved'])
+  )
 }
 
-async function compactTerminalWorkflowRuntime(specdevPath, options, allowedStatuses) {
+export async function recoverTerminalAssignmentRuntimeResidue(specdevPath) {
+  const assignmentsPath = join(specdevPath, 'assignments')
+  if (!(await fse.pathExists(assignmentsPath))) return []
+
+  const recovered = []
+  const entries = await fse.readdir(assignmentsPath, { withFileTypes: true })
+  for (const entry of entries.filter((candidate) => candidate.isDirectory())) {
+    const assignmentPath = join(assignmentsPath, entry.name)
+    const status = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => null)
+    if (
+      !status?.id ||
+      !status?.run_id ||
+      !['completed', 'abandoned', 'shelved'].includes(status.status)
+    ) {
+      continue
+    }
+
+    const path = runDir(specdevPath, status.run_id)
+    if (
+      !(await fse.pathExists(path)) ||
+      (await fse.pathExists(join(path, 'checkpoint.json')))
+    ) {
+      continue
+    }
+
+    const compact =
+      status.status === 'completed'
+        ? compactCompletedWorkflowRuntime
+        : compactShelvedWorkflowRuntime
+    recovered.push(
+      await compact(specdevPath, {
+        runId: status.run_id,
+        attemptFilter: { assignment: entry.name },
+        terminalOwner: { assignment: entry.name, status: status.status },
+      })
+    )
+  }
+  return recovered
+}
+
+async function compactTerminalWorkflowRuntime(
+  specdevPath,
+  options,
+  allowedStatuses,
+  allowedOwnerStatuses
+) {
   const runId = String(options?.runId || '').trim()
   const attemptFilter = options?.attemptFilter
   const focus = options?.focus
@@ -58,11 +113,14 @@ async function compactTerminalWorkflowRuntime(specdevPath, options, allowedStatu
 
   const path = runDir(specdevPath, runId)
   const runExists = await fse.pathExists(path)
-  if (runExists) {
+  const checkpointExists = runExists && (await fse.pathExists(join(path, 'checkpoint.json')))
+  if (checkpointExists) {
     const checkpoint = readCheckpoint(specdevPath, runId)
     if (!allowedStatuses.has(checkpoint.status)) {
       throw new Error(`cannot compact non-terminal RippleGraph run ${runId}: ${checkpoint.status}`)
     }
+  } else if (runExists) {
+    assertTerminalOwner(options?.terminalOwner, ownerFilter, allowedOwnerStatuses, runId)
   }
 
   const attempts = await listAttemptRecords(specdevPath, ownerFilter)
@@ -74,7 +132,10 @@ async function compactTerminalWorkflowRuntime(specdevPath, options, allowedStatu
   }
 
   const current = readRippleCurrent(specdevPath)
-  if (current.focusedRunId === runId) {
+  if (!checkpointExists && runExists && current.focusedRunId === runId) {
+    throw new Error(`cannot compact focused checkpoint-less RippleGraph run ${runId}`)
+  }
+  if (checkpointExists && current.focusedRunId === runId) {
     writeRippleCurrent(specdevPath, { focusedRunId: null })
   }
   if (runExists) await fse.remove(path)
@@ -95,5 +156,19 @@ async function compactTerminalWorkflowRuntime(specdevPath, options, allowedStatu
     compacted: runExists,
     run_id: runId,
     attempts_removed: attempts.length,
+  }
+}
+
+function assertTerminalOwner(owner, ownerFilter, allowedStatuses, runId) {
+  const ownerEntries = Object.entries(owner || {}).filter(([key]) => key !== 'status')
+  const filterEntries = Object.entries(ownerFilter)
+  const matchesFilter =
+    ownerEntries.length === 1 &&
+    ownerEntries[0][0] === filterEntries[0][0] &&
+    String(ownerEntries[0][1] || '').trim() === filterEntries[0][1]
+  if (!matchesFilter || !allowedStatuses.has(String(owner?.status || '').trim())) {
+    throw new Error(
+      `cannot compact checkpoint-less RippleGraph run ${runId} without verified terminal owner authority`
+    )
   }
 }
