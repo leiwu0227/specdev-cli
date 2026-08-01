@@ -1,0 +1,17 @@
+version: 1
+id: M00001
+objective: Make pinned Mission graph and controller version skew safely detectable, migratable, and recoverable
+status: running
+run_id: mission-lifecycle-20260801T14432200
+base_branch: main
+created_revision: b8da992a444f39aa4e9ecc76c974de91a9183b88
+base_revision: b8da992a444f39aa4e9ecc76c974de91a9183b88
+branch: specdev/M00001-make-pinned-mission-graph-and-co
+created_at: 2026-08-01T14:43:22.068Z
+next_action: Continue the foreground controller with specdev mission run M00001.
+approved_contract_hash: 8f5844db8a82036c50e512ecdef69957bb6e53d1c2a93e1c17d0c87f1db04184
+approved_at: 2026-08-01T14:58:31.448Z
+last_checkpoint:
+  base_revision: b8da992a444f39aa4e9ecc76c974de91a9183b88
+  push_requested: false
+  created_at: 2026-08-01T14:58:31.611Z

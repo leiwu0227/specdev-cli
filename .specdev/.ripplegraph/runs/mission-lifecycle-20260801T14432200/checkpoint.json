@@ -1,0 +1,54 @@
+{
+  "runId": "mission-lifecycle-20260801T14432200",
+  "status": "active",
+  "rootGraph": "mission-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "mission-lifecycle",
+    "node": "design"
+  },
+  "createdAt": "2026-08-01T14:43:22.007Z",
+  "updatedAt": "2026-08-01T14:58:31.447Z",
+  "outputs": {
+    "create-mission": {
+      "id": "M00001",
+      "path": ".specdev/missions/M00001_make-pinned-mission-graph-and-controller-version",
+      "objective": "Make pinned Mission graph and controller version skew safely detectable, migratable, and recoverable"
+    },
+    "brainstorm": {
+      "contract": ".specdev/missions/M00001_make-pinned-mission-graph-and-controller-version/brainstorm/contract.md",
+      "contract_hash": "8f5844db8a82036c50e512ecdef69957bb6e53d1c2a93e1c17d0c87f1db04184"
+    },
+    "approve-mission": {
+      "approved": true,
+      "contract_hash": "8f5844db8a82036c50e512ecdef69957bb6e53d1c2a93e1c17d0c87f1db04184",
+      "actor": "user",
+      "approved_at": "2026-08-01T14:58:31.431Z",
+      "review_override": false,
+      "base_revision": "b8da992a444f39aa4e9ecc76c974de91a9183b88",
+      "branch": "specdev/M00001-make-pinned-mission-graph-and-co"
+    }
+  },
+  "gateDecisions": {
+    "approve-mission": {
+      "approved": true,
+      "contract_hash": "8f5844db8a82036c50e512ecdef69957bb6e53d1c2a93e1c17d0c87f1db04184",
+      "actor": "user",
+      "approved_at": "2026-08-01T14:58:31.431Z",
+      "review_override": false,
+      "base_revision": "b8da992a444f39aa4e9ecc76c974de91a9183b88",
+      "branch": "specdev/M00001-make-pinned-mission-graph-and-co"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "mission-lifecycle",
+    "graphVersion": "1.4.0",
+    "packagePath": "workflows/mission-lifecycle@1.4.0"
+  },
+  "stack": [],
+  "frameCounter": 0
+}
