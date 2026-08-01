@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "mode": "automatic",
+  "stage": "complete",
+  "primary_round": 1,
+  "round": 1,
+  "history": [
+    {
+      "round": 1,
+      "candidate_digest": "a082ba81113e772cbff55c73dcb247c31989eb30161e4095477ff625ef2d35a2",
+      "findings_digest": "9d3b359d080126b8ef3b5ebdfac208e70bfd185308d49bc89d407f17b5caa84f"
+    }
+  ],
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "high",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "contract_hash": "78a5d867cd087f56d2db68d8efb6ecd3616ae418aa558a9ab2eb6f452ce5c446",
+  "status": "approved",
+  "candidate_digest": "a082ba81113e772cbff55c73dcb247c31989eb30161e4095477ff625ef2d35a2",
+  "findings_digest": "9d3b359d080126b8ef3b5ebdfac208e70bfd185308d49bc89d407f17b5caa84f",
+  "attempt": "Attempt-00039",
+  "updated_at": "2026-08-01T15:22:02.412Z"
+}

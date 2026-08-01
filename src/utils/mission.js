@@ -4,6 +4,7 @@ import fse from 'fs-extra'
 import { parse, stringify } from 'yaml'
 import { ASSIGNMENT_KINDS } from './assignment-vnext.js'
 import { reserveEntityId } from './id-reservation.js'
+import { parseResultEnvelope } from './result-envelope.js'
 import { normalizeMissionWaves } from './mission-waves.js'
 
 export function parseMissionId(name) {
@@ -42,6 +43,34 @@ export async function readMissionQueue(missionPath) {
 export async function writeMissionQueue(missionPath, value) {
   await fse.ensureDir(join(missionPath, 'design'))
   return writeYamlAtomic(join(missionPath, 'design', 'assignments.yaml'), value)
+}
+
+export function verificationReceiptsRequireFollowUp(receipts) {
+  const latestByObligation = new Map()
+  for (const receipt of Array.isArray(receipts) ? receipts : []) {
+    if (!['passed', 'failed'].includes(receipt?.status)) continue
+    const obligation = JSON.stringify([receipt.command, receipt.revision])
+    latestByObligation.set(obligation, receipt.status)
+  }
+  return [...latestByObligation.values()].some((status) => status === 'failed')
+}
+
+export async function missionChildFollowUp(specdevPath, child) {
+  if (!child.folder) return 'none'
+  const assignmentPath = join(specdevPath, 'assignments', child.folder)
+  const implementationPath = join(assignmentPath, 'implementation')
+  const progress = await fse.readJson(join(implementationPath, 'progress.json')).catch(() => null)
+  if (progress?.follow_up === 'required') return 'required'
+  for (const name of ['worker-result.md', 'repair-result.md']) {
+    const path = join(implementationPath, name)
+    if (!(await fse.pathExists(path))) continue
+    const result = parseResultEnvelope(await fse.readFile(path, 'utf-8'), 'worker')
+    if (result.frontmatter.follow_up === 'required') return 'required'
+  }
+  if (verificationReceiptsRequireFollowUp(progress?.verification)) return 'required'
+  const outcome = await fse.readFile(join(assignmentPath, 'outcome.md'), 'utf-8').catch(() => '')
+  if (/^\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/im.test(outcome)) return 'required'
+  return 'none'
 }
 
 export async function validateAndReserveReplannedQueue(specdevPath, original, revised) {
@@ -143,31 +172,6 @@ export function bindReplannedQueueToGap(original, revised, { gapId, stage }) {
   added[0].gap_id = gapId
   added[0].gap_stage = stage
   return added[0]
-}
-
-export function normalizeMissionGapResolutionForGraph(graph, resolved) {
-  const allowed = graph.node?.outputSchema?.properties?.disposition?.enum || []
-  if (resolved.disposition !== 'evidence-closed' || allowed.includes('evidence-closed')) {
-    return resolved
-  }
-  return {
-    ...resolved,
-    disposition: 'infrastructure-failure',
-    error: `Pinned Mission graph cannot route evidence closure for gap ${resolved.gap.id}; ending with an explicit infrastructure failure.`,
-  }
-}
-
-export function missionGapTransitionDisposition(graph, disposition) {
-  const allowed = graph.node?.outputSchema?.properties?.disposition?.enum || []
-  if (allowed.includes(disposition)) return disposition
-  if (disposition === 'resolution-added' && allowed.includes('replanned')) return 'replanned'
-  if (
-    ['semantic-failure', 'authority-failure', 'infrastructure-failure'].includes(disposition) &&
-    allowed.includes('objective-failure')
-  ) {
-    return 'objective-failure'
-  }
-  return disposition
 }
 
 export function assertMissionTransitionRecorded(stepped, node, action = 'record') {

@@ -1,0 +1,60 @@
+version: 2
+design_mode: replanned
+assignments:
+  - id: "00034"
+    title: Add Mission compatibility preflight and incompatibility status semantics
+    kind: feature
+    wave: 1
+    status: integrated
+    started_at: 2026-08-01T14:59:46.260Z
+    folder: 00034_add-mission-compatibility-preflight-and-incompat
+    outcome: .specdev/assignments/00034_add-mission-compatibility-preflight-and-incompat/outcome.md
+    completed_at: 2026-08-01T15:22:02.432Z
+    follow_up: none
+  - id: "00035"
+    title: Add resumable active Mission migration from lifecycle 1.3.0 to 1.4.0
+    kind: feature
+    wave: 2
+    status: integrated
+    started_at: 2026-08-01T15:22:02.445Z
+    folder: 00035_add-resumable-active-mission-migration-from-life
+    outcome: .specdev/assignments/00035_add-resumable-active-mission-migration-from-life/outcome.md
+    completed_at: 2026-08-01T15:45:47.140Z
+    follow_up: none
+  - id: "00036"
+    title: Add constrained terminal evidence-closure recovery and integrated regression coverage
+    kind: bugfix
+    wave: 3
+    status: integrated
+    started_at: 2026-08-01T15:45:47.236Z
+    folder: 00036_add-constrained-terminal-evidence-closure-recove
+    outcome: .specdev/assignments/00036_add-constrained-terminal-evidence-closure-recove/outcome.md
+    completed_at: 2026-08-01T16:15:39.542Z
+    follow_up: required
+  - id: "00037"
+    title: Treat later passing verification evidence as closing an earlier failed attempt
+    kind: bugfix
+    wave: 4
+    status: integrated
+    gap_id: gap-6a19ddeeb8fc6431
+    gap_stage: resolution
+    started_at: 2026-08-01T16:17:51.884Z
+    folder: 00037_treat-later-passing-verification-evidence-as-clo
+    outcome: .specdev/assignments/00037_treat-later-passing-verification-evidence-as-clo/outcome.md
+    completed_at: 2026-08-01T16:33:40.880Z
+    follow_up: none
+  - id: "00038"
+    title: Match verification retry receipts by command and revision, not scope prose
+    kind: bugfix
+    wave: 5
+    status: integrated
+    gap_id: gap-2d6c64c012c7d2ba
+    gap_stage: resolution
+    started_at: 2026-08-01T16:38:58.053Z
+    folder: 00038_match-verification-retry-receipts-by-command-and
+    outcome: .specdev/assignments/00038_match-verification-retry-receipts-by-command-and/outcome.md
+    completed_at: 2026-08-01T16:49:57.255Z
+    follow_up: none
+final_verification:
+  command: npm run test:mission-compatibility
+  scope: integrated

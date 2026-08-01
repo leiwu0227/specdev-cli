@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "00037",
+  "kind": "bugfix",
+  "description": "Treat later passing verification evidence as closing an earlier failed attempt",
+  "run_id": "mission-lifecycle-20260801T14432200",
+  "created_at": "2026-08-01T16:17:51.890Z",
+  "review_policy": {
+    "brainstorm": "required",
+    "implementation": "required"
+  },
+  "mission": "M00001",
+  "updated_at": "2026-08-01T16:33:40.828Z",
+  "review_policy_frozen_at": "2026-08-01T16:23:46.449Z",
+  "status": "completed",
+  "completed_at": "2026-08-01T16:33:40.827Z"
+}

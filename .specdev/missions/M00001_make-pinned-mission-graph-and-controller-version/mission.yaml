@@ -1,17 +1,39 @@
 version: 1
 id: M00001
 objective: Make pinned Mission graph and controller version skew safely detectable, migratable, and recoverable
-status: running
+status: completed
 run_id: mission-lifecycle-20260801T14432200
 base_branch: main
 created_revision: b8da992a444f39aa4e9ecc76c974de91a9183b88
 base_revision: b8da992a444f39aa4e9ecc76c974de91a9183b88
 branch: specdev/M00001-make-pinned-mission-graph-and-co
 created_at: 2026-08-01T14:43:22.068Z
-next_action: Continue the foreground controller with specdev mission run M00001.
+next_action: null
 approved_contract_hash: 8f5844db8a82036c50e512ecdef69957bb6e53d1c2a93e1c17d0c87f1db04184
 approved_at: 2026-08-01T14:58:31.448Z
 last_checkpoint:
-  base_revision: b8da992a444f39aa4e9ecc76c974de91a9183b88
+  base_revision: 5bf905e3ef55d418211c5427c8b499a00ef64765
   push_requested: false
-  created_at: 2026-08-01T14:58:31.611Z
+  created_at: 2026-08-01T16:54:05.322Z
+updated_at: 2026-08-01T16:44:58.846Z
+completed_at: 2026-08-01T16:54:05.112Z
+activity:
+  attempt_count: 37
+  orchestration_attempt_count: 6
+  provider_attempt_count: 31
+  provider_attempts:
+    total: 31
+    completed: 26
+    failed: 0
+    blocked: 5
+    interrupted: 0
+    running: 0
+  elapsed_ms: 6933664
+  agent_duration_ms: 6710841
+  provider_reported_tokens: 1046352
+gap_summary:
+  opened: 2
+  closed: 2
+  failed: 0
+  dispositions:
+    evidence-closed: 2

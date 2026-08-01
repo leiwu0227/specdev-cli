@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npx prettier --write package.json src/commands/mission.js src/utils/mission.js tests/test-vnext-foundations.js && node --check src/utils/mission-compatibility.js && node --check src/commands/mission.js && node --check src/utils/mission.js && node --check tests/test-mission-compatibility.js && node --check tests/test-vnext-foundations.js && git diff --check",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "Changed-file formatting, JavaScript syntax, and whitespace integrity",
+      "status": "passed",
+      "duration_ms": 503
+    },
+    {
+      "command": "npm run test:mission-compatibility",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "AC-1 and AC-2 focused compatibility, provider barrier, transition guard, and non-mutation behavior",
+      "status": "passed",
+      "duration_ms": 1118
+    },
+    {
+      "command": "jq -e '.version == 1 and (.tasks | length == 3) and (.tasks | all(.status == \"completed\")) and (.selected_guides.implementation == []) and (.selected_guides.review == []) and (.verification | length == 2) and (.deviations == []) and (.follow_up == \"none\")' .specdev/assignments/00034_add-mission-compatibility-preflight-and-incompat/implementation/progress.json >/dev/null && rg -n '^## Tasks$|^\\*\\*Implementation Guides:\\*\\*|^\\*\\*Review Guides:\\*\\*|AC-[12]' .specdev/assignments/00034_add-mission-compatibility-preflight-and-incompat/design/plan.md && rg -n '^\\| Acceptance \\| Evidence \\| Result \\|$|^\\| AC-[12] .+ \\| (Passed|Failed|Blocked) \\|$' .specdev/assignments/00034_add-mission-compatibility-preflight-and-incompat/outcome.md && git diff --check",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "Delivery artifact shape, Task/acceptance references, outcome result vocabulary, and diff whitespace",
+      "status": "passed",
+      "duration_ms": 1
+    },
+    {
+      "command": "npm view ajv version && npm install ajv@8.20.0 --save",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "Resolve and install the JSON Schema validator used by Mission compatibility evaluation; package audit",
+      "status": "passed",
+      "duration_ms": 2354
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

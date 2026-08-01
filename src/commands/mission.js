@@ -29,8 +29,7 @@ import { reserveEntityId } from '../utils/id-reservation.js'
 import {
   assertMissionTransitionRecorded,
   bindReplannedQueueToGap,
-  missionGapTransitionDisposition,
-  normalizeMissionGapResolutionForGraph,
+  missionChildFollowUp,
   readMission,
   readMissionQueue,
   resolveMissionSelector,
@@ -38,6 +37,15 @@ import {
   writeMission,
   writeMissionQueue,
 } from '../utils/mission.js'
+import {
+  evaluateMissionCompatibility,
+  evaluateMissionTransitionCompatibility,
+  MissionCompatibilityError,
+} from '../utils/mission-compatibility.js'
+import {
+  migrateActiveMission,
+  readRecoveredTerminalVerification,
+} from '../utils/mission-migration.js'
 import {
   attemptActivitySummary,
   attemptLiveness,
@@ -112,12 +120,45 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
   }
   if (subcommand === 'create') return createMission(rest, flags)
   if (subcommand === 'run') return runMission(rest[0], flags)
+  if (subcommand === 'migrate') return migrateMission(rest[0], flags)
   if (subcommand === 'status') return missionStatus(rest[0], flags)
   if (subcommand === 'land') return missionLand(rest[0], flags)
   if (subcommand === 'pause') return pauseMission(rest[0], flags)
   if (subcommand === 'checkpoint') return checkpointMission(rest[0], flags)
-  console.error('Usage: specdev mission <create | run | status | land | pause | checkpoint>')
+  console.error(
+    'Usage: specdev mission <create | run | migrate | status | land | pause | checkpoint>'
+  )
   process.exitCode = 1
+}
+
+async function migrateMission(selector, flags) {
+  const context = await missionContext(selector, flags)
+  if (!context) return null
+  const running = await listAttemptRecords(context.specdevPath, {
+    kind: 'mission-controller',
+    mission: context.mission.id,
+    status: 'running',
+  })
+  for (const record of running) {
+    if ((await attemptLiveness(context.specdevPath, record.id)).state === 'live_local') {
+      return fail(
+        flags,
+        `Mission ${context.mission.id} has a live local controller; stop it before migration.`
+      )
+    }
+  }
+  try {
+    const result = await migrateActiveMission(context)
+    return emit(flags, {
+      command: 'mission migrate',
+      version: 1,
+      ...result,
+      journal: result.journal ? relativeToRepo(context.targetDir, result.journal) : null,
+      next_action: `specdev mission run ${context.mission.id}`,
+    })
+  } catch (error) {
+    return fail(flags, error.message)
+  }
 }
 
 async function createMission(args, flags) {
@@ -226,6 +267,8 @@ async function runMission(selector, flags) {
       outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
     })
   }
+  const compatibility = evaluateMissionCompatibility({ specdevPath, mission })
+  if (!compatibility.compatible) return emitMissionCompatibility(flags, mission, compatibility)
   try {
     await focusMissionRun(context)
     await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
@@ -391,6 +434,10 @@ async function runMission(selector, flags) {
       }
       return payload
     } catch (error) {
+      if (error instanceof MissionCompatibilityError) {
+        await updateAttemptRecord(specdevPath, controller.id, { status: 'blocked' })
+        return emitMissionCompatibility(flags, mission, error.compatibility)
+      }
       if (mission.status === 'completed') {
         return fail(
           flags,
@@ -419,10 +466,16 @@ async function driveMission(context) {
   const { targetDir, specdevPath, missionPath, mission, flags } = context
   while (true) {
     await assertApprovedMissionContract(missionPath, mission)
+    const compatibility = evaluateMissionCompatibility({ specdevPath, mission })
+    if (!compatibility.compatible) throw new MissionCompatibilityError(compatibility)
     const graph = getState({ workflowRoot: workflowRootFor(targetDir) })
     const node = graph.position?.node
     if (mission.pending_transition?.node === node) {
+      const pending = structuredClone(mission.pending_transition)
       await replayMissionTransition(context)
+      if (pending.node === 'final-verification' && pending.output?.passed === true) {
+        return finishMissionDelivery(context)
+      }
       continue
     }
     if (mission.pending_transition) {
@@ -479,7 +532,7 @@ async function driveMission(context) {
       running.status = queue.design_mode === 'single' ? 'completed' : 'integrated'
       running.outcome = `.specdev/assignments/${running.folder}/outcome.md`
       running.completed_at = new Date().toISOString()
-      running.follow_up = await childFollowUp(specdevPath, running)
+      running.follow_up = await missionChildFollowUp(specdevPath, running)
       await writeMissionQueue(missionPath, queue)
       const remaining = missionQueueHasRemaining(queue)
       await recordMissionChildGap(context, running)
@@ -547,7 +600,7 @@ async function driveMission(context) {
         approved: false,
         verdict: review.verdict,
         attempt: review.attempt,
-        disposition: missionGapTransitionDisposition(graph, 'semantic-failure'),
+        disposition: 'semantic-failure',
       })
       await completeMissionFailure(
         context,
@@ -565,25 +618,17 @@ async function driveMission(context) {
     }
     if (node === 'replan' || node === 'resolve-gap') {
       const gapResolution = await resolveMissionGap(context)
-      const resolved = normalizeMissionGapResolutionForGraph(graph, gapResolution)
-      if (resolved !== gapResolution) {
-        failMissionGap(mission, resolved.gap.id, resolved.disposition, {
-          reason: resolved.error,
-          evidence: resolved.attempt?.id || null,
-        })
-        await writeMission(missionPath, mission)
-      }
+      const resolved = gapResolution
       const resolutionQueue = await readMissionQueue(missionPath)
       const remaining = missionQueueHasRemaining(resolutionQueue)
       const nextGap = actionableMissionGap(mission)
-      const transitionDisposition = missionGapTransitionDisposition(graph, resolved.disposition)
       await durableMissionStep(context, node, {
         queue: relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml')),
         reason: resolved.reason,
         gap_id: resolved.gap.id,
         stage: resolved.stage,
         attempt: resolved.attempt?.id || 'none',
-        disposition: transitionDisposition,
+        disposition: resolved.disposition,
         gap_open: Boolean(nextGap),
         remaining,
         parallel: remaining ? missionWaveIsParallel(resolutionQueue) : false,
@@ -610,6 +655,16 @@ async function driveMission(context) {
       continue
     }
     if (node === 'final-verification') {
+      const recovered = await readRecoveredTerminalVerification({
+        specdevPath,
+        missionPath,
+        mission,
+      })
+      if (recovered) {
+        delete mission.terminal_recovery
+        await durableMissionStep(context, 'final-verification', recovered)
+        return finishMissionDelivery(context)
+      }
       const result = await runFinalVerification(context)
       let verificationGap = missionGapForSource(mission, 'final-verification', 'authorized-command')
       if (result.passed && verificationGap) {
@@ -634,49 +689,7 @@ async function driveMission(context) {
         disposition: result.passed ? 'evidence-closed' : 'gap-open',
       })
       if (!result.passed) continue
-      await completeMission(context)
-      await updateAttemptRecord(specdevPath, context.controller.id, { status: 'completed' })
-      const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
-        runId: mission.run_id,
-        attemptFilter: { mission: mission.id },
-        terminalOwner: { mission: mission.id, status: mission.status },
-        focus: { kind: 'mission', id: mission.id },
-      })
-      const checkpoint = await withSuppressedOutput(() =>
-        checkpointMission(
-          mission.id,
-          {
-            target: targetDir,
-            json: true,
-          },
-          { commitType: 'completion' }
-        )
-      )
-      if (!checkpoint || checkpoint.status !== 'ok' || !checkpoint.revision) {
-        throw new Error(checkpoint?.error || 'Mission completion checkpoint failed')
-      }
-      mission.final_revision = checkpoint.revision
-      const landing = await missionLanding(context, {
-        attempt: true,
-        finalRevision: checkpoint.revision,
-      })
-      const finalGit = await gitSnapshot(targetDir)
-      mission.final_dirty_paths = finalGit.dirty_paths
-      return emit(flags, {
-        command: 'mission run',
-        version: 1,
-        status: 'completed',
-        mission: mission.id,
-        branch: mission.branch,
-        base_branch: mission.base_branch,
-        final_revision: mission.final_revision,
-        dirty_paths: mission.final_dirty_paths || [],
-        checked_out_branch: finalGit.branch,
-        landing,
-        next_action: landingNextAction(mission, landing),
-        outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
-        runtime_compaction: runtime,
-      })
+      return finishMissionDelivery(context)
     }
     if (graph.status === 'completed' || graph.run?.status === 'completed') {
       return emit(flags, {
@@ -691,7 +704,14 @@ async function driveMission(context) {
 }
 
 async function durableMissionStep(context, node, output) {
-  const { targetDir, missionPath, mission } = context
+  const { targetDir, specdevPath, missionPath, mission } = context
+  const compatibility = evaluateMissionTransitionCompatibility({
+    specdevPath,
+    mission,
+    node,
+    output,
+  })
+  if (!compatibility.compatible) throw new MissionCompatibilityError(compatibility)
   mission.pending_transition = { node, output }
   await writeMission(missionPath, mission)
   const stepped = stepGuidedNode(targetDir, node, output)
@@ -702,8 +722,15 @@ async function durableMissionStep(context, node, output) {
 }
 
 async function replayMissionTransition(context) {
-  const { targetDir, missionPath, mission } = context
+  const { targetDir, specdevPath, missionPath, mission } = context
   const transition = mission.pending_transition
+  const compatibility = evaluateMissionTransitionCompatibility({
+    specdevPath,
+    mission,
+    node: transition.node,
+    output: transition.output,
+  })
+  if (!compatibility.compatible) throw new MissionCompatibilityError(compatibility)
   const stepped = stepGuidedNode(targetDir, transition.node, transition.output)
   assertMissionTransitionRecorded(stepped, transition.node, 'replay')
   delete mission.pending_transition
@@ -1236,7 +1263,7 @@ async function executeMissionWaveSequentialFallback(context, queue, waveNumber) 
     const item = refreshed.assignments.find((candidate) => candidate.id === child.id)
     item.folder = delivered.child.folder
     item.outcome = `.specdev/assignments/${delivered.child.folder}/outcome.md`
-    item.follow_up = await childFollowUp(specdevPath, item)
+    item.follow_up = await missionChildFollowUp(specdevPath, item)
     item.status = 'integrated'
     item.completed_at = new Date().toISOString()
     item.integrated_at = item.completed_at
@@ -1677,7 +1704,7 @@ async function recordIntegratedMissionChild(context, queue, child, integrationRe
   const resolved = await findAssignmentFolder(context.specdevPath, child.id)
   child.folder = resolved.name
   child.outcome = `.specdev/assignments/${resolved.name}/outcome.md`
-  child.follow_up = await childFollowUp(context.specdevPath, child)
+  child.follow_up = await missionChildFollowUp(context.specdevPath, child)
   child.status = 'integrated'
   child.integrated_at ||= new Date().toISOString()
   if (integrationRevision) {
@@ -1804,25 +1831,6 @@ async function completedOutcomeLines(missionPath, currentChildId) {
     )
     .map((item) => `- ${item.id}: ${item.outcome}`)
   return paths.length > 0 ? ['Completed prerequisite outcomes:', ...paths] : []
-}
-
-async function childFollowUp(specdevPath, child) {
-  if (!child.folder) return 'none'
-  const implementationPath = join(specdevPath, 'assignments', child.folder, 'implementation')
-  const progress = await fse.readJson(join(implementationPath, 'progress.json')).catch(() => null)
-  if (progress?.follow_up === 'required') return 'required'
-  for (const name of ['worker-result.md', 'repair-result.md']) {
-    const path = join(implementationPath, name)
-    if (!(await fse.pathExists(path))) continue
-    const result = parseResultEnvelope(await fse.readFile(path, 'utf-8'), 'worker')
-    if (result.frontmatter.follow_up === 'required') return 'required'
-  }
-  if (progress?.verification?.some((receipt) => receipt.status === 'failed')) return 'required'
-  const outcome = await fse
-    .readFile(join(specdevPath, 'assignments', child.folder, 'outcome.md'), 'utf-8')
-    .catch(() => '')
-  if (/^\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/im.test(outcome)) return 'required'
-  return 'none'
 }
 
 async function reviewMission(context) {
@@ -2259,6 +2267,53 @@ async function runFinalVerification(context) {
   return { passed: exitCode === 0, path, receipt }
 }
 
+async function finishMissionDelivery(context) {
+  const { targetDir, specdevPath, missionPath, mission, flags } = context
+  await completeMission(context)
+  await updateAttemptRecord(specdevPath, context.controller.id, { status: 'completed' })
+  const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
+    runId: mission.run_id,
+    attemptFilter: { mission: mission.id },
+    terminalOwner: { mission: mission.id, status: mission.status },
+    focus: { kind: 'mission', id: mission.id },
+  })
+  const checkpoint = await withSuppressedOutput(() =>
+    checkpointMission(
+      mission.id,
+      {
+        target: targetDir,
+        json: true,
+      },
+      { commitType: 'completion' }
+    )
+  )
+  if (!checkpoint || checkpoint.status !== 'ok' || !checkpoint.revision) {
+    throw new Error(checkpoint?.error || 'Mission completion checkpoint failed')
+  }
+  mission.final_revision = checkpoint.revision
+  const landing = await missionLanding(context, {
+    attempt: true,
+    finalRevision: checkpoint.revision,
+  })
+  const finalGit = await gitSnapshot(targetDir)
+  mission.final_dirty_paths = finalGit.dirty_paths
+  return emit(flags, {
+    command: 'mission run',
+    version: 1,
+    status: 'completed',
+    mission: mission.id,
+    branch: mission.branch,
+    base_branch: mission.base_branch,
+    final_revision: mission.final_revision,
+    dirty_paths: mission.final_dirty_paths || [],
+    checked_out_branch: finalGit.branch,
+    landing,
+    next_action: landingNextAction(mission, landing),
+    outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
+    runtime_compaction: runtime,
+  })
+}
+
 async function completeMission(context) {
   const { specdevPath, missionPath, mission } = context
   const queue = await readMissionQueue(missionPath)
@@ -2638,6 +2693,12 @@ async function missionStatus(selector, flags) {
   const queue = await readMissionQueue(context.missionPath).catch(() => null)
   const assignments = queue?.assignments || []
   const phase = readMissionPhase(context.specdevPath, context.mission.run_id)
+  const compatibility = ['completed', 'failed'].includes(context.mission.status)
+    ? null
+    : evaluateMissionCompatibility({
+        specdevPath: context.specdevPath,
+        mission: context.mission,
+      })
   const runningAttempts = await listAttemptRecords(context.specdevPath, {
     kind: 'mission-controller',
     mission: context.mission.id,
@@ -2652,10 +2713,13 @@ async function missionStatus(selector, flags) {
   const liveController = controllerStates.find((item) => item.liveness.state === 'live_local')
   const interruptedController = liveController ? null : controllerStates.at(-1) || null
   const effectiveStatus =
-    interruptedController && context.mission.status === 'running'
-      ? 'interrupted'
-      : context.mission.status
+    compatibility && !compatibility.compatible
+      ? compatibility.status
+      : interruptedController && context.mission.status === 'running'
+        ? 'interrupted'
+        : context.mission.status
   const blocker =
+    (compatibility && !compatibility.compatible ? compatibility.message : null) ||
     context.mission.blocker ||
     (interruptedController
       ? `Controller ${interruptedController.id} is ${interruptedController.liveness.state}; inspect it before takeover.`
@@ -2680,6 +2744,7 @@ async function missionStatus(selector, flags) {
       ? await missionLanding(context, { attempt: false })
       : null
   const nextAction =
+    (compatibility && !compatibility.compatible ? compatibility.next_action : null) ||
     landingNextAction(context.mission, landing) ||
     missionNextAction(context.mission, phase, Boolean(liveController), interruptedController)
   return emit(flags, {
@@ -2714,10 +2779,24 @@ async function missionStatus(selector, flags) {
     activity,
     landing,
     blocker,
+    compatibility,
     next_action: nextAction,
     outcome: (await fse.pathExists(join(context.missionPath, 'outcome.md')))
       ? relativeToRepo(context.targetDir, join(context.missionPath, 'outcome.md'))
       : null,
+  })
+}
+
+function emitMissionCompatibility(flags, mission, compatibility) {
+  return emit(flags, {
+    command: 'mission run',
+    version: 1,
+    status: compatibility.status,
+    mission: mission.id,
+    compatibility,
+    diagnostics: compatibility.diagnostics,
+    blocker: compatibility.message,
+    next_action: compatibility.next_action,
   })
 }
 

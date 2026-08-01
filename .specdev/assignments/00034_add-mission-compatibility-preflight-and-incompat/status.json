@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "00034",
+  "kind": "feature",
+  "description": "Add Mission compatibility preflight and incompatibility status semantics",
+  "run_id": "mission-lifecycle-20260801T14432200",
+  "created_at": "2026-08-01T14:59:46.263Z",
+  "review_policy": {
+    "brainstorm": "required",
+    "implementation": "required"
+  },
+  "mission": "M00001",
+  "updated_at": "2026-08-01T15:22:02.424Z",
+  "review_policy_frozen_at": "2026-08-01T15:02:30.113Z",
+  "status": "completed",
+  "completed_at": "2026-08-01T15:22:02.424Z"
+}

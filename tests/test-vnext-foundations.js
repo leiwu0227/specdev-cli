@@ -31,8 +31,6 @@ import { readCurrentFocus, writeCurrentFocus } from '../src/utils/current.js'
 import {
   assertMissionTransitionRecorded,
   bindReplannedQueueToGap,
-  missionGapTransitionDisposition,
-  normalizeMissionGapResolutionForGraph,
   validateAndReserveReplannedQueue,
 } from '../src/utils/mission.js'
 import { contractPreview } from '../src/utils/assignment-vnext.js'
@@ -717,12 +715,7 @@ the existing API stable.
   assert.equal(await readCurrentFocus(specdevPath), null)
 
   const checkpointlessRunId = 'mission-lifecycle-checkpointless-run'
-  const checkpointlessRunPath = join(
-    specdevPath,
-    '.ripplegraph',
-    'runs',
-    checkpointlessRunId
-  )
+  const checkpointlessRunPath = join(specdevPath, '.ripplegraph', 'runs', checkpointlessRunId)
   mkdirSync(checkpointlessRunPath, { recursive: true })
   await assert.rejects(
     compactCompletedWorkflowRuntime(specdevPath, {
@@ -906,25 +899,6 @@ the existing API stable.
     /changed protected Assignment/
   )
 
-  const legacyGraph = {
-    node: {
-      outputSchema: {
-        properties: { disposition: { enum: ['replanned', 'objective-failure'] } },
-      },
-    },
-  }
-  const closedGap = {
-    gap: { id: 'gap-legacy' },
-    disposition: 'evidence-closed',
-    attempt: { id: 'Attempt-legacy' },
-  }
-  const legacyOutcome = normalizeMissionGapResolutionForGraph(legacyGraph, closedGap)
-  assert.equal(legacyOutcome.disposition, 'infrastructure-failure')
-  assert.equal(
-    missionGapTransitionDisposition(legacyGraph, legacyOutcome.disposition),
-    'objective-failure'
-  )
-  assert.match(legacyOutcome.error, /explicit infrastructure failure/)
   assert.throws(
     () =>
       assertMissionTransitionRecorded(

@@ -1,0 +1,8 @@
+{
+  "command": "npm run test:mission-compatibility",
+  "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+  "scope": "integrated",
+  "status": "passed",
+  "duration_ms": 5839,
+  "completed_at": "2026-08-01T16:54:05.063Z"
+}

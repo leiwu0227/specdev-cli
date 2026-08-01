@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npx prettier --write src/utils/mission-migration.js src/utils/mission-compatibility.js src/commands/mission.js tests/test-mission-compatibility.js .specdev/assignments/00035_add-resumable-active-mission-migration-from-life/design/plan.md",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "Changed implementation, focused fixture, and plan formatting",
+      "status": "passed",
+      "duration_ms": 500
+    },
+    {
+      "command": "npm run test:mission-compatibility",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "Initial focused migration suite; later blocking review found that its interruption fixture did not mutate the Mission record",
+      "status": "passed",
+      "duration_ms": 2353
+    },
+    {
+      "command": "npx prettier --check src/utils/mission-migration.js tests/test-mission-compatibility.js && npm run test:mission-compatibility",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "Blocking review repair: final formatting and focused AC-1 through AC-3 migration coverage, including all six interruption boundaries with a real replan-to-resolve-gap Mission-record mutation and evidence reuse",
+      "status": "passed",
+      "duration_ms": 2704
+    }
+  ],
+  "deviations": [
+    "The blocking implementation review found that the original interruption loop used a node-preserving fixture, so its Mission write boundaries were no-ops and AC-2 evidence was overstated. The repair makes pending-transition validation journal-aware only when the current Mission digest exactly matches the prepared target, and the focused loop now exercises all six boundaries with the durable evidence-closed replan-to-resolve-gap mutation."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

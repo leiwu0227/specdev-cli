@@ -14,10 +14,11 @@
     "hooks/"
   ],
   "scripts": {
-    "test": "node ./tests/test-review-convergence.js && node ./tests/test-mission-gaps.js && node ./tests/test-mission-landing.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-vnext-foundations.js && node ./tests/test-implement-recovery.js && node ./tests/test-engine-integration.js && node ./tests/test-assignment-shelf.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
+    "test": "node ./tests/test-review-convergence.js && node ./tests/test-mission-gaps.js && node ./tests/test-mission-compatibility.js && node ./tests/test-mission-landing.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-vnext-foundations.js && node ./tests/test-implement-recovery.js && node ./tests/test-engine-integration.js && node ./tests/test-assignment-shelf.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
     "test:review-convergence": "node ./tests/test-review-convergence.js",
     "test:mission-gaps": "node ./tests/test-mission-gaps.js",
     "test:mission-landing": "node ./tests/test-mission-landing.js",
+    "test:mission-compatibility": "node ./tests/test-mission-compatibility.js",
     "test:reviewloop-modes": "node ./tests/test-reviewloop-modes.js",
     "test:update-skill-roots": "node ./tests/test-update-skill-roots.js",
     "test:engine-graphpackages": "node ./tests/test-engine-graphpackages.js",
@@ -28,7 +29,7 @@
     "test:engine-packaging": "node ./tests/test-engine-packaging.js",
     "test:vnext-foundations": "node ./tests/test-vnext-foundations.js",
     "test:cleanup": "rm -rf ./tests/test-*-output ./test-assignment-output",
-    "lint": "prettier --check README.md QUICKSTART.md docs/assignment-schema.md package.json package-lock.json \".github/workflows/*.{yml,yaml}\" \"src/**/*.js\" \"templates/.specdev/**/*.{md,json,yaml,yml}\" tests/test-assignment-shelf.js tests/test-engine-adapter.js tests/test-engine-graphpackages.js tests/test-engine-integration.js tests/test-engine-packaging.js tests/test-implement-recovery.js tests/test-mission-landing.js tests/test-review-convergence.js tests/test-reviewloop-modes.js tests/test-update-skill-roots.js tests/test-vnext-foundations.js",
+    "lint": "prettier --check README.md QUICKSTART.md docs/assignment-schema.md package.json package-lock.json \".github/workflows/*.{yml,yaml}\" \"src/**/*.js\" \"templates/.specdev/**/*.{md,json,yaml,yml}\" tests/test-assignment-shelf.js tests/test-engine-adapter.js tests/test-engine-graphpackages.js tests/test-engine-integration.js tests/test-engine-packaging.js tests/test-implement-recovery.js tests/test-mission-compatibility.js tests/test-mission-landing.js tests/test-review-convergence.js tests/test-reviewloop-modes.js tests/test-update-skill-roots.js tests/test-vnext-foundations.js",
     "format": "prettier --write .",
     "vendor:ripplegraph": "node ./scripts/update-ripplegraph.js",
     "preversion": "sed -i \"s/\\\"releaseDate\\\": \\\"[0-9-]*\\\"/\\\"releaseDate\\\": \\\"$(date +%Y-%m-%d)\\\"/\" package.json",
@@ -47,6 +48,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "ajv": "^8.20.0",
     "fs-extra": "^11.2.0",
     "ripplegraph": "git+https://github.com/leiwu0227/ripplegraph.git#8288620441e8fdcea2d70b52672d6b8f85436644",
     "yaml": "^2.8.4"

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:mission-compatibility",
+      "revision": "working-tree@5bf905e3ef55d418211c5427c8b499a00ef64765",
+      "scope": "Focused Mission compatibility regression command covering chronological per-obligation receipt classification",
+      "status": "passed",
+      "duration_ms": 5677
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

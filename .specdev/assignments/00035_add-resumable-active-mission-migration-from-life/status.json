@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "00035",
+  "kind": "feature",
+  "description": "Add resumable active Mission migration from lifecycle 1.3.0 to 1.4.0",
+  "run_id": "mission-lifecycle-20260801T14432200",
+  "created_at": "2026-08-01T15:22:02.448Z",
+  "review_policy": {
+    "brainstorm": "required",
+    "implementation": "required"
+  },
+  "mission": "M00001",
+  "updated_at": "2026-08-01T15:45:47.086Z",
+  "review_policy_frozen_at": "2026-08-01T15:24:57.139Z",
+  "status": "completed",
+  "completed_at": "2026-08-01T15:45:47.086Z"
+}
