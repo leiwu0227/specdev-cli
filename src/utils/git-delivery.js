@@ -67,13 +67,14 @@ export async function stageOwnedChanges(targetDir) {
   }
 }
 
-export async function commitDelivery(targetDir, { subject, trailers }) {
+export async function commitDelivery(targetDir, { subject, trailers, allowEmpty = false }) {
   const trailerText = Object.entries(trailers)
     .filter(([, value]) => value !== undefined && value !== null && String(value).trim())
     .map(([key, value]) => `${key}: ${String(value).trim()}`)
     .join('\n')
   const args = ['commit', '-m', subject]
   if (trailerText) args.push('-m', trailerText)
+  if (allowEmpty) args.push('--allow-empty')
   await gitRun(targetDir, args)
   return requireGitHead(targetDir)
 }

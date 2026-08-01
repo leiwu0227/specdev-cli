@@ -9,7 +9,7 @@ import { startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 import { reserveEntityId } from '../utils/id-reservation.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { resolveTestAuditSelector, testAuditArtifactHash } from '../utils/test-audit.js'
-import { shelfAssignmentCommand } from './assignment-shelf.js'
+import { shelfAssignmentCommand, shelfAssignmentHelp } from './assignment-shelf.js'
 import { recoverTerminalAssignmentRuntimeResidue } from '../utils/artifact-retention.js'
 import {
   ASSIGNMENT_KINDS,
@@ -25,6 +25,9 @@ import {
 const ASSIGNMENT_KIND_SET = new Set(ASSIGNMENT_KINDS)
 
 export async function assignmentCommand(positionalArgs = [], flags = {}) {
+  if (positionalArgs[0] === 'shelf' && (flags.help || flags.h)) {
+    return shelfAssignmentHelp()
+  }
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)

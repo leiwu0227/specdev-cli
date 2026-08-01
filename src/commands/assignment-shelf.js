@@ -1,4 +1,5 @@
 import { execFile as execFileCallback } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
@@ -14,9 +15,42 @@ import { relativeToRepo, writeAssignmentStatus } from '../utils/assignment-vnext
 import { workflowRootFor } from '../utils/engine.js'
 import { attemptLiveness, listAttemptRecords } from '../utils/process-record.js'
 import { compactShelvedWorkflowRuntime } from '../utils/artifact-retention.js'
+import { commitDelivery, isConcurrentCallablePath } from '../utils/git-delivery.js'
 
 const execFile = promisify(execFileCallback)
 const TERMINAL_ASSIGNMENT_STATUSES = new Set(['completed', 'abandoned'])
+const SNAPSHOT_COMMIT_TYPE = 'shelf-snapshot'
+const TERMINAL_COMMIT_TYPE = 'shelf-terminal'
+const SUMMARY_LIMIT = 8
+
+export function shelfAssignmentHelp() {
+  console.log(`Usage: specdev assignment shelf <id> --reason="<reason>" [--snapshot-token=<token>]
+
+Shelve the active standalone Assignment as an immutable terminal record.
+
+Options:
+  --reason="<reason>"       Required reason recorded in shelf.md and status.json.
+  --snapshot-token=<token> Short authorization for the displayed HEAD and dirty path set.
+  --json                    Emit structured output.
+
+Protocol:
+  Clean work uses the pre-shelf HEAD as its recovery boundary. Dirty work first
+  requires the exact token printed by this command, then creates one labelled
+  snapshot-boundary commit. SpecDev writes and compacts the shelf state and
+  creates a separate terminal shelf commit. Both commit hashes are returned.
+
+Cache and concurrency:
+  Tracked .specdev/cache/** entries are removed from Git tracking while their
+  ignored local files are preserved. Cache-only dirt needs no snapshot token.
+  Concurrent Discussion and Test Audit artifacts are reported and left unstaged.
+  A live or unverified Assignment worker/reviewer blocks shelving.
+
+Recovery:
+  Rerun the exact same command after a Git or process interruption. A labelled
+  snapshot commit is discovered by trailers and reused. Existing terminal
+  metadata is compacted and committed if its terminal commit is missing. No
+  recovery path resets commits, unstages changes, or deletes cache content.`)
+}
 
 export async function shelfAssignmentCommand(targetDir, specdevPath, positionalArgs, flags = {}) {
   const selector = String(positionalArgs[0] || '').trim()
@@ -40,11 +74,20 @@ export async function shelfAssignmentCommand(targetDir, specdevPath, positionalA
         `Assignment ${status.id} has an incomplete shelf record; restore status.json and shelf.md before retrying`
       )
     }
+    const snapshotToken =
+      status.shelf.repository.snapshot_token ||
+      (await snapshotTokenForBoundary(targetDir, status.shelf.repository.commit).catch(() => null))
+    const recoveryCommand = shelfRecoveryCommand(status.id, status.shelf.reason, snapshotToken)
     try {
-      const runtime = await finalizeShelvedRuntime(specdevPath, resolved.name, status)
-      return emit(flags, shelfPayload(targetDir, resolved, status, runtime, true))
+      return emit(
+        flags,
+        await finishShelfTransaction(targetDir, specdevPath, resolved, status, true)
+      )
     } catch (error) {
-      return fail(flags, `Could not finish idempotent shelf cleanup: ${error.message}`)
+      return fail(
+        flags,
+        `Could not finish idempotent shelf cleanup: ${error.message}\nRerun: ${recoveryCommand}`
+      )
     }
   }
   if (status.mission) {
@@ -106,7 +149,7 @@ export async function shelfAssignmentCommand(targetDir, specdevPath, positionalA
 
   let boundary
   try {
-    boundary = await establishGitBoundary(targetDir, status.id, flags)
+    boundary = await establishGitBoundary(targetDir, status.id, reason, flags)
   } catch (error) {
     return fail(flags, error.message)
   }
@@ -124,6 +167,7 @@ export async function shelfAssignmentCommand(targetDir, specdevPath, positionalA
       branch: boundary.branch,
       commit: boundary.commit,
       boundary: boundary.snapshot ? 'authorized-snapshot' : 'clean-head',
+      ...(boundary.token ? { snapshot_token: boundary.token } : {}),
     },
   }
 
@@ -138,21 +182,45 @@ export async function shelfAssignmentCommand(targetDir, specdevPath, positionalA
       shelved_at: shelvedAt,
       shelf,
     })
-    const runtime = await finalizeShelvedRuntime(specdevPath, resolved.name, nextStatus)
-    return emit(flags, shelfPayload(targetDir, resolved, nextStatus, runtime, false))
+    return emit(
+      flags,
+      await finishShelfTransaction(targetDir, specdevPath, resolved, nextStatus, false)
+    )
   } catch (error) {
     return fail(
       flags,
-      `Shelf boundary was recorded at ${boundary.commit}, but terminal cleanup did not finish: ${error.message}. Rerun the same shelf command to recover idempotently.`
+      `Shelf boundary was recorded at ${boundary.commit}, but terminal cleanup did not finish: ${error.message}\nRerun: ${boundary.recoveryCommand}`
     )
   }
 }
 
+async function finishShelfTransaction(targetDir, specdevPath, resolved, status, idempotent) {
+  const ownedPaths = await terminalOwnedPaths(targetDir, specdevPath, resolved, status)
+  await assertTerminalIndexSafe(targetDir, ownedPaths)
+  const existingTerminal = await findCommitWithTrailers(targetDir, {
+    'SpecDev-Assignment': status.id,
+    'SpecDev-Commit-Type': TERMINAL_COMMIT_TYPE,
+  })
+  const runtime = await finalizeShelvedRuntime(specdevPath, resolved.name, status)
+  await stageTerminalPaths(targetDir, ownedPaths)
+  await assertTerminalIndexSafe(targetDir, ownedPaths)
+
+  let terminalCommit = existingTerminal?.hash || null
+  if ((await gitStagedPaths(targetDir)).length > 0 || !terminalCommit) {
+    terminalCommit = await commitDelivery(targetDir, {
+      subject: `specdev(assignment): shelf ${status.id}`,
+      trailers: {
+        'SpecDev-Assignment': status.id,
+        'SpecDev-Commit-Type': TERMINAL_COMMIT_TYPE,
+      },
+      allowEmpty: !terminalCommit,
+    })
+  }
+  return shelfPayload(targetDir, resolved, status, runtime, idempotent, terminalCommit)
+}
+
 async function finalizeShelvedRuntime(specdevPath, assignmentName, status) {
   const path = runDir(specdevPath, status.run_id)
-  if (!(await fse.pathExists(path))) {
-    return { compacted: false, run_id: status.run_id, attempts_removed: 0 }
-  }
   if (await fse.pathExists(join(path, 'checkpoint.json'))) {
     const checkpoint = readCheckpoint(specdevPath, status.run_id)
     if (checkpoint.status !== 'abandoned') {
@@ -176,34 +244,89 @@ async function finalizeShelvedRuntime(specdevPath, assignmentName, status) {
   })
 }
 
-async function establishGitBoundary(targetDir, assignmentId, flags) {
-  const [branch, commit, dirtyPaths] = await Promise.all([
-    gitText(targetDir, ['branch', '--show-current']),
-    gitText(targetDir, ['rev-parse', 'HEAD']),
-    gitDirtyPaths(targetDir),
-  ])
-  if (!commit) throw new Error('Shelving requires a repository with an existing Git commit')
-  if (dirtyPaths.length === 0) {
-    return { branch: branch || null, commit, snapshot: false }
+async function establishGitBoundary(targetDir, assignmentId, reason, flags) {
+  if (flags['snapshot-paths'] !== undefined) {
+    throw new Error('--snapshot-paths is no longer supported; use the displayed --snapshot-token')
   }
 
-  const authorized = parseSnapshotPaths(flags['snapshot-paths'])
-  if (!authorized) {
+  const recovered = await findCommitWithTrailers(targetDir, {
+    'SpecDev-Assignment': assignmentId,
+    'SpecDev-Commit-Type': SNAPSHOT_COMMIT_TYPE,
+  })
+  if (recovered) {
+    const token = trailerValue(recovered.message, 'SpecDev-Snapshot-Token')
+    return {
+      branch: (await gitText(targetDir, ['branch', '--show-current'])) || null,
+      commit: recovered.hash,
+      snapshot: true,
+      token,
+      recoveryCommand: shelfRecoveryCommand(assignmentId, reason, token),
+    }
+  }
+
+  const initial = await inspectShelfGitState(targetDir)
+  if (!initial.head) throw new Error('Shelving requires a repository with an existing Git commit')
+  if (initial.stagedConcurrentPaths.length > 0) {
     throw new Error(
-      `Worktree changes require an explicit snapshot decision. Review git status, then rerun with --snapshot-paths='${JSON.stringify(dirtyPaths)}' to authorize exactly these paths.`
+      `Concurrent Discussion/Test Audit artifacts are already staged; shelving will not commit or unstage them: ${formatPathSummary(summarizePaths(initial.stagedConcurrentPaths))}`
     )
   }
-  assertExactPaths(authorized, dirtyPaths)
+  const expectedToken = snapshotToken(assignmentId, initial.head, initial.authorizedPaths)
+  const suppliedToken = parseSnapshotToken(flags['snapshot-token'])
+  if (initial.authorizedPaths.length > 0 && suppliedToken !== expectedToken) {
+    throw new Error(
+      snapshotDecisionMessage(
+        assignmentId,
+        reason,
+        initial,
+        expectedToken,
+        suppliedToken ? 'The snapshot token no longer matches the current HEAD and path set.' : null
+      )
+    )
+  }
+  if (initial.authorizedPaths.length === 0 && suppliedToken) {
+    throw new Error(
+      snapshotDecisionMessage(
+        assignmentId,
+        reason,
+        initial,
+        null,
+        'No snapshot token is needed because there are no non-disposable dirty paths.'
+      )
+    )
+  }
 
-  const unchanged = await gitDirtyPaths(targetDir)
-  assertExactPaths(authorized, unchanged)
-  await git(targetDir, ['--literal-pathspecs', 'add', '-A', '--', ...authorized])
-  assertExactPaths(authorized, await gitDirtyPaths(targetDir))
-  await git(targetDir, ['commit', '-m', `specdev(assignment): shelf ${assignmentId}`])
+  const current = await inspectShelfGitState(targetDir)
+  assertUnchangedShelfState(initial, current, assignmentId, reason, suppliedToken)
+  if (current.snapshotPaths.length === 0) {
+    await retireTrackedCache(targetDir, current.trackedCachePaths)
+    return {
+      branch: current.branch,
+      commit: current.head,
+      snapshot: false,
+      token: suppliedToken,
+      recoveryCommand: shelfRecoveryCommand(assignmentId, reason, suppliedToken),
+    }
+  }
+
+  await git(targetDir, ['--literal-pathspecs', 'add', '-A', '--', ...current.snapshotPaths])
+  await retireTrackedCache(targetDir, current.trackedCachePaths)
+  const beforeCommit = await inspectShelfGitState(targetDir)
+  assertUnchangedShelfState(current, beforeCommit, assignmentId, reason, suppliedToken)
+  const commit = await commitDelivery(targetDir, {
+    subject: `specdev(assignment): shelf snapshot ${assignmentId}`,
+    trailers: {
+      'SpecDev-Assignment': assignmentId,
+      'SpecDev-Commit-Type': SNAPSHOT_COMMIT_TYPE,
+      'SpecDev-Snapshot-Token': suppliedToken,
+    },
+  })
   return {
     branch: (await gitText(targetDir, ['branch', '--show-current'])) || null,
-    commit: await gitText(targetDir, ['rev-parse', 'HEAD']),
+    commit,
     snapshot: true,
+    token: suppliedToken,
+    recoveryCommand: shelfRecoveryCommand(assignmentId, reason, suppliedToken),
   }
 }
 
@@ -262,7 +385,7 @@ ${verification.length > 0 ? verification.join('\n') : 'No historical verificatio
 `
 }
 
-function shelfPayload(targetDir, resolved, status, runtime, idempotent) {
+function shelfPayload(targetDir, resolved, status, runtime, idempotent, terminalCommit) {
   return {
     command: 'assignment-shelf',
     version: 1,
@@ -271,6 +394,10 @@ function shelfPayload(targetDir, resolved, status, runtime, idempotent) {
     name: resolved.name,
     path: relativeToRepo(targetDir, resolved.path),
     shelf: status.shelf,
+    repository: {
+      boundary_commit: status.shelf.repository.commit,
+      terminal_commit: terminalCommit,
+    },
     immutable: true,
     idempotent,
     runtime_compaction: runtime,
@@ -283,45 +410,248 @@ function shelfReason(positionalArgs, flags) {
   return String(value || '').trim()
 }
 
-function parseSnapshotPaths(value) {
+function parseSnapshotToken(value) {
   if (value === undefined) return null
-  if (typeof value !== 'string') {
-    throw new Error('--snapshot-paths requires a JSON array of repository-relative paths')
+  if (typeof value !== 'string' || !/^[a-f0-9]{16}$/i.test(value.trim())) {
+    throw new Error('--snapshot-token must be the 16-character token printed by this command')
   }
-  let parsed
-  try {
-    parsed = JSON.parse(value)
-  } catch {
-    throw new Error('--snapshot-paths must be valid JSON, for example \'["src/file.js"]\'')
-  }
-  if (
-    !Array.isArray(parsed) ||
-    parsed.length === 0 ||
-    parsed.some(
-      (path) =>
-        typeof path !== 'string' ||
-        !path.trim() ||
-        path.startsWith('/') ||
-        path === '..' ||
-        path.startsWith('../') ||
-        path.includes('/../')
-    )
-  ) {
-    throw new Error('--snapshot-paths must be a non-empty JSON array of repository-relative paths')
-  }
-  return [...new Set(parsed.map((path) => path.replaceAll('\\', '/')))].sort()
+  return value.trim().toLowerCase()
 }
 
-function assertExactPaths(authorized, dirtyPaths) {
-  const expected = [...new Set(dirtyPaths)].sort()
-  const actual = [...new Set(authorized)].sort()
-  if (expected.length !== actual.length || expected.some((path, index) => path !== actual[index])) {
-    const missing = expected.filter((path) => !actual.includes(path))
-    const extra = actual.filter((path) => !expected.includes(path))
+function snapshotToken(assignmentId, head, paths) {
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        assignment: String(assignmentId),
+        head: String(head),
+        paths: [...new Set(paths)].sort(),
+      })
+    )
+    .digest('hex')
+    .slice(0, 16)
+}
+
+async function inspectShelfGitState(targetDir) {
+  const [branch, head, dirtyPaths, trackedCachePaths, stagedPaths] = await Promise.all([
+    gitText(targetDir, ['branch', '--show-current']),
+    gitText(targetDir, ['rev-parse', 'HEAD']),
+    gitDirtyPaths(targetDir),
+    gitTrackedCachePaths(targetDir),
+    gitStagedPaths(targetDir),
+  ])
+  const dirtyCachePaths = dirtyPaths.filter(isCachePath)
+  const concurrentPaths = dirtyPaths.filter(
+    (path) => !isCachePath(path) && isConcurrentCallablePath(path)
+  )
+  const authorizedPaths = dirtyPaths.filter((path) => !isCachePath(path))
+  const snapshotPaths = authorizedPaths.filter((path) => !isConcurrentCallablePath(path))
+  return {
+    branch: branch || null,
+    head,
+    dirtyCachePaths,
+    trackedCachePaths,
+    concurrentPaths,
+    stagedConcurrentPaths: stagedPaths.filter(isConcurrentCallablePath),
+    authorizedPaths,
+    snapshotPaths,
+  }
+}
+
+function assertUnchangedShelfState(before, after, assignmentId, reason, suppliedToken) {
+  if (after.stagedConcurrentPaths.length > 0) {
     throw new Error(
-      `Snapshot authorization must exactly match the current dirty paths. Missing: ${missing.join(', ') || 'none'}. Extra: ${extra.join(', ') || 'none'}.`
+      `Concurrent Discussion/Test Audit artifacts became staged; shelving will not commit or unstage them: ${formatPathSummary(summarizePaths(after.stagedConcurrentPaths))}`
     )
   }
+  const currentToken = snapshotToken(assignmentId, after.head, after.authorizedPaths)
+  const expectedToken = snapshotToken(assignmentId, before.head, before.authorizedPaths)
+  if (
+    before.head !== after.head ||
+    expectedToken !== currentToken ||
+    (suppliedToken && suppliedToken !== currentToken)
+  ) {
+    throw new Error(
+      snapshotDecisionMessage(
+        assignmentId,
+        reason,
+        after,
+        after.authorizedPaths.length > 0 ? currentToken : null,
+        'HEAD or dirty path membership changed before the snapshot boundary.'
+      )
+    )
+  }
+}
+
+function snapshotDecisionMessage(assignmentId, reason, state, token, prefix) {
+  const authorized = summarizePaths(state.authorizedPaths)
+  const cache = summarizePaths([...new Set([...state.dirtyCachePaths, ...state.trackedCachePaths])])
+  const concurrent = summarizePaths(state.concurrentPaths)
+  const lines = []
+  if (prefix) lines.push(prefix)
+  if (state.authorizedPaths.length > 0 && !prefix) {
+    lines.push('Worktree changes require an explicit snapshot decision.')
+  }
+  lines.push(`HEAD: ${state.head || '(missing)'}`)
+  lines.push(`Non-disposable dirty paths: ${formatPathSummary(authorized)}`)
+  lines.push(
+    `Disposable cache paths: ${formatPathSummary(cache)} (dirty ${state.dirtyCachePaths.length}, tracked ${state.trackedCachePaths.length})`
+  )
+  lines.push(`Concurrent callable paths left unstaged: ${formatPathSummary(concurrent)}`)
+  if (token || state.authorizedPaths.length === 0) {
+    lines.push(`Rerun: ${shelfRecoveryCommand(assignmentId, reason, token)}`)
+  }
+  return lines.join('\n')
+}
+
+function summarizePaths(paths) {
+  const normalized = [...new Set(paths)].sort()
+  return {
+    count: normalized.length,
+    preview: normalized.slice(0, SUMMARY_LIMIT),
+    omitted: Math.max(0, normalized.length - SUMMARY_LIMIT),
+  }
+}
+
+function formatPathSummary(summary) {
+  if (summary.count === 0) return '0'
+  const preview = summary.preview.join(', ')
+  return `${summary.count} (${preview}${summary.omitted > 0 ? `, +${summary.omitted} more` : ''})`
+}
+
+function shelfRecoveryCommand(assignmentId, reason, token = null) {
+  const safeReason = String(reason || '')
+    .replaceAll('\\', '\\\\')
+    .replaceAll('"', '\\"')
+  return `specdev assignment shelf ${assignmentId} --reason="${safeReason}"${token ? ` --snapshot-token=${token}` : ''}`
+}
+
+function isCachePath(path) {
+  return path === '.specdev/cache' || path.startsWith('.specdev/cache/')
+}
+
+async function gitTrackedCachePaths(targetDir) {
+  const output = await gitOutput(targetDir, [
+    'ls-files',
+    '-z',
+    '--',
+    '.specdev/cache',
+    '.specdev/cache/**',
+  ])
+  return output
+    .split('\0')
+    .map((path) => path.replaceAll('\\', '/'))
+    .filter(Boolean)
+    .sort()
+}
+
+async function retireTrackedCache(targetDir, paths) {
+  if (paths.length === 0) return
+  await git(targetDir, [
+    '--literal-pathspecs',
+    'rm',
+    '--cached',
+    '--force',
+    '-r',
+    '--ignore-unmatch',
+    '--',
+    ...paths,
+  ])
+}
+
+async function terminalOwnedPaths(targetDir, specdevPath, resolved, status) {
+  const attempts = await listAttemptRecords(specdevPath, { assignment: resolved.name })
+  return [
+    relativeToRepo(targetDir, join(resolved.path, 'shelf.md')),
+    relativeToRepo(targetDir, join(resolved.path, 'status.json')),
+    relativeToRepo(targetDir, runDir(specdevPath, status.run_id)),
+    relativeToRepo(targetDir, join(specdevPath, '.ripplegraph', 'current.json')),
+    ...attempts.map((attempt) =>
+      relativeToRepo(targetDir, join(specdevPath, 'processes', `${attempt.id}.yaml`))
+    ),
+  ]
+}
+
+async function stageTerminalPaths(targetDir, paths) {
+  const stageable = []
+  for (const path of [...new Set(paths)]) {
+    const exists = await fse.pathExists(join(targetDir, path))
+    const tracked = Boolean(await gitText(targetDir, ['ls-files', '--', path]))
+    if (exists || tracked) stageable.push(path)
+  }
+  if (stageable.length > 0) {
+    await git(targetDir, ['--literal-pathspecs', 'add', '-A', '--', ...stageable])
+  }
+}
+
+async function assertTerminalIndexSafe(targetDir, ownedPaths) {
+  const staged = await gitStagedPaths(targetDir)
+  const unexpected = staged.filter(
+    (path) => !isCachePath(path) && !ownedPaths.some((owned) => pathWithin(path, owned))
+  )
+  if (unexpected.length > 0) {
+    throw new Error(
+      `Terminal shelf commit cannot include staged paths outside its ownership: ${formatPathSummary(summarizePaths(unexpected))}`
+    )
+  }
+}
+
+function pathWithin(path, root) {
+  return path === root || path.startsWith(`${root}/`)
+}
+
+async function gitStagedPaths(targetDir) {
+  const output = await gitOutput(targetDir, [
+    'diff',
+    '--cached',
+    '--name-only',
+    '--no-renames',
+    '-z',
+  ])
+  return output
+    .split('\0')
+    .map((path) => path.replaceAll('\\', '/'))
+    .filter(Boolean)
+}
+
+async function findCommitWithTrailers(targetDir, trailers) {
+  const first = Object.entries(trailers)[0]
+  const hashes = (
+    await gitOutput(targetDir, [
+      'log',
+      'HEAD',
+      '--format=%H',
+      '--fixed-strings',
+      `--grep=${first[0]}: ${first[1]}`,
+    ])
+  )
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+  for (const hash of hashes) {
+    const message = await gitOutput(targetDir, ['show', '-s', '--format=%B', hash])
+    const matches = Object.entries(trailers).every(([key, value]) =>
+      message.split(/\r?\n/).some((line) => line.trim() === `${key}: ${value}`)
+    )
+    if (matches) return { hash, message }
+  }
+  return null
+}
+
+function trailerValue(message, key) {
+  const prefix = `${key}: `
+  return (
+    message
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line.startsWith(prefix))
+      ?.slice(prefix.length)
+      .trim() || null
+  )
+}
+
+async function snapshotTokenForBoundary(targetDir, hash) {
+  const message = await gitOutput(targetDir, ['show', '-s', '--format=%B', hash])
+  return trailerValue(message, 'SpecDev-Snapshot-Token')
 }
 
 async function gitDirtyPaths(targetDir) {
@@ -386,7 +716,8 @@ function emit(flags, payload) {
   else {
     console.log(`Assignment ${payload.id} is shelved and immutable.`)
     console.log(`Shelf: ${payload.shelf.artifact}`)
-    console.log(`Git recovery boundary: ${payload.shelf.repository.commit}`)
+    console.log(`Git recovery boundary: ${payload.repository.boundary_commit}`)
+    console.log(`Terminal shelf commit: ${payload.repository.terminal_commit}`)
     console.log(`Continue as a fresh Assignment: ${payload.next_action}`)
   }
   return payload

@@ -46,6 +46,10 @@ const commandHandlers = {
 
 export async function dispatchCommand(command, positionalArgs, flags) {
   if (flags.help || flags.h) {
+    if (command === 'assignment' && positionalArgs[0] === 'shelf') {
+      await assignmentCommand(positionalArgs, flags)
+      return
+    }
     helpCommand(flags)
     return
   }

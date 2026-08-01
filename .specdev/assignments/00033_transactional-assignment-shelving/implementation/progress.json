@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "./node_modules/.bin/prettier --write src/commands/assignment-shelf.js src/commands/assignment.js src/commands/dispatch.js src/utils/git-delivery.js tests/test-assignment-shelf.js .specdev/assignments/00033_transactional-assignment-shelving/design/plan.md",
+      "revision": "working-tree@453724f7e1e9197267ef2f6d0d6f7f2a6b07dc48",
+      "scope": "Formatting of changed product, focused fixture, and plan files",
+      "status": "passed",
+      "duration_ms": 300
+    },
+    {
+      "command": "node --check src/commands/assignment-shelf.js && node --check src/commands/assignment.js && node --check src/commands/dispatch.js && node --check src/utils/git-delivery.js && node --check tests/test-assignment-shelf.js",
+      "revision": "working-tree@453724f7e1e9197267ef2f6d0d6f7f2a6b07dc48",
+      "scope": "Syntax-only parsing of all changed JavaScript files",
+      "status": "passed",
+      "duration_ms": 300
+    },
+    {
+      "command": "npm run test:assignment-shelf",
+      "revision": "working-tree@453724f7e1e9197267ef2f6d0d6f7f2a6b07dc48",
+      "scope": "Focused command-level Assignment shelving regression fixture",
+      "status": "passed",
+      "duration_ms": 10083
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}
