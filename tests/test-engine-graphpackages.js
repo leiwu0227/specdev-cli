@@ -14,6 +14,7 @@ const expectedIds = [
   'mission-lifecycle',
   'project-orientation',
   'test-audit-lifecycle',
+  'update-completion',
   'workspace-dispatcher',
 ]
 
@@ -32,7 +33,7 @@ const callables = packages.filter((manifest) => manifest.kind === 'callable')
 assert.equal(dispatcher.length, 1, 'exactly one dispatcher is registered')
 assert.equal(dispatcher[0].id, 'workspace-dispatcher')
 assert.equal(workflows.length, 4, 'four focused workflows are registered')
-assert.equal(callables.length, 2, 'two callable workflows are registered')
+assert.equal(callables.length, 3, 'three callable workflows are registered')
 
 for (const graph of workflows) {
   assert.ok(graph.title, `${graph.id} has a product title`)
@@ -50,6 +51,7 @@ for (const graph of workflows) {
 assert.deepEqual(callables.map((graph) => graph.id).sort(), [
   'discussion-lifecycle',
   'test-audit-lifecycle',
+  'update-completion',
 ])
 for (const graph of callables) assert.ok(graph.nodes[graph.entry])
 

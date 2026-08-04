@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:update-workflow",
+      "revision": "working-tree@c09c2547bd9b1554c8d919b225f108b491f85bc4",
+      "scope": "AC-1, AC-2, AC-3 focused update completion workflow; exposed a public receipt path missing its operation identity",
+      "status": "failed",
+      "duration_ms": 998
+    },
+    {
+      "command": "npm run test:update-workflow",
+      "revision": "working-tree@c09c2547bd9b1554c8d919b225f108b491f85bc4",
+      "scope": "same focused workflow after durable receipt-path projection; exposed over-broad generated-legacy adapter classification",
+      "status": "failed",
+      "duration_ms": 1416
+    },
+    {
+      "command": "npm run test:update-workflow",
+      "revision": "working-tree@c09c2547bd9b1554c8d919b225f108b491f85bc4",
+      "scope": "same focused workflow after conservative repository-heading ambiguity classification",
+      "status": "passed",
+      "duration_ms": 2385
+    },
+    {
+      "command": "npm run test:update-workflow",
+      "revision": "working-tree@c09c2547bd9b1554c8d919b225f108b491f85bc4",
+      "scope": "blocking review repair: reject dry-run operation resumption without changing callable state or writing a terminal receipt",
+      "status": "passed",
+      "duration_ms": 2504
+    }
+  ],
+  "deviations": [
+    "The first authorized run exposed that the public receipt returned RippleGraph's call-relative artifact path; the repair now projects the durable repository-relative path containing the update operation ID.",
+    "The second run exposed that generated-legacy detection treated a repository-domain heading as safely replaceable when its line contained `.specdev`; the repair restricts generated adapters to known adapter or explicit SpecDev headings and fails other boundaries safely.",
+    "Blocking implementation review found that `--dry-run` bypassed the read-only branch when combined with `--operation`; the repair rejects that combination before callable resumption and adds state-and-artifact preservation coverage."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

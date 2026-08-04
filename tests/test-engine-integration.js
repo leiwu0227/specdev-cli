@@ -223,7 +223,7 @@ try {
   configureGit(root)
   const init = runJson(root, ['init', '--platform=none', '--json'])
   assert.equal(init.status, 'ok')
-  assert.equal(init.guided_workflows, 6)
+  assert.equal(init.guided_workflows, 7)
   assert.equal(existsSync(join(root, '.specdev', 'workflow.json')), true)
   assert.equal(existsSync(join(root, '.specdev', 'workflow.yaml')), false)
   assert.equal(existsSync(join(root, '.specdev', 'agents.yaml')), true)
@@ -234,7 +234,7 @@ try {
 
   const registryPath = join(root, '.specdev', '.ripplegraph', 'registry.json')
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
-  assert.equal(Object.keys(registry.graphs).length, 7)
+  assert.equal(Object.keys(registry.graphs).length, 8)
   assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.2\.0$/)
   assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.4\.0$/)
   assert.equal(registry.graphs['discussion-lifecycle'].kind, 'callable')
@@ -587,6 +587,7 @@ try {
     'mission-lifecycle',
     'project-orientation',
     'test-audit-lifecycle',
+    'update-completion',
     'workspace-dispatcher',
   ])
   assert.equal(existsSync(join(root, '.specdev', 'workflows', 'catalog.json')), true)

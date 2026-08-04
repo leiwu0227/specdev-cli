@@ -1,0 +1,133 @@
+{
+  "id": "update-completion",
+  "version": "1.0.0",
+  "kind": "callable",
+  "title": "Update completion",
+  "description": "Provider-neutral semantic reconciliation of stale SpecDev platform adapters after a deterministic runtime update.",
+  "activationHints": ["update completion", "adapter reconciliation", "resume update"],
+  "inputSchema": {
+    "type": "object",
+    "required": ["operation_id", "runtime", "adapters", "started_at"],
+    "properties": {
+      "operation_id": { "type": "string" },
+      "runtime": {
+        "type": "object",
+        "required": ["cli_version", "release_date", "updated_paths"],
+        "properties": {
+          "cli_version": { "type": "string" },
+          "release_date": { "type": "string" },
+          "updated_paths": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      },
+      "adapters": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "path",
+            "status",
+            "orientation_present",
+            "obsolete_references",
+            "stale_signatures",
+            "before_sha256",
+            "protected_regions"
+          ],
+          "properties": {
+            "path": { "type": "string" },
+            "status": {
+              "enum": [
+                "current",
+                "backfilled",
+                "needs_reconciliation",
+                "needs_orientation",
+                "ambiguous",
+                "missing"
+              ]
+            },
+            "orientation_present": { "type": "boolean" },
+            "obsolete_references": { "type": "array", "items": { "type": "string" } },
+            "stale_signatures": { "type": "array", "items": { "type": "string" } },
+            "before_sha256": { "type": "string" },
+            "protected_regions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["key", "sha256"],
+                "properties": { "key": { "type": "string" }, "sha256": { "type": "string" } },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "started_at": { "type": "string" }
+    },
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": ["operation_id", "runtime_status", "adapter_status", "adapters", "completed_at"],
+    "properties": {
+      "operation_id": { "type": "string" },
+      "runtime_status": { "const": "updated" },
+      "adapter_status": { "const": "current" },
+      "adapters": { "type": "array", "items": { "type": "object" } },
+      "completed_at": { "type": "string" }
+    },
+    "additionalProperties": false
+  },
+  "entry": "reconcile-adapters",
+  "nodes": {
+    "reconcile-adapters": {
+      "purpose": "Reconcile only bounded stale SpecDev guidance in supported platform adapters.",
+      "instructions": "Read the installed .specdev/_main.md and .specdev/_guides/update_guide.md. Edit only stale SpecDev guidance identified by the update command, preserve every project-owned section, and do not rewrite an ambiguous boundary. Then run the exact specdev update --operation command emitted by the host.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["reconciled", "preservation_evidence"],
+        "properties": {
+          "reconciled": { "const": true },
+          "preservation_evidence": { "type": "array", "items": { "type": "object" } }
+        },
+        "additionalProperties": false
+      },
+      "operatorContext": {
+        "phase": "adapter-reconciliation",
+        "command": "specdev update --operation=<id>"
+      },
+      "edges": [{ "to": "validate-adapters" }]
+    },
+    "validate-adapters": {
+      "purpose": "Validate current orientation, obsolete-reference removal, and preservation evidence.",
+      "instructions": "Run the exact specdev update --operation command again if interrupted. The deterministic host validates the adapter invariants and emits the terminal receipt.",
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "operation_id",
+          "runtime_status",
+          "adapter_status",
+          "adapters",
+          "completed_at"
+        ],
+        "properties": {
+          "operation_id": { "type": "string" },
+          "runtime_status": { "const": "updated" },
+          "adapter_status": { "const": "current" },
+          "adapters": { "type": "array", "items": { "type": "object" } },
+          "completed_at": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "operatorContext": {
+        "phase": "adapter-validation",
+        "command": "specdev update --operation=<id>"
+      },
+      "edges": [{ "to": "done" }]
+    },
+    "done": {
+      "purpose": "The runtime update and adapter reconciliation are complete.",
+      "terminal": true
+    }
+  }
+}

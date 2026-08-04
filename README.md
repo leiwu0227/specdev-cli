@@ -27,6 +27,11 @@ Refresh an existing installation with:
 specdev update
 ```
 
+If stale SpecDev clauses remain in a platform adapter, the command returns a
+durable operation and an exact `specdev update --operation=UPD00001` resume
+command. `specdev update --status` lists interrupted operations; dry-run never
+creates one.
+
 ## Examples
 
 In normal use, you do not drive SpecDev by memorizing commands. Tell your coding

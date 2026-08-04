@@ -209,7 +209,9 @@ completed work and stale FAQs that may deserve curated knowledge updates.
 | Command                                | Purpose                                          |
 | -------------------------------------- | ------------------------------------------------ |
 | `specdev init`                         | Initialize portable SpecDev state                |
-| `specdev update`                       | Refresh managed runtime files and graph packages |
+| `specdev update`                       | Refresh runtime and start adapter reconciliation |
+| `specdev update --status`              | List durable update completion operations        |
+| `specdev update --operation=UPD00001`  | Validate or resume one update operation          |
 | `specdev start`                        | Fill or review project context                   |
 | `specdev next --json`                  | Show the canonical focused-workflow action       |
 | `specdev adhoc start "<scope>"`        | Start one bounded change without a graph         |
