@@ -1,0 +1,54 @@
+{
+  "runId": "mission-lifecycle-20260804T00370435",
+  "status": "active",
+  "rootGraph": "mission-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "mission-lifecycle",
+    "node": "design"
+  },
+  "createdAt": "2026-08-04T00:37:04.356Z",
+  "updatedAt": "2026-08-04T00:49:13.479Z",
+  "outputs": {
+    "create-mission": {
+      "id": "M00002",
+      "path": ".specdev/missions/M00002_make-live-specdev-workflows-visibly-progressive-",
+      "objective": "Make live SpecDev workflows visibly progressive, concise, and self-reporting"
+    },
+    "brainstorm": {
+      "contract": ".specdev/missions/M00002_make-live-specdev-workflows-visibly-progressive-/brainstorm/contract.md",
+      "contract_hash": "f807741f24148b58f7bba60216c0686c95ce99afd2fa7cd40d13d2670f0cfbd2"
+    },
+    "approve-mission": {
+      "approved": true,
+      "contract_hash": "f807741f24148b58f7bba60216c0686c95ce99afd2fa7cd40d13d2670f0cfbd2",
+      "actor": "user",
+      "approved_at": "2026-08-04T00:49:13.465Z",
+      "review_override": false,
+      "base_revision": "3f9fd1afcb18676895a36fadd4edaa0c41747a3d",
+      "branch": "specdev/M00002-make-live-specdev-workflows-visi"
+    }
+  },
+  "gateDecisions": {
+    "approve-mission": {
+      "approved": true,
+      "contract_hash": "f807741f24148b58f7bba60216c0686c95ce99afd2fa7cd40d13d2670f0cfbd2",
+      "actor": "user",
+      "approved_at": "2026-08-04T00:49:13.465Z",
+      "review_override": false,
+      "base_revision": "3f9fd1afcb18676895a36fadd4edaa0c41747a3d",
+      "branch": "specdev/M00002-make-live-specdev-workflows-visi"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "mission-lifecycle",
+    "graphVersion": "1.4.0",
+    "packagePath": "workflows/mission-lifecycle@1.4.0"
+  },
+  "stack": [],
+  "frameCounter": 0
+}

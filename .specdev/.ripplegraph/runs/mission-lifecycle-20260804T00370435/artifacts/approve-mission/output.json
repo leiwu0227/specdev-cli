@@ -1,0 +1,9 @@
+{
+  "approved": true,
+  "contract_hash": "f807741f24148b58f7bba60216c0686c95ce99afd2fa7cd40d13d2670f0cfbd2",
+  "actor": "user",
+  "approved_at": "2026-08-04T00:49:13.465Z",
+  "review_override": false,
+  "base_revision": "3f9fd1afcb18676895a36fadd4edaa0c41747a3d",
+  "branch": "specdev/M00002-make-live-specdev-workflows-visi"
+}
