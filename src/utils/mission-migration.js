@@ -15,6 +15,7 @@ const MIGRATION_ID = `${GRAPH_ID}@${SOURCE_VERSION}-to-${TARGET_VERSION}`
 const TARGET_PACKAGE_PATH = `workflows/${GRAPH_ID}@${TARGET_VERSION}`
 const JOURNAL_NAME = 'mission-migration.json'
 const ROOT_NODE_MAP = Object.freeze({ replan: 'resolve-gap' })
+const PRE_DESIGN_PHASES = new Set(['create-mission', 'brainstorm', 'approve-mission'])
 const TERMINAL_FAILURE_PREFIX = 'Pinned Mission graph cannot route evidence closure for gap '
 const TERMINAL_FAILURE_SUFFIX = '; ending with an explicit infrastructure failure.'
 
@@ -42,6 +43,36 @@ export function readMissionMigrationJournal(specdevPath, runId) {
     return journal && typeof journal === 'object' && !Array.isArray(journal) ? journal : null
   } catch (error) {
     throw new MissionMigrationError(`Cannot read Mission migration journal: ${error.message}`)
+  }
+}
+
+export async function inspectMissionMigration({ specdevPath, missionPath, mission }) {
+  let checkpoint
+  let journal
+  try {
+    checkpoint = readCheckpoint(specdevPath, mission.run_id)
+    journal = readMissionMigrationJournal(specdevPath, mission.run_id)
+    const plan = await planMigration({
+      specdevPath,
+      missionPath,
+      mission,
+      checkpoint,
+      journal,
+    })
+    return {
+      supported: true,
+      phase: plan.phase,
+      mode: plan.mode,
+      queue: plan.queueState,
+    }
+  } catch (error) {
+    return {
+      supported: false,
+      phase: checkpoint ? rootMissionPhase(checkpoint) : null,
+      mode: checkpoint ? migrationMode(checkpoint) : null,
+      code: error.code || 'invalid-migration-state',
+      diagnostic: error.message,
+    }
   }
 }
 
@@ -121,9 +152,13 @@ export async function migrateActiveMission({
     return alreadyMigratedResult(currentMission, currentCheckpoint, journalPath, existingJournal)
   }
   if (!existingJournal && pinnedVersion(currentCheckpoint) === TARGET_VERSION) {
-    validateMissionIdentity(currentMission, currentCheckpoint)
+    const mode = migrationMode(currentCheckpoint)
+    validateMissionIdentity(currentMission, currentCheckpoint, {
+      requireApproval: mode !== 'pre-design',
+    })
     const targetPackage = loadPinnedPackage(specdevPath, TARGET_PACKAGE_PATH, TARGET_VERSION)
     validateDurablePosition(specdevPath, currentCheckpoint, targetPackage.manifest)
+    await validatePhaseArtifacts(missionPath, currentMission, mode)
     return alreadyMigratedResult(currentMission, currentCheckpoint, journalPath)
   }
 
@@ -155,7 +190,8 @@ export async function migrateActiveMission({
       source: {
         mission_digest: digest(plan.sourceMission),
         checkpoint_digest: digest(plan.sourceCheckpoint),
-        queue_digest: plan.queueDigest,
+        queue: plan.queueState,
+        ...(plan.queueDigest ? { queue_digest: plan.queueDigest } : {}),
       },
       target: {
         mission_digest: digest(plan.targetMission),
@@ -174,7 +210,8 @@ export async function migrateActiveMission({
               mission_digest: digest(plan.sourceMission),
               checkpoint_digest: digest(plan.sourceCheckpoint),
               status_digest: digest(plan.sourceStatus),
-              queue_digest: plan.queueDigest,
+              queue: plan.queueState,
+              ...(plan.queueDigest ? { queue_digest: plan.queueDigest } : {}),
             },
             target: {
               mission_digest: digest(plan.targetMission),
@@ -196,13 +233,13 @@ export async function migrateActiveMission({
   }
 
   if (
-    plan.queueDigest !== journal.source.queue_digest ||
+    !journalQueueMatches(plan, journal) ||
     digest(plan.targetMission) !== journal.target.mission_digest ||
     digest(plan.targetCheckpoint) !== journal.target.checkpoint_digest ||
     (journal.target.status_digest && digest(plan.targetStatus) !== journal.target.status_digest)
   ) {
     throw new MissionMigrationError(
-      'Mission migration inputs diverged from the prepared queue or target mapping; inspect them before retrying.'
+      'Mission migration inputs diverged from the prepared phase artifacts or target mapping; inspect them before retrying.'
     )
   }
 
@@ -289,11 +326,19 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
   if (currentMission.id !== mission.id || currentMission.run_id !== mission.run_id) {
     throw new MissionMigrationError('Mission record changed while migration was being prepared.')
   }
-  const queuePath = join(missionPath, 'design', 'assignments.yaml')
-  const queue = await readYamlFile(queuePath, 'Mission queue')
-  validateQueueAndGaps(currentMission, queue)
+  const checkpointVersion = pinnedVersion(checkpoint)
+  const phase = rootMissionPhase(checkpoint)
+  const mode = migrationMode(checkpoint)
+  if (![SOURCE_VERSION, TARGET_VERSION].includes(checkpointVersion)) {
+    throw new MissionMigrationError(
+      `Unsupported Mission migration source ${GRAPH_ID}@${checkpointVersion || 'unknown'}; only ${GRAPH_ID}@${SOURCE_VERSION} can migrate to @${TARGET_VERSION}.`,
+      'unsupported-version'
+    )
+  }
   const targetPackage = loadPinnedPackage(specdevPath, TARGET_PACKAGE_PATH, TARGET_VERSION)
   if (journal) validateJournal(journal, mission)
+
+  const queue = await validatePhaseArtifacts(missionPath, currentMission, mode)
   if (journal?.recovery) {
     return resumeTerminalRecoveryPlan({
       specdevPath,
@@ -316,15 +361,9 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
     })
   }
 
-  validateMissionIdentity(currentMission, checkpoint)
-
-  const checkpointVersion = pinnedVersion(checkpoint)
-  if (![SOURCE_VERSION, TARGET_VERSION].includes(checkpointVersion)) {
-    throw new MissionMigrationError(
-      `Unsupported Mission migration source ${GRAPH_ID}@${checkpointVersion || 'unknown'}; only ${GRAPH_ID}@${SOURCE_VERSION} can migrate to @${TARGET_VERSION}.`,
-      'unsupported-version'
-    )
-  }
+  validateMissionIdentity(currentMission, checkpoint, {
+    requireApproval: mode !== 'pre-design',
+  })
   if (checkpointVersion === TARGET_VERSION && !journal) {
     throw new MissionMigrationError(
       `Mission ${mission.id} is already pinned to ${GRAPH_ID}@${TARGET_VERSION}.`
@@ -353,12 +392,16 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
     targetMission: missionMapping.targetMission,
     targetCheckpoint,
     evidenceTransitionReused: missionMapping.evidenceTransitionReused,
-    queueDigest: digest(queue),
+    phase,
+    mode,
+    queueState:
+      mode === 'pre-design' ? { state: 'absent' } : { state: 'present', digest: digest(queue) },
+    queueDigest: mode === 'pre-design' ? undefined : digest(queue),
   }
 }
 
-function validateMissionIdentity(mission, checkpoint) {
-  validateMissionAuthority(mission, checkpoint)
+function validateMissionIdentity(mission, checkpoint, { requireApproval = true } = {}) {
+  validateMissionAuthority(mission, checkpoint, { requireApproval })
   if (!mission || typeof mission !== 'object')
     throw new MissionMigrationError('Mission is missing.')
   if (['completed', 'failed'].includes(mission.status)) {
@@ -374,7 +417,7 @@ function validateMissionIdentity(mission, checkpoint) {
   }
 }
 
-function validateMissionAuthority(mission, checkpoint) {
+function validateMissionAuthority(mission, checkpoint, { requireApproval = true } = {}) {
   if (!mission || typeof mission !== 'object')
     throw new MissionMigrationError('Mission is missing.')
   if (!mission.id || !mission.run_id) {
@@ -383,8 +426,11 @@ function validateMissionAuthority(mission, checkpoint) {
   if (checkpoint.runId !== mission.run_id || checkpoint.rootGraph !== GRAPH_ID) {
     throw new MissionMigrationError('Mission identity does not match its durable RippleGraph run.')
   }
-  if (!mission.approved_contract_hash || !mission.approved_at) {
+  if (requireApproval && (!mission.approved_contract_hash || !mission.approved_at)) {
     throw new MissionMigrationError('Mission approval authority is incomplete.')
+  }
+  if (Boolean(mission.approved_contract_hash) !== Boolean(mission.approved_at)) {
+    throw new MissionMigrationError('Mission approval authority is partially recorded.')
   }
 }
 
@@ -585,6 +631,9 @@ async function planTerminalRecovery({
     targetCheckpoint,
     targetStatus,
     evidenceTransitionReused: true,
+    phase: rootMissionPhase(checkpoint),
+    mode: 'designed',
+    queueState: { state: 'present', digest: digest(queue) },
     queueDigest: digest(queue),
     recovery,
   }
@@ -671,6 +720,9 @@ async function resumeTerminalRecoveryPlan({
     targetCheckpoint,
     targetStatus,
     evidenceTransitionReused: true,
+    phase: rootMissionPhase(checkpoint),
+    mode: 'designed',
+    queueState: { state: 'present', digest: digest(queue) },
     queueDigest: digest(queue),
     recovery: journal.recovery,
   }
@@ -811,6 +863,22 @@ function validateQueueAndGaps(mission, queue) {
       }
     }
   }
+}
+
+async function validatePhaseArtifacts(missionPath, mission, mode) {
+  const queuePath = join(missionPath, 'design', 'assignments.yaml')
+  if (mode === 'pre-design') {
+    if (await fse.pathExists(queuePath)) {
+      throw new MissionMigrationError(
+        'A pre-Design Mission must not have design/assignments.yaml; inspect the phase and queue before migration.',
+        'invalid-phase-artifacts'
+      )
+    }
+    return null
+  }
+  const queue = await readYamlFile(queuePath, 'Mission queue')
+  validateQueueAndGaps(mission, queue)
+  return queue
 }
 
 function mapMissionRecord(
@@ -969,6 +1037,12 @@ function loadPinnedPackage(specdevPath, packagePath, expectedVersion) {
       `Pinned graph package path escapes the workflow root: ${packagePath}`
     )
   }
+  if (!fse.existsSync(packageRoot)) {
+    throw new MissionMigrationError(
+      `${GRAPH_ID}@${expectedVersion} graph package is not installed at ${packagePath}.`,
+      expectedVersion === TARGET_VERSION ? 'target-package-missing' : 'graph-package-missing'
+    )
+  }
   let loaded
   try {
     loaded = loadGraphPackage(packageRoot)
@@ -1026,6 +1100,18 @@ function validateJournal(journal, mission) {
     )
   }
   if (
+    journal.source.queue &&
+    !(
+      journal.source.queue.state === 'absent' ||
+      (journal.source.queue.state === 'present' &&
+        journal.source.queue.digest &&
+        (!journal.source.queue_digest ||
+          journal.source.queue_digest === journal.source.queue.digest))
+    )
+  ) {
+    throw new MissionMigrationError('Mission migration journal queue state is incomplete.')
+  }
+  if (
     journal.recovery &&
     (journal.recovery.kind !== 'terminal-evidence-closure' ||
       !journal.recovery.gap_id ||
@@ -1078,6 +1164,20 @@ function assertRecoverableDigest(label, actual, source, target) {
   }
 }
 
+function journalQueueMatches(plan, journal) {
+  const recorded = journal.source.queue
+  if (!recorded) return plan.queueDigest === journal.source.queue_digest
+  if (recorded.state === 'absent') {
+    return plan.queueState?.state === 'absent' && journal.source.queue_digest === undefined
+  }
+  return (
+    recorded.state === 'present' &&
+    plan.queueState?.state === 'present' &&
+    plan.queueDigest === recorded.digest &&
+    (!journal.source.queue_digest || journal.source.queue_digest === recorded.digest)
+  )
+}
+
 function pinnedVersion(checkpoint) {
   return checkpoint?.graphSource?.graphId === GRAPH_ID ? checkpoint.graphSource.graphVersion : null
 }
@@ -1085,6 +1185,10 @@ function pinnedVersion(checkpoint) {
 function rootMissionPhase(checkpoint) {
   if (checkpoint.position?.graph === GRAPH_ID) return checkpoint.position.node || null
   return checkpoint.stack?.[0]?.parent?.node || null
+}
+
+function migrationMode(checkpoint) {
+  return PRE_DESIGN_PHASES.has(rootMissionPhase(checkpoint)) ? 'pre-design' : 'designed'
 }
 
 function mapRootNode(node) {

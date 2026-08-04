@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00043",
+  "kind": "change",
+  "description": "Make Mission lifecycle compatibility preflight and migration phase-aware before Design",
+  "run_id": "assignment-lifecycle-20260804T02001591",
+  "created_at": "2026-08-04T02:00:15.925Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-08-04T02:29:58.755Z",
+  "review_policy_frozen_at": "2026-08-04T02:07:01.027Z",
+  "approved_at": "2026-08-04T02:07:01.027Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "badbb507ed6585330f5285ca12226ffa1fc1ea48",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-08-04T02:07:10.376Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-08-04T02:29:58.735Z",
+  "activity": {
+    "attempt_count": 3,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 3,
+    "provider_attempts": {
+      "total": 3,
+      "completed": 2,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1377708,
+    "agent_duration_ms": 996847,
+    "provider_reported_tokens": 175024
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-08-04T02:29:58.755Z"
+}

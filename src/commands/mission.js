@@ -267,7 +267,7 @@ async function runMission(selector, flags) {
       outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
     })
   }
-  const compatibility = evaluateMissionCompatibility({ specdevPath, mission })
+  const compatibility = await evaluateMissionCompatibility({ specdevPath, missionPath, mission })
   if (!compatibility.compatible) return emitMissionCompatibility(flags, mission, compatibility)
   try {
     await focusMissionRun(context)
@@ -466,7 +466,7 @@ async function driveMission(context) {
   const { targetDir, specdevPath, missionPath, mission, flags } = context
   while (true) {
     await assertApprovedMissionContract(missionPath, mission)
-    const compatibility = evaluateMissionCompatibility({ specdevPath, mission })
+    const compatibility = await evaluateMissionCompatibility({ specdevPath, missionPath, mission })
     if (!compatibility.compatible) throw new MissionCompatibilityError(compatibility)
     const graph = getState({ workflowRoot: workflowRootFor(targetDir) })
     const node = graph.position?.node
@@ -705,8 +705,9 @@ async function driveMission(context) {
 
 async function durableMissionStep(context, node, output) {
   const { targetDir, specdevPath, missionPath, mission } = context
-  const compatibility = evaluateMissionTransitionCompatibility({
+  const compatibility = await evaluateMissionTransitionCompatibility({
     specdevPath,
+    missionPath,
     mission,
     node,
     output,
@@ -724,8 +725,9 @@ async function durableMissionStep(context, node, output) {
 async function replayMissionTransition(context) {
   const { targetDir, specdevPath, missionPath, mission } = context
   const transition = mission.pending_transition
-  const compatibility = evaluateMissionTransitionCompatibility({
+  const compatibility = await evaluateMissionTransitionCompatibility({
     specdevPath,
+    missionPath,
     mission,
     node: transition.node,
     output: transition.output,
@@ -2695,8 +2697,9 @@ async function missionStatus(selector, flags) {
   const phase = readMissionPhase(context.specdevPath, context.mission.run_id)
   const compatibility = ['completed', 'failed'].includes(context.mission.status)
     ? null
-    : evaluateMissionCompatibility({
+    : await evaluateMissionCompatibility({
         specdevPath: context.specdevPath,
+        missionPath: context.missionPath,
         mission: context.mission,
       })
   const runningAttempts = await listAttemptRecords(context.specdevPath, {

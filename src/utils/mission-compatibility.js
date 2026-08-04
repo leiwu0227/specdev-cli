@@ -1,7 +1,7 @@
 import { resolve, sep } from 'node:path'
 import Ajv from 'ajv'
 import { loadGraphPackage, readCheckpoint } from 'ripplegraph'
-import { readMissionMigrationJournal } from './mission-migration.js'
+import { inspectMissionMigration, readMissionMigrationJournal } from './mission-migration.js'
 
 const CONTROLLER_GRAPH_ID = 'mission-lifecycle'
 const CONTROLLER_GRAPH_VERSION = '1.4.0'
@@ -59,7 +59,7 @@ export class MissionCompatibilityError extends Error {
   }
 }
 
-export function evaluateMissionCompatibility({ specdevPath, mission }) {
+export async function evaluateMissionCompatibility({ specdevPath, missionPath, mission }) {
   let journal
   try {
     journal = readMissionMigrationJournal(specdevPath, mission.run_id)
@@ -72,18 +72,8 @@ export function evaluateMissionCompatibility({ specdevPath, mission }) {
     )
   }
   if (journal && journal.status !== 'completed') {
-    const command = `specdev mission migrate ${mission.id}`
-    return {
-      status: 'migration-required',
-      compatible: false,
-      controller: `${CONTROLLER_GRAPH_ID}@${CONTROLLER_GRAPH_VERSION}`,
-      graph: journal.from || { id: CONTROLLER_GRAPH_ID, version: 'unknown', path: null },
-      phase: null,
-      diagnostics: [`Mission migration is incomplete at ${journal.status || 'unknown'}.`],
-      migration: { from: journal.from, to: journal.to, command },
-      next_action: command,
-      message: `Mission ${mission.id} has an incomplete migration. Resume it with: ${command}`,
-    }
+    const readiness = await inspectMissionMigration({ specdevPath, missionPath, mission })
+    return migrationCompatibilityResult({ mission, journal, readiness })
   }
   const loaded = loadPinnedMissionGraph(specdevPath, mission.run_id)
   if (!loaded.ok) {
@@ -105,29 +95,21 @@ export function evaluateMissionCompatibility({ specdevPath, mission }) {
   }
 
   if (MIGRATABLE_GRAPH_VERSIONS.has(graph.version)) {
-    const command = `specdev mission migrate ${mission.id}`
-    return {
-      status: 'migration-required',
-      compatible: false,
-      controller: `${CONTROLLER_GRAPH_ID}@${CONTROLLER_GRAPH_VERSION}`,
-      graph,
-      phase,
-      diagnostics,
-      migration: {
-        from: `${graph.id}@${graph.version}`,
-        to: `${CONTROLLER_GRAPH_ID}@${CONTROLLER_GRAPH_VERSION}`,
-        command,
-      },
-      next_action: command,
-      message: `Mission ${mission.id} is pinned to ${graph.id}@${graph.version}, which requires migration before this controller can continue. Run: ${command}`,
-    }
+    const readiness = await inspectMissionMigration({ specdevPath, missionPath, mission })
+    return migrationCompatibilityResult({ mission, graph, phase, diagnostics, readiness })
   }
 
   return incompatibleResult(mission.id, graph, phase, diagnostics)
 }
 
-export function evaluateMissionTransitionCompatibility({ specdevPath, mission, node, output }) {
-  const compatibility = evaluateMissionCompatibility({ specdevPath, mission })
+export async function evaluateMissionTransitionCompatibility({
+  specdevPath,
+  missionPath,
+  mission,
+  node,
+  output,
+}) {
+  const compatibility = await evaluateMissionCompatibility({ specdevPath, missionPath, mission })
   if (!compatibility.compatible) return compatibility
 
   const loaded = loadPinnedMissionGraph(specdevPath, mission.run_id)
@@ -144,6 +126,69 @@ export function evaluateMissionTransitionCompatibility({ specdevPath, mission, n
   return diagnostic
     ? incompatibleResult(mission.id, loaded.graph, loaded.phase, [diagnostic])
     : compatibility
+}
+
+function migrationCompatibilityResult({
+  mission,
+  graph,
+  phase,
+  diagnostics = [],
+  readiness,
+  journal,
+}) {
+  const controller = `${CONTROLLER_GRAPH_ID}@${CONTROLLER_GRAPH_VERSION}`
+  const sourceGraph = graph ||
+    journal?.from || { id: CONTROLLER_GRAPH_ID, version: 'unknown', path: null }
+  const effectivePhase = readiness.phase || phase || null
+  if (readiness.code === 'target-package-missing') {
+    const command = 'specdev update'
+    return {
+      status: 'update-required',
+      compatible: false,
+      controller,
+      graph: sourceGraph,
+      phase: effectivePhase,
+      diagnostics: [...diagnostics, readiness.diagnostic],
+      next_action: command,
+      message: `Mission ${mission.id} requires ${controller}, but that target package is not installed. Run: ${command}`,
+    }
+  }
+  if (!readiness.supported) {
+    const command = `specdev mission status ${mission.id} --json`
+    return {
+      status: 'migration-unsupported',
+      compatible: false,
+      controller,
+      graph: sourceGraph,
+      phase: effectivePhase,
+      diagnostics: [...diagnostics, readiness.diagnostic],
+      next_action: command,
+      message: `Mission ${mission.id} cannot run its ${sourceGraph.id}@${sourceGraph.version} to ${controller} migration from ${effectivePhase || 'an unknown phase'}. ${readiness.diagnostic}`,
+    }
+  }
+
+  const command = `specdev mission migrate ${mission.id}`
+  const incomplete = journal && journal.status !== 'completed'
+  return {
+    status: 'migration-required',
+    compatible: false,
+    controller,
+    graph: sourceGraph,
+    phase: effectivePhase,
+    diagnostics: incomplete
+      ? [`Mission migration is incomplete at ${journal.status || 'unknown'}.`]
+      : diagnostics,
+    migration: {
+      from: journal?.from || `${sourceGraph.id}@${sourceGraph.version}`,
+      to: journal?.to || controller,
+      command,
+      mode: readiness.mode,
+    },
+    next_action: command,
+    message: incomplete
+      ? `Mission ${mission.id} has an incomplete migration. Resume it with: ${command}`
+      : `Mission ${mission.id} is pinned to ${sourceGraph.id}@${sourceGraph.version}, which requires migration before this controller can continue. Run: ${command}`,
+  }
 }
 
 function loadPinnedMissionGraph(specdevPath, runId) {

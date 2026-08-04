@@ -55,6 +55,8 @@ function fixture(version, mutateGraph = (graph) => graph) {
   mkdirSync(join(missionPath, 'design'), { recursive: true })
   mkdirSync(packagePath, { recursive: true })
   mkdirSync(join(specdevPath, '.ripplegraph'), { recursive: true })
+  mkdirSync(join(specdevPath, '_guides'), { recursive: true })
+  mkdirSync(join(specdevPath, 'project_notes'), { recursive: true })
   writeFileSync(
     join(specdevPath, 'workflow.json'),
     `${JSON.stringify(
@@ -239,6 +241,132 @@ function migrationContext(value) {
     missionPath: value.missionPath,
     mission: value.mission,
   }
+}
+
+function preDesignContract() {
+  return `# Mission contract
+
+## Objective and context
+
+Exercise pre-Design lifecycle migration.
+
+## Scope and non-goals
+
+- In scope: compatibility migration.
+
+## Expected behavior
+
+The Mission continues without a Design queue.
+
+## Important decisions
+
+- Preserve durable authority.
+
+## Constraints and invariants
+
+- Do not launch providers.
+
+## Delegated and reserved authority
+
+- Delegated: exact checkpoint mapping.
+
+## Risks and assumptions
+
+- Pre-Design evidence combinations vary.
+
+## Verification authority
+
+- Focused compatibility fixture only.
+
+## Acceptance criteria
+
+- AC-1: The Mission migrates in place.
+
+## Mission execution shape
+
+- Initial child plan: single
+
+## Final integrated verification
+
+- Command: \`node focused-check.js\`
+`
+}
+
+function preparePreDesign(value, phase, { approved = false, review = false } = {}) {
+  rmSync(join(value.missionPath, 'design', 'assignments.yaml'))
+  const contract = preDesignContract()
+  const contractHash = createHash('sha256').update(contract).digest('hex')
+  mkdirSync(join(value.missionPath, 'brainstorm'), { recursive: true })
+  writeFileSync(join(value.missionPath, 'brainstorm', 'contract.md'), contract, 'utf8')
+  if (review) {
+    mkdirSync(join(value.missionPath, 'review'), { recursive: true })
+    writeFileSync(
+      join(value.missionPath, 'review', 'brainstorm-notes.md'),
+      '# Preserved Brainstorm review evidence\n',
+      'utf8'
+    )
+  }
+
+  const mission = readMission(value.missionPath)
+  mission.status = approved
+    ? 'running'
+    : phase === 'approve-mission'
+      ? 'awaiting_approval'
+      : 'brainstorming'
+  mission.source_discussion = { id: 'D00001', hash: 'discussion-source-sha256' }
+  if (approved) {
+    mission.approved_contract_hash = contractHash
+    mission.approved_at = '2026-08-01T00:01:00.000Z'
+    mission.base_revision = 'fixture-base-revision'
+  } else {
+    delete mission.approved_contract_hash
+    delete mission.approved_at
+    delete mission.base_revision
+  }
+  writeMission(value.missionPath, mission)
+  value.mission = mission
+
+  const checkpoint = readCheckpoint(value.specdevPath, value.mission.run_id)
+  checkpoint.position = { graph: 'mission-lifecycle', node: phase }
+  checkpoint.stack = []
+  checkpoint.outputs = {}
+  checkpoint.gateDecisions = {}
+  if (phase !== 'create-mission') {
+    checkpoint.outputs['create-mission'] = {
+      id: mission.id,
+      path: '.specdev/missions/M00001_fixture',
+      objective: mission.objective,
+    }
+  }
+  if (phase === 'approve-mission') {
+    checkpoint.outputs.brainstorm = {
+      contract: '.specdev/missions/M00001_fixture/brainstorm/contract.md',
+      contract_hash: contractHash,
+    }
+  }
+  if (approved) {
+    checkpoint.gateDecisions['approve-mission'] = {
+      approved: true,
+      contract_hash: contractHash,
+      actor: 'user',
+      approved_at: mission.approved_at,
+      base_revision: mission.base_revision,
+      branch: mission.branch,
+    }
+  }
+  writeCheckpoint(value.specdevPath, checkpoint)
+  writeFileSync(
+    join(value.specdevPath, '.ripplegraph', 'current.json'),
+    `${JSON.stringify({ focusedRunId: value.mission.run_id }, null, 2)}\n`,
+    'utf8'
+  )
+  const runPath = join(value.specdevPath, '.ripplegraph', 'runs', value.mission.run_id)
+  writeFileSync(
+    join(runPath, 'transition-log.jsonl'),
+    '{"preserved":"pre-design-transition-history"}\n',
+    'utf8'
+  )
+  return value
 }
 
 function prepareEvidenceClosure(value) {
@@ -601,18 +729,307 @@ try {
   assert.match(knownHuman, /Mission M00001: migration-required/)
   assert.match(knownHuman, /specdev mission migrate M00001/)
   assert.equal(
-    evaluateMissionTransitionCompatibility({
-      specdevPath: known.specdevPath,
-      mission: known.mission,
-      node: 'mission-review',
-      output: {
-        approved: false,
-        verdict: 'review/mission-verdict.md',
-        attempt: 'Attempt-00001',
-        disposition: 'semantic-failure',
-      },
-    }).status,
+    (
+      await evaluateMissionTransitionCompatibility({
+        specdevPath: known.specdevPath,
+        missionPath: known.missionPath,
+        mission: known.mission,
+        node: 'mission-review',
+        output: {
+          approved: false,
+          verdict: 'review/mission-verdict.md',
+          attempt: 'Attempt-00001',
+          disposition: 'semantic-failure',
+        },
+      })
+    ).status,
     'migration-required'
+  )
+
+  const updateCandidate = preparePreDesign(fixture('1.3.0', knownLegacyGraph), 'brainstorm', {
+    review: true,
+  })
+  const updateTargetPath = join(updateCandidate.specdevPath, 'workflows', 'mission-lifecycle@1.4.0')
+  rmSync(updateTargetPath, { recursive: true, force: true })
+  const updateMissionBefore = readFileSync(
+    join(updateCandidate.missionPath, 'mission.yaml'),
+    'utf8'
+  )
+  const updateCheckpointPath = join(
+    updateCandidate.specdevPath,
+    '.ripplegraph',
+    'runs',
+    updateCandidate.mission.run_id,
+    'checkpoint.json'
+  )
+  const updateCheckpointBefore = readFileSync(updateCheckpointPath, 'utf8')
+  const updateContractPath = join(updateCandidate.missionPath, 'brainstorm', 'contract.md')
+  const updateReviewPath = join(updateCandidate.missionPath, 'review', 'brainstorm-notes.md')
+  const updateContractBefore = readFileSync(updateContractPath, 'utf8')
+  const updateReviewBefore = readFileSync(updateReviewPath, 'utf8')
+  const updateRequired = runJson(updateCandidate.root, ['mission', 'status', 'M00001', '--json'])
+  assert.equal(updateRequired.status, 'update-required')
+  assert.equal(updateRequired.next_action, 'specdev update')
+  assert.equal(
+    readFileSync(join(updateCandidate.missionPath, 'mission.yaml'), 'utf8'),
+    updateMissionBefore
+  )
+  assert.equal(readFileSync(updateCheckpointPath, 'utf8'), updateCheckpointBefore)
+  assert.equal(readFileSync(updateContractPath, 'utf8'), updateContractBefore)
+  assert.equal(readFileSync(updateReviewPath, 'utf8'), updateReviewBefore)
+  assert.equal(
+    existsSync(
+      join(
+        updateCandidate.specdevPath,
+        '.ripplegraph',
+        'runs',
+        updateCandidate.mission.run_id,
+        'mission-migration.json'
+      )
+    ),
+    false
+  )
+  const updated = runJson(updateCandidate.root, ['update', '--json'])
+  assert.equal(updated.status, 'ok')
+  assert.equal(existsSync(updateTargetPath), true)
+  assert.equal(
+    readCheckpoint(updateCandidate.specdevPath, updateCandidate.mission.run_id).graphSource
+      .graphVersion,
+    '1.3.0'
+  )
+  assert.equal(
+    runJson(updateCandidate.root, ['mission', 'status', 'M00001', '--json']).status,
+    'migration-required'
+  )
+  assert.equal(
+    runJson(updateCandidate.root, ['mission', 'migrate', 'M00001', '--json']).status,
+    'migrated'
+  )
+
+  const preDesignCases = [
+    { phase: 'create-mission', approved: false, review: false },
+    { phase: 'brainstorm', approved: false, review: true },
+    { phase: 'approve-mission', approved: false, review: true },
+    { phase: 'approve-mission', approved: true, review: true },
+  ]
+  for (const fixtureCase of preDesignCases) {
+    const value = preparePreDesign(
+      fixture('1.3.0', knownLegacyGraph),
+      fixtureCase.phase,
+      fixtureCase
+    )
+    const missionPath = join(value.missionPath, 'mission.yaml')
+    const contractPath = join(value.missionPath, 'brainstorm', 'contract.md')
+    const reviewPath = join(value.missionPath, 'review', 'brainstorm-notes.md')
+    const checkpointBefore = readCheckpoint(value.specdevPath, value.mission.run_id)
+    const transitionPath = join(
+      value.specdevPath,
+      '.ripplegraph',
+      'runs',
+      value.mission.run_id,
+      'transition-log.jsonl'
+    )
+    const missionBefore = readFileSync(missionPath, 'utf8')
+    const contractBefore = readFileSync(contractPath, 'utf8')
+    const transitionBefore = readFileSync(transitionPath, 'utf8')
+    const reviewBefore = fixtureCase.review ? readFileSync(reviewPath, 'utf8') : null
+    const compatibility = runJson(value.root, ['mission', 'status', 'M00001', '--json'])
+    assert.equal(compatibility.status, 'migration-required', fixtureCase.phase)
+    assert.equal(compatibility.compatibility.phase, fixtureCase.phase, fixtureCase.phase)
+    assert.equal(compatibility.compatibility.migration.mode, 'pre-design', fixtureCase.phase)
+
+    const migrated = runJson(value.root, ['mission', 'migrate', 'M00001', '--json'])
+    assert.equal(migrated.status, 'migrated', fixtureCase.phase)
+    assert.equal(readFileSync(missionPath, 'utf8'), missionBefore, fixtureCase.phase)
+    assert.equal(readFileSync(contractPath, 'utf8'), contractBefore, fixtureCase.phase)
+    assert.equal(readFileSync(transitionPath, 'utf8'), transitionBefore, fixtureCase.phase)
+    if (fixtureCase.review) assert.equal(readFileSync(reviewPath, 'utf8'), reviewBefore)
+    assert.equal(existsSync(join(value.missionPath, 'design', 'assignments.yaml')), false)
+    assert.equal(existsSync(join(value.specdevPath, 'processes')), false)
+    assert.equal(existsSync(join(value.specdevPath, '.id-counters.json')), false)
+
+    const checkpointAfter = readCheckpoint(value.specdevPath, value.mission.run_id)
+    const expectedCheckpoint = structuredClone(checkpointBefore)
+    expectedCheckpoint.graphSource = {
+      kind: 'package',
+      graphId: 'mission-lifecycle',
+      graphVersion: '1.4.0',
+      packagePath: 'workflows/mission-lifecycle@1.4.0',
+    }
+    assert.deepEqual(checkpointAfter, expectedCheckpoint, fixtureCase.phase)
+    const journal = JSON.parse(
+      readFileSync(
+        join(
+          value.specdevPath,
+          '.ripplegraph',
+          'runs',
+          value.mission.run_id,
+          'mission-migration.json'
+        ),
+        'utf8'
+      )
+    )
+    assert.deepEqual(journal.source.queue, { state: 'absent' }, fixtureCase.phase)
+    assert.equal(journal.source.queue_digest, undefined, fixtureCase.phase)
+    assert.equal(
+      (
+        await evaluateMissionCompatibility({
+          specdevPath: value.specdevPath,
+          missionPath: value.missionPath,
+          mission: value.mission,
+        })
+      ).status,
+      'compatible',
+      fixtureCase.phase
+    )
+    if (!fixtureCase.approved) {
+      const continued = runJson(value.root, ['mission', 'run', 'M00001', '--json'])
+      assert.equal(continued.status, 'awaiting_approval', fixtureCase.phase)
+      assert.equal(existsSync(join(value.specdevPath, 'processes')), false)
+      assert.equal(existsSync(join(value.missionPath, 'design', 'assignments.yaml')), false)
+      assert.equal(existsSync(join(value.specdevPath, '.id-counters.json')), false)
+    }
+  }
+
+  for (const fixtureCase of preDesignCases) {
+    for (const boundary of [
+      'journal-prepared',
+      'mission-written',
+      'mission-progress-recorded',
+      'checkpoint-written',
+      'checkpoint-progress-recorded',
+      'journal-completed',
+    ]) {
+      const interrupted = preparePreDesign(
+        fixture('1.3.0', knownLegacyGraph),
+        fixtureCase.phase,
+        fixtureCase
+      )
+      const missionBefore = readFileSync(join(interrupted.missionPath, 'mission.yaml'), 'utf8')
+      const contractBefore = readFileSync(
+        join(interrupted.missionPath, 'brainstorm', 'contract.md'),
+        'utf8'
+      )
+      const transitionPath = join(
+        interrupted.specdevPath,
+        '.ripplegraph',
+        'runs',
+        interrupted.mission.run_id,
+        'transition-log.jsonl'
+      )
+      const transitionBefore = readFileSync(transitionPath, 'utf8')
+      await assert.rejects(
+        migrateActiveMission({ ...migrationContext(interrupted), interruptAfter: boundary }),
+        (error) => error instanceof MissionMigrationInterruptionError && error.boundary === boundary
+      )
+      const resumed = await migrateActiveMission(migrationContext(interrupted))
+      assert.equal(resumed.already_migrated, boundary === 'journal-completed')
+      assert.equal(
+        readCheckpoint(interrupted.specdevPath, interrupted.mission.run_id).graphSource
+          .graphVersion,
+        '1.4.0'
+      )
+      assert.equal(
+        readFileSync(join(interrupted.missionPath, 'mission.yaml'), 'utf8'),
+        missionBefore
+      )
+      assert.equal(
+        readFileSync(join(interrupted.missionPath, 'brainstorm', 'contract.md'), 'utf8'),
+        contractBefore
+      )
+      assert.equal(readFileSync(transitionPath, 'utf8'), transitionBefore)
+      assert.equal(existsSync(join(interrupted.missionPath, 'design', 'assignments.yaml')), false)
+      assert.equal(existsSync(join(interrupted.specdevPath, 'processes')), false)
+      const journalPath = join(
+        interrupted.specdevPath,
+        '.ripplegraph',
+        'runs',
+        interrupted.mission.run_id,
+        'mission-migration.json'
+      )
+      const journal = JSON.parse(readFileSync(journalPath, 'utf8'))
+      assert.equal(journal.status, 'completed')
+      assert.deepEqual(journal.source.queue, { state: 'absent' })
+      const stableJournal = readFileSync(journalPath, 'utf8')
+      await migrateActiveMission(migrationContext(interrupted))
+      assert.equal(readFileSync(journalPath, 'utf8'), stableJournal)
+    }
+  }
+
+  const invalidPreDesign = preparePreDesign(fixture('1.3.0', knownLegacyGraph), 'brainstorm')
+  writeFileSync(
+    join(invalidPreDesign.missionPath, 'design', 'assignments.yaml'),
+    stringify({ version: 2, design_mode: 'single', assignments: [] }),
+    'utf8'
+  )
+  const invalidMissionPath = join(invalidPreDesign.missionPath, 'mission.yaml')
+  const invalidContractPath = join(invalidPreDesign.missionPath, 'brainstorm', 'contract.md')
+  const invalidQueuePath = join(invalidPreDesign.missionPath, 'design', 'assignments.yaml')
+  const invalidCheckpointPath = join(
+    invalidPreDesign.specdevPath,
+    '.ripplegraph',
+    'runs',
+    invalidPreDesign.mission.run_id,
+    'checkpoint.json'
+  )
+  const invalidPaths = [
+    invalidMissionPath,
+    invalidCheckpointPath,
+    invalidContractPath,
+    invalidQueuePath,
+  ]
+  const invalidBefore = invalidPaths.map((path) => readFileSync(path, 'utf8'))
+  const invalidStatus = runJson(invalidPreDesign.root, ['mission', 'status', 'M00001', '--json'])
+  assert.equal(invalidStatus.status, 'migration-unsupported')
+  assert.match(invalidStatus.blocker, /pre-Design Mission must not have/)
+  run(invalidPreDesign.root, ['mission', 'migrate', 'M00001', '--json'], 1)
+  assert.deepEqual(
+    invalidPaths.map((path) => readFileSync(path, 'utf8')),
+    invalidBefore
+  )
+  assert.equal(
+    existsSync(
+      join(
+        invalidPreDesign.specdevPath,
+        '.ripplegraph',
+        'runs',
+        invalidPreDesign.mission.run_id,
+        'mission-migration.json'
+      )
+    ),
+    false
+  )
+
+  const missingDesignedQueue = fixture('1.3.0', knownLegacyGraph)
+  rmSync(join(missingDesignedQueue.missionPath, 'design', 'assignments.yaml'))
+  const missingQueueStatus = runJson(missingDesignedQueue.root, [
+    'mission',
+    'status',
+    'M00001',
+    '--json',
+  ])
+  assert.equal(missingQueueStatus.status, 'migration-unsupported')
+  assert.match(missingQueueStatus.blocker, /Mission queue is missing/)
+
+  const partialApproval = preparePreDesign(fixture('1.3.0', knownLegacyGraph), 'approve-mission')
+  const partialMission = readMission(partialApproval.missionPath)
+  partialMission.approved_contract_hash = 'partial-approval-hash'
+  writeMission(partialApproval.missionPath, partialMission)
+  partialApproval.mission = partialMission
+  const partialStatus = runJson(partialApproval.root, ['mission', 'status', 'M00001', '--json'])
+  assert.equal(partialStatus.status, 'migration-unsupported')
+  assert.match(partialStatus.blocker, /partially recorded/)
+  assert.equal(
+    existsSync(
+      join(
+        partialApproval.specdevPath,
+        '.ripplegraph',
+        'runs',
+        partialApproval.mission.run_id,
+        'mission-migration.json'
+      )
+    ),
+    false
   )
 
   const unknown = fixture('9.9.0', knownLegacyGraph)
@@ -623,8 +1040,9 @@ try {
   assert.match(unknownStatus.blocker, /workflow-incompatible/)
 
   const compatible = fixture('1.4.0')
-  const compatibleResult = evaluateMissionCompatibility({
+  const compatibleResult = await evaluateMissionCompatibility({
     specdevPath: compatible.specdevPath,
+    missionPath: compatible.missionPath,
     mission: compatible.mission,
   })
   assert.equal(compatibleResult.status, 'compatible')
@@ -632,8 +1050,9 @@ try {
   assert.equal(compatibleStatus.status, 'running')
   assert.equal(compatibleStatus.compatibility.status, 'compatible')
 
-  const lateMismatch = evaluateMissionTransitionCompatibility({
+  const lateMismatch = await evaluateMissionTransitionCompatibility({
     specdevPath: compatible.specdevPath,
+    missionPath: compatible.missionPath,
     mission: compatible.mission,
     node: 'mission-review',
     output: {
@@ -732,6 +1151,11 @@ try {
   assert.deepEqual(migratedCheckpoint.gateDecisions, preservedCheckpoint.gateDecisions)
   assert.equal(migratedCheckpoint.createdAt, preservedCheckpoint.createdAt)
   const completedJournalPath = join(runPath, 'mission-migration.json')
+  const completedJournal = JSON.parse(readFileSync(completedJournalPath, 'utf8'))
+  assert.deepEqual(completedJournal.source.queue, {
+    state: 'present',
+    digest: completedJournal.source.queue_digest,
+  })
   const completedJournalBefore = readFileSync(completedJournalPath, 'utf8')
   const idempotent = runJson(preserved.root, ['mission', 'migrate', 'M00001', '--json'])
   assert.equal(idempotent.already_migrated, true)

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:mission-compatibility",
+      "revision": "working-tree@badbb507ed6585330f5285ca12226ffa1fc1ea48",
+      "scope": "focused Mission create/update/migrate compatibility, pre-Design recovery, and existing active/terminal regression coverage; exposed an active-but-unfocused synthetic pre-Design fixture",
+      "status": "failed",
+      "duration_ms": 2001
+    },
+    {
+      "command": "npm run test:mission-compatibility",
+      "revision": "working-tree@badbb507ed6585330f5285ca12226ffa1fc1ea48",
+      "scope": "same focused compatibility coverage after aligning the pre-Design fixture with normal RippleGraph focus state",
+      "status": "passed",
+      "duration_ms": 12048
+    }
+  ],
+  "deviations": [
+    "The first authorized run exposed a synthetic fixture mismatch: it manually created an active Mission checkpoint while leaving RippleGraph unfocused. The fixture now models normal fresh-Mission focus; no runtime recovery behavior was broadened."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}
