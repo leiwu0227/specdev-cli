@@ -23,19 +23,14 @@ assignments:
     outcome: .specdev/assignments/00040_emit-deterministic-standalone-assignment-deliver/outcome.md
     delivery_revision: d3d67874c42f4f68b46d7a5afa558efa5156fe79
     completed_at: 2026-08-04T01:36:32.106Z
-    integration:
-      delivery_revision: d3d67874c42f4f68b46d7a5afa558efa5156fe79
-      wave: 2
-      phase: committing
-      started_at: 2026-08-04T01:36:32.369Z
-      updated_at: 2026-08-04T01:36:32.421Z
     follow_up: none
     integrated_at: 2026-08-04T01:36:32.422Z
+    integration_revision: 3c2e6f4ae28e2e5de831ad683f9216564093dabe
   - id: "00041"
     title: Make status active-first with explicit history access
     kind: change
     wave: 2
-    status: completed
+    status: integrated
     base_revision: 4afa2dd1cf12d8d5e7e673847e2399ff80e42638
     branch: specdev/M00002/00041
     started_at: 2026-08-04T01:09:45.719Z
@@ -43,6 +38,14 @@ assignments:
     outcome: .specdev/assignments/00041_make-status-active-first-with-explicit-history-a/outcome.md
     delivery_revision: f3dbc415daaf7bbee1441514d78c8584fc79501e
     completed_at: 2026-08-04T01:32:00.665Z
+    integration:
+      delivery_revision: f3dbc415daaf7bbee1441514d78c8584fc79501e
+      wave: 2
+      phase: committing
+      started_at: 2026-08-04T01:36:32.510Z
+      updated_at: 2026-08-04T01:36:32.535Z
+    follow_up: none
+    integrated_at: 2026-08-04T01:36:32.535Z
 final_verification:
   command: npm run test:workflow-visibility
   scope: integrated

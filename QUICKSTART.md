@@ -52,9 +52,13 @@ Check an already-focused workflow with:
 
 ```bash
 specdev next --json
+specdev status
 specdev status --json
 specdev continue
 ```
+
+Status is active-first in both formats. Use `specdev status --history` (or add
+`--json`) when you need the complete compatible run history.
 
 ## 3. Make a bounded Adhoc change
 

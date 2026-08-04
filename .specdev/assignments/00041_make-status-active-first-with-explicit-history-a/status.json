@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "00041",
+  "kind": "change",
+  "description": "Make status active-first with explicit history access",
+  "run_id": "assignment-lifecycle-20260804T01094585",
+  "created_at": "2026-08-04T01:09:45.861Z",
+  "review_policy": {
+    "brainstorm": "required",
+    "implementation": "required"
+  },
+  "mission": "M00002",
+  "updated_at": "2026-08-04T01:32:00.499Z",
+  "review_policy_frozen_at": "2026-08-04T01:12:49.805Z",
+  "status": "completed",
+  "completed_at": "2026-08-04T01:32:00.499Z"
+}

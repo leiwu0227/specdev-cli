@@ -61,7 +61,11 @@ export const COMMANDS = [
     usage: 'focus <id>',
     description: 'Set the committed foreground convenience pointer',
   },
-  { name: 'status', usage: 'status', description: 'Show focused workflow state' },
+  {
+    name: 'status',
+    usage: 'status [--json] [--history]',
+    description: 'Show active work, or explicit run history',
+  },
   {
     name: 'continue',
     usage: 'continue',

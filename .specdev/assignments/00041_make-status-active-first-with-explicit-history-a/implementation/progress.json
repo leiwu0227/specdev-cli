@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:status-visibility",
+      "revision": "working-tree@4afa2dd1cf12d8d5e7e673847e2399ff80e42638",
+      "scope": "Focused active, pending-decision, blocked, interrupted, idle, human, JSON, and explicit-history status projections",
+      "status": "passed",
+      "duration_ms": 76
+    },
+    {
+      "command": "npx prettier --check QUICKSTART.md package.json src/commands/engine.js src/utils/commands.js src/utils/status-view.js tests/test-assignment-shelf.js tests/test-status-visibility.js",
+      "revision": "working-tree@4afa2dd1cf12d8d5e7e673847e2399ff80e42638",
+      "scope": "Formatting check limited to changed product, documentation, and test files",
+      "status": "failed",
+      "duration_ms": 248
+    },
+    {
+      "command": "npx prettier --check QUICKSTART.md package.json src/commands/engine.js src/utils/commands.js src/utils/status-view.js tests/test-assignment-shelf.js tests/test-status-visibility.js",
+      "revision": "working-tree@4afa2dd1cf12d8d5e7e673847e2399ff80e42638",
+      "scope": "Formatting recheck after mechanically formatting src/commands/engine.js and src/utils/status-view.js",
+      "status": "passed",
+      "duration_ms": 503
+    }
+  ],
+  "deviations": [
+    "The first changed-file Prettier check found two files; they were mechanically formatted and the identical check then passed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

@@ -15,6 +15,7 @@ import { assertWorkspaceEngine, workflowRootFor } from '../utils/engine.js'
 import { graphTitle, toProductState, wrapDecision } from '../utils/engine-adapter.js'
 import { readFocusedAssignmentLifecycle } from '../utils/assignment-lifecycle.js'
 import { writeAssignmentStatus } from '../utils/assignment-vnext.js'
+import { buildStatusViews, formatStatusView } from '../utils/status-view.js'
 
 export async function engineCommand(command, positionalArgs = [], flags = {}) {
   const projectRoot = resolveTargetDir(flags)
@@ -27,7 +28,7 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
       command === 'cancel'
         ? await readFocusedAssignmentLifecycle(join(projectRoot, '.specdev'))
         : null
-    const result = runEngineCommand(workflowRoot, command, positionalArgs, flags)
+    let result = runEngineCommand(workflowRoot, command, positionalArgs, flags)
     if (command === 'cancel' && result.state === 'cancelled' && assignmentBefore?.status) {
       await writeAssignmentStatus(assignmentBefore.path, {
         status: 'abandoned',
@@ -47,9 +48,21 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
           next_action: assignment.next_action,
         }
       }
+      const views = await buildStatusViews({
+        targetDir: projectRoot,
+        specdevPath: join(projectRoot, '.specdev'),
+        history: result,
+        assignment,
+      })
+      result = flags.history ? views.history : views.active
+      if (flags.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
+      else
+        process.stdout.write(formatStatusView(views.active, flags.history ? views.history : null))
+    } else {
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
     }
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
-    if (result.status === 'blocked' || result.status === 'error') process.exitCode = 1
+    if (result.status === 'blocked' || result.status === 'error' || result.lifecycle === 'blocked')
+      process.exitCode = 1
     return result
   } catch (error) {
     const result = {
@@ -58,7 +71,11 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
       problem: error?.message || String(error),
       next_action: { command_line: 'specdev update' },
     }
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
+    if (command === 'status' && !flags.json) {
+      process.stderr.write(`${result.problem}\nNext: ${result.next_action.command_line}\n`)
+    } else {
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
+    }
     process.exitCode = 1
     return result
   }

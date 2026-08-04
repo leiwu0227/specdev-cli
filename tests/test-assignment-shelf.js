@@ -160,7 +160,11 @@ try {
   assert.equal(focused.lifecycle, 'shelved')
   assert.equal(focused.immutable, true)
   const status = runJson(cleanRoot, ['status', '--json'])
-  assert.equal(status.artifact_focus.lifecycle, 'shelved')
+  assert.equal(status.lifecycle, 'shelved')
+  assert.equal(status.focus.id, clean.id)
+  assert.equal('runs' in status, false)
+  const historicalStatus = runJson(cleanRoot, ['status', '--history', '--json'])
+  assert.equal(historicalStatus.artifact_focus.lifecycle, 'shelved')
 
   const beforeHelp = readFileSync(join(cleanPath, 'status.json'), 'utf8')
   run(cleanRoot, ['cancel', '--help'])
