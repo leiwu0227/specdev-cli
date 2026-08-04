@@ -1,0 +1,16 @@
+id: Attempt-00069
+kind: mission-controller
+status: blocked
+workspace: .
+base_revision: 4f376e2140248974262f82535727bbb548aaad65
+started_at: 2026-08-04T00:49:13.703Z
+profile: null
+provider: null
+model: null
+effort: null
+network: false
+result_path: null
+mission: M00002
+error: Child 00039 implementation blocked
+ended_at: 2026-08-04T01:00:19.970Z
+duration_ms: 666267

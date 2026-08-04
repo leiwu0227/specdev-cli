@@ -1,0 +1,26 @@
+version: 2
+design_mode: planned
+assignments:
+  - id: "00039"
+    title: Add bounded structured progress for long-running Attempts
+    kind: feature
+    wave: 1
+    status: integrated
+    started_at: 2026-08-04T00:50:40.661Z
+    folder: 00039_add-bounded-structured-progress-for-long-running
+    outcome: .specdev/assignments/00039_add-bounded-structured-progress-for-long-running/outcome.md
+    completed_at: 2026-08-04T01:08:59.071Z
+    follow_up: none
+  - id: "00040"
+    title: Emit deterministic standalone Assignment delivery receipts
+    kind: feature
+    wave: 2
+    status: pending
+  - id: "00041"
+    title: Make status active-first with explicit history access
+    kind: change
+    wave: 2
+    status: pending
+final_verification:
+  command: npm run test:workflow-visibility
+  scope: integrated

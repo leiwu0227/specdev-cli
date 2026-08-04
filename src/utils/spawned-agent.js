@@ -13,6 +13,15 @@ import {
 } from './result-envelope.js'
 import { parseGitPorcelainPaths, workspaceChangeSummaryLines } from './workspace-changes.js'
 import {
+  ATTEMPT_PROGRESS_INTERVAL_MS,
+  attemptMilestonePrompt,
+  attemptProgressPaths,
+  buildAttemptProgress,
+  formatAttemptProgress,
+  readAttemptMilestone,
+  writeAttemptProgress,
+} from './attempt-progress.js'
+import {
   attemptLiveness,
   clearLocalProcessMarker,
   createAttemptRecord,
@@ -24,7 +33,6 @@ import {
 const execFile = promisify(execFileCallback)
 const TERMINATION_GRACE_MS = 5_000
 const MAX_CAPTURE_BYTES = 2 * 1024 * 1024
-const HEARTBEAT_INTERVAL_MS = 60_000
 
 export async function runSpawnedAgent(options) {
   const {
@@ -40,6 +48,7 @@ export async function runSpawnedAgent(options) {
     discussion,
     guides = [],
     allowFormatCorrection = true,
+    progressFormat = requestedProgressFormat(),
   } = options
   if (!targetDir || !specdevPath || !resultPath) {
     throw new Error('runSpawnedAgent requires targetDir, specdevPath, and resultPath')
@@ -69,6 +78,7 @@ export async function runSpawnedAgent(options) {
     discussion,
     guides,
     attemptKind: role,
+    progressFormat,
   })
   if (primary.status !== 'completed') return primary
 
@@ -133,6 +143,7 @@ export async function runSpawnedAgent(options) {
       discussion,
       guides,
       attemptKind: 'format-correction',
+      progressFormat,
     })
     if (correction.status !== 'completed') return correction
     if (beforeCorrection) {
@@ -264,6 +275,7 @@ async function executeInvocation({
   discussion,
   guides,
   attemptKind,
+  progressFormat,
 }) {
   await fse.ensureDir(dirname(resultPath))
   if (profile.provider === 'codex' && process.env.CODEX_SANDBOX) {
@@ -305,6 +317,7 @@ async function executeInvocation({
   const providerResultPath = join(cacheDir, `${attempt.id}-result.md`)
   const stdoutPath = join(cacheDir, `${attempt.id}.stdout.log`)
   const stderrPath = join(cacheDir, `${attempt.id}.stderr.log`)
+  const progressPaths = attemptProgressPaths(specdevPath, attempt.id)
   await fse.ensureDir(cacheDir)
   await writeLocalProcessMarker(specdevPath, attempt.id)
 
@@ -323,11 +336,16 @@ async function executeInvocation({
     processResult = await spawnInvocation({
       ...invocation,
       cwd: targetDir,
-      prompt,
+      prompt: `${prompt.trim()}\n\n${attemptMilestonePrompt(targetDir, progressPaths.milestone)}\n`,
       timeoutMs: profile.timeout_ms,
       stdoutPath,
       stderrPath,
       attemptId: attempt.id,
+      role,
+      startedAt: attempt.started_at,
+      milestonePath: progressPaths.milestone,
+      progressPath: progressPaths.progress,
+      progressFormat,
     })
   } catch (error) {
     process.stderr.write(`SpecDev ${attempt.id}: agent launch failed: ${error.message}\n`)
@@ -396,6 +414,11 @@ function spawnInvocation({
   stdoutPath,
   stderrPath,
   attemptId,
+  role,
+  startedAt,
+  milestonePath,
+  progressPath,
+  progressFormat,
 }) {
   return new Promise((resolvePromise, reject) => {
     const stdoutLog = createWriteStream(stdoutPath, { flags: 'a' })
@@ -405,6 +428,9 @@ function spawnInvocation({
     let settled = false
     let timedOut = false
     let killTimer
+    let lastLogActivityAt = null
+    let lastValidMilestone = null
+    let progressEmission = null
     const streamProviderOutput = process.env.SPECDEV_AGENT_STREAM === '1'
     const child = spawn(command, args, {
       cwd,
@@ -425,22 +451,59 @@ function spawnInvocation({
       }, TERMINATION_GRACE_MS)
       killTimer.unref?.()
     }, timeoutMs)
-    const heartbeatTimer = streamProviderOutput
-      ? null
-      : setInterval(() => {
-          process.stderr.write(
-            `SpecDev ${attemptId}: agent is still running; raw output is in .specdev/cache/attempts/.\n`
-          )
-        }, HEARTBEAT_INTERVAL_MS)
-    heartbeatTimer?.unref?.()
+    const emitProgress = () => {
+      if (progressEmission) return progressEmission
+      progressEmission = (async () => {
+        const milestoneResult = await readAttemptMilestone(milestonePath, {
+          lastValidMilestone,
+        })
+        lastValidMilestone = milestoneResult.milestone
+        const progress = buildAttemptProgress({
+          attemptId,
+          role,
+          startedAt,
+          processLiveness: 'live_local',
+          logActivityAt: lastLogActivityAt,
+          milestone: lastValidMilestone,
+          diagnostic: milestoneResult.diagnostic,
+        })
+        await writeAttemptProgress(progressPath, progress)
+        process.stderr.write(`${formatAttemptProgress(progress, progressFormat)}\n`)
+      })()
+        .catch(() => {
+          const fallback =
+            progressFormat === 'structured'
+              ? JSON.stringify({
+                  type: 'specdev.attempt_progress',
+                  progress: {
+                    version: 1,
+                    attempt: attemptId,
+                    role,
+                    classification: 'stale',
+                    diagnostic: 'progress_io_error',
+                  },
+                })
+              : `SpecDev ${attemptId} progress unavailable: progress_io_error.`
+          process.stderr.write(`${fallback}\n`)
+        })
+        .finally(() => {
+          progressEmission = null
+        })
+      return progressEmission
+    }
+    void emitProgress()
+    const progressTimer = setInterval(emitProgress, ATTEMPT_PROGRESS_INTERVAL_MS)
+    progressTimer.unref?.()
 
     child.stdin.end(prompt)
     child.stdout.on('data', (chunk) => {
+      lastLogActivityAt = Date.now()
       stdoutLog.write(chunk)
       if (streamProviderOutput) process.stderr.write(chunk)
       stdout = appendCapped(stdout, chunk)
     })
     child.stderr.on('data', (chunk) => {
+      lastLogActivityAt = Date.now()
       stderrLog.write(chunk)
       if (streamProviderOutput) process.stderr.write(chunk)
       stderr = appendCapped(stderr, chunk)
@@ -449,7 +512,7 @@ function spawnInvocation({
       if (settled) return
       settled = true
       clearTimeout(timeoutTimer)
-      if (heartbeatTimer) clearInterval(heartbeatTimer)
+      clearInterval(progressTimer)
       if (killTimer) clearTimeout(killTimer)
       await closeStreams(stdoutLog, stderrLog)
       reject(error)
@@ -458,7 +521,7 @@ function spawnInvocation({
       if (settled) return
       settled = true
       clearTimeout(timeoutTimer)
-      if (heartbeatTimer) clearInterval(heartbeatTimer)
+      clearInterval(progressTimer)
       if (killTimer) clearTimeout(killTimer)
       await closeStreams(stdoutLog, stderrLog)
       resolvePromise({
@@ -494,6 +557,12 @@ function appendResultContract(prompt, kind, guides) {
       ? 'Use `git status` and read relevant untracked files directly; `git diff` alone may omit an untracked candidate.\n'
       : ''
   return `${prompt.trim()}\n\nKeep tool output narrow. Do not repeatedly print full files or full diffs; inspect targeted ranges and return as soon as the required evidence and artifacts are complete.\n${inspectionNote}\nGuides supplied by the host for this invocation:\n${guideLines}\n\nReturn only the strict result envelope below. Invalid formatting cannot advance the workflow.\n\n${resultEnvelopeInstructions(kind)}\n`
+}
+
+function requestedProgressFormat() {
+  return process.argv.some((arg) => arg === '--json' || arg.startsWith('--json='))
+    ? 'structured'
+    : 'human'
 }
 
 function formattingCorrectionPrompt(malformed, kind, error) {

@@ -8,10 +8,10 @@
   },
   "position": {
     "graph": "mission-lifecycle",
-    "node": "design"
+    "node": "execute-wave"
   },
   "createdAt": "2026-08-04T00:37:04.356Z",
-  "updatedAt": "2026-08-04T00:49:13.479Z",
+  "updatedAt": "2026-08-04T01:08:59.115Z",
   "outputs": {
     "create-mission": {
       "id": "M00002",
@@ -30,6 +30,65 @@
       "review_override": false,
       "base_revision": "3f9fd1afcb18676895a36fadd4edaa0c41747a3d",
       "branch": "specdev/M00002-make-live-specdev-workflows-visi"
+    },
+    "design": {
+      "queue": ".specdev/missions/M00002_make-live-specdev-workflows-visibly-progressive-/design/assignments.yaml",
+      "attempt": "Attempt-00070",
+      "parallel": false
+    },
+    "f1/create-assignment": {
+      "id": "00039",
+      "name": "00039_add-bounded-structured-progress-for-long-running",
+      "path": ".specdev/assignments/00039_add-bounded-structured-progress-for-long-running",
+      "description": "Add bounded structured progress for long-running Attempts",
+      "review_policy": {
+        "brainstorm": "required",
+        "implementation": "required"
+      }
+    },
+    "f1/brainstorm": {
+      "contract": ".specdev/assignments/00039_add-bounded-structured-progress-for-long-running/brainstorm/contract.md",
+      "contract_hash": "882e8561d220a15c3663697986cb7ffdd865e8c5c7e5b9be9c0c25735bff2af3"
+    },
+    "f1/approve-contract": {
+      "approved": true,
+      "contract_hash": "882e8561d220a15c3663697986cb7ffdd865e8c5c7e5b9be9c0c25735bff2af3",
+      "actor": "mission:M00002",
+      "approved_at": "2026-08-04T00:52:34.610Z",
+      "revision": "4f376e2140248974262f82535727bbb548aaad65",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "required",
+        "implementation": "required"
+      }
+    },
+    "f1/design": {
+      "plan": ".specdev/assignments/00039_add-bounded-structured-progress-for-long-running/design/plan.md",
+      "attempt": "recovered-artifacts"
+    },
+    "f1/implementation": {
+      "progress": ".specdev/assignments/00039_add-bounded-structured-progress-for-long-running/implementation/progress.json",
+      "outcome": ".specdev/assignments/00039_add-bounded-structured-progress-for-long-running/outcome.md",
+      "attempt": "recovered-artifacts"
+    },
+    "f1/implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00039_add-bounded-structured-progress-for-long-running/review/implementation-verdict.md",
+      "attempt": "Attempt-00075",
+      "disposition": "approved"
+    },
+    "child-assignment": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00039_add-bounded-structured-progress-for-long-running/review/implementation-verdict.md",
+      "attempt": "Attempt-00075",
+      "disposition": "approved"
+    },
+    "advance-queue": {
+      "remaining": true,
+      "completed": "00039",
+      "follow_up_required": false,
+      "gap_open": false,
+      "parallel": true
     }
   },
   "gateDecisions": {
@@ -41,6 +100,18 @@
       "review_override": false,
       "base_revision": "3f9fd1afcb18676895a36fadd4edaa0c41747a3d",
       "branch": "specdev/M00002-make-live-specdev-workflows-visi"
+    },
+    "f1/approve-contract": {
+      "approved": true,
+      "contract_hash": "882e8561d220a15c3663697986cb7ffdd865e8c5c7e5b9be9c0c25735bff2af3",
+      "actor": "mission:M00002",
+      "approved_at": "2026-08-04T00:52:34.610Z",
+      "revision": "4f376e2140248974262f82535727bbb548aaad65",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "required",
+        "implementation": "required"
+      }
     }
   },
   "graphSource": {
@@ -50,5 +121,5 @@
     "packagePath": "workflows/mission-lifecycle@1.4.0"
   },
   "stack": [],
-  "frameCounter": 0
+  "frameCounter": 1
 }
