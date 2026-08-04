@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:workflow-visibility",
+      "revision": "working-tree@a28ad6d700f9e3a7bbbf3a0d3dbb377a9ef3c5a9",
+      "scope": "AC-1: integrated Attempt-progress, delivery-recovery, and status-visibility suites",
+      "status": "passed",
+      "duration_ms": 9995
+    },
+    {
+      "command": "jq -e '.scripts[\"test:workflow-visibility\"] == \"npm run test:attempt-progress && npm run test:implement-recovery && npm run test:status-visibility\" and (.scripts.test | contains(\"node ./tests/test-attempt-progress.js\"))' package.json",
+      "revision": "working-tree@a28ad6d700f9e3a7bbbf3a0d3dbb377a9ef3c5a9",
+      "scope": "AC-1 and AC-2: package-script composition and default-suite reachability",
+      "status": "passed",
+      "duration_ms": 100
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

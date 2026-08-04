@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "00042",
+  "kind": "bugfix",
+  "description": "Add the missing workflow visibility verification entrypoints",
+  "run_id": "mission-lifecycle-20260804T00370435",
+  "created_at": "2026-08-04T01:39:35.474Z",
+  "review_policy": {
+    "brainstorm": "required",
+    "implementation": "required"
+  },
+  "mission": "M00002",
+  "updated_at": "2026-08-04T01:45:45.029Z",
+  "review_policy_frozen_at": "2026-08-04T01:42:16.098Z",
+  "status": "completed",
+  "completed_at": "2026-08-04T01:45:45.028Z"
+}

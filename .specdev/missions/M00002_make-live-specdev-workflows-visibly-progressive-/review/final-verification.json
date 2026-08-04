@@ -1,0 +1,8 @@
+{
+  "command": "npm run test:workflow-visibility",
+  "revision": "working-tree@a28ad6d700f9e3a7bbbf3a0d3dbb377a9ef3c5a9",
+  "scope": "integrated",
+  "status": "passed",
+  "duration_ms": 9408,
+  "completed_at": "2026-08-04T01:47:05.292Z"
+}

@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "mode": "automatic",
+  "stage": "complete",
+  "primary_round": 2,
+  "round": 2,
+  "history": [
+    {
+      "round": 1,
+      "candidate_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "findings_digest": "d0c4487f50b4a816c000e84477ef44974e551016ff28ea713495b624da1932a6"
+    },
+    {
+      "round": 2,
+      "candidate_digest": "562629768f4d32cf890ddd6c4e67dabe66cdb0454844beac3577bc958aab63df",
+      "findings_digest": "35a3905d0a27acdc1bda82c24b2690c3e55b1383b6870c3fa0187cf60946265e"
+    }
+  ],
+  "status": "approved",
+  "candidate_digest": "562629768f4d32cf890ddd6c4e67dabe66cdb0454844beac3577bc958aab63df",
+  "findings_digest": "35a3905d0a27acdc1bda82c24b2690c3e55b1383b6870c3fa0187cf60946265e",
+  "attempt": "Attempt-00091",
+  "updated_at": "2026-08-04T01:46:55.808Z",
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "high",
+    "network": false,
+    "timeout_ms": 1200000
+  }
+}

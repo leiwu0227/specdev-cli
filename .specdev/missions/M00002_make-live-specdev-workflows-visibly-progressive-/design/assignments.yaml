@@ -1,5 +1,5 @@
 version: 2
-design_mode: planned
+design_mode: replanned
 assignments:
   - id: "00039"
     title: Add bounded structured progress for long-running Attempts
@@ -38,14 +38,21 @@ assignments:
     outcome: .specdev/assignments/00041_make-status-active-first-with-explicit-history-a/outcome.md
     delivery_revision: f3dbc415daaf7bbee1441514d78c8584fc79501e
     completed_at: 2026-08-04T01:32:00.665Z
-    integration:
-      delivery_revision: f3dbc415daaf7bbee1441514d78c8584fc79501e
-      wave: 2
-      phase: committing
-      started_at: 2026-08-04T01:36:32.510Z
-      updated_at: 2026-08-04T01:36:32.535Z
     follow_up: none
     integrated_at: 2026-08-04T01:36:32.535Z
+    integration_revision: a28ad6d700f9e3a7bbbf3a0d3dbb377a9ef3c5a9
+  - id: "00042"
+    title: Add the missing workflow visibility verification entrypoints
+    kind: bugfix
+    wave: 3
+    status: integrated
+    gap_id: gap-2d6c64c012c7d2ba
+    gap_stage: resolution
+    started_at: 2026-08-04T01:39:35.464Z
+    folder: 00042_add-the-missing-workflow-visibility-verification
+    outcome: .specdev/assignments/00042_add-the-missing-workflow-visibility-verification/outcome.md
+    completed_at: 2026-08-04T01:45:45.076Z
+    follow_up: none
 final_verification:
   command: npm run test:workflow-visibility
   scope: integrated
