@@ -1,23 +1,22 @@
 version: 1
 id: M00002
 objective: Make live SpecDev workflows visibly progressive, concise, and self-reporting
-status: blocked
+status: running
 run_id: mission-lifecycle-20260804T00370435
 base_branch: main
 created_revision: 3f9fd1afcb18676895a36fadd4edaa0c41747a3d
 base_revision: 3f9fd1afcb18676895a36fadd4edaa0c41747a3d
 branch: specdev/M00002-make-live-specdev-workflows-visi
 created_at: 2026-08-04T00:37:04.379Z
-next_action: Resolve the blocker, then run specdev mission run M00002.
+next_action: Mission M00002 is running in the foreground.
 approved_contract_hash: f807741f24148b58f7bba60216c0686c95ce99afd2fa7cd40d13d2670f0cfbd2
 approved_at: 2026-08-04T00:49:13.481Z
 last_checkpoint:
-  base_revision: 4f376e2140248974262f82535727bbb548aaad65
+  base_revision: 9e9abe4a73d30fba20098a9dfa0619d4a224ef61
   push_requested: false
-  created_at: 2026-08-04T01:09:35.356Z
-updated_at: 2026-08-04T01:08:59.176Z
+  created_at: 2026-08-04T01:09:45.217Z
+updated_at: 2026-08-04T01:09:45.036Z
 gaps:
   version: 1
   items: []
   processed_signals: []
-blocker: "Cannot start a parallel Mission wave while the main worktree has product changes: package.json, src/utils/spawned-agent.js, src/utils/attempt-progress.js, tests/test-attempt-progress.js"

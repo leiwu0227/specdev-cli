@@ -1,0 +1,13 @@
+id: Attempt-00076
+kind: mission-controller
+status: running
+workspace: .
+base_revision: 9e9abe4a73d30fba20098a9dfa0619d4a224ef61
+started_at: 2026-08-04T01:09:45.035Z
+profile: null
+provider: null
+model: null
+effort: null
+network: false
+result_path: null
+mission: M00002
