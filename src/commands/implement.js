@@ -25,6 +25,7 @@ import {
   completeStandaloneAssignmentDelivery,
   ensureAssignmentGitBoundary,
   findPendingStandaloneAssignmentDelivery,
+  formatStandaloneAssignmentReceipt,
 } from '../utils/assignment-delivery.js'
 
 export async function implementCommand(positionalArgs = [], flags = {}) {
@@ -339,7 +340,10 @@ function profileOverrides(flags) {
 
 function emit(flags, payload) {
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
-  else console.log(`Assignment complete: ${payload.assignment}`)
+  else {
+    console.log(`Assignment complete: ${payload.assignment}`)
+    if (payload.receipt) console.log(formatStandaloneAssignmentReceipt(payload.receipt))
+  }
   return payload
 }
 

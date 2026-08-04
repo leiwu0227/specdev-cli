@@ -30,7 +30,10 @@ import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { readMission, resolveMissionSelector } from '../utils/mission.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
-import { completeStandaloneAssignmentDelivery } from '../utils/assignment-delivery.js'
+import {
+  completeStandaloneAssignmentDelivery,
+  formatStandaloneAssignmentReceipt,
+} from '../utils/assignment-delivery.js'
 import {
   initialAutomaticReviewState,
   recordArbitration,
@@ -1256,6 +1259,7 @@ function emit(flags, payload) {
     }
     if (payload.textual_changes)
       console.log(`\nTextual changes from review baseline:\n${payload.textual_changes}`)
+    if (payload.receipt) console.log(formatStandaloneAssignmentReceipt(payload.receipt))
     console.log(`Next: ${payload.next_action}`)
   }
 }

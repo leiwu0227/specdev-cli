@@ -80,8 +80,13 @@ export async function commitDelivery(targetDir, { subject, trailers, allowEmpty 
 }
 
 export async function findCommitByTrailer(targetDir, key, value, options = {}) {
+  return (await findCommitsByTrailer(targetDir, key, value, options))[0] || null
+}
+
+export async function findCommitsByTrailer(targetDir, key, value, options = {}) {
   const needle = `${key}: ${value}`
   const revision = options.revision || '--all'
+  const matches = []
   const output = await gitOutput(targetDir, [
     'log',
     revision,
@@ -94,9 +99,23 @@ export async function findCommitByTrailer(targetDir, key, value, options = {}) {
     .map((line) => line.trim())
     .filter(Boolean)) {
     const message = await gitOutput(targetDir, ['show', '-s', '--format=%B', hash])
-    if (message.split(/\r?\n/).some((line) => line.trim() === needle)) return hash
+    if (message.split(/\r?\n/).some((line) => line.trim() === needle)) matches.push(hash)
   }
-  return null
+  return matches
+}
+
+export async function gitChangedPathsAtCommit(targetDir, revision) {
+  const output = await gitOutput(targetDir, [
+    'diff-tree',
+    '--root',
+    '--no-commit-id',
+    '--name-only',
+    '--no-renames',
+    '-r',
+    '-z',
+    revision,
+  ])
+  return [...new Set(output.split('\0').map(normalizePath).filter(Boolean))].sort()
 }
 
 export async function findCommitAddingPath(targetDir, path) {

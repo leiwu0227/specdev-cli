@@ -45,6 +45,12 @@ function runGit(root, args) {
   assert.equal(result.status, 0, `git ${args.join(' ')} failed:\n${result.stderr}`)
 }
 
+function gitText(root, args) {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' })
+  assert.equal(result.status, 0, `git ${args.join(' ')} failed:\n${result.stderr}`)
+  return result.stdout.trim()
+}
+
 function writeContract(path) {
   writeFileSync(
     join(path, 'brainstorm', 'contract.md'),
@@ -117,7 +123,15 @@ function writeDelivery(path) {
         version: 1,
         tasks: [{ id: 'T-1', status: 'completed' }],
         selected_guides: { implementation: [], review: [] },
-        verification: [],
+        verification: [
+          {
+            command: 'node focused-receipt.js',
+            revision: 'working-tree@fixture',
+            scope: 'focused receipt fixture',
+            status: 'passed',
+            duration_ms: 1,
+          },
+        ],
         deviations: [],
         follow_up: 'none',
       },
@@ -129,6 +143,18 @@ function writeDelivery(path) {
   writeFileSync(
     join(path, 'outcome.md'),
     `# Outcome
+
+## Delivered behavior
+
+Completed the focused fixture.
+
+## Deviations
+
+None.
+
+## Unresolved risks
+
+None.
 
 | Acceptance | Evidence | Result |
 | --- | --- | --- |
@@ -227,7 +253,7 @@ printf '%s\\n' '---' 'status: completed' 'revision: null' 'follow_up: none' '---
   runJson(root, ['checkpoint', 'brainstorm', '--json'])
   runJson(root, ['approve', 'brainstorm', '--implementation-review=waived', '--json'])
   assert.equal(runJson(root, ['next', '--json']).phase, 'design')
-  return { root, assignmentPath }
+  return { root, assignmentPath, assignment: assignment.path.split('/').pop() }
 }
 
 function assertPreservedBlock({ root, assignmentPath, expectedRecovery, diagnostic }) {
@@ -273,9 +299,134 @@ try {
   const completed = createFixture('completed')
   writeDelivery(completed.assignmentPath)
   writeWorkerResult(completed.assignmentPath, completedResult())
-  const recovered = runJson(completed.root, ['implement', '--json'])
+  mkdirSync(join(completed.root, 'src'))
+  writeFileSync(join(completed.root, 'src', 'receipt.js'), 'export const receipt = true\n', 'utf8')
+  const recovered = runJson(completed.root, ['implement', '--adopt-dirty', '--json'])
   assert.equal(recovered.status, 'completed')
   assert.equal(recovered.activity.provider_attempts.total, 0)
+  assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
+  assert.equal(recovered.receipt.completeness, 'complete')
+  assert.equal(recovered.receipt.contract.review_identity_matches, true)
+  assert.equal(recovered.receipt.review.verdict, 'approved')
+  assert.equal(recovered.receipt.review.divergence, 'none')
+  assert.equal(recovered.receipt.delivery.commit, recovered.delivery.ending_git_commit_hash)
+  assert.equal(recovered.receipt.delivery.matching_commit_count, 1)
+  assert.deepEqual(recovered.receipt.acceptance.counts, {
+    passed: 3,
+    failed: 0,
+    blocked: 0,
+    missing: 0,
+  })
+  assert.deepEqual(recovered.receipt.verification.counts, {
+    passed: 1,
+    failed: 0,
+    skipped: 0,
+    missing: 0,
+  })
+  assert.deepEqual(recovered.receipt.changed_project_paths.groups, [
+    { name: 'src', count: 1, paths: ['src/receipt.js'], omitted: 0 },
+  ])
+  assert.equal(recovered.receipt.unresolved_risks.status, 'none')
+  assert.equal(recovered.receipt.worktree.clean, true)
+  const deliveredHead = gitText(completed.root, ['rev-parse', 'HEAD'])
+  const deliveredCommitCount = gitText(completed.root, ['rev-list', '--count', 'HEAD'])
+
+  const resumed = runJson(completed.root, [
+    'implement',
+    `--assignment=${completed.assignment}`,
+    '--json',
+  ])
+  assert.equal(resumed.status, 'completed')
+  assert.equal(resumed.recovered, true)
+  assert.equal(resumed.delivery.recovered, true)
+  assert.deepEqual(resumed.receipt, recovered.receipt)
+  assert.equal(gitText(completed.root, ['rev-parse', 'HEAD']), deliveredHead)
+  assert.equal(gitText(completed.root, ['rev-list', '--count', 'HEAD']), deliveredCommitCount)
+  assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
+
+  const human = run(completed.root, ['implement', `--assignment=${completed.assignment}`]).stdout
+  assert.match(human, /Assignment complete:/)
+  assert.match(human, /Delivery receipt:/)
+  assert.match(human, /Evidence: complete/)
+  assert.match(human, new RegExp(`Delivery commit: ${deliveredHead}`))
+  assert.match(human, /Acceptance: 3 passed, 0 failed, 0 blocked, 0 missing/)
+  assert.match(human, /Verification: 1 passed, 0 failed, 0 skipped, 0 missing/)
+  assert.match(human, /src \(1\): src\/receipt\.js/)
+  assert.match(human, /Worktree: clean/)
+
+  runGit(completed.root, [
+    'commit',
+    '--quiet',
+    '--allow-empty',
+    '-m',
+    'duplicate delivery evidence fixture',
+    '-m',
+    `SpecDev-Assignment: ${recovered.receipt.assignment.id}\nSpecDev-Commit-Type: delivery`,
+  ])
+  const ambiguousHead = gitText(completed.root, ['rev-parse', 'HEAD'])
+  const ambiguousCommitCount = gitText(completed.root, ['rev-list', '--count', 'HEAD'])
+  const ambiguous = runJson(completed.root, [
+    'implement',
+    `--assignment=${completed.assignment}`,
+    '--json',
+  ])
+  assert.equal(ambiguous.receipt.completeness, 'incomplete')
+  assert.equal(ambiguous.receipt.delivery.matching_commit_count, 2)
+  assert(ambiguous.receipt.issues.includes('ambiguous_delivery_commit'))
+  assert(ambiguous.receipt.issues.includes('ambiguous_git_delivery_boundary'))
+  assert.equal(ambiguous.delivery.ending_git_commit_hash, ambiguousHead)
+  assert.equal(gitText(completed.root, ['rev-list', '--count', 'HEAD']), ambiguousCommitCount)
+  assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
+
+  rmSync(join(completed.assignmentPath, 'implementation', 'progress.json'))
+  const incomplete = runJson(completed.root, [
+    'implement',
+    `--assignment=${completed.assignment}`,
+    '--json',
+  ])
+  assert.equal(incomplete.receipt.completeness, 'incomplete')
+  assert.equal(incomplete.receipt.artifacts.progress.exists, false)
+  assert.equal(incomplete.receipt.verification.counts.missing, 1)
+  assert(incomplete.receipt.issues.includes('missing_artifact:progress'))
+  assert(incomplete.receipt.issues.includes('verification_evidence_missing'))
+  assert.equal(incomplete.delivery.ending_git_commit_hash, ambiguousHead)
+  assert.equal(gitText(completed.root, ['rev-list', '--count', 'HEAD']), ambiguousCommitCount)
+  assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
+
+  writeDelivery(completed.assignmentPath)
+  const nonPassingProgressPath = join(completed.assignmentPath, 'implementation', 'progress.json')
+  const nonPassingProgress = JSON.parse(readFileSync(nonPassingProgressPath, 'utf8'))
+  nonPassingProgress.verification = [
+    { ...nonPassingProgress.verification[0], status: 'failed' },
+    {
+      ...nonPassingProgress.verification[0],
+      command: 'node optional-receipt.js',
+      status: 'skipped',
+    },
+  ]
+  writeFileSync(nonPassingProgressPath, `${JSON.stringify(nonPassingProgress, null, 2)}\n`, 'utf8')
+  const nonPassingOutcomePath = join(completed.assignmentPath, 'outcome.md')
+  writeFileSync(
+    nonPassingOutcomePath,
+    readFileSync(nonPassingOutcomePath, 'utf8')
+      .replace('None.\n\n| Acceptance', '- Manual follow-up remains.\n\n| Acceptance')
+      .replace('| AC-1 | Focused fixture | Passed |', '| AC-1 | Focused fixture | Blocked |')
+      .replace('| AC-2 | Focused fixture | Passed |', '| AC-2 | Focused fixture | Failed |'),
+    'utf8'
+  )
+  const nonPassing = runJson(completed.root, [
+    'implement',
+    `--assignment=${completed.assignment}`,
+    '--json',
+  ])
+  assert.equal(nonPassing.receipt.completeness, 'incomplete')
+  assert.equal(nonPassing.receipt.acceptance.counts.blocked, 1)
+  assert.equal(nonPassing.receipt.acceptance.counts.failed, 1)
+  assert.equal(nonPassing.receipt.verification.counts.failed, 1)
+  assert.equal(nonPassing.receipt.verification.counts.skipped, 1)
+  assert.equal(nonPassing.receipt.unresolved_risks.status, 'present')
+  assert.deepEqual(nonPassing.receipt.unresolved_risks.items, ['Manual follow-up remains.'])
+  assert.equal(gitText(completed.root, ['rev-list', '--count', 'HEAD']), ambiguousCommitCount)
   assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
 
   const retried = createFixture('retry')
