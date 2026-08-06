@@ -43,6 +43,15 @@ assert(
   mainMd.includes('.specdev/project_notes/big_picture.md'),
   '_main.md uses a repository-root-relative project context path'
 )
+assert(mainMd.includes('command -v specdev'), '_main.md installs the copyable PATH fallback')
+assert(
+  mainMd.includes('[ -x .specdev/cache/bin/specdev ]'),
+  '_main.md checks workspace launcher executability before use'
+)
+assert(
+  /repeated\s+read-only probes/.test(mainMd),
+  '_main.md defines phase-level announcement granularity'
+)
 const claudeMd = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
 assert(claudeMd.includes('.specdev/_main.md'), 'CLAUDE.md points to _main.md')
 const agentsMd = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8')
@@ -92,6 +101,21 @@ assert(
 const startSkill = readFileSync(join(skillsDir, 'specdev-start', 'SKILL.md'), 'utf-8')
 assert(startSkill.includes('big_picture.md'), 'start skill references big_picture.md')
 assert(startSkill.includes('purpose, users'), 'start skill includes Q&A instructions')
+
+const adhocSkill = readFileSync(join(skillsDir, 'specdev-adhoc', 'SKILL.md'), 'utf-8')
+assert(
+  /adhoc\s+verify --label=/.test(adhocSkill),
+  'Adhoc skill documents structured verification'
+)
+assert(adhocSkill.includes('--title='), 'Adhoc skill documents the independent short title')
+assert(
+  adhocSkill.includes('independent Discussion and Test'),
+  'Adhoc skill explains concurrent callable classification'
+)
+assert(
+  adhocSkill.includes('without Git archaeology'),
+  'Adhoc skill describes the self-contained repeated-run handoff'
+)
 
 const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
 assert(

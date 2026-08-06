@@ -4,9 +4,19 @@ SpecDev treats tracked `.specdev/` as portable workflow state and the current
 coding CLI as the interactive worker. Run the Node.js CLI directly as `specdev
 <command>`; never install or invoke it with Python tooling.
 
-When `.specdev/cache/bin/specdev` exists, run workflow commands through that
-workspace-local wrapper so a stale global installation cannot drive newer
-artifacts. Fall back to `specdev` on PATH only when the wrapper is absent.
+Resolve the launcher once per shell/session with this copyable contract. It
+selects an executable workspace wrapper when present and otherwise resolves the
+supported PATH command without first attempting a missing path:
+
+```sh
+if [ -x .specdev/cache/bin/specdev ]; then
+  SPECDEV_LAUNCHER=.specdev/cache/bin/specdev
+else
+  SPECDEV_LAUNCHER="$(command -v specdev)"
+fi
+[ -n "$SPECDEV_LAUNCHER" ] || { echo "specdev launcher not found" >&2; exit 127; }
+"$SPECDEV_LAUNCHER" <command>
+```
 
 ## Start here
 
@@ -17,7 +27,9 @@ artifacts. Fall back to `specdev` on PATH only when the wrapper is absent.
 3. Run `specdev next --json` only when resuming a focused RippleGraph workflow.
 4. For explicit identities use `specdev mission status M00001` or `specdev
 discussion D00001`.
-5. Announce every subtask with `Specdev: <action>`.
+5. Announce meaningful phase transitions with `Specdev: <action>`. Announce
+   plan changes, failed verification, and blockers immediately; repeated
+   read-only probes within an announced phase need no additional message.
 
 Questions, explanations, status checks, and read-only inspection are **Direct**:
 answer them without a graph or log. A user instruction such as “directly”, “just
@@ -85,9 +97,11 @@ a scheduler, but only one may be active in a worktree.
 - Before requesting Assignment or Mission contract approval, show the exact
   contract path and hash plus a concise 2-4 bullet preview covering objective,
   scope, and key acceptance criteria. The preview never replaces the contract.
-- Adhoc refuses a dirty start until the user inspects, separately checkpoints,
-  or explicitly adopts every existing change. Assignment enforces the same
-  product-tree decision immediately before implementation.
+- Adhoc classifies dirty product paths separately from independent Discussion
+  and Test Audit state. Concurrent callable state is preserved outside Adhoc
+  ownership; dirty product paths still require inspection, a separate
+  checkpoint, or explicit adoption. Assignment enforces the same product-tree
+  decision immediately before implementation.
 - SpecDev-owned delivery commits carry `SpecDev-*` trailers. Adhoc and
   standalone Assignment create one final delivery commit; Mission checkpoints,
   child deliveries, integrations, and completion identify their commit type.

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@e99966189a27281226efa03a62b5cc1ebc7ee4ce",
+      "scope": "changed-file whitespace validation",
+      "status": "passed",
+      "duration_ms": 100
+    },
+    {
+      "command": "node ./tests/test-engine-integration.js && node ./tests/test-init-platform.js",
+      "revision": "working-tree@e99966189a27281226efa03a62b5cc1ebc7ee4ce",
+      "scope": "initial focused Adhoc lifecycle and generated-guidance run; exposed two whitespace-sensitive assertions",
+      "status": "failed",
+      "duration_ms": 12800
+    },
+    {
+      "command": "node ./tests/test-engine-integration.js && node ./tests/test-init-platform.js",
+      "revision": "working-tree@e99966189a27281226efa03a62b5cc1ebc7ee4ce",
+      "scope": "focused Adhoc lifecycle and generated-guidance passing rerun after assertion correction",
+      "status": "passed",
+      "duration_ms": 12300
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

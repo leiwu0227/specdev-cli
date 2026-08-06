@@ -9,7 +9,7 @@ export const COMMANDS = [
   { name: 'do', usage: 'do <intent>', description: 'Start or resume a focused guided workflow' },
   {
     name: 'adhoc',
-    usage: 'adhoc <start|finish|status|show|cancel>',
+    usage: 'adhoc <start|verify|finish|status|show|cancel>',
     description: 'Make one bounded change with a receipt and final commit, without a graph',
   },
   { name: 'next', usage: 'next', description: 'Show the canonical focused-workflow action' },

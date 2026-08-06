@@ -118,6 +118,10 @@ export async function gitChangedPathsAtCommit(targetDir, revision) {
   return [...new Set(output.split('\0').map(normalizePath).filter(Boolean))].sort()
 }
 
+export async function gitCommitSubject(targetDir, revision) {
+  return gitText(targetDir, ['show', '-s', '--format=%s', revision])
+}
+
 export async function findCommitAddingPath(targetDir, path) {
   const output = await gitOutput(targetDir, [
     'log',

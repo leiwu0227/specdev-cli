@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00045",
+  "kind": "change",
+  "description": "Remove the live Adhoc workflow friction identified in the Fireplace field note by making dirty-path decisions explicit, providing stable launcher guidance, capturing verification structurally, expanding finish handoff output, generating readable subjects, and defining phase-level announcements without weakening atomic delivery",
+  "run_id": "assignment-lifecycle-20260806T01211942",
+  "created_at": "2026-08-06T01:21:19.429Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-08-06T01:46:22.174Z",
+  "review_policy_frozen_at": "2026-08-06T01:30:27.181Z",
+  "approved_at": "2026-08-06T01:30:27.181Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "e99966189a27281226efa03a62b5cc1ebc7ee4ce",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-08-06T01:31:15.376Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-08-06T01:46:22.149Z",
+  "activity": {
+    "attempt_count": 6,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 6,
+    "provider_attempts": {
+      "total": 6,
+      "completed": 2,
+      "failed": 3,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 954968,
+    "agent_duration_ms": 952316,
+    "provider_reported_tokens": 114260
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-08-06T01:46:22.174Z"
+}

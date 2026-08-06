@@ -166,6 +166,20 @@ try {
   const dirtyAdhoc = runJson(adhocRoot, ['adhoc', 'start', 'Repair one help message', '--json'], 1)
   assert.equal(dirtyAdhoc.state, 'dirty_worktree')
   assert.equal(dirtyAdhoc.working_tree.count, 1)
+  assert.deepEqual(dirtyAdhoc.worktree.product_dirty.paths, ['existing.txt'])
+  assert.deepEqual(dirtyAdhoc.worktree.preserved_workflow_state.paths, [
+    adhocDiscussionRelative,
+    adhocAuditRelative,
+  ])
+  assert.equal(
+    dirtyAdhoc.worktree.applied_policy,
+    'preserve_concurrent_discussion_and_test_audit_state'
+  )
+  assert.equal(dirtyAdhoc.worktree.decision, 'blocked')
+  const dirtyAdhocHuman = run(adhocRoot, ['adhoc', 'start', 'Repair one help message'], 1)
+  assert.match(dirtyAdhocHuman.stderr, /Worktree product paths: 1/)
+  assert.match(dirtyAdhocHuman.stderr, /Worktree independent workflow paths: 2 \(preserved\)/)
+  assert.match(dirtyAdhocHuman.stderr, /Worktree decision: blocked/)
   const adhoc = runJson(adhocRoot, [
     'adhoc',
     'start',
@@ -175,18 +189,66 @@ try {
   ])
   assert.match(adhoc.id, /^AH-\d{8}T\d{9}Z-[a-f0-9]{4}$/)
   assert.equal(adhoc.starting_worktree, 'adopted')
+  assert.deepEqual(adhoc.worktree.adopted.paths, ['existing.txt'])
+  assert.equal(adhoc.worktree.decision, 'allowed')
   assert.equal(runJson(adhocRoot, ['adhoc', 'status', '--json']).status, 'active')
   writeFileSync(join(adhocRoot, 'help.txt'), 'corrected help\n', 'utf8')
+  const failedVerification = runJson(
+    adhocRoot,
+    [
+      'adhoc',
+      'verify',
+      '--label=rendered help',
+      '--annotation=expected red run',
+      '--json',
+      '--',
+      process.execPath,
+      '-e',
+      'console.error("not corrected"); process.exit(3)',
+    ],
+    1
+  )
+  assert.equal(failedVerification.verification.status, 'failed')
+  assert.equal(failedVerification.verification.exit_status, 3)
+  assert.match(failedVerification.verification.tested_revision, /^working-tree@/)
+  assert.match(failedVerification.verification.output.text, /not corrected/)
+  const passingVerification = runJson(adhocRoot, [
+    'adhoc',
+    'verify',
+    '--label=rendered help',
+    '--json',
+    '--',
+    process.execPath,
+    '-e',
+    'console.log("corrected")',
+  ])
+  assert.equal(passingVerification.verification.status, 'passed')
+  assert.equal(passingVerification.acceptance_evidence.length, 1)
+  assert.equal(passingVerification.acceptance_evidence[0].status, 'passed')
+  const activeAdhocPath = join(adhocRoot, '.specdev', 'cache', 'adhoc.json')
+  const activeForRecovery = readFileSync(activeAdhocPath, 'utf8')
   const adhocFinished = runJson(adhocRoot, [
     'adhoc',
     'finish',
     '--outcome=Corrected the help text',
-    '--verification=Inspected the rendered help',
     '--json',
   ])
   assert.equal(adhocFinished.status, 'completed')
   assert.equal(adhocFinished.starting_git_commit_hash, adhocStartRevision)
   assert.equal(adhocFinished.ending_git_commit_hash, gitText(adhocRoot, ['rev-parse', 'HEAD']))
+  assert.equal(adhocFinished.delivery_commit, adhocFinished.ending_git_commit_hash)
+  assert.equal(adhocFinished.verification.attempts.length, 2)
+  assert.equal(adhocFinished.verification.acceptance_evidence.length, 1)
+  assert.equal(adhocFinished.product_worktree_clean, true)
+  assert.deepEqual(adhocFinished.remaining_worktree.product_dirty.paths, [])
+  assert.deepEqual(adhocFinished.remaining_worktree.preserved_workflow_state.paths, [
+    adhocDiscussionRelative,
+    adhocAuditRelative,
+  ])
+  assert(adhocFinished.committed_paths.product.includes('existing.txt'))
+  assert(adhocFinished.committed_paths.product.includes('help.txt'))
+  assert.deepEqual(adhocFinished.committed_paths.receipt, [adhocFinished.receipt])
+  assert.deepEqual(adhocFinished.start_worktree.adopted.paths, ['existing.txt'])
   assert.match(
     gitText(adhocRoot, ['log', '-1', '--format=%B']),
     new RegExp(`SpecDev-Adhoc: ${adhoc.id}`)
@@ -212,11 +274,71 @@ try {
     false
   )
   const adhocReceipt = readFileSync(join(adhocRoot, adhocFinished.receipt), 'utf8')
-  assert.doesNotMatch(adhocReceipt, /git_commit_hash/)
+  assert.match(adhocReceipt, /## Verification attempt history/)
+  assert.match(adhocReceipt, /rendered help: failed/)
+  assert.match(adhocReceipt, /rendered help: passed/)
+  assert.match(adhocReceipt, /## Current acceptance evidence/)
+  assert.match(adhocReceipt, /## Structured verification/)
+  assert.match(adhocReceipt, /"attempt_history"/)
+  writeFileSync(activeAdhocPath, activeForRecovery, 'utf8')
+  const recoveredHuman = run(adhocRoot, ['adhoc', 'finish'])
+  assert.match(recoveredHuman.stdout, /Adhoc .*: completed/)
+  assert.match(recoveredHuman.stdout, /Delivery subject: specdev\(adhoc\): Repair one help message/)
+  assert.match(recoveredHuman.stdout, /Remaining independent workflow paths: 2 \(preserved\)/)
+  assert.match(recoveredHuman.stdout, /Product worktree clean: yes/)
+  writeFileSync(activeAdhocPath, activeForRecovery, 'utf8')
+  const recoveredJson = runJson(adhocRoot, ['adhoc', 'finish', '--json'])
+  assert.equal(recoveredJson.recovered, true)
+  assert.deepEqual(recoveredJson.remaining_worktree, adhocFinished.remaining_worktree)
   const shownAdhoc = runJson(adhocRoot, ['adhoc', 'show', adhoc.id, '--json'])
   assert.equal(shownAdhoc.starting_git_commit_hash, adhocStartRevision)
   assert.equal(shownAdhoc.ending_git_commit_hash, adhocFinished.ending_git_commit_hash)
   assert.equal(runJson(adhocRoot, ['adhoc', 'status', '--json']).status, 'idle')
+
+  const longScope =
+    'Keep artifact preview header actions and close control reachable on narrow mobile layouts while preserving native desktop behavior'
+  const secondAdhoc = runJson(adhocRoot, ['adhoc', 'start', longScope, '--json'])
+  writeFileSync(join(adhocRoot, 'second.txt'), 'second delivery\n', 'utf8')
+  const secondFinished = runJson(adhocRoot, [
+    'adhoc',
+    'finish',
+    '--outcome=Kept preview actions reachable',
+    '--verification=Inspected the bounded fixture',
+    '--json',
+  ])
+  assert.equal(secondFinished.verification.manual, 'Inspected the bounded fixture')
+  assert.equal(secondFinished.delivery_subject.length <= 'specdev(adhoc): '.length + 68, true)
+  assert.doesNotMatch(
+    secondFinished.delivery_subject,
+    /\b(?:and|as|at|by|for|from|in|of|on|or|the|to|using|while|with)$/i
+  )
+  assert.equal(
+    gitText(adhocRoot, ['rev-parse', `${secondFinished.delivery_commit}^`]),
+    adhocFinished.delivery_commit
+  )
+  assert.notEqual(secondAdhoc.id, adhoc.id)
+
+  const thirdAdhoc = runJson(adhocRoot, [
+    'adhoc',
+    'start',
+    'Preserve this complete receipt scope even though the delivery log needs a concise operator title',
+    '--title=Concise operator title',
+    '--json',
+  ])
+  assert.equal(thirdAdhoc.title, 'Concise operator title')
+  writeFileSync(join(adhocRoot, 'third.txt'), 'third delivery\n', 'utf8')
+  const thirdFinished = runJson(adhocRoot, [
+    'adhoc',
+    'finish',
+    '--outcome=Used an independent title',
+    '--verification=Inspected the title fixture',
+    '--json',
+  ])
+  assert.equal(thirdFinished.delivery_subject, 'specdev(adhoc): Concise operator title')
+  assert.equal(
+    gitText(adhocRoot, ['rev-parse', `${thirdFinished.delivery_commit}^`]),
+    secondFinished.delivery_commit
+  )
 
   const root = tempProject('main')
   runGit(root, ['init', '--quiet'])

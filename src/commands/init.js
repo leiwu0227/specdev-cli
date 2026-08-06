@@ -20,8 +20,9 @@ Classify each request before creating workflow state. Questions and read-only
 inspection are Direct. Use Adhoc, Discussion, Assignment, or Mission only when
 the user selects that lane; never silently make every request an Assignment.
 
-IMPORTANT: Before starting any subtask, announce "Specdev: <what you're doing>".
-If you stop announcing subtasks, the user will assume you've stopped following the workflow.
+IMPORTANT: Announce "Specdev: <what you're doing>" at meaningful phase
+boundaries and whenever the plan changes, verification fails, or work blocks.
+Repeated read-only probes within one announced phase need no extra announcement.
 `
 }
 
@@ -40,14 +41,24 @@ description: Make one bounded change without a RippleGraph workflow
 Use Adhoc only when the user selects a concrete bounded repository change and
 does not want an Assignment. Start with \`specdev adhoc start "<scope>"\`.
 
-If the worktree is dirty, show the bounded summary and wait for the user to
-inspect, separately checkpoint, or explicitly adopt every existing change with
-\`--adopt-dirty\`. Make the change directly without a scheduler, worktree,
-subagent, or SpecDev approval gate. Finish with \`specdev adhoc finish
---outcome="..." --verification="..."\`; the host writes one receipt and one
-final commit. \`specdev adhoc cancel\` leaves source changes untouched.
+Start classifies product dirt separately from independent Discussion and Test
+Audit state. The latter is preserved outside Adhoc ownership. Product dirt
+still requires inspection, a separate checkpoint, or explicit adoption with
+\`--adopt-dirty\`. Use \`--title="..."\` when the commit needs a short subject
+independent of the full receipt scope.
 
-Announce every subtask with "Specdev: <action>".
+Make the change directly without a scheduler, worktree, subagent, or approval
+gate. Verification execution always requires repository/user authorization.
+After authorization, structured evidence may be captured with \`specdev adhoc
+verify --label="..." -- <command>\`; failed attempts and passing reruns remain
+in the receipt. Finish with \`specdev adhoc finish --outcome="..."\` when the
+latest evidence for each label passes, or retain the supported manual
+\`--verification="..."\` summary. Finish reports the delivery and remaining
+classified paths so the next bounded Adhoc can start without Git archaeology.
+\`specdev adhoc cancel\` leaves source changes untouched.
+
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; do not announce every repeated read-only probe.
 `,
   'specdev-start': `---
 name: specdev-start

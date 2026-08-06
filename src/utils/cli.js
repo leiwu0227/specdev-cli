@@ -3,7 +3,17 @@ export function parseArgv(argv) {
   const flags = {}
   const positionalArgs = []
 
+  let positionalOnly = false
+
   args.forEach((arg) => {
+    if (arg === '--' && !positionalOnly) {
+      positionalOnly = true
+      return
+    }
+    if (positionalOnly) {
+      positionalArgs.push(arg)
+      return
+    }
     if (arg.startsWith('--')) {
       const equalIndex = arg.indexOf('=')
       if (equalIndex > -1) {
