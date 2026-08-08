@@ -6,6 +6,8 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
   const planPath = join(assignmentPath, 'design', 'plan.md')
   const progressPath = join(assignmentPath, 'implementation', 'progress.json')
   const outcomePath = join(assignmentPath, 'outcome.md')
+  const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => null)
+  const standalone = !assignmentStatus?.mission
   for (const path of [planPath, progressPath, outcomePath]) {
     if (!(await fse.pathExists(path))) throw new Error(`Worker did not create ${path}`)
   }
@@ -69,7 +71,9 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
     throw new Error('implementation/progress.json requires follow_up: none or required')
   }
   for (const receipt of progress.verification) {
-    for (const field of ['command', 'revision', 'scope', 'status', 'duration_ms']) {
+    const requiredFields = ['command', 'revision', 'scope', 'status', 'duration_ms']
+    if (standalone) requiredFields.push('role')
+    for (const field of requiredFields) {
       if (receipt[field] === undefined || receipt[field] === null || receipt[field] === '') {
         throw new Error(`verification receipt is missing ${field}`)
       }
@@ -77,10 +81,14 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
     if (!['passed', 'failed', 'skipped'].includes(receipt.status)) {
       throw new Error(`invalid verification receipt status: ${receipt.status}`)
     }
+    if (standalone && !['qualification', 'authoritative_acceptance'].includes(receipt.role)) {
+      throw new Error(`invalid verification receipt role: ${receipt.role}`)
+    }
   }
   await writeJsonAtomic(progressPath, progress)
 
   const outcome = await fse.readFile(outcomePath, 'utf-8')
+  if (standalone) assertCanonicalOutcome(outcome)
   for (const id of acceptanceIds) {
     const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     if (
@@ -103,6 +111,22 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
   }
 }
 
+function assertCanonicalOutcome(outcome) {
+  if (!/^#\s+Outcome\s*$/m.test(outcome)) throw new Error('outcome.md requires # Outcome')
+  for (const heading of ['Delivered behavior', 'Deviations', 'Unresolved risks']) {
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (!new RegExp(`^##\\s+${escaped}\\s*$`, 'm').test(outcome)) {
+      throw new Error(`outcome.md requires ## ${heading}`)
+    }
+  }
+  const tables = [...outcome.matchAll(/^\|\s*Acceptance\s*\|\s*Evidence\s*\|\s*Result\s*\|\s*$/gim)]
+  if (tables.length !== 1) {
+    throw new Error(
+      'outcome.md requires exactly one | Acceptance | Evidence | Result | table header'
+    )
+  }
+}
+
 export function assertReviewWaiverEvidence(delivery, acceptanceIds) {
   if (delivery.progress.follow_up !== 'none') {
     throw new Error('Implementation review cannot be waived when follow_up is required')
@@ -110,9 +134,13 @@ export function assertReviewWaiverEvidence(delivery, acceptanceIds) {
   if (delivery.progress.deviations.length > 0) {
     throw new Error('Implementation review cannot be waived when delivery reports deviations')
   }
-  if (delivery.progress.verification.some((receipt) => receipt.status !== 'passed')) {
+  if (
+    delivery.progress.verification
+      .filter((receipt) => receipt.role === 'authoritative_acceptance')
+      .some((receipt) => receipt.status !== 'passed')
+  ) {
     throw new Error(
-      'Implementation review cannot be waived unless every verification receipt passed'
+      'Implementation review cannot be waived unless every authoritative acceptance receipt passed'
     )
   }
   const outcome = delivery.outcome || ''

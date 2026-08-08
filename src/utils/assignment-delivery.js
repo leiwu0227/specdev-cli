@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import fse from 'fs-extra'
 import {
@@ -22,6 +23,134 @@ import { attemptActivitySummary } from './process-record.js'
 import { parseResultEnvelope } from './result-envelope.js'
 
 const RECEIPT_LIMITS = Object.freeze({ items: 12, groups: 8, text: 240 })
+
+export async function buildStandaloneAssignmentCandidateReceipt({
+  targetDir,
+  assignmentPath,
+  assignmentStatus,
+}) {
+  const issues = []
+  const paths = receiptArtifactPaths(assignmentPath)
+  const reviewedPaths = {
+    contract: paths.contract,
+    plan: paths.plan,
+    progress: paths.progress,
+    outcome: paths.outcome,
+  }
+  const artifacts = {}
+  for (const [key, path] of Object.entries(reviewedPaths)) {
+    const bytes = await fse.readFile(path).catch(() => null)
+    artifacts[key] = {
+      path: boundedText(relativeToRepo(targetDir, path)),
+      exists: bytes !== null,
+      digest: bytes === null ? null : createHash('sha256').update(bytes).digest('hex'),
+    }
+    if (bytes === null) issues.push(`missing_artifact:${key}`)
+  }
+  const contract = await validateAssignmentContract(assignmentPath)
+  if (!contract.valid) issues.push('invalid_contract')
+  const progress = await readJsonIfPresent(paths.progress)
+  const outcome = await readTextIfPresent(paths.outcome)
+  const acceptance = summarizeAcceptance(contract.acceptanceIds || [], outcome, issues)
+  const verification = summarizeVerification(progress?.verification, issues)
+  const risks = summarizeRisks(outcome, issues)
+  if (progress?.follow_up === 'required') issues.push('follow_up_required')
+
+  const productDigest = await productWorkingTreeDigest(targetDir)
+  if (!productDigest) issues.push('candidate_product_identity_missing')
+  const identityInputs = {
+    assignment_id: String(assignmentStatus?.id || '').trim() || null,
+    contract_hash: contract.hash || null,
+    product_digest: productDigest,
+    artifact_digests: Object.fromEntries(
+      Object.entries(artifacts).map(([key, value]) => [key, value.digest])
+    ),
+  }
+  const identity = createHash('sha256').update(JSON.stringify(identityInputs)).digest('hex')
+  const projectPaths = (await gitStatusPaths(targetDir)).filter(
+    (path) => path !== '.specdev' && !path.startsWith('.specdev/')
+  )
+  const uniqueIssues = [...new Set(issues)]
+  const receipt = {
+    version: 1,
+    kind: 'standalone_assignment_candidate',
+    completeness: uniqueIssues.length === 0 ? 'complete' : 'incomplete',
+    identity,
+    assignment: {
+      id: identityInputs.assignment_id,
+      folder: assignmentPath.split(/[/\\]/).pop(),
+    },
+    contract: { path: artifacts.contract.path, hash: contract.hash || null },
+    acceptance,
+    verification,
+    changed_project_paths: groupProjectPaths(projectPaths),
+    unresolved_risks: risks,
+    artifacts,
+    issues: uniqueIssues.slice(0, RECEIPT_LIMITS.items),
+    issues_omitted: Math.max(0, uniqueIssues.length - RECEIPT_LIMITS.items),
+  }
+  validateStandaloneAssignmentCandidateReceipt(receipt)
+  return receipt
+}
+
+export function validateStandaloneAssignmentCandidateReceipt(receipt) {
+  if (!receipt || receipt.version !== 1 || receipt.kind !== 'standalone_assignment_candidate') {
+    throw new Error('Invalid standalone Assignment candidate receipt')
+  }
+  if (!/^[a-f0-9]{64}$/.test(String(receipt.identity || ''))) {
+    throw new Error('Standalone Assignment candidate receipt has invalid identity')
+  }
+  if (!['complete', 'incomplete'].includes(receipt.completeness)) {
+    throw new Error('Standalone Assignment candidate receipt has invalid completeness')
+  }
+  if (!Array.isArray(receipt.issues) || receipt.issues.length > RECEIPT_LIMITS.items) {
+    throw new Error('Standalone Assignment candidate receipt issues are invalid or unbounded')
+  }
+  for (const key of [
+    'assignment',
+    'contract',
+    'acceptance',
+    'verification',
+    'changed_project_paths',
+    'unresolved_risks',
+    'artifacts',
+  ]) {
+    if (!receipt[key] || typeof receipt[key] !== 'object') {
+      throw new Error(`Standalone Assignment candidate receipt is missing ${key}`)
+    }
+  }
+  for (const key of ['acceptance', 'verification']) {
+    if (!Array.isArray(receipt[key].items) || receipt[key].items.length > RECEIPT_LIMITS.items) {
+      throw new Error(`Standalone Assignment candidate receipt ${key} is invalid or unbounded`)
+    }
+  }
+  if (
+    !Array.isArray(receipt.verification.authoritative_evidence) ||
+    receipt.verification.authoritative_evidence.length > RECEIPT_LIMITS.items
+  ) {
+    throw new Error('Standalone Assignment candidate authoritative evidence is invalid')
+  }
+  for (const artifact of Object.values(receipt.artifacts)) {
+    if (
+      typeof artifact?.path !== 'string' ||
+      typeof artifact.exists !== 'boolean' ||
+      (artifact.digest !== null && !/^[a-f0-9]{64}$/.test(String(artifact.digest)))
+    ) {
+      throw new Error('Standalone Assignment candidate artifact identity is invalid')
+    }
+  }
+  return receipt
+}
+
+export async function writeStandaloneAssignmentCandidateReceipt(assignmentPath, receipt) {
+  validateStandaloneAssignmentCandidateReceipt(receipt)
+  const path = join(assignmentPath, 'review', 'candidate-receipt.json')
+  await fse.ensureDir(join(assignmentPath, 'review'))
+  const temporary = `${path}.tmp-${process.pid}`
+  await fse.writeJson(temporary, receipt, { spaces: 2 })
+  await fse.move(temporary, path, { overwrite: true })
+  return path
+}
 
 export async function ensureAssignmentGitBoundary({
   targetDir,
@@ -170,6 +299,23 @@ export async function completeStandaloneAssignmentDelivery({
       : await writeAssignmentStatus(assignmentPath, { activity })
   }
 
+  const reviewState = await readJsonIfPresent(
+    join(assignmentPath, 'review', 'implementation-state.json')
+  )
+  if (reviewState?.candidate_receipt_identity && !existingDeliveryCommit) {
+    const currentCandidate = await buildStandaloneAssignmentCandidateReceipt({
+      targetDir,
+      assignmentPath,
+      assignmentStatus: status,
+    })
+    if (
+      currentCandidate.completeness !== 'complete' ||
+      currentCandidate.identity !== reviewState.candidate_receipt_identity
+    ) {
+      throw new Error('Standalone Assignment reviewed candidate changed before delivery commit')
+    }
+  }
+
   await retireTransientArtifact(
     targetDir,
     specdevPath,
@@ -180,12 +326,6 @@ export async function completeStandaloneAssignmentDelivery({
     specdevPath,
     join(assignmentPath, 'implementation', 'repair-result.md')
   )
-  const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
-    runId: status.run_id,
-    attemptFilter: { assignment: name },
-    terminalOwner: { assignment: name, status: status.status },
-    focus: { kind: 'assignment', id: status.id },
-  })
   if (status.delivery_phase !== 'ready' || !status.delivery_prepared_at) {
     const deliveryPatch = {
       delivery_phase: 'ready',
@@ -206,6 +346,19 @@ export async function completeStandaloneAssignmentDelivery({
     assignmentStatus: status,
     delivery,
   })
+  if (receipt.completeness !== 'complete') {
+    const error = new Error(
+      `Standalone Assignment awaits artifact repair: ${receipt.issues.join(', ') || 'final receipt incomplete'}`
+    )
+    error.receipt = receipt
+    throw error
+  }
+  const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
+    runId: status.run_id,
+    attemptFilter: { assignment: name },
+    terminalOwner: { assignment: name, status: status.status },
+    focus: { kind: 'assignment', id: status.id },
+  })
   return { activity, runtime_compaction: runtime, delivery, receipt }
 }
 
@@ -221,7 +374,7 @@ export async function buildStandaloneAssignmentReceipt({
   for (const [key, path] of Object.entries(artifactPaths)) {
     const exists = await fse.pathExists(path)
     artifacts[key] = { path: boundedText(relativeToRepo(targetDir, path)), exists }
-    if (!exists && !['review_verdict', 'review_state'].includes(key)) {
+    if (!exists && !['review_verdict', 'review_state', 'candidate_receipt'].includes(key)) {
       issues.push(`missing_artifact:${key}`)
     }
   }
@@ -232,6 +385,7 @@ export async function buildStandaloneAssignmentReceipt({
   const outcome = await readTextIfPresent(artifactPaths.outcome)
   const reviewState = await readJsonIfPresent(artifactPaths.review_state)
   const reviewResult = await readReviewResult(artifactPaths.review_verdict)
+  const candidateReceipt = await readJsonIfPresent(artifactPaths.candidate_receipt)
   const contractHashMatchesReview = Boolean(
     contract.hash && reviewState?.contract_hash && contract.hash === reviewState.contract_hash
   )
@@ -240,7 +394,7 @@ export async function buildStandaloneAssignmentReceipt({
   const acceptance = summarizeAcceptance(contract.acceptanceIds || [], outcome, issues)
   const verification = summarizeVerification(progress?.verification, issues)
   const risks = summarizeRisks(outcome, issues)
-  const review = summarizeReview(reviewState, reviewResult, issues)
+  const review = summarizeReview(reviewState, reviewResult, candidateReceipt, issues)
 
   const id = String(assignmentStatus?.id || '').trim()
   const deliveryCommit = String(delivery?.ending_git_commit_hash || '').trim() || null
@@ -260,7 +414,9 @@ export async function buildStandaloneAssignmentReceipt({
   const projectPaths = committedPaths.filter(
     (path) => path !== '.specdev' && !path.startsWith('.specdev/')
   )
-  const worktreePaths = await gitStatusPaths(targetDir)
+  const worktreePaths = (await gitStatusPaths(targetDir)).filter(
+    (path) => path !== '.specdev' && !path.startsWith('.specdev/')
+  )
   const worktree = summarizeGitPaths(worktreePaths, RECEIPT_LIMITS.items)
 
   const uniqueIssues = [...new Set(issues)]
@@ -305,6 +461,7 @@ export function formatStandaloneAssignmentReceipt(receipt) {
   validateStandaloneAssignmentReceipt(receipt)
   const acceptance = receipt.acceptance.counts
   const verification = receipt.verification.counts
+  const roles = receipt.verification.by_role
   const lines = [
     'Delivery receipt:',
     `  Evidence: ${receipt.completeness}`,
@@ -313,6 +470,8 @@ export function formatStandaloneAssignmentReceipt(receipt) {
     `  Delivery commit: ${receipt.delivery.commit || 'missing'}`,
     `  Acceptance: ${acceptance.passed} passed, ${acceptance.failed} failed, ${acceptance.blocked} blocked, ${acceptance.missing} missing`,
     `  Verification: ${verification.passed} passed, ${verification.failed} failed, ${verification.skipped} skipped, ${verification.missing} missing`,
+    `    Qualification: ${roles.qualification.passed} passed, ${roles.qualification.failed} failed, ${roles.qualification.skipped} skipped`,
+    `    Authoritative acceptance: ${roles.authoritative_acceptance.passed} passed, ${roles.authoritative_acceptance.failed} failed, ${roles.authoritative_acceptance.skipped} skipped`,
     `  Changed project paths: ${receipt.changed_project_paths.count}`,
   ]
   for (const group of receipt.changed_project_paths.groups) {
@@ -383,6 +542,14 @@ export function validateStandaloneAssignmentReceipt(receipt) {
     }
   }
   if (
+    !receipt.verification.by_role ||
+    !receipt.verification.by_role.qualification ||
+    !receipt.verification.by_role.authoritative_acceptance ||
+    !Array.isArray(receipt.verification.authoritative_evidence)
+  ) {
+    throw new Error('Standalone delivery receipt verification roles are invalid')
+  }
+  if (
     !Array.isArray(receipt.unresolved_risks.items) ||
     receipt.unresolved_risks.items.length > RECEIPT_LIMITS.items
   ) {
@@ -416,6 +583,7 @@ function receiptArtifactPaths(assignmentPath) {
     status: join(assignmentPath, 'status.json'),
     review_verdict: verdictPath,
     review_state: join(reviewDir, 'implementation-state.json'),
+    candidate_receipt: join(reviewDir, 'candidate-receipt.json'),
   }
 }
 
@@ -458,7 +626,7 @@ function summarizeAcceptance(ids, outcome, issues) {
   return { total: ids.length, items, omitted: Math.max(0, ids.length - items.length), counts }
 }
 
-function summarizeVerification(receipts, issues) {
+export function summarizeVerification(receipts, issues) {
   if (!Array.isArray(receipts)) {
     issues.push('verification_evidence_missing')
     return {
@@ -466,29 +634,71 @@ function summarizeVerification(receipts, issues) {
       items: [],
       omitted: 0,
       counts: { passed: 0, failed: 0, skipped: 0, missing: 1 },
+      by_role: emptyVerificationRoleCounts(),
+      authoritative_evidence: [],
     }
   }
-  const items = receipts.slice(0, RECEIPT_LIMITS.items).map((receipt) => ({
-    command: boundedText(receipt?.command || 'missing'),
-    revision: boundedText(receipt?.revision || 'missing'),
-    scope: boundedText(receipt?.scope || 'missing'),
-    status: ['passed', 'failed', 'skipped'].includes(receipt?.status) ? receipt.status : 'missing',
-    duration_ms: Number.isSafeInteger(receipt?.duration_ms) ? receipt.duration_ms : null,
-  }))
+  const items = receipts.slice(0, RECEIPT_LIMITS.items).map((receipt) => {
+    const explicitRole = ['qualification', 'authoritative_acceptance'].includes(receipt?.role)
+      ? receipt.role
+      : null
+    return {
+      command: boundedText(receipt?.command || 'missing'),
+      revision: boundedText(receipt?.revision || 'missing'),
+      scope: boundedText(receipt?.scope || 'missing'),
+      status: ['passed', 'failed', 'skipped'].includes(receipt?.status)
+        ? receipt.status
+        : 'missing',
+      duration_ms: Number.isSafeInteger(receipt?.duration_ms) ? receipt.duration_ms : null,
+      role: explicitRole || 'authoritative_acceptance',
+      role_source: explicitRole ? 'explicit' : 'legacy_default',
+    }
+  })
   const counts = countStatuses(items, ['passed', 'failed', 'skipped', 'missing'])
+  const byRole = {
+    qualification: countStatuses(
+      items.filter((item) => item.role === 'qualification'),
+      ['passed', 'failed', 'skipped', 'missing']
+    ),
+    authoritative_acceptance: countStatuses(
+      items.filter((item) => item.role === 'authoritative_acceptance'),
+      ['passed', 'failed', 'skipped', 'missing']
+    ),
+  }
   if (receipts.length > RECEIPT_LIMITS.items || counts.missing > 0) {
     issues.push('verification_evidence_incomplete')
   }
-  if (counts.failed > 0 || counts.skipped > 0) issues.push('verification_not_passed')
+  const authoritative = items.filter((item) => item.role === 'authoritative_acceptance')
+  if (authoritative.length === 0) issues.push('authoritative_verification_missing')
+  if (
+    byRole.authoritative_acceptance.failed > 0 ||
+    byRole.authoritative_acceptance.skipped > 0 ||
+    byRole.authoritative_acceptance.missing > 0
+  ) {
+    issues.push('authoritative_verification_not_passed')
+  }
   return {
     total: receipts.length,
     items,
     omitted: Math.max(0, receipts.length - items.length),
     counts,
+    by_role: byRole,
+    authoritative_evidence: authoritative.map((item) => ({
+      command: item.command,
+      revision: item.revision,
+      status: item.status,
+    })),
   }
 }
 
-function summarizeReview(state, result, issues) {
+function emptyVerificationRoleCounts() {
+  return {
+    qualification: { passed: 0, failed: 0, skipped: 0, missing: 0 },
+    authoritative_acceptance: { passed: 0, failed: 0, skipped: 0, missing: 1 },
+  }
+}
+
+function summarizeReview(state, result, candidateReceipt, issues) {
   const verdict = result?.verdict || (state?.policy_waiver ? 'approved' : 'missing')
   const status = state?.status || 'missing'
   const disposition = state?.policy_waiver
@@ -500,30 +710,70 @@ function summarizeReview(state, result, issues) {
         ? 'material'
         : 'none'
       : 'unknown'
+  const scopeDivergence = result?.scope_divergence || state?.scope_divergence || 'unknown'
+  const procedureDivergence =
+    result?.procedure_divergence || state?.procedure_divergence || 'unknown'
+  const evidenceIntegrity = result?.evidence_integrity || state?.evidence_integrity || 'unknown'
+  const userReapprovalRequired =
+    result?.user_reapproval_required ?? state?.user_reapproval_required ?? false
+  const candidateIdentity = candidateReceipt?.identity || null
+  const reviewedCandidateIdentity = state?.candidate_receipt_identity || null
+  const candidateIdentityMatches =
+    candidateIdentity && reviewedCandidateIdentity
+      ? candidateIdentity === reviewedCandidateIdentity &&
+        candidateReceipt?.completeness === 'complete'
+      : null
+  const taxonomySource = result?.taxonomy_source || state?.taxonomy_source || 'structured'
   if (status !== 'approved' || verdict !== 'approved' || divergence === 'unknown') {
     issues.push('review_evidence_incomplete')
   }
-  return { status, verdict, disposition, divergence }
+  if (
+    taxonomySource !== 'legacy_projection' &&
+    (scopeDivergence === 'material' ||
+      userReapprovalRequired ||
+      !['complete', 'unknown'].includes(evidenceIntegrity))
+  ) {
+    issues.push('review_transition_unsafe')
+  }
+  if (candidateIdentityMatches === false) issues.push('reviewed_candidate_identity_changed')
+  return {
+    status,
+    verdict,
+    disposition,
+    divergence,
+    scope_divergence: scopeDivergence,
+    procedure_divergence: procedureDivergence,
+    evidence_integrity: evidenceIntegrity,
+    user_reapproval_required: Boolean(userReapprovalRequired),
+    candidate_identity: candidateIdentity,
+    candidate_identity_matches: candidateIdentityMatches,
+    taxonomy_source: taxonomySource,
+  }
 }
 
-function summarizeRisks(outcome, issues) {
-  const match =
+export function summarizeRisks(outcome, issues) {
+  const canonical =
     /^##\s+Unresolved risks\s*$([\s\S]*?)(?=^##\s+|^\|\s*Acceptance\s*\|\s*Evidence\s*\|\s*Result\s*\||(?![\s\S]))/im.exec(
       outcome
     )
+  const legacy = canonical ? null : /^Unresolved risks:\s*(.+)$/im.exec(outcome)
+  const match = canonical || legacy
   if (!match) {
     issues.push('unresolved_risks_missing')
-    return { status: 'missing', items: [] }
+    return { status: 'missing', items: [], source: 'missing' }
   }
   const text = match[1].trim()
-  if (!text || /^(?:none|none\.)$/i.test(text)) return { status: 'none', items: [] }
+  const source = canonical ? 'canonical_section' : 'legacy_inline'
+  if (!text || /^(?:none|none blocking)[.!]?$/i.test(text)) {
+    return { status: 'none', items: [], source }
+  }
   const candidates = text
     .split(/\r?\n/)
     .map((line) => line.replace(/^[-*]\s+/, '').trim())
     .filter(Boolean)
   const items = candidates.slice(0, RECEIPT_LIMITS.items).map(boundedText)
   if (candidates.length > RECEIPT_LIMITS.items) issues.push('unresolved_risks_truncated')
-  return { status: 'present', items }
+  return { status: 'present', items, source }
 }
 
 function groupProjectPaths(paths) {
@@ -571,6 +821,36 @@ function boundedText(value) {
   return text.length <= RECEIPT_LIMITS.text
     ? text
     : `${text.slice(0, RECEIPT_LIMITS.text - 3).trimEnd()}...`
+}
+
+async function productWorkingTreeDigest(targetDir) {
+  const paths = (await gitStatusPaths(targetDir))
+    .filter((path) => path !== '.specdev' && !path.startsWith('.specdev/'))
+    .sort()
+  const hash = createHash('sha256')
+  for (const path of paths) {
+    hash.update('\0path\0')
+    hash.update(path)
+    const absolutePath = join(targetDir, path)
+    let stat
+    try {
+      stat = await fse.lstat(absolutePath)
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error
+      hash.update('\0deleted\0')
+      continue
+    }
+    if (stat.isSymbolicLink()) {
+      hash.update('\0symlink\0')
+      hash.update(await fse.readlink(absolutePath))
+    } else if (stat.isFile()) {
+      hash.update(`\0file:${stat.mode & 0o111}\0`)
+      hash.update(await fse.readFile(absolutePath))
+    } else {
+      hash.update(`\0other:${stat.mode}\0`)
+    }
+  }
+  return hash.digest('hex')
 }
 
 export async function findPendingStandaloneAssignmentDelivery(targetDir, specdevPath) {

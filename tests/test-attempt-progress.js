@@ -6,7 +6,9 @@ import {
   attemptMilestonePrompt,
   attemptProgressPaths,
   buildAttemptProgress,
+  extractSpecdevAnnouncement,
   formatAttemptProgress,
+  newestPublicMilestone,
   readAttemptMilestone,
   validateMilestone,
   writeAttemptProgress,
@@ -112,6 +114,24 @@ try {
   assert.equal(withMilestone.phase, 'verification')
   assert.equal(withMilestone.milestone.summary, 'Checking focused progress fixtures')
   assert.equal(withMilestone.diagnostic, 'milestone_malformed')
+
+  const announcement = extractSpecdevAnnouncement(
+    'provider noise\nSpecdev: T-3 verification: 4 passed, 1 failed',
+    { phase: 'worker', updatedAt: now - 1_000 }
+  )
+  assert.equal(announcement.phase, 'T-3')
+  assert.equal(announcement.summary, 'T-3 verification: 4 passed, 1 failed')
+  assert.equal(extractSpecdevAnnouncement('Specdev: password=hunter2', { updatedAt: now }), null)
+  assert.equal(newestPublicMilestone(valid, announcement), announcement)
+  const announcementProgress = buildAttemptProgress({
+    ...base,
+    now,
+    milestone: announcement,
+  })
+  assert.equal(announcementProgress.current_task, 'T-3')
+  assert.deepEqual(announcementProgress.verification_counts, { passed: 4, failed: 1 })
+  assert.equal(announcementProgress.active_state, 'command_or_output_active')
+  assert.equal(announcementProgress.milestone, announcement)
 
   const human = formatAttemptProgress(withMilestone)
   const structured = formatAttemptProgress(withMilestone, 'structured')

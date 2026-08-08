@@ -101,6 +101,7 @@ export function buildAttemptProgress(input) {
   const diagnostic =
     input.diagnostic ||
     (milestoneAt !== null && now - milestoneAt > STALE_AFTER_MS ? 'milestone_stale' : null)
+  const semanticContext = milestone ? semanticMilestoneContext(milestone.summary) : {}
   return {
     version: 1,
     attempt: String(input.attemptId),
@@ -115,7 +116,13 @@ export function buildAttemptProgress(input) {
           : 'stale'
         : classifyAge(now - logActivityAt),
     last_log_activity_at: logActivityAt === null ? null : new Date(logActivityAt).toISOString(),
+    last_meaningful_activity_at: new Date(latestActivityAt).toISOString(),
     milestone,
+    current_task: input.currentTask || semanticContext.currentTask || null,
+    active_state:
+      input.activeState ||
+      (classification === 'fresh' ? 'command_or_output_active' : 'waiting_or_quiet'),
+    verification_counts: input.verificationCounts || semanticContext.verificationCounts || null,
     classification,
     diagnostic,
     updated_at: new Date(now).toISOString(),
@@ -137,7 +144,42 @@ export function formatAttemptProgress(progress, format = 'human') {
     ? `${progress.milestone.phase}: ${progress.milestone.summary}`
     : 'none'
   const diagnostic = progress.diagnostic ? `; diagnostic ${progress.diagnostic}` : ''
-  return `SpecDev ${progress.attempt} progress: ${progress.role}; ${formatElapsed(progress.elapsed_ms)}; process ${progress.process_liveness}; logs ${progress.log_liveness}; milestone ${milestone}; ${progress.classification}${diagnostic}.`
+  const task = progress.current_task ? `; task ${progress.current_task}` : ''
+  const active = progress.active_state ? `; state ${progress.active_state}` : ''
+  const verification = progress.verification_counts
+    ? `; verification ${progress.verification_counts.passed} passed, ${progress.verification_counts.failed} failed`
+    : ''
+  return `SpecDev ${progress.attempt} progress: ${progress.role}; ${formatElapsed(progress.elapsed_ms)}; process ${progress.process_liveness}; logs ${progress.log_liveness}; milestone ${milestone}${task}${active}${verification}; ${progress.classification}${diagnostic}.`
+}
+
+export function extractSpecdevAnnouncement(value, options = {}) {
+  const lines = String(value || '').split(/\r?\n/)
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const match = /^Specdev:\s*(.+)$/i.exec(lines[index].trim())
+    if (!match) continue
+    try {
+      const summary = boundedPublicText(match[1], SUMMARY_MAX_CHARS, 'summary')
+      const currentTask = /\bT-\d+\b/i.exec(summary)?.[0]?.toUpperCase() || null
+      return {
+        version: 1,
+        phase:
+          currentTask || boundedPublicText(options.phase || 'worker', PHASE_MAX_CHARS, 'phase'),
+        summary,
+        updated_at: new Date(validTime(options.updatedAt, Date.now())).toISOString(),
+      }
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+export function newestPublicMilestone(explicitMilestone, announcementMilestone) {
+  if (!explicitMilestone) return announcementMilestone || null
+  if (!announcementMilestone) return explicitMilestone
+  return Date.parse(explicitMilestone.updated_at) >= Date.parse(announcementMilestone.updated_at)
+    ? explicitMilestone
+    : announcementMilestone
 }
 
 export function attemptMilestonePrompt(targetDir, milestonePath) {
@@ -169,6 +211,19 @@ function boundedPublicText(value, maxChars, field) {
   }
   if (SENSITIVE_TEXT.test(text)) throw milestoneError('milestone_sensitive_text')
   return text
+}
+
+function semanticMilestoneContext(summary) {
+  const currentTask = /\bT-\d+\b/i.exec(String(summary || ''))?.[0]?.toUpperCase() || null
+  const verification = /\b(\d+)\s+passed\b[^\n]{0,40}\b(\d+)\s+failed\b/i.exec(
+    String(summary || '')
+  )
+  return {
+    currentTask,
+    verificationCounts: verification
+      ? { passed: Number(verification[1]), failed: Number(verification[2]) }
+      : null,
+  }
 }
 
 function normalizeProcessLiveness(value) {

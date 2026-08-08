@@ -22,10 +22,12 @@ import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { reviewImplementation } from './reviewloop.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import {
+  buildStandaloneAssignmentCandidateReceipt,
   completeStandaloneAssignmentDelivery,
   ensureAssignmentGitBoundary,
   findPendingStandaloneAssignmentDelivery,
   formatStandaloneAssignmentReceipt,
+  writeStandaloneAssignmentCandidateReceipt,
 } from '../utils/assignment-delivery.js'
 
 export async function implementCommand(positionalArgs = [], flags = {}) {
@@ -40,11 +42,18 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
 
   try {
     if (assignmentStatus?.status === 'completed' && !assignmentStatus.mission) {
-      const completion = await completeStandaloneAssignmentDelivery({
-        targetDir,
-        specdevPath,
-        assignmentPath,
-      })
+      let completion
+      try {
+        completion = await completeStandaloneAssignmentDelivery({
+          targetDir,
+          specdevPath,
+          assignmentPath,
+        })
+      } catch (error) {
+        return emitArtifactRepair(flags, name, error.message, {
+          ...(error.receipt ? { receipt: error.receipt } : {}),
+        })
+      }
       return emit(flags, {
         command: 'implement',
         version: 2,
@@ -166,19 +175,38 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       graph.position.node === 'implementation-review' &&
       reviewPolicy.implementation === 'waived'
     ) {
-      const delivery = await validateDeliveryArtifacts(
-        specdevPath,
-        assignmentPath,
-        contract.acceptanceIds
-      )
+      let delivery
+      try {
+        delivery = await validateDeliveryArtifacts(
+          specdevPath,
+          assignmentPath,
+          contract.acceptanceIds
+        )
+      } catch (error) {
+        return emitArtifactRepair(flags, name, `delivery_artifact_invalid: ${error.message}`)
+      }
       assertReviewWaiverEvidence(delivery, contract.acceptanceIds)
       const reviewDir = join(assignmentPath, 'review')
       const verdictPath = join(reviewDir, 'implementation-waiver.md')
       const candidateDigest = await productStateDigest(targetDir)
+      const currentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
+      const candidateReceipt = await buildStandaloneAssignmentCandidateReceipt({
+        targetDir,
+        assignmentPath,
+        assignmentStatus: currentStatus,
+      })
+      if (candidateReceipt.completeness !== 'complete') {
+        return emitArtifactRepair(
+          flags,
+          name,
+          `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`
+        )
+      }
       await fse.ensureDir(reviewDir)
+      await writeStandaloneAssignmentCandidateReceipt(assignmentPath, candidateReceipt)
       await fse.writeFile(
         verdictPath,
-        `---\nverdict: approved\nmaterial_divergence: false\n---\n\n## Findings\n\nImplementation review was waived by the approved Assignment policy. Host validation confirmed all acceptance criteria Passed, all verification receipts passed, no deviations, and no required follow-up.\n`,
+        `---\nverdict: approved\nmaterial_divergence: false\nscope_divergence: none\nprocedure_divergence: none\nevidence_integrity: complete\nuser_reapproval_required: false\n---\n\n## Findings\n\nImplementation review was waived by the approved Assignment policy. Host validation confirmed all acceptance criteria Passed, authoritative acceptance evidence passed, no deviations, and no required follow-up.\n`,
         'utf-8'
       )
       await fse.writeJson(
@@ -190,10 +218,23 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           policy_waiver: true,
           contract_hash: contract.hash,
           candidate_digest: candidateDigest,
+          candidate_receipt_identity: candidateReceipt.identity,
+          scope_divergence: 'none',
+          procedure_divergence: 'none',
+          evidence_integrity: 'complete',
+          user_reapproval_required: false,
           updated_at: new Date().toISOString(),
         },
         { spaces: 2 }
       )
+      const revalidatedCandidate = await buildStandaloneAssignmentCandidateReceipt({
+        targetDir,
+        assignmentPath,
+        assignmentStatus: currentStatus,
+      })
+      if (revalidatedCandidate.identity !== candidateReceipt.identity) {
+        return emitArtifactRepair(flags, name, 'candidate_receipt_changed_after_waiver')
+      }
       stepGuidedNode(targetDir, 'implementation-review', {
         approved: true,
         verdict: relativeToRepo(targetDir, verdictPath),
@@ -324,8 +365,8 @@ function workerPrompt({ targetDir, assignmentPath, contract, catalog }) {
     'Repository instructions outrank the contract and guides. Before any test or protected command, obey repository confirmation rules. If permission is missing, return blocked rather than guessing.',
     'Never run a full suite when focused evidence answers the question. Reuse a receipt for the same command on the same revision.',
     'When adding or upgrading an external dependency, resolve its version from the package manager or registry during this Attempt rather than relying on model memory. Use the ecosystem lockfile/audit mechanism when available and record the result. A lockfile-only update is not evidence that the dependency installed or that its entry point starts. Do not claim completion with an unresolved direct high/critical advisory unless the approved contract explicitly accepts it; report the blocker or required follow-up instead.',
-    'progress.json must use this exact top-level shape: { "version": 1, "tasks": [{ "id": "T-1", "status": "completed" }], "selected_guides": { "implementation": ["guide-id"], "review": ["guide-id"] }, "verification": [{ "command": "...", "revision": "...", "scope": "...", "status": "passed|failed|skipped", "duration_ms": 123 }], "deviations": [], "follow_up": "none|required" }. Do not rename these keys. Record every material contract or plan deviation in deviations. Use follow_up: required only when another bounded Assignment is actually needed. For a dirty tested candidate, record revision as `working-tree@<HEAD>` rather than implying HEAD contains the changes. Every Task must be completed before returning completed.',
-    'outcome.md must summarize delivered behavior, deviations, unresolved risks, and a compact table with exactly three columns: Acceptance, Evidence, Result. Put only Passed, Failed, or Blocked (optional terminal punctuation is allowed) in the Result cell for every acceptance ID.',
+    'progress.json must use this exact top-level shape: { "version": 1, "tasks": [{ "id": "T-1", "status": "completed" }], "selected_guides": { "implementation": ["guide-id"], "review": ["guide-id"] }, "verification": [{ "command": "...", "revision": "...", "scope": "...", "status": "passed|failed|skipped", "duration_ms": 123, "role": "qualification|authoritative_acceptance" }], "deviations": [], "follow_up": "none|required" }. Do not rename these keys. Record every material contract or plan deviation in deviations. Use follow_up: required only when another bounded Assignment is actually needed. For a dirty tested candidate, record revision as `working-tree@<HEAD>` rather than implying HEAD contains the changes. Every Task must be completed before returning completed. Verification role records evidence classification only and never authorizes or reruns a command.',
+    'outcome.md must use this exact skeleton: # Outcome, ## Delivered behavior, ## Deviations, ## Unresolved risks, then one compact table with exactly three columns: Acceptance, Evidence, Result. Put only Passed, Failed, or Blocked (optional terminal punctuation is allowed) in the Result cell for every acceptance ID.',
   ].join('\n')
 }
 
@@ -359,6 +400,21 @@ function emitBlockedWorker(flags, payload) {
   }
   process.exitCode = 1
   return payload
+}
+
+function emitArtifactRepair(flags, assignment, issue, details = {}) {
+  return emitBlockedWorker(flags, {
+    command: 'implement',
+    version: 2,
+    status: 'blocked',
+    assignment,
+    recovery: 'artifact_repair',
+    diagnostic: String(issue).slice(0, 500),
+    ...details,
+    result: 'Candidate receipt preflight did not authorize review or delivery.',
+    next_action:
+      'Repair the preserved delivery artifacts, then rerun specdev implement; the existing source changes and worker result remain reusable.',
+  })
 }
 
 function emitBoundaryBlocked(flags, details) {

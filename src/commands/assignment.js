@@ -265,6 +265,11 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
       : assignmentContractTemplate({ description, kind, sourceDiscussion, sourceAssignment }),
     'utf-8'
   )
+  await fse.writeFile(
+    join(assignmentPath, 'outcome.md'),
+    `# Outcome\n\n## Delivered behavior\n\nPending implementation.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Pending implementation evidence. | Blocked |\n`,
+    'utf-8'
+  )
   await writeAssignmentStatus(assignmentPath, {
     id,
     kind,

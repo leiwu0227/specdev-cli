@@ -130,6 +130,7 @@ function writeDelivery(path) {
             scope: 'focused receipt fixture',
             status: 'passed',
             duration_ms: 1,
+            role: 'authoritative_acceptance',
           },
         ],
         deviations: [],
@@ -369,12 +370,14 @@ try {
     'implement',
     `--assignment=${completed.assignment}`,
     '--json',
-  ])
+  ], 1)
+  assert.equal(ambiguous.status, 'blocked')
+  assert.equal(ambiguous.recovery, 'artifact_repair')
   assert.equal(ambiguous.receipt.completeness, 'incomplete')
   assert.equal(ambiguous.receipt.delivery.matching_commit_count, 2)
   assert(ambiguous.receipt.issues.includes('ambiguous_delivery_commit'))
   assert(ambiguous.receipt.issues.includes('ambiguous_git_delivery_boundary'))
-  assert.equal(ambiguous.delivery.ending_git_commit_hash, ambiguousHead)
+  assert.equal(ambiguous.receipt.delivery.commit, ambiguousHead)
   assert.equal(gitText(completed.root, ['rev-list', '--count', 'HEAD']), ambiguousCommitCount)
   assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
 
@@ -383,13 +386,15 @@ try {
     'implement',
     `--assignment=${completed.assignment}`,
     '--json',
-  ])
+  ], 1)
+  assert.equal(incomplete.status, 'blocked')
+  assert.equal(incomplete.recovery, 'artifact_repair')
   assert.equal(incomplete.receipt.completeness, 'incomplete')
   assert.equal(incomplete.receipt.artifacts.progress.exists, false)
   assert.equal(incomplete.receipt.verification.counts.missing, 1)
   assert(incomplete.receipt.issues.includes('missing_artifact:progress'))
   assert(incomplete.receipt.issues.includes('verification_evidence_missing'))
-  assert.equal(incomplete.delivery.ending_git_commit_hash, ambiguousHead)
+  assert.equal(incomplete.receipt.delivery.commit, ambiguousHead)
   assert.equal(gitText(completed.root, ['rev-list', '--count', 'HEAD']), ambiguousCommitCount)
   assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
 
@@ -418,7 +423,9 @@ try {
     'implement',
     `--assignment=${completed.assignment}`,
     '--json',
-  ])
+  ], 1)
+  assert.equal(nonPassing.status, 'blocked')
+  assert.equal(nonPassing.recovery, 'artifact_repair')
   assert.equal(nonPassing.receipt.completeness, 'incomplete')
   assert.equal(nonPassing.receipt.acceptance.counts.blocked, 1)
   assert.equal(nonPassing.receipt.acceptance.counts.failed, 1)

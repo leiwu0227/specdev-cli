@@ -17,7 +17,9 @@ import {
   attemptMilestonePrompt,
   attemptProgressPaths,
   buildAttemptProgress,
+  extractSpecdevAnnouncement,
   formatAttemptProgress,
+  newestPublicMilestone,
   readAttemptMilestone,
   writeAttemptProgress,
 } from './attempt-progress.js'
@@ -430,6 +432,8 @@ function spawnInvocation({
     let killTimer
     let lastLogActivityAt = null
     let lastValidMilestone = null
+    let lastAnnouncementMilestone = null
+    let announcementBuffer = ''
     let progressEmission = null
     const streamProviderOutput = process.env.SPECDEV_AGENT_STREAM === '1'
     const child = spawn(command, args, {
@@ -458,13 +462,14 @@ function spawnInvocation({
           lastValidMilestone,
         })
         lastValidMilestone = milestoneResult.milestone
+        const publicMilestone = newestPublicMilestone(lastValidMilestone, lastAnnouncementMilestone)
         const progress = buildAttemptProgress({
           attemptId,
           role,
           startedAt,
           processLiveness: 'live_local',
           logActivityAt: lastLogActivityAt,
-          milestone: lastValidMilestone,
+          milestone: publicMilestone,
           diagnostic: milestoneResult.diagnostic,
         })
         await writeAttemptProgress(progressPath, progress)
@@ -496,14 +501,26 @@ function spawnInvocation({
     progressTimer.unref?.()
 
     child.stdin.end(prompt)
+    const captureAnnouncement = (chunk) => {
+      announcementBuffer = `${announcementBuffer}${chunk.toString('utf-8')}`.slice(-4096)
+      const next = extractSpecdevAnnouncement(announcementBuffer, {
+        phase: role,
+        updatedAt: lastLogActivityAt,
+      })
+      if (next && next.summary !== lastAnnouncementMilestone?.summary) {
+        lastAnnouncementMilestone = next
+      }
+    }
     child.stdout.on('data', (chunk) => {
       lastLogActivityAt = Date.now()
+      captureAnnouncement(chunk)
       stdoutLog.write(chunk)
       if (streamProviderOutput) process.stderr.write(chunk)
       stdout = appendCapped(stdout, chunk)
     })
     child.stderr.on('data', (chunk) => {
       lastLogActivityAt = Date.now()
+      captureAnnouncement(chunk)
       stderrLog.write(chunk)
       if (streamProviderOutput) process.stderr.write(chunk)
       stderr = appendCapped(stderr, chunk)

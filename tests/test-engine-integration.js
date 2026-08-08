@@ -124,7 +124,16 @@ function writeRecoveredDelivery(path) {
       version: 1,
       tasks: [{ id: 'T-1', status: 'completed' }],
       selected_guides: { implementation: [], review: [] },
-      verification: [],
+      verification: [
+        {
+          command: 'node focused-recovery-check.js',
+          revision: 'working-tree@fixture',
+          scope: 'AC-1 recovery fixture',
+          status: 'passed',
+          duration_ms: 1,
+          role: 'authoritative_acceptance',
+        },
+      ],
       deviations: [],
       follow_up: 'none',
     }),
@@ -132,7 +141,7 @@ function writeRecoveredDelivery(path) {
   )
   writeFileSync(
     join(path, 'outcome.md'),
-    '# Outcome\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Fixture inspection | Passed |\n',
+    '# Outcome\n\n## Delivered behavior\n\nRecovered fixture.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Fixture inspection | Passed |\n',
     'utf8'
   )
   writeFileSync(
@@ -573,7 +582,7 @@ try {
   const compacted = runJson(root, ['implement', '--json'])
   assert.equal(compacted.status, 'completed')
   assert.equal(compacted.recovered, true)
-  assert.equal(compacted.runtime_compaction.compacted, false)
+  assert.equal(compacted.runtime_compaction.compacted, true)
   assert.deepEqual(compacted.activity.provider_attempts, {
     total: 0,
     completed: 0,

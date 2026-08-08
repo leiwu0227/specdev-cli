@@ -3,6 +3,7 @@ import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync 
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { stepGuidedNode } from '../src/utils/engine-sync.js'
 
 const repoRoot = resolve(import.meta.dirname, '..')
 const bin = join(repoRoot, 'bin', 'specdev.js')
@@ -113,6 +114,46 @@ function writeDiscussion(path) {
   )
 }
 
+function writeImplementationDelivery(path) {
+  mkdirSync(join(path, 'design'), { recursive: true })
+  mkdirSync(join(path, 'implementation'), { recursive: true })
+  writeFileSync(
+    join(path, 'design', 'plan.md'),
+    '# Implementation plan\n\n**Implementation Guides:** []\n\n**Review Guides:** []\n\n## Tasks\n\n1. **T-1 — Exercise repair convergence (AC-1).** Preserve the invalid artifact for the bounded-repair fixture.\n',
+    'utf8'
+  )
+  writeFileSync(
+    join(path, 'implementation', 'progress.json'),
+    `${JSON.stringify(
+      {
+        version: 1,
+        tasks: [{ id: 'T-1', status: 'completed' }],
+        selected_guides: { implementation: [], review: [] },
+        verification: [
+          {
+            command: 'node focused-repair-check.js',
+            revision: 'working-tree@fixture',
+            scope: 'AC-1 bounded repair fixture',
+            status: 'passed',
+            duration_ms: 1,
+            role: 'authoritative_acceptance',
+          },
+        ],
+        deviations: [],
+        follow_up: 'none',
+      },
+      null,
+      2
+    )}\n`,
+    'utf8'
+  )
+  writeFileSync(
+    join(path, 'outcome.md'),
+    '# Outcome\n\n## Delivered behavior\n\nFixture delivery.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Focused fixture. | Passed |\n',
+    'utf8'
+  )
+}
+
 function mutateDuringNextReview(relativePath) {
   writeFileSync(join(root, '.git', 'specdev-review-mutation'), relativePath, 'utf8')
 }
@@ -123,7 +164,18 @@ try {
   writeFileSync(
     fakeClaude,
     `#!/bin/sh
-cat >/dev/null
+prompt=$(cat)
+case "$prompt" in
+  *"Continue the existing Assignment"*)
+    repair_count_file="${root}.repair-count"
+    repair_count=0
+    if [ -f "$repair_count_file" ]; then repair_count=$(cat "$repair_count_file"); fi
+    repair_count=$((repair_count + 1))
+    printf '%s' "$repair_count" >"$repair_count_file"
+    printf '%s\n' '---' 'status: completed' 'revision: null' 'follow_up: none' '---' '' '## Changes' '' 'Preserved the fixture artifacts without repairing them.'
+    exit 0
+    ;;
+esac
 count_file="${root}.review-count"
 count=0
 if [ -f "$count_file" ]; then count=$(cat "$count_file"); fi
@@ -256,8 +308,46 @@ fi
   assert.equal(childState.mode, 'automatic')
   assert.equal(childState.stage, 'complete')
 
+  runJson(['cancel', 'finish automatic Mission child fixture'])
+  runJson(['do', 'start an assignment'])
+  const boundedRepair = runJson([
+    'assignment',
+    'Bound artifact preflight repair',
+    '--slug=bounded-artifact-repair',
+    '--json',
+  ])
+  const boundedRepairPath = join(root, boundedRepair.path)
+  writeContract(boundedRepairPath, 'Bound repeated artifact-preflight repair')
+  runJson(['checkpoint', 'brainstorm', '--json'])
+  runJson(['approve', 'brainstorm', '--json'])
+  writeImplementationDelivery(boundedRepairPath)
+  stepGuidedNode(root, 'design', {
+    plan: `${boundedRepair.path}/design/plan.md`,
+    attempt: 'fixture-worker',
+  })
+  stepGuidedNode(root, 'implementation', {
+    progress: `${boundedRepair.path}/implementation/progress.json`,
+    outcome: `${boundedRepair.path}/outcome.md`,
+    attempt: 'fixture-worker',
+  })
+  writeFileSync(join(boundedRepairPath, 'outcome.md'), '# Outcome\n\nInvalid fixture.\n', 'utf8')
+  const exhaustedRepair = runJson(['reviewloop', 'implementation', '--json'], 1)
+  assert.match(exhaustedRepair.error, /awaits manual artifact repair after 1 automatic repair Attempt/)
+  assert.equal(readFileSync(`${root}.repair-count`, 'utf8'), '1')
+  const repairState = JSON.parse(
+    readFileSync(join(boundedRepairPath, 'review', 'implementation-state.json'), 'utf8')
+  )
+  assert.equal(repairState.status, 'artifact_repair')
+  assert.equal(repairState.disposition, 'blocked')
+  assert.equal(repairState.artifact_repair_round, 2)
+  assert.equal(repairState.artifact_repair_limit, 1)
+  const repeatedRepair = runJson(['reviewloop', 'implementation', '--json'], 1)
+  assert.match(repeatedRepair.error, /no replacement worker was launched/)
+  assert.equal(readFileSync(`${root}.repair-count`, 'utf8'), '1')
+
   console.log('reviewloop mode command tests passed')
 } finally {
   rmSync(root, { recursive: true, force: true })
   rmSync(`${root}.review-count`, { force: true })
+  rmSync(`${root}.repair-count`, { force: true })
 }

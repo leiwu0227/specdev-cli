@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import fse from 'fs-extra'
@@ -71,6 +71,15 @@ import {
 } from '../src/utils/workspace-changes.js'
 import { compactCompletedWorkflowRuntime } from '../src/utils/artifact-retention.js'
 import { durableAttemptStatusForResult } from '../src/utils/spawned-agent.js'
+import {
+  buildStandaloneAssignmentCandidateReceipt,
+  summarizeRisks,
+  summarizeVerification,
+} from '../src/utils/assignment-delivery.js'
+import {
+  AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
+  recordArtifactRepair,
+} from '../src/utils/review-convergence.js'
 
 const root = mkdtempSync(join(tmpdir(), 'specdev-vnext-foundations-'))
 const specdevPath = join(root, '.specdev')
@@ -202,6 +211,21 @@ the existing API stable.
     'reviewer'
   )
   assert.equal(result.frontmatter.verdict, 'approved')
+  assert.equal(result.frontmatter.taxonomy_source, 'legacy_projection')
+  assert.equal(result.frontmatter.evidence_integrity, 'complete')
+  const structuredReview = parseResultEnvelope(
+    `---\nverdict: approved\nmaterial_divergence: false\nscope_divergence: none\nprocedure_divergence: disclosed\nevidence_integrity: complete\nuser_reapproval_required: false\n---\n\n## Findings\n\nProcedure divergence was disclosed and evidence remains complete.\n`,
+    'reviewer'
+  )
+  assert.equal(structuredReview.frontmatter.procedure_divergence, 'disclosed')
+  assert.throws(
+    () =>
+      parseResultEnvelope(
+        `---\nverdict: approved\nmaterial_divergence: false\nscope_divergence: material\nprocedure_divergence: none\nevidence_integrity: complete\nuser_reapproval_required: true\n---\n\n## Findings\n\nUnsafe.\n`,
+        'reviewer'
+      ),
+    /structured projection/
+  )
   assert.throws(() => parseResultEnvelope('approved', 'reviewer'), /frontmatter/)
   assert.throws(
     () =>
@@ -793,14 +817,23 @@ the existing API stable.
       version: 1,
       tasks: [{ id: 'T-1', status: 'completed' }],
       selected_guides: { implementation: ['api-security'], review: ['frontend'] },
-      verification: [],
+      verification: [
+        {
+          command: 'node focused-check.js',
+          revision: 'working-tree@fixture',
+          scope: 'AC-1',
+          status: 'passed',
+          duration_ms: 10,
+          role: 'authoritative_acceptance',
+        },
+      ],
       deviations: [],
       follow_up: 'none',
     })
   )
   writeFileSync(
     join(deliveryPath, 'outcome.md'),
-    '# Outcome\n\n| Criterion | Evidence | Result |\n|---|---|---|\n| AC-1 | Inspection | Passed |\n'
+    '# Outcome\n\n## Delivered behavior\n\nDelivered.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n|---|---|---|\n| AC-1 | Inspection | Passed |\n'
   )
   const delivery = await validateDeliveryArtifacts(specdevPath, deliveryPath, ['AC-1'])
   assert.doesNotThrow(() => assertReviewWaiverEvidence(delivery, ['AC-1']))
@@ -814,7 +847,7 @@ the existing API stable.
   await validateDeliveryArtifacts(specdevPath, deliveryPath, ['AC-1'])
   writeFileSync(
     join(deliveryPath, 'outcome.md'),
-    '# Outcome\n\n| Criterion | Evidence | Result |\n|---|---|---|\n| AC-1 | Inspection | Passed. |\n'
+    '# Outcome\n\n## Delivered behavior\n\nDelivered.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n|---|---|---|\n| AC-1 | Inspection | Passed. |\n'
   )
   await validateDeliveryArtifacts(specdevPath, deliveryPath, ['AC-1'])
   writeFileSync(
@@ -832,8 +865,105 @@ the existing API stable.
   writeFileSync(join(deliveryPath, 'outcome.md'), '# Outcome\n\nNo acceptance table.\n')
   await assert.rejects(
     validateDeliveryArtifacts(specdevPath, deliveryPath, ['AC-1']),
-    /no final Passed/
+    /requires ## Delivered behavior|no final Passed/
   )
+
+  const legacyRiskIssues = []
+  assert.deepEqual(
+    summarizeRisks('# Outcome\n\nUnresolved risks: none blocking.\n', legacyRiskIssues),
+    { status: 'none', items: [], source: 'legacy_inline' }
+  )
+  assert.deepEqual(legacyRiskIssues, [])
+  const caveatIssues = []
+  assert.equal(
+    summarizeRisks(
+      '# Outcome\n\nUnresolved risks: none blocking. This remains a smoke test.\n',
+      caveatIssues
+    ).status,
+    'present'
+  )
+  const verificationIssues = []
+  const verificationSummary = summarizeVerification(
+    [
+      {
+        command: 'node harness-probe.js',
+        revision: 'working-tree@fixture',
+        scope: 'harness',
+        status: 'failed',
+        duration_ms: 2,
+        role: 'qualification',
+      },
+      {
+        command: 'node acceptance.js',
+        revision: 'working-tree@fixture',
+        scope: 'AC-1',
+        status: 'passed',
+        duration_ms: 3,
+        role: 'authoritative_acceptance',
+      },
+    ],
+    verificationIssues
+  )
+  assert.equal(verificationSummary.by_role.qualification.failed, 1)
+  assert.equal(verificationSummary.by_role.authoritative_acceptance.passed, 1)
+  assert.deepEqual(verificationIssues, [])
+
+  const candidateRoot = join(root, 'candidate-repo')
+  const candidateSpecdev = join(candidateRoot, '.specdev')
+  const candidatePath = join(candidateSpecdev, 'assignments', '00002_candidate')
+  mkdirSync(join(candidatePath, 'brainstorm'), { recursive: true })
+  mkdirSync(join(candidatePath, 'design'), { recursive: true })
+  mkdirSync(join(candidatePath, 'implementation'), { recursive: true })
+  execFileSync('git', ['init'], { cwd: candidateRoot })
+  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: candidateRoot })
+  execFileSync('git', ['config', 'user.name', 'SpecDev Test'], { cwd: candidateRoot })
+  writeFileSync(join(candidateRoot, 'product.js'), 'export const value = 1\n')
+  execFileSync('git', ['add', '.'], { cwd: candidateRoot })
+  execFileSync('git', ['commit', '-m', 'fixture'], { cwd: candidateRoot })
+  writeFileSync(
+    join(candidatePath, 'brainstorm', 'contract.md'),
+    assignmentContractTemplate({ description: 'Candidate fixture' }).replace(/TODO/g, 'None')
+  )
+  writeFileSync(
+    join(candidatePath, 'design', 'plan.md'),
+    readFileSync(join(deliveryPath, 'design', 'plan.md'))
+  )
+  writeFileSync(
+    join(candidatePath, 'implementation', 'progress.json'),
+    readFileSync(join(deliveryPath, 'implementation', 'progress.json'))
+  )
+  const canonicalOutcome =
+    '# Outcome\n\n## Delivered behavior\n\nDelivered.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Focused evidence. | Passed |\n'
+  writeFileSync(join(candidatePath, 'outcome.md'), canonicalOutcome)
+  const firstCandidate = await buildStandaloneAssignmentCandidateReceipt({
+    targetDir: candidateRoot,
+    assignmentPath: candidatePath,
+    assignmentStatus: { id: '00002' },
+  })
+  assert.equal(firstCandidate.completeness, 'complete')
+  writeFileSync(join(candidatePath, 'outcome.md'), canonicalOutcome.replace('Focused', 'Changed'))
+  const changedCandidate = await buildStandaloneAssignmentCandidateReceipt({
+    targetDir: candidateRoot,
+    assignmentPath: candidatePath,
+    assignmentStatus: { id: '00002' },
+  })
+  assert.notEqual(changedCandidate.identity, firstCandidate.identity)
+
+  const firstArtifactRepair = recordArtifactRepair(
+    {},
+    { issue: 'authoritative_verification_missing', updatedAt: '2026-08-08T00:00:00.000Z' }
+  )
+  assert.equal(AUTOMATIC_ARTIFACT_REPAIR_LIMIT, 1)
+  assert.equal(firstArtifactRepair.disposition, 'repair')
+  assert.equal(firstArtifactRepair.state.artifact_repair_round, 1)
+  assert.equal(firstArtifactRepair.state.artifact_repair_limit, 1)
+  const exhaustedArtifactRepair = recordArtifactRepair(firstArtifactRepair.state, {
+    issue: 'authoritative_verification_missing',
+    updatedAt: '2026-08-08T00:01:00.000Z',
+  })
+  assert.equal(exhaustedArtifactRepair.disposition, 'exhausted')
+  assert.equal(exhaustedArtifactRepair.state.disposition, 'blocked')
+  assert.equal(exhaustedArtifactRepair.state.artifact_repair_round, 2)
 
   const originalQueue = {
     version: 2,

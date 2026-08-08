@@ -31,11 +31,15 @@ import { readGuidedCall } from '../utils/callable-sync.js'
 import { readMission, resolveMissionSelector } from '../utils/mission.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import {
+  buildStandaloneAssignmentCandidateReceipt,
   completeStandaloneAssignmentDelivery,
   formatStandaloneAssignmentReceipt,
+  writeStandaloneAssignmentCandidateReceipt,
 } from '../utils/assignment-delivery.js'
 import {
+  AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
   initialAutomaticReviewState,
+  recordArtifactRepair,
   recordArbitration,
   recordPrimaryReview,
   recordResolver,
@@ -720,38 +724,24 @@ export async function reviewImplementation(flags = {}) {
       `Implementation review is not available at ${graph?.position?.node || 'the current workflow'}`
     )
   }
-  let delivery = await validateDeliveryArtifacts(
-    specdevPath,
-    assignmentPath,
-    contract.acceptanceIds
-  )
-
   const reviewDir = join(assignmentPath, 'review')
   const verdictPath = join(reviewDir, 'implementation-verdict.md')
   const statePath = join(reviewDir, 'implementation-state.json')
   await fse.ensureDir(reviewDir)
   let reviewState = initialAutomaticReviewState((await readJsonIfPresent(statePath)) || {})
 
-  const profile = await reviewProfile(specdevPath, flags, reviewState.profile)
-  const guideIds = guideIdsFromFlags(
-    flags,
-    reviewState.guide_ids || (await selectedReviewGuides(assignmentPath))
-  )
-  const guides = await withCommonReviewGuide(
-    specdevPath,
-    await resolveGuides(specdevPath, guideIds, { phase: 'implementation' })
-  )
-  reviewState = { ...reviewState, profile, guide_ids: guideIds, contract_hash: contract.hash }
-
   if (graph.position.node === 'repair') {
+    const implementationGuideIds = await selectedImplementationGuides(assignmentPath)
+    const implementationGuides = await resolveGuides(specdevPath, implementationGuideIds, {
+      phase: 'implementation',
+    })
     const repaired = await runRepairWorker({
       ...context,
       flags,
       verdictPath,
-      guides: delivery.implementationGuides,
+      guides: implementationGuides,
     })
     if (!repaired) return null
-    delivery = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
     stepGuidedNode(targetDir, 'repair', {
       attempt: repaired.attempt.id,
       result: relativeToRepo(targetDir, repaired.resultPath),
@@ -765,6 +755,66 @@ export async function reviewImplementation(flags = {}) {
     }
     await writeJsonAtomic(statePath, reviewState)
   }
+
+  let delivery
+  try {
+    delivery = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+  } catch (error) {
+    if (mission) throw error
+    return requestArtifactRepair({
+      ...context,
+      flags,
+      graph,
+      verdictPath,
+      statePath,
+      reviewState,
+      issue: `delivery_artifact_invalid: ${error.message}`,
+    })
+  }
+
+  let candidateReceipt = null
+  let candidateReceiptPath = null
+  if (!mission) {
+    const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
+    candidateReceipt = await buildStandaloneAssignmentCandidateReceipt({
+      targetDir,
+      assignmentPath,
+      assignmentStatus,
+    })
+    candidateReceiptPath = await writeStandaloneAssignmentCandidateReceipt(
+      assignmentPath,
+      candidateReceipt
+    )
+    if (candidateReceipt.completeness !== 'complete') {
+      return requestArtifactRepair({
+        ...context,
+        flags,
+        graph,
+        verdictPath,
+        statePath,
+        reviewState,
+        issue: `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`,
+      })
+    }
+  }
+
+  const profile = await reviewProfile(specdevPath, flags, reviewState.profile)
+  const guideIds = guideIdsFromFlags(
+    flags,
+    reviewState.guide_ids || (await selectedReviewGuides(assignmentPath))
+  )
+  const guides = await withCommonReviewGuide(
+    specdevPath,
+    await resolveGuides(specdevPath, guideIds, { phase: 'implementation' })
+  )
+  reviewState = {
+    ...reviewState,
+    profile,
+    guide_ids: guideIds,
+    contract_hash: contract.hash,
+    ...(candidateReceipt ? { candidate_receipt_identity: candidateReceipt.identity } : {}),
+  }
+  await writeJsonAtomic(statePath, reviewState)
 
   if (reviewState.stage === 'resolver') {
     const resolved = await runImplementationResolver({
@@ -799,8 +849,12 @@ export async function reviewImplementation(flags = {}) {
     `Design plan: ${relativeToRepo(targetDir, join(assignmentPath, 'design', 'plan.md'))}`,
     `Progress and verification receipts: ${relativeToRepo(targetDir, join(assignmentPath, 'implementation', 'progress.json'))}`,
     `Outcome: ${relativeToRepo(targetDir, join(assignmentPath, 'outcome.md'))}`,
+    candidateReceiptPath
+      ? `Complete candidate receipt: ${relativeToRepo(targetDir, candidateReceiptPath)} @ ${candidateReceipt.identity}`
+      : null,
     reviewState.round > 0 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
     'Inspect the current Git diff or revision. Reuse existing receipts and never run a full suite without explicit authority.',
+    'Report scope_divergence, procedure_divergence, evidence_integrity, and user_reapproval_required explicitly. Scope materiality, changed/incomplete evidence, or required user reapproval cannot authorize delivery; disclosed procedure divergence may be approved when evidence remains complete.',
     'If the candidate adds or upgrades an external dependency, require execution-time package-manager/registry version evidence and inspect available lockfile/audit evidence. An unresolved direct high/critical advisory is blocking unless the approved contract explicitly accepts it. A lockfile-only update does not prove installation or entry-point startup; do not credit evidence the receipts do not contain.',
     arbitration
       ? 'Return approved when the candidate satisfies the contract, needs_changes only for a nonblocking disagreement that may advance solely if the host validates the strict delivery-evidence gate, and blocked for objective acceptance, verification, authority, or safety failure.'
@@ -821,7 +875,13 @@ export async function reviewImplementation(flags = {}) {
     guides,
   })
   if (result.status !== 'completed') return fail(flags, result.error || 'Reviewer failed')
-  const verdict = result.result.frontmatter.verdict
+  const reviewerResult = result.result.frontmatter
+  const unsafeTransition =
+    reviewerResult.scope_divergence === 'material' ||
+    reviewerResult.evidence_integrity !== 'complete' ||
+    reviewerResult.user_reapproval_required === true
+  const verdict =
+    unsafeTransition && reviewerResult.verdict === 'approved' ? 'blocked' : reviewerResult.verdict
   const findings = await fse.readFile(verdictPath, 'utf-8')
   const candidateDigest = await productStateDigest(targetDir)
 
@@ -832,7 +892,12 @@ export async function reviewImplementation(flags = {}) {
       candidateDigest,
       findings,
     })
-    reviewState = { ...arbitrationResult.state, profile, guide_ids: guideIds }
+    reviewState = {
+      ...arbitrationResult.state,
+      profile,
+      guide_ids: guideIds,
+      ...reviewTaxonomy(reviewerResult),
+    }
     let approved = arbitrationResult.disposition === 'approved'
     if (arbitrationResult.disposition === 'nonblocking-disagreement') {
       try {
@@ -904,7 +969,12 @@ export async function reviewImplementation(flags = {}) {
     candidateDigest,
     findings,
   })
-  reviewState = { ...primary.state, profile, guide_ids: guideIds }
+  reviewState = {
+    ...primary.state,
+    profile,
+    guide_ids: guideIds,
+    ...reviewTaxonomy(reviewerResult),
+  }
   await writeJsonAtomic(statePath, reviewState)
   if (primary.disposition === 'approved') {
     return completeImplementationReview({
@@ -935,11 +1005,42 @@ async function completeImplementationReview({
   name,
   mission,
   flags,
+  contract,
   verdictPath,
   attempt,
   round,
   disposition,
 }) {
+  if (!mission) {
+    const state = await readJsonIfPresent(
+      join(assignmentPath, 'review', 'implementation-state.json')
+    )
+    const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
+    await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+    const currentCandidate = await buildStandaloneAssignmentCandidateReceipt({
+      targetDir,
+      assignmentPath,
+      assignmentStatus,
+    })
+    if (
+      currentCandidate.completeness !== 'complete' ||
+      !state?.candidate_receipt_identity ||
+      currentCandidate.identity !== state.candidate_receipt_identity
+    ) {
+      return requestArtifactRepair({
+        targetDir,
+        specdevPath,
+        assignmentPath,
+        name,
+        mission,
+        flags,
+        verdictPath,
+        statePath: join(assignmentPath, 'review', 'implementation-state.json'),
+        reviewState: state || {},
+        issue: 'candidate_receipt_changed_after_review',
+      })
+    }
+  }
   stepGuidedNode(targetDir, 'implementation-review', {
     approved: true,
     verdict: relativeToRepo(targetDir, verdictPath),
@@ -1108,6 +1209,66 @@ async function selectedReviewGuides(assignmentPath) {
         .map((value) => value.trim())
         .filter(Boolean)
     : []
+}
+
+async function selectedImplementationGuides(assignmentPath) {
+  const path = join(assignmentPath, 'implementation', 'progress.json')
+  const progress = await fse.readJson(path).catch(() => null)
+  return Array.isArray(progress?.selected_guides?.implementation)
+    ? progress.selected_guides.implementation
+        .map(String)
+        .map((value) => value.trim())
+        .filter(Boolean)
+    : []
+}
+
+function reviewTaxonomy(result) {
+  return {
+    material_divergence: result.material_divergence,
+    scope_divergence: result.scope_divergence,
+    procedure_divergence: result.procedure_divergence,
+    evidence_integrity: result.evidence_integrity,
+    user_reapproval_required: result.user_reapproval_required,
+    taxonomy_source: result.taxonomy_source || 'structured',
+  }
+}
+
+async function requestArtifactRepair({
+  targetDir,
+  assignmentPath,
+  name,
+  flags,
+  verdictPath,
+  statePath,
+  reviewState,
+  issue,
+}) {
+  const boundedIssue = String(issue || 'candidate_receipt_incomplete').slice(0, 500)
+  const repair = recordArtifactRepair(reviewState, { issue: boundedIssue })
+  await fse.ensureDir(join(assignmentPath, 'review'))
+  await fse.writeFile(
+    verdictPath,
+    `---\nverdict: blocked\nmaterial_divergence: false\nscope_divergence: none\nprocedure_divergence: disclosed\nevidence_integrity: incomplete\nuser_reapproval_required: false\n---\n\n## Findings\n\nArtifact preflight blocked review before any delivery commit: ${boundedIssue}\n`,
+    'utf-8'
+  )
+  await writeJsonAtomic(statePath, repair.state)
+  if (repair.disposition === 'exhausted') {
+    return fail(
+      flags,
+      `Assignment ${name} awaits manual artifact repair after ${AUTOMATIC_ARTIFACT_REPAIR_LIMIT} automatic repair Attempt: ${boundedIssue}. Repair the preserved delivery artifacts, then rerun specdev implement; no replacement worker was launched.`
+    )
+  }
+  stepGuidedNode(targetDir, 'implementation-review', {
+    approved: false,
+    verdict: relativeToRepo(targetDir, verdictPath),
+    attempt: 'artifact-preflight',
+    disposition: 'repair',
+  })
+  const next = await currentAssignmentNode(targetDir)
+  if (next?.position?.node !== 'repair') {
+    return fail(flags, `Assignment ${name} awaits artifact repair: ${boundedIssue}`)
+  }
+  return reviewImplementation(flags)
 }
 
 async function childMissionReviewLines(targetDir, specdevPath, assignmentPath) {

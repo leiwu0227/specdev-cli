@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    },
+    {
+      "id": "T-5",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-attempt-progress.js && node tests/test-vnext-foundations.js && node tests/test-implement-recovery.js && node tests/test-reviewloop-modes.js && node tests/test-engine-integration.js",
+      "revision": "working-tree@ef9db9bdb4859d4f901be9624397675afc8908d6",
+      "scope": "qualification run exposed product-worktree accounting in recovered receipts",
+      "status": "failed",
+      "duration_ms": 5900,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-attempt-progress.js && node tests/test-vnext-foundations.js && node tests/test-implement-recovery.js && node tests/test-reviewloop-modes.js && node tests/test-engine-integration.js",
+      "revision": "working-tree@ef9db9bdb4859d4f901be9624397675afc8908d6",
+      "scope": "qualification run exposed obsolete successful-completion expectations for incomplete terminal receipts",
+      "status": "failed",
+      "duration_ms": 6300,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-attempt-progress.js && node tests/test-vnext-foundations.js && node tests/test-implement-recovery.js && node tests/test-reviewloop-modes.js && node tests/test-engine-integration.js",
+      "revision": "working-tree@ef9db9bdb4859d4f901be9624397675afc8908d6",
+      "scope": "qualification run exposed candidate identity instability across Git staging",
+      "status": "failed",
+      "duration_ms": 17200,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-attempt-progress.js && node tests/test-vnext-foundations.js && node tests/test-implement-recovery.js && node tests/test-reviewloop-modes.js && node tests/test-engine-integration.js",
+      "revision": "working-tree@ef9db9bdb4859d4f901be9624397675afc8908d6",
+      "scope": "qualification run confirmed delivery but exposed the old pre-commit runtime-compaction expectation",
+      "status": "failed",
+      "duration_ms": 21600,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-attempt-progress.js && node tests/test-vnext-foundations.js && node tests/test-implement-recovery.js && node tests/test-reviewloop-modes.js && node tests/test-engine-integration.js",
+      "revision": "working-tree@ef9db9bdb4859d4f901be9624397675afc8908d6",
+      "scope": "AC-1 through AC-5 focused authoritative acceptance run",
+      "status": "passed",
+      "duration_ms": 17800,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js && node tests/test-reviewloop-modes.js",
+      "revision": "working-tree@ef9db9bdb4859d4f901be9624397675afc8908d6",
+      "scope": "qualification run exposed a missing design-directory setup step in the new bounded artifact-repair fixture before the product path ran",
+      "status": "failed",
+      "duration_ms": 5600,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js && node tests/test-reviewloop-modes.js",
+      "revision": "working-tree@ef9db9bdb4859d4f901be9624397675afc8908d6",
+      "scope": "AC-1 and AC-3 focused authoritative acceptance for the persisted one-worker artifact-repair bound and exhausted-state behavior",
+      "status": "passed",
+      "duration_ms": 5600,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

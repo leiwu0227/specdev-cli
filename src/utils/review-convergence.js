@@ -5,6 +5,8 @@ export const REVIEW_MODES = Object.freeze({
   automatic: 'automatic',
 })
 
+export const AUTOMATIC_ARTIFACT_REPAIR_LIMIT = 1
+
 export function reviewExecutionMode({ phase, missionChild = false }) {
   if (phase === 'implementation' || phase === 'mission-convergence') {
     return REVIEW_MODES.automatic
@@ -91,6 +93,28 @@ export function recordResolver(
     resolver_attempt: attempt,
     resolver_status: status,
     updated_at: updatedAt,
+  }
+}
+
+export function recordArtifactRepair(
+  existing,
+  { issue, updatedAt = new Date().toISOString() }
+) {
+  const state = initialAutomaticReviewState(existing)
+  const artifactRepairRound = positiveInteger(state.artifact_repair_round, 0) + 1
+  const exhausted = artifactRepairRound > AUTOMATIC_ARTIFACT_REPAIR_LIMIT
+  return {
+    state: {
+      ...state,
+      stage: 'primary',
+      status: 'artifact_repair',
+      disposition: exhausted ? 'blocked' : 'repair',
+      artifact_repair_round: artifactRepairRound,
+      artifact_repair_limit: AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
+      artifact_preflight_issue: issue,
+      updated_at: updatedAt,
+    },
+    disposition: exhausted ? 'exhausted' : 'repair',
   }
 }
 

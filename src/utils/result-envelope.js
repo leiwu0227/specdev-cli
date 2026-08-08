@@ -4,17 +4,29 @@ const REVIEWER_VERDICTS = new Set(['approved', 'needs_changes', 'blocked'])
 const WORKER_STATUSES = new Set(['completed', 'blocked'])
 const RESULT_CONTRACTS = Object.freeze({
   reviewer: Object.freeze({
-    allowedKeys: new Set(['verdict', 'material_divergence']),
+    allowedKeys: new Set([
+      'verdict',
+      'material_divergence',
+      'scope_divergence',
+      'procedure_divergence',
+      'evidence_integrity',
+      'user_reapproval_required',
+    ]),
     requiredKeys: ['verdict', 'material_divergence'],
     section: 'Findings',
     instructions: [
       'Choose exactly one verdict: approved, needs_changes, or blocked.',
       'Set material_divergence to exactly true or false.',
+      'Set scope_divergence to none, clarifying, or material; procedure_divergence to none, disclosed, or material; evidence_integrity to complete, incomplete, or changed; and user_reapproval_required to true or false.',
       'The example below is valid YAML. Replace its values; do not copy a list of alternatives.',
     ],
     template: `---
 verdict: approved
 material_divergence: false
+scope_divergence: none
+procedure_divergence: none
+evidence_integrity: complete
+user_reapproval_required: false
 ---
 
 ## Findings
@@ -107,6 +119,43 @@ function validateReviewerResult(result, content) {
   }
   if (typeof result.material_divergence !== 'boolean') {
     throw new Error('reviewer material_divergence must be true or false')
+  }
+  const structuredKeys = [
+    'scope_divergence',
+    'procedure_divergence',
+    'evidence_integrity',
+    'user_reapproval_required',
+  ]
+  const present = structuredKeys.filter((key) => Object.hasOwn(result, key))
+  if (present.length > 0 && present.length !== structuredKeys.length) {
+    throw new Error('reviewer structured divergence fields must be supplied together')
+  }
+  if (present.length > 0) {
+    if (!['none', 'clarifying', 'material'].includes(result.scope_divergence)) {
+      throw new Error('reviewer scope_divergence must be none, clarifying, or material')
+    }
+    if (!['none', 'disclosed', 'material'].includes(result.procedure_divergence)) {
+      throw new Error('reviewer procedure_divergence must be none, disclosed, or material')
+    }
+    if (!['complete', 'incomplete', 'changed'].includes(result.evidence_integrity)) {
+      throw new Error('reviewer evidence_integrity must be complete, incomplete, or changed')
+    }
+    if (typeof result.user_reapproval_required !== 'boolean') {
+      throw new Error('reviewer user_reapproval_required must be true or false')
+    }
+    const projectedMaterial =
+      result.scope_divergence === 'material' ||
+      result.procedure_divergence === 'material' ||
+      result.user_reapproval_required
+    if (result.material_divergence !== projectedMaterial) {
+      throw new Error('reviewer material_divergence does not match the structured projection')
+    }
+  } else {
+    result.scope_divergence = result.material_divergence ? 'material' : 'none'
+    result.procedure_divergence = 'none'
+    result.evidence_integrity = 'complete'
+    result.user_reapproval_required = result.material_divergence
+    result.taxonomy_source = 'legacy_projection'
   }
   requireSectionContent(content, 'Findings')
 }
