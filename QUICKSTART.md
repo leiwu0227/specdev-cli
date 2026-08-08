@@ -70,7 +70,9 @@ specdev adhoc finish --outcome="Corrected the help text" --verification="Inspect
 
 Adhoc has no RippleGraph run, scheduler, subagent, or approval gate. A dirty
 start requires an explicit inspect/checkpoint/adopt decision; use
-`--adopt-dirty` only when every existing change belongs to this work. Finish
+`--adopt-dirty` only when every existing change belongs to this work. The start
+persists the exact expanded path manifest and refuses the whole adoption when a
+Discussion or Test Audit owns any requested path. Finish
 requires the same HEAD, writes a concise `.specdev/adhoc/` receipt, and creates
 one final delivery commit. Use `specdev adhoc status`, `show <ID>`, or `cancel`
 for recovery. Receipts stay outside `knowledge.sqlite`; an indexed workflow note

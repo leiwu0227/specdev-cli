@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@1c25b65f05b7d4b8a53110973081a43c03143db9",
+      "scope": "Changed product, documentation, focused test, and Assignment delivery artifacts",
+      "status": "passed",
+      "duration_ms": 10,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-engine-integration.js && node tests/test-init-platform.js",
+      "revision": "working-tree@1c25b65f05b7d4b8a53110973081a43c03143db9",
+      "scope": "diagnostic run exposing deleted-path staging incompatibility in the temporary index",
+      "status": "failed",
+      "duration_ms": 1000,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-engine-integration.js && node tests/test-init-platform.js",
+      "revision": "working-tree@1c25b65f05b7d4b8a53110973081a43c03143db9",
+      "scope": "diagnostic rerun proving transactional behavior and exposing a whitespace-sensitive generated-guidance assertion",
+      "status": "failed",
+      "duration_ms": 23000,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-engine-integration.js && node tests/test-init-platform.js",
+      "revision": "working-tree@1c25b65f05b7d4b8a53110973081a43c03143db9",
+      "scope": "AC-1, AC-2, and AC-3 transactional Adhoc behavior plus generated guidance compatibility",
+      "status": "passed",
+      "duration_ms": 24000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm test",
+      "revision": "working-tree@1c25b65f05b7d4b8a53110973081a43c03143db9",
+      "scope": "full repository regression suite including cleanup",
+      "status": "passed",
+      "duration_ms": 57000,
+      "role": "qualification"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

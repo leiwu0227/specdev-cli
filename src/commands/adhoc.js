@@ -4,18 +4,19 @@ import { dirname, join } from 'node:path'
 import fse from 'fs-extra'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import {
-  commitDelivery,
+  commitExactDelivery,
+  concurrentCallablePathDetails,
   currentGitBranch,
   findCommitAddingPath,
   findCommitByTrailer,
   firstParent,
   gitChangedPathsAtCommit,
   gitCommitSubject,
+  gitStatusEntries,
   gitStatusPaths,
-  isConcurrentCallablePath,
   requireGitHead,
-  stageOwnedChanges,
   summarizeGitPaths,
+  synchronizeIndexPaths,
 } from '../utils/git-delivery.js'
 import { relativeToRepo } from '../utils/assignment-vnext.js'
 
@@ -57,11 +58,16 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
 
   const startingGitCommitHash = await requireGitHead(targetDir)
   const branch = await currentGitBranch(targetDir)
-  const allPaths = await gitStatusPaths(targetDir)
+  const allEntries = await gitStatusEntries(targetDir)
+  const allPaths = allEntries.map((entry) => entry.path)
+  const rejectedPaths = flags['adopt-dirty']
+    ? allPaths.flatMap((path) => {
+        const rejection = concurrentCallablePathDetails(path)
+        return rejection ? [rejection] : []
+      })
+    : []
   const decision = classifyWorktree(allPaths, {
-    adoptedPaths: flags['adopt-dirty']
-      ? allPaths.filter((path) => !isConcurrentCallablePath(path))
-      : [],
+    adoptedPaths: flags['adopt-dirty'] && rejectedPaths.length === 0 ? allPaths : [],
     phase: 'start',
   })
   if (decision.product_dirty.count > 0 && !flags['adopt-dirty']) {
@@ -91,12 +97,22 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
       },
     })
   }
+  if (rejectedPaths.length > 0) {
+    return blocked(flags, {
+      state: 'adoption_rejected',
+      requested_paths: pathClassification(allPaths),
+      rejected_paths: rejectedPaths,
+      worktree: { ...decision, decision: 'blocked' },
+      next_action:
+        'Resolve every rejected callable-owned path, then inspect the complete dirty set and rerun --adopt-dirty. No Adhoc state was created.',
+    })
+  }
 
   const startedAt = new Date().toISOString()
   const id = createAdhocId(startedAt)
   const receiptRelative = `.specdev/adhoc/${startedAt.slice(0, 7)}/${id}_${slugify(scope)}.md`
   const state = {
-    version: 1,
+    version: 2,
     id,
     scope,
     title: stringFlag(flags.title) || null,
@@ -105,6 +121,13 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
     starting_branch: branch,
     starting_worktree: decision.product_dirty.count > 0 ? 'adopted' : 'clean',
     adopted_path_count: decision.adopted.count,
+    adoption_manifest: {
+      version: 1,
+      starting_revision: startingGitCommitHash,
+      paths: flags['adopt-dirty']
+        ? allEntries.map(({ path, status, role }) => ({ path, status, role }))
+        : [],
+    },
     starting_worktree_decision: { ...decision, decision: 'allowed' },
     receipt: receiptRelative,
   }
@@ -118,6 +141,7 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
     title: state.title,
     starting_worktree: state.starting_worktree,
     adopted_path_count: state.adopted_path_count,
+    adoption_manifest: state.adoption_manifest,
     worktree: state.starting_worktree_decision,
     next_action:
       'Make the bounded change directly. Optionally capture commands with adhoc verify, then finish with an outcome and passing evidence or --verification.',
@@ -190,8 +214,10 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
     revision: 'HEAD',
   })
   if (recoveredCommit) {
+    const verification = await verifyDeliveryCommit(targetDir, active, recoveredCommit)
+    if (!verification.valid) return blockedDelivery(flags, active, verification, true)
     await clearActive(specdevPath)
-    return completedPayload(targetDir, active, recoveredCommit, flags, true)
+    return completedPayload(targetDir, active, recoveredCommit, flags, true, verification)
   }
 
   const currentHead = await requireGitHead(targetDir)
@@ -221,9 +247,24 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
     )
   }
 
-  const currentPaths = (await gitStatusPaths(targetDir)).filter(
-    (path) => !isConcurrentCallablePath(path)
+  const manifest = exactAdoptionManifest(active)
+  if (!manifest.valid) {
+    return blocked(flags, {
+      state: 'legacy_adoption_manifest_missing',
+      id: active.id,
+      scope: active.scope,
+      rejected_paths: manifest.rejected_paths,
+      next_action:
+        'Cancel this legacy adopted Adhoc, inspect the still-dirty paths, and restart with --adopt-dirty to create exact authorization.',
+    })
+  }
+
+  const currentEntries = (await gitStatusEntries(targetDir)).filter(
+    (entry) => entry.path !== active.receipt
   )
+  const currentPaths = currentEntries
+    .map((entry) => entry.path)
+    .filter((path) => !isProtectedAdhocPath(path))
   if (currentPaths.length === 0) {
     return blocked(flags, {
       state: 'no_changes',
@@ -233,29 +274,95 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
     })
   }
 
+  const missingAdoptedPaths = manifest.paths.filter((path) => !currentPaths.includes(path))
+  if (missingAdoptedPaths.length > 0) {
+    return blocked(flags, {
+      state: 'adopted_paths_missing',
+      id: active.id,
+      scope: active.scope,
+      rejected_paths: missingAdoptedPaths.map((path) => ({
+        path,
+        reason: 'required_adopted_path_has_no_precommit_delta',
+        next_action:
+          'Restore the adopted path delta or cancel and restart after explicitly resolving the changed authorization.',
+      })),
+      next_action:
+        'Every adopted manifest path must be represented in the delivery commit; restore the missing deltas or cancel and restart.',
+    })
+  }
+
   const receiptPath = join(targetDir, active.receipt)
   active.outcome = outcome
   active.verification = verification || null
   active.completed_at = new Date().toISOString()
   active.acceptance_evidence = acceptanceEvidence
-  await writeActive(specdevPath, active)
-  if (!(await fse.pathExists(receiptPath))) {
-    await fse.ensureDir(dirname(receiptPath))
-    await fse.writeFile(receiptPath, receiptMarkdown(active), 'utf-8')
+  active.delivery_candidate = {
+    version: 1,
+    starting_revision: active.starting_git_commit_hash,
+    product_paths: [...new Set(currentPaths)].sort(),
+    receipt_path: active.receipt,
   }
+  await writeActive(specdevPath, active)
+  await fse.ensureDir(dirname(receiptPath))
+  await fse.writeFile(receiptPath, receiptMarkdown(active, preparingPathFacts(active)), 'utf-8')
 
-  await stageOwnedChanges(targetDir)
-  const endingGitCommitHash = await commitDelivery(targetDir, {
-    subject:
-      stringFlag(flags.message) ||
-      `specdev(adhoc): ${readableSubject(active.title || active.scope, 68)}`,
-    trailers: {
-      'SpecDev-Adhoc': active.id,
-      'SpecDev-Commit-Type': 'delivery',
-    },
-  })
+  let delivery
+  try {
+    delivery = await commitExactDelivery(targetDir, {
+      expectedHead: active.starting_git_commit_hash,
+      paths: [...active.delivery_candidate.product_paths, active.receipt],
+      subject:
+        stringFlag(flags.message) ||
+        `specdev(adhoc): ${readableSubject(active.title || active.scope, 68)}`,
+      trailers: {
+        'SpecDev-Adhoc': active.id,
+        'SpecDev-Commit-Type': 'delivery',
+      },
+      finalizeDraft: async ({ committedPaths }) => {
+        const facts = {
+          requested: manifest.paths,
+          committed: committedPaths,
+          rejected: [],
+          remaining: [],
+        }
+        await fse.writeFile(receiptPath, receiptMarkdown(active, facts), 'utf-8')
+      },
+    })
+  } catch (error) {
+    return blocked(flags, {
+      state: error.code === 'exact_path_mismatch' ? 'staged_path_mismatch' : 'delivery_failed',
+      id: active.id,
+      scope: active.scope,
+      rejected_paths: [
+        ...(error.missingPaths || []).map((path) => ({
+          path,
+          reason: 'missing_from_staged_candidate',
+          next_action: 'Restore the required path delta and retry finish.',
+        })),
+        ...(error.unexpectedPaths || []).map((path) => ({
+          path,
+          reason: 'unauthorized_staged_path',
+          next_action: 'Remove or separately checkpoint the unauthorized path and retry finish.',
+        })),
+      ],
+      error: error.message,
+      next_action:
+        'The Adhoc remains active and the caller index was not changed. Resolve the reported path or Git failure, then retry finish.',
+    })
+  }
+  const endingGitCommitHash = delivery.commit
+  const deliveryVerification = await verifyDeliveryCommit(targetDir, active, endingGitCommitHash)
+  if (!deliveryVerification.valid)
+    return blockedDelivery(flags, active, deliveryVerification, false)
   await clearActive(specdevPath)
-  return completedPayload(targetDir, active, endingGitCommitHash, flags, false)
+  return completedPayload(
+    targetDir,
+    active,
+    endingGitCommitHash,
+    flags,
+    false,
+    deliveryVerification
+  )
 }
 
 async function statusAdhoc(targetDir, specdevPath, flags) {
@@ -270,6 +377,7 @@ async function statusAdhoc(targetDir, specdevPath, flags) {
     id: active.id,
     scope: active.scope,
     starting_worktree: active.starting_worktree,
+    adoption_manifest: active.adoption_manifest || null,
     changed_paths: summarizeGitPaths(await gitStatusPaths(targetDir)),
   })
 }
@@ -309,10 +417,19 @@ async function cancelAdhoc(specdevPath, flags) {
   })
 }
 
-async function completedPayload(targetDir, active, endingGitCommitHash, flags, recovered) {
-  const startingGitCommitHash = await firstParent(targetDir, endingGitCommitHash)
-  const committedPaths = await gitChangedPathsAtCommit(targetDir, endingGitCommitHash)
-  const remainingPaths = await gitStatusPaths(targetDir)
+async function completedPayload(
+  targetDir,
+  active,
+  endingGitCommitHash,
+  flags,
+  recovered,
+  deliveryVerification = null
+) {
+  const verification =
+    deliveryVerification || (await verifyDeliveryCommit(targetDir, active, endingGitCommitHash))
+  const startingGitCommitHash = verification.starting_git_commit_hash
+  const committedPaths = verification.path_facts.committed
+  const remainingPaths = verification.remaining_paths
   const worktree = classifyWorktree(remainingPaths, { phase: 'finish' })
   const verificationAttempts = active.verification_attempts || []
   return emit(flags, {
@@ -328,6 +445,7 @@ async function completedPayload(targetDir, active, endingGitCommitHash, flags, r
       product: committedPaths.filter((path) => path !== active.receipt),
       receipt: committedPaths.filter((path) => path === active.receipt),
     },
+    path_facts: verification.path_facts,
     verification: {
       manual: active.verification || null,
       attempts: verificationAttempts,
@@ -342,7 +460,186 @@ async function completedPayload(targetDir, active, endingGitCommitHash, flags, r
   })
 }
 
-function receiptMarkdown(active) {
+async function verifyDeliveryCommit(targetDir, active, endingGitCommitHash) {
+  const manifest = exactAdoptionManifest(active)
+  if (!manifest.valid) {
+    return {
+      valid: false,
+      state: 'legacy_adoption_manifest_missing',
+      issues: manifest.rejected_paths,
+      path_facts: {
+        requested: [],
+        committed: [],
+        rejected: manifest.rejected_paths,
+        remaining: [],
+      },
+      remaining_paths: await gitStatusPaths(targetDir),
+      next_action:
+        'Do not clear this legacy adopted Adhoc automatically; inspect the delivery boundary and resolve it explicitly.',
+    }
+  }
+
+  const startingGitCommitHash = await firstParent(targetDir, endingGitCommitHash)
+  const currentHead = await requireGitHead(targetDir)
+  const committedPaths = await gitChangedPathsAtCommit(targetDir, endingGitCommitHash)
+  const expectedPaths = active.delivery_candidate
+    ? [
+        ...(active.delivery_candidate.product_paths || []),
+        active.delivery_candidate.receipt_path || active.receipt,
+      ]
+    : committedPaths
+  const expected = [...new Set(expectedPaths)].sort()
+  const committed = [...new Set(committedPaths)].sort()
+  const issues = []
+  if (currentHead !== endingGitCommitHash) {
+    issues.push({
+      path: '(current HEAD)',
+      reason: 'delivery_commit_is_not_head',
+      expected: endingGitCommitHash,
+      actual: currentHead,
+      next_action: 'Resolve the intervening history before retrying recovered completion.',
+    })
+  }
+  if (startingGitCommitHash !== active.starting_git_commit_hash) {
+    issues.push({
+      path: '(delivery parent)',
+      reason: 'delivery_parent_mismatch',
+      expected: active.starting_git_commit_hash,
+      actual: startingGitCommitHash,
+      next_action: 'Inspect and restore the authorized Adhoc history boundary before retrying.',
+    })
+  }
+  for (const path of expected.filter((path) => !committed.includes(path))) {
+    issues.push({
+      path,
+      reason: 'authorized_candidate_missing_from_commit',
+      next_action: 'Restore the authorized delivery boundary before retrying completion.',
+    })
+  }
+  for (const path of committed.filter((path) => !expected.includes(path))) {
+    issues.push({
+      path,
+      reason: 'unauthorized_path_in_commit',
+      next_action:
+        'Inspect and restore the delivery commit; this path was not in the durable candidate.',
+    })
+  }
+  for (const path of manifest.paths.filter((path) => !committed.includes(path))) {
+    if (issues.some((issue) => issue.path === path)) continue
+    issues.push({
+      path,
+      reason: 'adopted_path_missing_from_commit',
+      next_action: 'Restore the adopted path to the delivery commit before retrying completion.',
+    })
+  }
+  for (const path of committed) {
+    const protectedPath = concurrentCallablePathDetails(path)
+    if (protectedPath) issues.push(protectedPath)
+  }
+  if (!committed.includes(active.receipt)) {
+    issues.push({
+      path: active.receipt,
+      reason: 'receipt_missing_from_commit',
+      next_action: 'Restore the commit-derived receipt to the delivery commit before retrying.',
+    })
+  }
+
+  if (issues.length > 0) {
+    return {
+      valid: false,
+      state: 'delivery_commit_invalid',
+      issues,
+      starting_git_commit_hash: startingGitCommitHash,
+      ending_git_commit_hash: endingGitCommitHash,
+      path_facts: {
+        requested: manifest.paths,
+        committed,
+        rejected: issues,
+        remaining: [],
+      },
+      remaining_paths: await gitStatusPaths(targetDir),
+      next_action:
+        'The Adhoc remains active. Inspect or restore the delivery commit and retry finish; SpecDev will not clear state from ambiguous Git facts.',
+    }
+  }
+
+  await synchronizeIndexPaths(targetDir, committed, endingGitCommitHash)
+  const remainingPaths = await gitStatusPaths(targetDir)
+  const remainingOwnedPaths = remainingPaths.filter(
+    (path) => path !== active.receipt && !isProtectedAdhocPath(path)
+  )
+  const remainingIssues = remainingOwnedPaths.map((path) => ({
+    path,
+    reason: manifest.paths.includes(path)
+      ? 'adopted_delta_remains_after_commit'
+      : 'adhoc_owned_delta_remains_after_commit',
+    next_action: 'Resolve the remaining owned delta, then retry finish to revalidate completion.',
+  }))
+  return {
+    valid: remainingIssues.length === 0,
+    state: remainingIssues.length === 0 ? 'verified' : 'remaining_owned_delta',
+    issues: remainingIssues,
+    starting_git_commit_hash: startingGitCommitHash,
+    ending_git_commit_hash: endingGitCommitHash,
+    path_facts: {
+      requested: manifest.paths,
+      committed,
+      rejected: remainingIssues,
+      remaining: remainingOwnedPaths,
+    },
+    remaining_paths: remainingPaths,
+    next_action:
+      remainingIssues.length === 0
+        ? null
+        : 'The delivery commit exists, but owned worktree deltas remain. Resolve them and retry finish; active state was preserved.',
+  }
+}
+
+function blockedDelivery(flags, active, verification, recovered) {
+  return blocked(flags, {
+    state: verification.state,
+    id: active.id,
+    scope: active.scope,
+    delivery_commit: verification.ending_git_commit_hash || null,
+    recovered,
+    path_facts: verification.path_facts,
+    rejected_paths: verification.issues,
+    next_action: verification.next_action,
+  })
+}
+
+function exactAdoptionManifest(active) {
+  const manifest = active.adoption_manifest
+  if (manifest?.version === 1 && manifest.starting_revision === active.starting_git_commit_hash) {
+    const entries = Array.isArray(manifest.paths) ? manifest.paths : []
+    const paths = [...new Set(entries.map((entry) => entry?.path).filter(Boolean))].sort()
+    return { valid: true, entries, paths }
+  }
+  if (active.starting_worktree !== 'adopted') return { valid: true, entries: [], paths: [] }
+  return {
+    valid: false,
+    rejected_paths: [
+      {
+        path: '(legacy adoption authorization)',
+        reason: 'exact_manifest_unavailable',
+        next_action:
+          'Cancel and restart with --adopt-dirty after inspecting the exact current path set.',
+      },
+    ],
+  }
+}
+
+function preparingPathFacts(active) {
+  const manifest = exactAdoptionManifest(active)
+  return {
+    requested: manifest.valid ? manifest.paths : [],
+    committed: [],
+    rejected: [],
+    remaining: active.delivery_candidate?.product_paths || [],
+  }
+}
+
+function receiptMarkdown(active, pathFacts) {
   const starting =
     active.starting_worktree === 'clean'
       ? 'Clean.'
@@ -357,14 +654,31 @@ function receiptMarkdown(active) {
     : 'No structured acceptance evidence was recorded.'
   const manual = active.verification || 'No manual verification summary was supplied.'
   const structured = JSON.stringify(
-    { version: 1, attempt_history: history, acceptance_evidence: evidence },
+    {
+      version: 1,
+      path_facts: pathFacts,
+      attempt_history: history,
+      acceptance_evidence: evidence,
+    },
     null,
     2
   )
     .split('\n')
     .map((line) => `    ${line}`)
     .join('\n')
-  return `# Adhoc ${active.id}\n\n- Scope: ${active.scope}\n- Title: ${active.title || 'Derived from full scope'}\n- Started: ${active.started_at}\n- Completed: ${active.completed_at}\n- Starting working tree: ${starting}\n\n## Outcome\n\n${active.outcome}\n\n## Verification summary\n\n${manual}\n\n## Verification attempt history\n\n${historyLines}\n\n## Current acceptance evidence\n\n${evidenceLines}\n\n## Structured verification\n\n${structured}\n`
+  return `# Adhoc ${active.id}\n\n- Scope: ${active.scope}\n- Title: ${active.title || 'Derived from full scope'}\n- Started: ${active.started_at}\n- Completed: ${active.completed_at}\n- Starting working tree: ${starting}\n\n## Outcome\n\n${active.outcome}\n\n## Delivery path facts\n\n### Requested adopted paths\n\n${formatReceiptPaths(pathFacts.requested)}\n\n### Committed paths\n\n${formatReceiptPaths(pathFacts.committed)}\n\n### Rejected paths\n\n${formatReceiptRejections(pathFacts.rejected)}\n\n### Remaining owned paths\n\n${formatReceiptPaths(pathFacts.remaining)}\n\n## Verification summary\n\n${manual}\n\n## Verification attempt history\n\n${historyLines}\n\n## Current acceptance evidence\n\n${evidenceLines}\n\n## Structured verification\n\n${structured}\n`
+}
+
+function formatReceiptPaths(paths = []) {
+  return paths.length > 0 ? paths.map((path) => `- \`${path}\``).join('\n') : 'None.'
+}
+
+function formatReceiptRejections(rejections = []) {
+  return rejections.length > 0
+    ? rejections
+        .map((item) => `- \`${item.path}\` — ${item.reason}${item.owner ? ` (${item.owner})` : ''}`)
+        .join('\n')
+    : 'None.'
 }
 
 async function findReceipt(specdevPath, id) {
@@ -426,8 +740,8 @@ function shellQuote(value) {
 }
 
 function classifyWorktree(paths, { adoptedPaths = [], phase } = {}) {
-  const workflowPaths = paths.filter(isConcurrentCallablePath)
-  const productPaths = paths.filter((path) => !isConcurrentCallablePath(path))
+  const workflowPaths = paths.filter(isProtectedAdhocPath)
+  const productPaths = paths.filter((path) => !isProtectedAdhocPath(path))
   return {
     version: 1,
     phase,
@@ -437,6 +751,10 @@ function classifyWorktree(paths, { adoptedPaths = [], phase } = {}) {
     applied_policy: 'preserve_concurrent_discussion_and_test_audit_state',
     decision: productPaths.length > 0 && adoptedPaths.length === 0 ? 'blocked' : 'allowed',
   }
+}
+
+function isProtectedAdhocPath(path) {
+  return Boolean(concurrentCallablePathDetails(path))
 }
 
 function pathClassification(paths) {
@@ -536,6 +854,7 @@ function emit(flags, payload) {
     if (payload.scope) console.log(`Scope: ${payload.scope}`)
     if (payload.title) console.log(`Title: ${payload.title}`)
     if (payload.worktree) printWorktree(payload.worktree)
+    if (payload.adoption_manifest) printAdoptionManifest(payload.adoption_manifest)
     if (payload.start_worktree) printWorktree(payload.start_worktree, 'Starting')
     if (payload.receipt) console.log(`Receipt: ${payload.receipt}`)
     if (payload.delivery_commit) console.log(`Delivery commit: ${payload.delivery_commit}`)
@@ -556,6 +875,7 @@ function emit(flags, payload) {
     if (payload.ending_git_commit_hash)
       console.log(`Ending Git commit: ${payload.ending_git_commit_hash}`)
     if (payload.remaining_worktree) printWorktree(payload.remaining_worktree, 'Remaining')
+    if (payload.path_facts) printPathFacts(payload.path_facts)
     if (typeof payload.product_worktree_clean === 'boolean')
       console.log(`Product worktree clean: ${payload.product_worktree_clean ? 'yes' : 'no'}`)
     if (payload.next_action) console.log(`Next: ${payload.next_action}`)
@@ -575,6 +895,15 @@ function blocked(flags, details) {
         console.error(`  - +${details.working_tree.omitted} more path(s)`)
     }
     if (details.worktree) printWorktree(details.worktree, 'Worktree', console.error)
+    if (details.rejected_paths?.length) {
+      console.error('Rejected paths:')
+      for (const rejection of details.rejected_paths) {
+        console.error(`  - ${rejection.path}: ${rejection.reason}`)
+        if (rejection.owner) console.error(`    Owner: ${rejection.owner}`)
+        if (rejection.next_action) console.error(`    Next: ${rejection.next_action}`)
+      }
+    }
+    if (details.error) console.error(`Error: ${details.error}`)
     if (details.next_action) console.error(`Next: ${details.next_action}`)
   }
   process.exitCode = 1
@@ -597,7 +926,29 @@ function printWorktree(worktree, prefix = 'Worktree', write = console.log) {
 function printPaths(label, paths = [], write = console.log) {
   if (paths.length === 0) return
   write(`${label}:`)
-  for (const path of paths) write(`  - ${path}`)
+  for (const path of paths.slice(0, 12)) write(`  - ${path}`)
+  if (paths.length > 12) write(`  - +${paths.length - 12} more path(s)`)
+}
+
+function printAdoptionManifest(manifest, write = console.log) {
+  write(`Adoption manifest v${manifest.version}: ${manifest.paths.length} path(s)`)
+  for (const entry of manifest.paths.slice(0, 12)) {
+    write(`  - ${entry.status} ${entry.path}`)
+  }
+  if (manifest.paths.length > 12) write(`  - +${manifest.paths.length - 12} more path(s)`)
+}
+
+function printPathFacts(facts, write = console.log) {
+  printPaths('Requested adopted paths', facts.requested, write)
+  printPaths('Actual committed paths', facts.committed, write)
+  if (facts.rejected?.length) {
+    write('Rejected paths:')
+    for (const rejection of facts.rejected.slice(0, 12)) {
+      write(`  - ${rejection.path}: ${rejection.reason}`)
+    }
+    if (facts.rejected.length > 12) write(`  - +${facts.rejected.length - 12} more path(s)`)
+  }
+  printPaths('Remaining owned paths', facts.remaining, write)
 }
 
 function fail(flags, message) {

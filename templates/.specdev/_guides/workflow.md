@@ -6,8 +6,10 @@ Direct work answers or inspects without creating state. Use Adhoc only when the
 user chooses a concrete bounded edit but the Assignment contract/review cycle
 would be ceremony. Adhoc has no RippleGraph run. `adhoc start` requires an
 existing Git HEAD and a clean worktree unless `--adopt-dirty` explicitly adopts
-all existing changes. `adhoc finish` requires an unchanged HEAD, writes one
-small receipt, and creates one delivery commit. `adhoc cancel` removes only the
+the exact expanded eligible path manifest for all existing changes.
+Callable-owned paths refuse the whole adoption rather than being filtered.
+`adhoc finish` requires an unchanged HEAD, verifies the manifest, writes one
+small commit-derived receipt, and creates one delivery commit. `adhoc cancel` removes only the
 ignored active marker and leaves source changes untouched. Receipts are not
 knowledge-index sources; `knowledge/workflow/adhoc-history.md` explains the
 explicit receipt and Git search path.

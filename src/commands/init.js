@@ -41,11 +41,12 @@ description: Make one bounded change without a RippleGraph workflow
 Use Adhoc only when the user selects a concrete bounded repository change and
 does not want an Assignment. Start with \`specdev adhoc start "<scope>"\`.
 
-Start classifies product dirt separately from independent Discussion and Test
-Audit state. The latter is preserved outside Adhoc ownership. Product dirt
-still requires inspection, a separate checkpoint, or explicit adoption with
-\`--adopt-dirty\`. Use \`--title="..."\` when the commit needs a short subject
-independent of the full receipt scope.
+Start classifies every expanded dirty path before creating state. Independent
+Discussion and Test Audit paths remain outside Adhoc ownership; requesting
+\`--adopt-dirty\` while any such path is present refuses the whole adoption and
+reports every rejected owner and recovery action. An accepted adoption persists
+the exact path/status manifest at the starting revision. Use \`--title="..."\`
+when the commit needs a short subject independent of the full receipt scope.
 
 Make the change directly without a scheduler, worktree, subagent, or approval
 gate. Verification execution always requires repository/user authorization.
@@ -53,8 +54,11 @@ After authorization, structured evidence may be captured with \`specdev adhoc
 verify --label="..." -- <command>\`; failed attempts and passing reruns remain
 in the receipt. Finish with \`specdev adhoc finish --outcome="..."\` when the
 latest evidence for each label passes, or retain the supported manual
-\`--verification="..."\` summary. Finish reports the delivery and remaining
-classified paths so the next bounded Adhoc can start without Git archaeology.
+\`--verification="..."\` summary. Finish stages the persisted manifest plus
+valid Adhoc-owned paths through an exact temporary-index transaction and clears
+active state only after the delivery commit and remaining owned delta verify.
+Its requested, committed, rejected, and remaining facts come from Git rather
+than outcome prose.
 \`specdev adhoc cancel\` leaves source changes untouched.
 
 Announce meaningful phases, plan changes, failed verification, and blockers

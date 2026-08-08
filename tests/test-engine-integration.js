@@ -157,26 +157,52 @@ try {
   configureGit(adhocRoot)
   runJson(adhocRoot, ['init', '--platform=none', '--json'])
   writeFileSync(join(adhocRoot, 'README.md'), '# Adhoc fixture\n', 'utf8')
+  writeFileSync(join(adhocRoot, 'rename source.txt'), 'rename this path\n', 'utf8')
+  writeFileSync(join(adhocRoot, 'delete me.txt'), 'delete this path\n', 'utf8')
   runGit(adhocRoot, ['add', '--all'])
   runGit(adhocRoot, ['commit', '--quiet', '-m', 'initial fixture'])
   const adhocStartRevision = gitText(adhocRoot, ['rev-parse', 'HEAD'])
 
   const adhocDiscussionRelative = '.specdev/discussions/D99998_concurrent/brainstorm/proposal.md'
   const adhocAuditRelative = '.specdev/test-audits/TA99998_concurrent/audit.md'
+  const adhocCallRelative = '.specdev/.ripplegraph/calls/D99998/checkpoint.json'
   mkdirSync(join(adhocRoot, '.specdev', 'discussions', 'D99998_concurrent', 'brainstorm'), {
     recursive: true,
   })
   mkdirSync(join(adhocRoot, '.specdev', 'test-audits', 'TA99998_concurrent'), {
     recursive: true,
   })
+  mkdirSync(join(adhocRoot, '.specdev', '.ripplegraph', 'calls', 'D99998'), {
+    recursive: true,
+  })
   writeFileSync(join(adhocRoot, adhocDiscussionRelative), '# Concurrent proposal\n', 'utf8')
   writeFileSync(join(adhocRoot, adhocAuditRelative), '# Concurrent audit\n', 'utf8')
+  writeFileSync(join(adhocRoot, adhocCallRelative), '{"status":"active"}\n', 'utf8')
   writeFileSync(join(adhocRoot, 'existing.txt'), 'adopt this change\n', 'utf8')
+  mkdirSync(join(adhocRoot, 'untracked bundle', 'nested'), { recursive: true })
+  writeFileSync(join(adhocRoot, 'untracked bundle', 'first.txt'), 'first\n', 'utf8')
+  writeFileSync(
+    join(adhocRoot, 'untracked bundle', 'nested', 'file with spaces.txt'),
+    'second\n',
+    'utf8'
+  )
+  runGit(adhocRoot, ['mv', 'rename source.txt', 'renamed destination.txt'])
+  rmSync(join(adhocRoot, 'delete me.txt'))
+  runGit(adhocRoot, ['add', 'existing.txt'])
+  const callerIndexBeforeRefusal = gitText(adhocRoot, ['diff', '--cached', '--raw'])
   const dirtyAdhoc = runJson(adhocRoot, ['adhoc', 'start', 'Repair one help message', '--json'], 1)
   assert.equal(dirtyAdhoc.state, 'dirty_worktree')
-  assert.equal(dirtyAdhoc.working_tree.count, 1)
-  assert.deepEqual(dirtyAdhoc.worktree.product_dirty.paths, ['existing.txt'])
+  assert.equal(dirtyAdhoc.working_tree.count, 6)
+  assert(dirtyAdhoc.worktree.product_dirty.paths.includes('existing.txt'))
+  assert(dirtyAdhoc.worktree.product_dirty.paths.includes('rename source.txt'))
+  assert(dirtyAdhoc.worktree.product_dirty.paths.includes('renamed destination.txt'))
+  assert(dirtyAdhoc.worktree.product_dirty.paths.includes('delete me.txt'))
+  assert(dirtyAdhoc.worktree.product_dirty.paths.includes('untracked bundle/first.txt'))
+  assert(
+    dirtyAdhoc.worktree.product_dirty.paths.includes('untracked bundle/nested/file with spaces.txt')
+  )
   assert.deepEqual(dirtyAdhoc.worktree.preserved_workflow_state.paths, [
+    adhocCallRelative,
     adhocDiscussionRelative,
     adhocAuditRelative,
   ])
@@ -186,9 +212,37 @@ try {
   )
   assert.equal(dirtyAdhoc.worktree.decision, 'blocked')
   const dirtyAdhocHuman = run(adhocRoot, ['adhoc', 'start', 'Repair one help message'], 1)
-  assert.match(dirtyAdhocHuman.stderr, /Worktree product paths: 1/)
-  assert.match(dirtyAdhocHuman.stderr, /Worktree independent workflow paths: 2 \(preserved\)/)
+  assert.match(dirtyAdhocHuman.stderr, /Worktree product paths: 6/)
+  assert.match(dirtyAdhocHuman.stderr, /Worktree independent workflow paths: 3 \(preserved\)/)
   assert.match(dirtyAdhocHuman.stderr, /Worktree decision: blocked/)
+  const rejectedAdoption = runJson(
+    adhocRoot,
+    ['adhoc', 'start', 'Repair one help message', '--adopt-dirty', '--json'],
+    1
+  )
+  assert.equal(rejectedAdoption.state, 'adoption_rejected')
+  assert.deepEqual(
+    rejectedAdoption.rejected_paths.map((item) => item.path),
+    [adhocCallRelative, adhocDiscussionRelative, adhocAuditRelative]
+  )
+  assert.deepEqual(
+    rejectedAdoption.rejected_paths.map((item) => item.owner),
+    ['Discussion D99998', 'Discussion D99998', 'Test Audit TA99998']
+  )
+  assert.equal(existsSync(join(adhocRoot, '.specdev', 'cache', 'adhoc.json')), false)
+  assert.equal(gitText(adhocRoot, ['diff', '--cached', '--raw']), callerIndexBeforeRefusal)
+  rmSync(join(adhocRoot, '.specdev', 'discussions', 'D99998_concurrent'), {
+    recursive: true,
+    force: true,
+  })
+  rmSync(join(adhocRoot, '.specdev', 'test-audits', 'TA99998_concurrent'), {
+    recursive: true,
+    force: true,
+  })
+  rmSync(join(adhocRoot, '.specdev', '.ripplegraph', 'calls', 'D99998'), {
+    recursive: true,
+    force: true,
+  })
   const adhoc = runJson(adhocRoot, [
     'adhoc',
     'start',
@@ -198,10 +252,78 @@ try {
   ])
   assert.match(adhoc.id, /^AH-\d{8}T\d{9}Z-[a-f0-9]{4}$/)
   assert.equal(adhoc.starting_worktree, 'adopted')
-  assert.deepEqual(adhoc.worktree.adopted.paths, ['existing.txt'])
+  assert.equal(adhoc.adoption_manifest.version, 1)
+  assert.equal(adhoc.adoption_manifest.starting_revision, adhocStartRevision)
+  assert.equal(adhoc.adoption_manifest.paths.length, 6)
+  assert.deepEqual(
+    adhoc.adoption_manifest.paths.map((entry) => entry.path),
+    adhoc.worktree.adopted.paths
+  )
+  assert(
+    adhoc.adoption_manifest.paths.some(
+      (entry) =>
+        entry.path === 'untracked bundle/nested/file with spaces.txt' && entry.status === '??'
+    )
+  )
+  assert(
+    adhoc.adoption_manifest.paths.some(
+      (entry) => entry.path === 'rename source.txt' && entry.role === 'source'
+    )
+  )
   assert.equal(adhoc.worktree.decision, 'allowed')
-  assert.equal(runJson(adhocRoot, ['adhoc', 'status', '--json']).status, 'active')
+  const activeStatus = runJson(adhocRoot, ['adhoc', 'status', '--json'])
+  assert.equal(activeStatus.status, 'active')
+  assert.deepEqual(activeStatus.adoption_manifest, adhoc.adoption_manifest)
+  const activeAdhocPath = join(adhocRoot, '.specdev', 'cache', 'adhoc.json')
+  const exactActiveState = JSON.parse(readFileSync(activeAdhocPath, 'utf8'))
+  const legacyActiveState = { ...exactActiveState }
+  delete legacyActiveState.adoption_manifest
+  writeFileSync(activeAdhocPath, JSON.stringify(legacyActiveState, null, 2), 'utf8')
+  const legacyRefusal = runJson(
+    adhocRoot,
+    [
+      'adhoc',
+      'finish',
+      '--outcome=Corrected the help text',
+      '--verification=Inspected the bounded fixture',
+      '--json',
+    ],
+    1
+  )
+  assert.equal(legacyRefusal.state, 'legacy_adoption_manifest_missing')
+  assert.equal(existsSync(activeAdhocPath), true)
+  writeFileSync(activeAdhocPath, JSON.stringify(exactActiveState, null, 2), 'utf8')
+  rmSync(join(adhocRoot, 'untracked bundle', 'first.txt'))
+  const indexBeforeMissingRefusal = gitText(adhocRoot, ['diff', '--cached', '--raw'])
+  const missingAdopted = runJson(
+    adhocRoot,
+    [
+      'adhoc',
+      'finish',
+      '--outcome=Corrected the help text',
+      '--verification=Inspected the bounded fixture',
+      '--json',
+    ],
+    1
+  )
+  assert.equal(missingAdopted.state, 'adopted_paths_missing')
+  assert.equal(missingAdopted.rejected_paths[0].path, 'untracked bundle/first.txt')
+  assert.equal(gitText(adhocRoot, ['diff', '--cached', '--raw']), indexBeforeMissingRefusal)
+  writeFileSync(join(adhocRoot, 'untracked bundle', 'first.txt'), 'first\n', 'utf8')
   writeFileSync(join(adhocRoot, 'help.txt'), 'corrected help\n', 'utf8')
+  mkdirSync(join(adhocRoot, '.specdev', 'discussions', 'D99998_concurrent', 'brainstorm'), {
+    recursive: true,
+  })
+  mkdirSync(join(adhocRoot, '.specdev', 'test-audits', 'TA99998_concurrent'), {
+    recursive: true,
+  })
+  mkdirSync(join(adhocRoot, '.specdev', '.ripplegraph', 'calls', 'D99998'), {
+    recursive: true,
+  })
+  writeFileSync(join(adhocRoot, adhocDiscussionRelative), '# Concurrent proposal\n', 'utf8')
+  writeFileSync(join(adhocRoot, adhocAuditRelative), '# Concurrent audit\n', 'utf8')
+  writeFileSync(join(adhocRoot, adhocCallRelative), '{"status":"active"}\n', 'utf8')
+  runGit(adhocRoot, ['add', '--', adhocDiscussionRelative, adhocCallRelative])
   const failedVerification = runJson(
     adhocRoot,
     [
@@ -234,8 +356,7 @@ try {
   assert.equal(passingVerification.verification.status, 'passed')
   assert.equal(passingVerification.acceptance_evidence.length, 1)
   assert.equal(passingVerification.acceptance_evidence[0].status, 'passed')
-  const activeAdhocPath = join(adhocRoot, '.specdev', 'cache', 'adhoc.json')
-  const activeForRecovery = readFileSync(activeAdhocPath, 'utf8')
+  const activeBeforeDelivery = JSON.parse(readFileSync(activeAdhocPath, 'utf8'))
   const adhocFinished = runJson(adhocRoot, [
     'adhoc',
     'finish',
@@ -251,13 +372,22 @@ try {
   assert.equal(adhocFinished.product_worktree_clean, true)
   assert.deepEqual(adhocFinished.remaining_worktree.product_dirty.paths, [])
   assert.deepEqual(adhocFinished.remaining_worktree.preserved_workflow_state.paths, [
+    adhocCallRelative,
     adhocDiscussionRelative,
     adhocAuditRelative,
   ])
   assert(adhocFinished.committed_paths.product.includes('existing.txt'))
   assert(adhocFinished.committed_paths.product.includes('help.txt'))
+  assert(adhocFinished.committed_paths.product.includes('delete me.txt'))
+  assert(adhocFinished.committed_paths.product.includes('rename source.txt'))
+  assert(adhocFinished.committed_paths.product.includes('renamed destination.txt'))
+  assert(adhocFinished.committed_paths.product.includes('untracked bundle/first.txt'))
+  assert(
+    adhocFinished.committed_paths.product.includes('untracked bundle/nested/file with spaces.txt')
+  )
   assert.deepEqual(adhocFinished.committed_paths.receipt, [adhocFinished.receipt])
-  assert.deepEqual(adhocFinished.start_worktree.adopted.paths, ['existing.txt'])
+  assert.deepEqual(adhocFinished.path_facts.requested, adhoc.worktree.adopted.paths)
+  assert.deepEqual(adhocFinished.path_facts.remaining, [])
   assert.match(
     gitText(adhocRoot, ['log', '-1', '--format=%B']),
     new RegExp(`SpecDev-Adhoc: ${adhoc.id}`)
@@ -271,6 +401,7 @@ try {
   ]).split('\n')
   assert.equal(adhocCommittedPaths.includes(adhocDiscussionRelative), false)
   assert.equal(adhocCommittedPaths.includes(adhocAuditRelative), false)
+  assert.equal(adhocCommittedPaths.includes(adhocCallRelative), false)
   const adhocRemainingPaths = gitText(adhocRoot, [
     'status',
     '--porcelain=v1',
@@ -278,9 +409,10 @@ try {
   ])
   assert.match(adhocRemainingPaths, new RegExp(adhocDiscussionRelative.replaceAll('/', '\\/')))
   assert.match(adhocRemainingPaths, new RegExp(adhocAuditRelative.replaceAll('/', '\\/')))
+  assert.match(adhocRemainingPaths, new RegExp(adhocCallRelative.replaceAll('/', '\\/')))
   assert.equal(
-    gitText(adhocRoot, ['diff', '--cached', '--name-only']).includes('D99998_concurrent'),
-    false
+    gitText(adhocRoot, ['diff', '--cached', '--name-only']).includes(adhocDiscussionRelative),
+    true
   )
   const adhocReceipt = readFileSync(join(adhocRoot, adhocFinished.receipt), 'utf8')
   assert.match(adhocReceipt, /## Verification attempt history/)
@@ -289,13 +421,32 @@ try {
   assert.match(adhocReceipt, /## Current acceptance evidence/)
   assert.match(adhocReceipt, /## Structured verification/)
   assert.match(adhocReceipt, /"attempt_history"/)
-  writeFileSync(activeAdhocPath, activeForRecovery, 'utf8')
+  assert.match(adhocReceipt, /## Delivery path facts/)
+  assert.match(adhocReceipt, /untracked bundle\/nested\/file with spaces\.txt/)
+  const activeForRecovery = {
+    ...activeBeforeDelivery,
+    outcome: 'Corrected the help text',
+    completed_at: new Date().toISOString(),
+    delivery_candidate: {
+      version: 1,
+      starting_revision: adhocStartRevision,
+      product_paths: adhocFinished.committed_paths.product,
+      receipt_path: adhocFinished.receipt,
+    },
+  }
+  writeFileSync(activeAdhocPath, JSON.stringify(activeForRecovery, null, 2), 'utf8')
+  writeFileSync(join(adhocRoot, 'existing.txt'), 'post-commit owned delta\n', 'utf8')
+  const blockedRecovery = runJson(adhocRoot, ['adhoc', 'finish', '--json'], 1)
+  assert.equal(blockedRecovery.state, 'remaining_owned_delta')
+  assert.deepEqual(blockedRecovery.path_facts.remaining, ['existing.txt'])
+  assert.equal(existsSync(activeAdhocPath), true)
+  runGit(adhocRoot, ['restore', '--worktree', '--', 'existing.txt'])
   const recoveredHuman = run(adhocRoot, ['adhoc', 'finish'])
   assert.match(recoveredHuman.stdout, /Adhoc .*: completed/)
   assert.match(recoveredHuman.stdout, /Delivery subject: specdev\(adhoc\): Repair one help message/)
-  assert.match(recoveredHuman.stdout, /Remaining independent workflow paths: 2 \(preserved\)/)
+  assert.match(recoveredHuman.stdout, /Remaining independent workflow paths: 3 \(preserved\)/)
   assert.match(recoveredHuman.stdout, /Product worktree clean: yes/)
-  writeFileSync(activeAdhocPath, activeForRecovery, 'utf8')
+  writeFileSync(activeAdhocPath, JSON.stringify(activeForRecovery, null, 2), 'utf8')
   const recoveredJson = runJson(adhocRoot, ['adhoc', 'finish', '--json'])
   assert.equal(recoveredJson.recovered, true)
   assert.deepEqual(recoveredJson.remaining_worktree, adhocFinished.remaining_worktree)

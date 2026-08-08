@@ -103,18 +103,19 @@ assert(startSkill.includes('big_picture.md'), 'start skill references big_pictur
 assert(startSkill.includes('purpose, users'), 'start skill includes Q&A instructions')
 
 const adhocSkill = readFileSync(join(skillsDir, 'specdev-adhoc', 'SKILL.md'), 'utf-8')
-assert(
-  /adhoc\s+verify --label=/.test(adhocSkill),
-  'Adhoc skill documents structured verification'
-)
+assert(/adhoc\s+verify --label=/.test(adhocSkill), 'Adhoc skill documents structured verification')
 assert(adhocSkill.includes('--title='), 'Adhoc skill documents the independent short title')
 assert(
-  adhocSkill.includes('independent Discussion and Test'),
+  /independent\s+Discussion and Test/i.test(adhocSkill),
   'Adhoc skill explains concurrent callable classification'
 )
 assert(
-  adhocSkill.includes('without Git archaeology'),
-  'Adhoc skill describes the self-contained repeated-run handoff'
+  adhocSkill.includes('exact temporary-index transaction'),
+  'Adhoc skill documents transactional exact staging'
+)
+assert(
+  adhocSkill.includes('requested, committed, rejected, and remaining'),
+  'Adhoc skill documents Git-derived delivery facts'
 )
 
 const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
