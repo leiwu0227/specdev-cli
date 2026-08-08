@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "mode": "automatic",
+  "stage": "complete",
+  "primary_round": 2,
+  "round": 2,
+  "history": [
+    {
+      "round": 1,
+      "candidate_digest": "77514c58f081d6379ac5103d08c0ad41002aa0a4c157e8aef66fbb927a16912b",
+      "findings_digest": "56457dab37441565f635887daa212c5a12baecf5d2f33a4f9264cc7bd7764ffa"
+    },
+    {
+      "round": 2,
+      "candidate_digest": "243d1dc28f1a3e7699ca2fef73cb8a8ef502640f01ab1295afd9a289501eb078",
+      "findings_digest": "910dbbc4dd1b2d928a2679779bf9d659be5f076a2250ef7b62a6c062469cfda3"
+    }
+  ],
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "high",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "contract_hash": "411e0d42c382c160ae8bf68245b26ae3d040ede5956f9e5b67f9d3887a6a0edb",
+  "status": "approved",
+  "candidate_digest": "243d1dc28f1a3e7699ca2fef73cb8a8ef502640f01ab1295afd9a289501eb078",
+  "findings_digest": "910dbbc4dd1b2d928a2679779bf9d659be5f076a2250ef7b62a6c062469cfda3",
+  "attempt": "Attempt-00117",
+  "updated_at": "2026-08-08T03:02:17.287Z",
+  "repair_attempt": "Attempt-00116"
+}

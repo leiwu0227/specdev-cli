@@ -42,6 +42,15 @@ export async function compactCompletedWorkflowRuntime(specdevPath, options) {
   )
 }
 
+export async function compactFailedWorkflowRuntime(specdevPath, options) {
+  return compactTerminalWorkflowRuntime(
+    specdevPath,
+    options,
+    new Set(['completed']),
+    new Set(['failed'])
+  )
+}
+
 export async function compactShelvedWorkflowRuntime(specdevPath, options) {
   return compactTerminalWorkflowRuntime(
     specdevPath,

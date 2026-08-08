@@ -25,7 +25,16 @@ export function ensureMissionGapState(mission) {
 
 export function openMissionGap(
   mission,
-  { kind, sourceId, signalId, artifact = null, parentGapId = null, now = new Date().toISOString() }
+  {
+    kind,
+    sourceId,
+    signalId,
+    artifact = null,
+    parentGapId = null,
+    acceptance = null,
+    findingType = null,
+    now = new Date().toISOString(),
+  }
 ) {
   const state = ensureMissionGapState(mission)
   const signal = requiredIdentity(signalId, 'Mission gap signal')
@@ -45,7 +54,7 @@ export function openMissionGap(
     gap = state.items.find((item) => item.id === parentGapId)
     if (!gap) throw new Error(`Mission repair descendant references unknown gap ${parentGapId}`)
   } else {
-    const key = sourceKey(kind, sourceId)
+    const key = sourceKey(kind, sourceId, acceptance, findingType)
     gap = state.items.find((item) => item.source?.key === key)
     if (!gap) {
       gap = {
@@ -58,6 +67,8 @@ export function openMissionGap(
         status: 'open',
         stage: 'resolution',
         disposition: 'unresolved',
+        ...(acceptance ? { acceptance } : {}),
+        ...(findingType ? { finding_type: findingType } : {}),
         assignments: [],
         signals: [],
         created_at: now,
@@ -136,7 +147,7 @@ export function awaitMissionGapValidation(
 export function closeMissionGap(
   mission,
   gapId,
-  { evidence = null, now = new Date().toISOString() } = {}
+  { evidence = null, authority = null, now = new Date().toISOString() } = {}
 ) {
   const gap = requiredGap(ensureMissionGapState(mission), gapId)
   gap.status = 'closed'
@@ -144,6 +155,24 @@ export function closeMissionGap(
   gap.closed_at = now
   gap.updated_at = now
   if (evidence) gap.evidence = evidence
+  if (authority) gap.closure_authority = authority
+  return gap
+}
+
+export function supersedeMissionGap(
+  mission,
+  gapId,
+  { supersededBy, evidence = null, authority = null, now = new Date().toISOString() }
+) {
+  const gap = requiredGap(ensureMissionGapState(mission), gapId)
+  const replacement = requiredIdentity(supersededBy, 'Superseding Mission finding')
+  gap.status = 'superseded'
+  gap.disposition = 'evidence-superseded'
+  gap.superseded_by = replacement
+  gap.superseded_at = now
+  gap.updated_at = now
+  if (evidence) gap.evidence = evidence
+  if (authority) gap.closure_authority = authority
   return gap
 }
 
@@ -178,23 +207,34 @@ export function missionGap(mission, gapId) {
   return ensureMissionGapState(mission).items.find((item) => item.id === gapId) || null
 }
 
-export function missionGapForSource(mission, kind, sourceId) {
-  const key = sourceKey(kind, sourceId)
+export function missionGapForSource(
+  mission,
+  kind,
+  sourceId,
+  acceptance = null,
+  findingType = null
+) {
+  const key = sourceKey(kind, sourceId, acceptance, findingType)
   return (
     ensureMissionGapState(mission).items.find(
-      (item) => item.source?.key === key && item.status !== 'closed'
+      (item) => item.source?.key === key && !['closed', 'superseded'].includes(item.status)
     ) || null
   )
 }
 
-export function recordMissionSourceGap(mission, { kind, sourceId, signalId, artifact }) {
-  const existing = missionGapForSource(mission, kind, sourceId)
+export function recordMissionSourceGap(
+  mission,
+  { kind, sourceId, signalId, artifact, acceptance = null, findingType = null }
+) {
+  const existing = missionGapForSource(mission, kind, sourceId, acceptance, findingType)
   if (!existing) {
     return openMissionGap(mission, {
       kind,
       sourceId,
       signalId,
       artifact,
+      acceptance,
+      findingType,
     }).gap
   }
   if (['resolving', 'validating'].includes(existing.status)) {
@@ -206,6 +246,8 @@ export function recordMissionSourceGap(mission, { kind, sourceId, signalId, arti
     signalId,
     artifact,
     parentGapId: existing.id,
+    acceptance,
+    findingType,
   }).gap
 }
 
@@ -255,7 +297,7 @@ export function compactMissionGaps(mission) {
   const state = ensureMissionGapState(mission)
   return {
     opened: state.items.length,
-    closed: state.items.filter((gap) => gap.status === 'closed').length,
+    closed: state.items.filter((gap) => ['closed', 'superseded'].includes(gap.status)).length,
     failed: state.items.filter((gap) => gap.status === 'failed').length,
     dispositions: Object.fromEntries(
       [...new Set(state.items.map((gap) => gap.disposition))].map((disposition) => [
@@ -266,11 +308,17 @@ export function compactMissionGaps(mission) {
   }
 }
 
-function sourceKey(kind, sourceId) {
-  return `${requiredIdentity(kind, 'Mission gap source kind')}:${requiredIdentity(
+function sourceKey(kind, sourceId, acceptance = null, findingType = null) {
+  const base = `${requiredIdentity(kind, 'Mission gap source kind')}:${requiredIdentity(
     sourceId,
     'Mission gap source identity'
   )}`
+  return acceptance || findingType
+    ? `${base}:${requiredIdentity(acceptance, 'Mission gap acceptance')}:${requiredIdentity(
+        findingType,
+        'Mission gap finding type'
+      )}`
+    : base
 }
 
 function stableGapId(key) {

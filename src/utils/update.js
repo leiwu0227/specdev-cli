@@ -125,6 +125,7 @@ export async function updateSpecdevSystem(source, destination) {
     const ensurePaths = [
       '.gitignore',
       'agents.yaml',
+      'executors.yaml',
       'adhoc/.gitkeep',
       'knowledge/_index.md',
       'knowledge/faq',

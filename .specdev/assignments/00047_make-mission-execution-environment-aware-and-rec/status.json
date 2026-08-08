@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00047",
+  "kind": "change",
+  "description": "Make Mission execution environment-aware and recoverable by preflighting verification capabilities before approval, distinguishing product failures from evidence-infrastructure failures, routing one bounded evidence recovery, superseding criterion-scoped follow-ups, checkpointing integrated work, guiding successor handoff, and presenting one consolidated execution policy",
+  "run_id": "assignment-lifecycle-20260808T02203146",
+  "created_at": "2026-08-08T02:20:31.472Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-08-08T03:02:17.323Z",
+  "review_policy_frozen_at": "2026-08-08T02:27:56.280Z",
+  "approved_at": "2026-08-08T02:27:56.280Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "c84d5dc81962e080fdf078dc98f2562cea5021e1",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-08-08T02:29:28.438Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-08-08T03:02:17.295Z",
+  "activity": {
+    "attempt_count": 6,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 6,
+    "provider_attempts": {
+      "total": 6,
+      "completed": 4,
+      "failed": 1,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 2061015,
+    "agent_duration_ms": 1889946,
+    "provider_reported_tokens": 363223
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-08-08T03:02:17.323Z"
+}

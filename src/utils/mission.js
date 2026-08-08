@@ -60,6 +60,8 @@ export async function missionChildFollowUp(specdevPath, child) {
   const assignmentPath = join(specdevPath, 'assignments', child.folder)
   const implementationPath = join(assignmentPath, 'implementation')
   const progress = await fse.readJson(join(implementationPath, 'progress.json')).catch(() => null)
+  const findings = normalizeMissionFindings(progress?.findings)
+  if (findings.some((finding) => finding.status === 'open')) return 'required'
   if (progress?.follow_up === 'required') return 'required'
   for (const name of ['worker-result.md', 'repair-result.md']) {
     const path = join(implementationPath, name)
@@ -71,6 +73,26 @@ export async function missionChildFollowUp(specdevPath, child) {
   const outcome = await fse.readFile(join(assignmentPath, 'outcome.md'), 'utf-8').catch(() => '')
   if (/^\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/im.test(outcome)) return 'required'
   return 'none'
+}
+
+export async function missionChildFindings(specdevPath, child) {
+  if (!child.folder) return []
+  const assignmentPath = join(specdevPath, 'assignments', child.folder)
+  const progress = await fse
+    .readJson(join(assignmentPath, 'implementation', 'progress.json'))
+    .catch(() => null)
+  const declared = normalizeMissionFindings(progress?.findings)
+  if (declared.length > 0) return declared
+  const outcome = await fse.readFile(join(assignmentPath, 'outcome.md'), 'utf-8').catch(() => '')
+  return [...outcome.matchAll(/^\|\s*(AC-\d+)\s*\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/gim)].map(
+    (match) => ({
+      acceptance: match[1].toUpperCase(),
+      type: match[2].toLowerCase() === 'blocked' ? 'evidence' : 'product',
+      status: 'open',
+      required: `Resolve ${match[1].toUpperCase()} from ${child.id}.`,
+      supersedes: [],
+    })
+  )
 }
 
 export async function validateAndReserveReplannedQueue(specdevPath, original, revised) {
@@ -182,6 +204,34 @@ export function assertMissionTransitionRecorded(stepped, node, action = 'record'
     throw new Error(`Invalid durable Mission transition from ${node}`)
   }
   return stepped
+}
+
+function normalizeMissionFindings(value) {
+  if (!Array.isArray(value)) return []
+  return value.map((finding, index) => {
+    const acceptance = String(finding?.acceptance || '')
+      .trim()
+      .toUpperCase()
+    const type = String(finding?.type || '').trim()
+    const status = String(finding?.status || 'open').trim()
+    if (!/^AC-\d+$/.test(acceptance)) {
+      throw new Error(`Invalid Mission finding acceptance at index ${index}: ${acceptance}`)
+    }
+    if (!type) throw new Error(`Mission finding type is required at index ${index}`)
+    if (!['open', 'closed', 'superseded'].includes(status)) {
+      throw new Error(`Invalid Mission finding status at index ${index}: ${status}`)
+    }
+    return {
+      acceptance,
+      type,
+      status,
+      required: String(finding.required || '').trim() || null,
+      evidence: String(finding.evidence || '').trim() || null,
+      supersedes: Array.isArray(finding.supersedes)
+        ? finding.supersedes.map((entry) => String(entry).trim()).filter(Boolean)
+        : [],
+    }
+  })
 }
 
 async function readYaml(path) {

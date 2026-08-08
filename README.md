@@ -102,6 +102,25 @@ and checkpoints its progress so interrupted work can resume safely. Independent
 children may run concurrently; final verification and landing bring the
 integrated result back to the base branch.
 
+Before approval, Mission output includes one contract-bound execution policy:
+worker and reviewer profiles, the exact verification executable and command,
+required capabilities, services, platforms, and secret names, approved executor
+classes, and every explicit bypass or escalation. Capability facts live in
+`.specdev/executors.yaml`; secret values are never stored there or in receipts.
+
+Verification receipts retain executor and candidate provenance. A confirmed
+executor-only blockage may use one approved alternate while keeping the exact
+command and candidate. Later passing evidence links to, rather than overwrites,
+the blocked attempt. Successful child and wave boundaries create recoverable
+checkpoints, and convergence refuses uncheckpointed product changes.
+
+If an evidence-only problem has already terminalized a Mission, keep that
+history immutable and draft a fresh approval boundary with:
+
+```bash
+specdev mission handoff M00001 --successor-assignment
+```
+
 ## Learn more
 
 See [QUICKSTART.md](QUICKSTART.md) for an end-to-end walkthrough, or run:

@@ -5,6 +5,7 @@
 ```text
 .specdev/
   agents.yaml                         committed worker/reviewer preferences
+  executors.yaml                      reusable capability facts; secret names only
   guides/review.md                    common reviewer contract
   guides/library/catalog.yaml         managed curated guides
   guides/project/catalog.yaml         repository-owned guides
@@ -44,6 +45,7 @@ specdev assignment --from-test-audit=TA00001
 specdev mission create "<objective>"
 specdev reviewloop mission --mission=M00001   # optional
 specdev mission run|status|pause|checkpoint M00001
+specdev mission handoff M00001 --successor-assignment
 
 specdev knowledge rebuild
 specdev knowledge search "<terms>" [--include-stale] [--scope=history|workflow|all]
@@ -58,7 +60,8 @@ specdev knowledge distill
 - `specdev next --json`: focused Assignment/Mission position.
 - `specdev discussion --list`: isolated callable positions.
 - `specdev test-audit --list`: isolated test-audit callable positions.
-- `specdev mission status M00001`: branch, queue counts, and blocker.
+- `specdev mission status M00001`: branch, queue counts, blocker, and the
+  contract-bound review/execution policy.
 - `specdev mission run M00001 --takeover`: explicit recovery only after a
   durable running controller has no live local process.
 

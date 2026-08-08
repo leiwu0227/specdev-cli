@@ -1,0 +1,10 @@
+version: 1
+executors:
+  managed-worker:
+    class: managed-worker
+    available: true
+    capabilities: []
+    services: []
+    platforms: [current]
+    runtimes: []
+    secret_names: []

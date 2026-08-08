@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "round": 1,
+  "status": "approved",
+  "profile": {
+    "provider": "claude",
+    "model": "claude-opus-5",
+    "effort": "xhigh",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "baseline_hash": "411e0d42c382c160ae8bf68245b26ae3d040ede5956f9e5b67f9d3887a6a0edb",
+  "contract_hash": "411e0d42c382c160ae8bf68245b26ae3d040ede5956f9e5b67f9d3887a6a0edb",
+  "material_divergence": false,
+  "attempt": "Attempt-00113",
+  "updated_at": "2026-08-08T02:26:52.817Z"
+}

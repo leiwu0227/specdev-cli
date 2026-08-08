@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-mission-environment.js && node tests/test-mission-gaps.js && node tests/test-mission-compatibility.js",
+      "revision": "working-tree@c84d5dc81962e080fdf078dc98f2562cea5021e1",
+      "scope": "execution policy, executor routing, receipt supersession, scoped findings, Mission scaffold, gap compatibility, finite convergence, and terminal recovery",
+      "status": "passed",
+      "duration_ms": 11000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm test",
+      "revision": "working-tree@c84d5dc81962e080fdf078dc98f2562cea5021e1",
+      "scope": "full repository regression suite including cleanup",
+      "status": "passed",
+      "duration_ms": 55000,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-environment.js",
+      "revision": "working-tree@c84d5dc81962e080fdf078dc98f2562cea5021e1",
+      "scope": "initial evidence-only successor handoff execution; exposed the failed Mission runtime remaining focused and preventing fresh Assignment creation",
+      "status": "failed",
+      "duration_ms": 700,
+      "role": "diagnostic"
+    },
+    {
+      "command": "node tests/test-mission-environment.js",
+      "revision": "working-tree@c84d5dc81962e080fdf078dc98f2562cea5021e1",
+      "scope": "evidence-only successor handoff execution, immutable source Mission provenance, and convergence refusal for an uncheckpointed product path",
+      "status": "passed",
+      "duration_ms": 1400,
+      "role": "blocking_review_repair"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

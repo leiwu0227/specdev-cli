@@ -29,6 +29,7 @@ import { reserveEntityId } from '../utils/id-reservation.js'
 import {
   assertMissionTransitionRecorded,
   bindReplannedQueueToGap,
+  missionChildFindings,
   missionChildFollowUp,
   readMission,
   readMissionQueue,
@@ -81,9 +82,13 @@ import { implementCommand } from './implement.js'
 import { reviewBrainstorm } from './reviewloop.js'
 import {
   compactCompletedWorkflowRuntime,
+  compactFailedWorkflowRuntime,
   retireTransientArtifact,
 } from '../utils/artifact-retention.js'
-import { workspaceChangeSummaryLines } from '../utils/workspace-changes.js'
+import {
+  classifyWorkspaceChanges,
+  workspaceChangeSummaryLines,
+} from '../utils/workspace-changes.js'
 import {
   actionableMissionGap,
   adoptLegacyMissionReplan,
@@ -97,6 +102,7 @@ import {
   missionGapForSource,
   openMissionGap,
   recordMissionSourceGap,
+  supersedeMissionGap,
 } from '../utils/mission-gaps.js'
 import {
   initialAutomaticReviewState,
@@ -108,6 +114,13 @@ import {
   assertReviewWaiverEvidence,
   validateDeliveryArtifacts,
 } from '../utils/delivery-artifacts.js'
+import {
+  appendVerificationReceipt,
+  classifyVerificationDisposition,
+  deriveMissionExecutionPolicy,
+  missionExecutionPolicyTemplate,
+  selectVerificationExecutor,
+} from '../utils/mission-execution.js'
 
 const execFile = promisify(execFileCallback)
 const LOCAL_SPECDEV_BIN = fileURLToPath(new URL('../../bin/specdev.js', import.meta.url))
@@ -125,8 +138,9 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
   if (subcommand === 'land') return missionLand(rest[0], flags)
   if (subcommand === 'pause') return pauseMission(rest[0], flags)
   if (subcommand === 'checkpoint') return checkpointMission(rest[0], flags)
+  if (subcommand === 'handoff') return handoffMission(rest[0], flags)
   console.error(
-    'Usage: specdev mission <create | run | migrate | status | land | pause | checkpoint>'
+    'Usage: specdev mission <create | run | migrate | status | land | pause | checkpoint | handoff>'
   )
   process.exitCode = 1
 }
@@ -199,7 +213,9 @@ async function createMission(args, flags) {
     sourceDiscussion: source,
   }).replace('# Assignment contract', '# Mission contract')
   contract +=
-    '\n## Mission execution shape\n\n- Initial child plan: single\n- Split reason: none\n\n<!-- Use planned only for a concrete context, dependency, decision, or independent verification/rollback boundary. -->\n\n## Final integrated verification\n\n- Command: `TODO`\n'
+    '\n## Mission execution shape\n\n- Initial child plan: single\n- Split reason: none\n\n<!-- Use planned only for a concrete context, dependency, decision, or independent verification/rollback boundary. -->\n' +
+    missionExecutionPolicyTemplate() +
+    '\n## Final integrated verification\n\n- Command: `TODO`\n'
   await fse.writeFile(join(missionPath, 'brainstorm', 'contract.md'), contract, 'utf-8')
   await writeMission(missionPath, {
     version: 1,
@@ -295,6 +311,7 @@ async function runMission(selector, flags) {
     if (graph.position.node === 'approve-mission') {
       const contract = await validateMissionContract(missionPath)
       if (!contract.valid) return fail(flags, contract.errors.join('; '))
+      const executionPolicy = await deriveApprovedExecutionPolicy(context, contract)
       const git = await gitSnapshot(targetDir)
       if (!git.branch)
         return fail(
@@ -354,8 +371,15 @@ async function runMission(selector, flags) {
             : staleReview
               ? { stale: true, reviewed_contract_hash: reviewRecord.contract_hash }
               : null,
+          execution_policy: executionPolicy,
           next_action: mission.next_action,
         })
+      }
+      if (!executionPolicy.preflight.ready) {
+        return fail(
+          flags,
+          `Mission execution policy requires a decision before approval: ${executionPolicy.preflight.missing.join(', ')}. ${executionPolicy.preflight.decisions[0]?.action || ''}`.trim()
+        )
       }
       if (review && review.result.frontmatter.verdict !== 'approved' && !flags['override-review']) {
         return fail(
@@ -380,6 +404,8 @@ async function runMission(selector, flags) {
       mission.approved_contract_hash = contract.hash
       mission.base_revision = git.revision || 'unborn'
       mission.approved_at = new Date().toISOString()
+      mission.approval_dirty_paths = classifyWorkspaceChanges(git.dirty_paths).projectPaths
+      mission.execution_policy = executionPolicy
       mission.next_action = `Continue the foreground controller with specdev mission run ${mission.id}.`
       delete mission.blocker
       await writeMission(missionPath, mission)
@@ -514,6 +540,7 @@ async function driveMission(context) {
       }
       delete mission.completed_wave
       await writeMission(missionPath, mission)
+      await checkpointMissionBoundary(context, `wave-${wave}`)
       const gap = actionableMissionGap(mission)
       await durableMissionStep(context, 'advance-wave', {
         remaining,
@@ -538,6 +565,7 @@ async function driveMission(context) {
       await recordMissionChildGap(context, running)
       const gap = actionableMissionGap(mission)
       await writeMission(missionPath, mission)
+      await checkpointMissionBoundary(context, running.id)
       await durableMissionStep(context, 'advance-queue', {
         remaining,
         completed: running.id,
@@ -549,8 +577,10 @@ async function driveMission(context) {
       continue
     }
     if (node === 'mission-review') {
+      await assertMissionCandidateCheckpoint(context)
       const review = await reviewMission(context)
       if (review.disposition === 'approved' || review.disposition === 'nonblocking-override') {
+        mission.convergence_disposition = 'needs_evidence'
         closeValidatingGap(mission, 'mission-review', 'convergence', review.verdict)
         await writeMission(missionPath, mission)
         await durableMissionStep(context, 'mission-review', {
@@ -562,6 +592,7 @@ async function driveMission(context) {
         continue
       }
       if (review.disposition === 'repair' || review.disposition === 'resolver') {
+        mission.convergence_disposition = 'needs_product_change'
         const gap = recordMissionSourceGap(mission, {
           kind: 'mission-review',
           sourceId: 'convergence',
@@ -595,6 +626,7 @@ async function driveMission(context) {
         reason: 'Mission convergence review found an objective failure.',
         evidence: review.verdict,
       })
+      mission.convergence_disposition = 'objective_failure'
       await writeMission(missionPath, mission)
       await durableMissionStep(context, 'mission-review', {
         approved: false,
@@ -638,6 +670,12 @@ async function driveMission(context) {
           resolved.disposition
         )
       ) {
+        mission.convergence_disposition =
+          resolved.disposition === 'semantic-failure'
+            ? 'objective_failure'
+            : resolved.disposition === 'authority-failure'
+              ? 'user_decision_required'
+              : 'executor_unavailable'
         await completeMissionFailure(
           context,
           resolved.error || 'Mission gap resolution failed.',
@@ -666,6 +704,23 @@ async function driveMission(context) {
         return finishMissionDelivery(context)
       }
       const result = await runFinalVerification(context)
+      if (result.blocked) {
+        mission.status = 'blocked'
+        mission.blocker = result.receipt.reason || result.next_action
+        mission.next_action = result.next_action
+        mission.convergence_disposition = 'executor_unavailable'
+        await writeMission(missionPath, mission)
+        return emit(flags, {
+          command: 'mission run',
+          version: 1,
+          status: 'blocked',
+          mission: mission.id,
+          disposition: 'executor_unavailable',
+          receipt: relativeToRepo(targetDir, result.path),
+          blocker: mission.blocker,
+          next_action: mission.next_action,
+        })
+      }
       let verificationGap = missionGapForSource(mission, 'final-verification', 'authorized-command')
       if (result.passed && verificationGap) {
         closeMissionGap(mission, verificationGap.id, {
@@ -674,6 +729,7 @@ async function driveMission(context) {
         await writeMission(missionPath, mission)
       }
       if (!result.passed) {
+        mission.convergence_disposition = result.receipt.disposition
         verificationGap = recordMissionSourceGap(mission, {
           kind: 'final-verification',
           sourceId: 'authorized-command',
@@ -793,12 +849,14 @@ async function designMission(context) {
       prompt: [
         'Design a static-wave Mission plan. Do not modify product code.',
         `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
+        `Approved execution policy: ${JSON.stringify(mission.execution_policy)}`,
         `Write ${relativeToRepo(targetDir, queuePath)} as YAML with version: 2, an ordered assignments list containing only title, kind, wave, status: pending, and a final_verification mapping with the exact contract-authorized command and scope.`,
         `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
         'Start by trying to express the entire Mission as one Assignment. Split only for a worker/reviewer context limit, an information dependency, an intermediate user/operational decision, or meaningfully independent verification/rollback.',
         'File count, architectural layers, and the existence of several implementation Tasks are not split reasons. When uncertain, write one Assignment.',
         "Use dense positive wave numbers beginning at 1. Put children in the same wave only when neither requires the other's output, decision, artifact, or intermediate verification.",
         'Parallel speed alone is not a split reason. Do not predict file ownership, assign IDs, add dependency edges, create a graph, or invoke agents.',
+        'Do not create evidence-only children for requirements that the approved execution policy marks impossible; retain their explicit bypass, escalation, or residual-risk decision instead.',
       ]
         .filter(Boolean)
         .join('\n'),
@@ -2018,7 +2076,7 @@ async function reusableSingleChildReview(context) {
 }
 
 async function recordMissionChildGap(context, child) {
-  const { mission } = context
+  const { mission, specdevPath } = context
   const signalId = `child:${child.id}:${child.follow_up === 'required' ? 'follow-up' : 'complete'}`
   if (child.gap_id) {
     const gap = missionGap(mission, child.gap_id)
@@ -2031,10 +2089,43 @@ async function recordMissionChildGap(context, child) {
     } else if (['mission-review', 'final-verification'].includes(gap.source.kind)) {
       awaitMissionGapValidation(mission, gap.id, { artifact: child.outcome })
     } else {
-      closeMissionGap(mission, gap.id, { evidence: child.outcome })
+      supersedeMissionGap(mission, gap.id, {
+        supersededBy: `child:${child.id}:complete`,
+        evidence: child.outcome,
+        authority: child.id,
+      })
     }
     return gap
   }
+  const findings = await missionChildFindings(specdevPath, child)
+  for (const finding of findings) {
+    for (const gapId of finding.supersedes || []) {
+      const gap = missionGap(mission, gapId)
+      if (!gap || !['open', 'resolving', 'validating'].includes(gap.status)) continue
+      if (finding.status === 'superseded') {
+        supersedeMissionGap(mission, gap.id, {
+          supersededBy: `${child.id}:${finding.acceptance}:${finding.type}`,
+          evidence: finding.evidence || child.outcome,
+          authority: child.id,
+        })
+      } else if (finding.status === 'closed') {
+        closeMissionGap(mission, gap.id, {
+          evidence: finding.evidence || child.outcome,
+          authority: child.id,
+        })
+      }
+    }
+    if (finding.status !== 'open') continue
+    openMissionGap(mission, {
+      kind: 'child',
+      sourceId: child.id,
+      acceptance: finding.acceptance,
+      findingType: finding.type,
+      signalId: `${signalId}:${finding.acceptance}:${finding.type}`,
+      artifact: child.outcome,
+    })
+  }
+  if (findings.some((finding) => finding.status === 'open')) return actionableMissionGap(mission)
   if (child.follow_up !== 'required') return null
   return openMissionGap(mission, {
     kind: 'child',
@@ -2078,6 +2169,7 @@ async function resolveMissionGap(context) {
         ? 'Act as the resolver for one durable Mission gap. Add one final focused resolution Assignment to the remaining queue; do not modify product code.'
         : 'Add one focused resolution Assignment for one durable Mission gap; do not modify product code.',
       `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
+      `Approved execution policy: ${JSON.stringify(mission.execution_policy)}`,
       `Queue to edit in place: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
       `Gap: ${gap.id}`,
       `Stable source: ${gap.source.key}`,
@@ -2085,7 +2177,7 @@ async function resolveMissionGap(context) {
       gap.artifact ? `Trigger artifact: ${gap.artifact}` : null,
       'Preserve every completed, integrated, or running entry exactly. Existing pending entries may change title or kind but must retain their IDs. New entries must omit IDs and use status: pending; SpecDev allocates identity and appends sequential repair waves.',
       `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
-      'Preserve final_verification exactly. Keep the resolution sequential and small. Do not broaden approved scope, behavior, constraints, reserved authority, or verification authority. If the gap cannot be resolved inside that authority, return blocked without changing the queue.',
+      'Preserve final_verification exactly. Use the approved execution policy to avoid assigning evidence to an incapable executor. Keep the resolution sequential and small. Do not broaden approved scope, behavior, constraints, reserved authority, or verification authority. If the gap cannot be resolved inside that authority, return blocked without changing the queue.',
     ]
       .filter(Boolean)
       .join('\n'),
@@ -2242,7 +2334,7 @@ async function arbitrateMissionGap(context, gap) {
 }
 
 async function runFinalVerification(context) {
-  const { targetDir, missionPath, flags } = context
+  const { targetDir, missionPath, mission, flags } = context
   const contract = await validateMissionContract(missionPath)
   const queue = await readMissionQueue(missionPath)
   const command = String(queue.final_verification?.command || '').trim()
@@ -2252,21 +2344,142 @@ async function runFinalVerification(context) {
       'Mission final verification must exactly match the command approved in the Mission contract'
     )
   }
-  const started = Date.now()
   const snapshot = await gitSnapshot(targetDir)
   const revision = candidateRevision(snapshot)
+  const candidateDigest = await productStateDigest(targetDir)
+  const policy = await deriveApprovedExecutionPolicy(context, contract)
+  if (policy.contract_hash !== mission.approved_contract_hash) {
+    throw new Error('Mission execution policy is not bound to the approved contract hash')
+  }
+  const historyPath = join(missionPath, 'review', 'final-verification-attempts.json')
+  const existing = await fse.readJson(historyPath).catch(() => [])
+  const obligation = existing.filter(
+    (receipt) => receipt.command === command && receipt.revision === revision
+  )
+  if (
+    obligation.some(
+      (receipt) =>
+        receipt.candidate_digest && candidateDigest && receipt.candidate_digest !== candidateDigest
+    )
+  ) {
+    throw new Error(
+      'Mission evidence recovery refuses a changed candidate at the same revision; checkpoint the candidate and start a new verification obligation.'
+    )
+  }
+  const selected = selectVerificationExecutor(policy)
+  const recoveryAttempts = obligation.filter((receipt) => receipt.route === 'recovery')
+  if (selected.status === 'recovery' && recoveryAttempts.length >= 1) {
+    const prior = recoveryAttempts.at(-1)
+    return {
+      passed: false,
+      blocked: true,
+      path: join(missionPath, 'review', 'final-verification.json'),
+      receipt: prior,
+      next_action:
+        'The single approved evidence-recovery attempt is already exhausted; a user decision or fresh approved successor is required.',
+    }
+  }
+  if (selected.status === 'executor-unavailable') {
+    const priorBlock = obligation.find(
+      (receipt) => receipt.status === 'blocked' && receipt.disposition === 'executor_unavailable'
+    )
+    if (priorBlock) {
+      return {
+        passed: false,
+        blocked: true,
+        path: historyPath,
+        receipt: priorBlock,
+        next_action: selected.next_action,
+      }
+    }
+    return writeBlockedVerificationReceipt(context, {
+      command,
+      revision,
+      candidateDigest,
+      executor: selected.current_class,
+      reason: `Current executor class ${selected.current_class} cannot satisfy the approved verification policy.`,
+      nextAction: selected.next_action,
+      historyPath,
+      existing,
+    })
+  }
+
+  const started = Date.now()
   const exitCode = await runForegroundShell(command, targetDir, { json: Boolean(flags.json) })
   const receipt = {
+    id: `verification-${String(existing.length + 1).padStart(3, '0')}`,
     command,
     revision,
+    candidate_digest: candidateDigest,
     scope: queue.final_verification?.scope || 'integrated',
     status: exitCode === 0 ? 'passed' : 'failed',
+    disposition: classifyVerificationDisposition({ exitCode }),
+    policy_contract_hash: policy.contract_hash,
+    allowed_bypasses: policy.allowed_bypasses,
+    executor: selected.executor.id,
+    executor_class: selected.executor.class,
+    route: selected.status,
+    exit_code: exitCode,
     duration_ms: Date.now() - started,
     completed_at: new Date().toISOString(),
   }
+  const history = appendVerificationReceipt(existing, receipt)
   const path = join(missionPath, 'review', 'final-verification.json')
-  await fse.writeJson(path, receipt, { spaces: 2 })
-  return { passed: exitCode === 0, path, receipt }
+  await fse.writeJson(historyPath, history, { spaces: 2 })
+  await fse.writeJson(path, history.at(-1), { spaces: 2 })
+  const executorBlocked = receipt.disposition === 'executor_unavailable'
+  const alternate = policy.executors.find(
+    (executor) =>
+      executor.capable &&
+      executor.id !== selected.executor.id &&
+      policy.alternate_executors.includes(executor.id)
+  )
+  return {
+    passed: exitCode === 0,
+    blocked: executorBlocked,
+    path,
+    receipt: history.at(-1),
+    historyPath,
+    next_action: executorBlocked
+      ? alternate
+        ? `Resume on approved executor class ${alternate.class} with SPECDEV_EXECUTOR_CLASS=${alternate.class}.`
+        : 'The executor could not start the command and no approved capable alternate remains; a user decision is required.'
+      : null,
+  }
+}
+
+async function writeBlockedVerificationReceipt(
+  context,
+  { command, revision, candidateDigest, executor, reason, nextAction, historyPath, existing }
+) {
+  const receipt = {
+    id: `verification-${String(existing.length + 1).padStart(3, '0')}`,
+    command,
+    revision,
+    candidate_digest: candidateDigest,
+    scope: 'integrated',
+    status: 'blocked',
+    disposition: 'executor_unavailable',
+    policy_contract_hash: context.mission.execution_policy?.contract_hash || null,
+    allowed_bypasses: context.mission.execution_policy?.allowed_bypasses || [],
+    executor,
+    route: 'preflight',
+    reason,
+    duration_ms: 0,
+    completed_at: new Date().toISOString(),
+  }
+  const history = appendVerificationReceipt(existing, receipt)
+  const latestPath = join(context.missionPath, 'review', 'final-verification.json')
+  await fse.ensureDir(join(context.missionPath, 'review'))
+  await fse.writeJson(historyPath, history, { spaces: 2 })
+  await fse.writeJson(latestPath, history.at(-1), { spaces: 2 })
+  return {
+    passed: false,
+    blocked: true,
+    path: latestPath,
+    receipt: history.at(-1),
+    next_action: nextAction,
+  }
 }
 
 async function finishMissionDelivery(context) {
@@ -2493,6 +2706,27 @@ async function validateMissionContract(missionPath) {
   return result
 }
 
+async function deriveApprovedExecutionPolicy(context, contract = null) {
+  const validated = contract || (await validateMissionContract(context.missionPath))
+  if (!validated.valid) throw new Error(validated.errors.join('; '))
+  const command = authorizedVerificationCommand(validated.content)
+  const stored = context.mission.execution_policy
+  const current = await deriveMissionExecutionPolicy({
+    specdevPath: context.specdevPath,
+    contractContent: validated.content,
+    contractHash: validated.hash,
+    verificationCommand: command,
+  })
+  if (
+    stored?.version === 1 &&
+    stored.contract_hash === validated.hash &&
+    stored.verification?.command === command
+  ) {
+    current.approval_preflight = stored.preflight
+  }
+  return current
+}
+
 function missionExecutionShape(content) {
   const values = [
     ...String(content || '').matchAll(/^\s*-\s+Initial child plan:\s*(single|planned)\s*$/gim),
@@ -2689,6 +2923,204 @@ async function missionLand(selector, flags) {
   })
 }
 
+async function handoffMission(selector, flags) {
+  if (!flags['successor-assignment']) {
+    return fail(
+      flags,
+      'Mission handoff requires --successor-assignment so the new approval boundary is explicit'
+    )
+  }
+  const context = await missionContext(selector, flags)
+  if (!context) return null
+  const { targetDir, specdevPath, missionPath, mission } = context
+  if (mission.status !== 'failed') {
+    return fail(flags, `Mission ${mission.id} must be terminal failed before successor handoff`)
+  }
+  const historyPath = join(missionPath, 'review', 'final-verification-attempts.json')
+  const history = await fse.readJson(historyPath).catch(async () => {
+    const latest = await fse
+      .readJson(join(missionPath, 'review', 'final-verification.json'))
+      .catch(() => null)
+    return latest ? [latest] : []
+  })
+  const latest = history.at(-1) || null
+  const evidenceOnly =
+    ['infrastructure-failure'].includes(mission.disposition) ||
+    ['needs_evidence', 'executor_unavailable', 'user_decision_required'].includes(
+      mission.convergence_disposition
+    ) ||
+    latest?.disposition === 'executor_unavailable'
+  if (!evidenceOnly) {
+    return fail(
+      flags,
+      `Mission ${mission.id} is not classified as evidence-only; product or contract failure requires a separately authored objective.`
+    )
+  }
+
+  const sourceContract = await validateMissionContract(missionPath)
+  if (!sourceContract.valid) return fail(flags, sourceContract.errors.join('; '))
+  const acceptanceLines = [
+    ...contractSection(sourceContract.content, 'Acceptance criteria').matchAll(
+      /^\s*-\s+(AC-\d+):\s*(.+)$/gim
+    ),
+  ].map((match) => ({ id: match[1].toUpperCase(), text: match[2].trim() }))
+  const scoped = new Set(
+    (mission.gaps?.items || [])
+      .filter((gap) => gap.status !== 'closed' && gap.status !== 'superseded' && gap.acceptance)
+      .map((gap) => gap.acceptance)
+  )
+  const unresolved =
+    scoped.size > 0
+      ? acceptanceLines.filter((criterion) => scoped.has(criterion.id))
+      : acceptanceLines
+  if (unresolved.length === 0) {
+    return fail(flags, `Mission ${mission.id} has no unresolved acceptance criteria to hand off`)
+  }
+  const snapshot = await gitSnapshot(targetDir)
+  if (snapshot.branch !== mission.branch) {
+    return fail(
+      flags,
+      `Mission handoff requires checked-out candidate branch ${mission.branch}; current branch is ${snapshot.branch || 'detached'}.`
+    )
+  }
+  const candidate = {
+    revision: candidateRevision(snapshot),
+    dirty_paths: snapshot.dirty_paths,
+    source_mission: mission.id,
+    source_contract_hash: mission.approved_contract_hash,
+  }
+  const relevantReceipts = history.filter(
+    (receipt) => receipt.command === authorizedVerificationCommand(sourceContract.content)
+  )
+  const description = `Recover unresolved evidence from Mission ${mission.id}`
+  await compactFailedWorkflowRuntime(specdevPath, {
+    runId: mission.run_id,
+    attemptFilter: { mission: mission.id },
+    terminalOwner: { mission: mission.id, status: mission.status },
+    focus: { kind: 'mission', id: mission.id },
+  })
+  const nestedOutput = []
+  const created = await withSuppressedOutput(
+    () =>
+      assignmentCommand([description], {
+        target: targetDir,
+        json: true,
+        kind: 'change',
+      }),
+    nestedOutput
+  )
+  if (!created?.path) {
+    const nestedError = nestedOutput
+      .map((line) => {
+        try {
+          return JSON.parse(line)?.error || null
+        } catch {
+          return null
+        }
+      })
+      .find(Boolean)
+    return fail(
+      flags,
+      `Could not create the successor Assignment${nestedError ? `: ${nestedError}` : ''}`
+    )
+  }
+  const assignmentPath = join(targetDir, created.path)
+  const handoffPath = join(assignmentPath, 'brainstorm', 'mission-handoff.json')
+  const relativeHistory = relativeToRepo(targetDir, historyPath)
+  const handoff = {
+    version: 1,
+    source: {
+      mission: mission.id,
+      path: relativeToRepo(targetDir, missionPath),
+      contract_hash: mission.approved_contract_hash,
+      terminal_status: mission.status,
+      terminal_disposition: mission.disposition || null,
+    },
+    candidate,
+    unresolved_criteria: unresolved.map((criterion) => criterion.id),
+    receipts: relevantReceipts.map((receipt) => ({
+      id: receipt.id || null,
+      path: relativeHistory,
+      command: receipt.command,
+      revision: receipt.revision,
+      status: receipt.status,
+      disposition: receipt.disposition || null,
+      executor: receipt.executor || null,
+      supersedable: receipt.status !== 'passed',
+      superseded_by: receipt.superseded_by || null,
+    })),
+    approval_boundary:
+      'This is a fresh Assignment. Its contract must be checkpointed and explicitly approved; the terminal Mission remains immutable.',
+    created_at: new Date().toISOString(),
+  }
+  await fse.writeJson(handoffPath, handoff, { spaces: 2 })
+  const contract = `# Assignment contract
+
+Kind: change
+
+## Objective and context
+
+Recover only the unresolved evidence from terminal Mission \`${mission.id}\` for its preserved candidate. Provenance: \`${relativeToRepo(targetDir, handoffPath)}\`.
+
+## Scope and non-goals
+
+- In scope: rerun or replace supersedable evidence for ${unresolved.map((criterion) => criterion.id).join(', ')} against the preserved candidate.
+- Non-goals: mutate or rehabilitate Mission \`${mission.id}\`, change its candidate, broaden product scope, or weaken its approved command.
+
+## Expected behavior
+
+Produce current evidence for the unresolved criteria and link it as superseding, without deleting or rewriting historical receipts.
+
+## Important decisions
+
+- Candidate: \`${candidate.revision}\` with ${candidate.dirty_paths.length} recorded dirty path(s).
+- Historical failed or blocked evidence remains immutable and is only superseded by an explicit linked receipt.
+
+## Constraints and invariants
+
+The candidate revision and exact verification command remain pinned. Secret values and new executor authority are not inherited.
+
+## Delegated and reserved authority
+
+- Delegated: collect the smallest evidence set within the authority approved for this fresh Assignment.
+- Reserved for the user: approve this new contract, authorize another executor, change the command, accept bypasses, or change product scope.
+
+## Risks and assumptions
+
+The terminal Mission remains authoritative history. Dirty paths are a snapshot, not proof of ownership, and must be preserved until the fresh approval boundary is established.
+
+## Verification authority
+
+- Exact inherited command: \`${authorizedVerificationCommand(sourceContract.content)}\`.
+- Focused evidence collection is allowed only after repository instructions are satisfied.
+- Full suite or alternate execution requires explicit authority.
+
+## Acceptance criteria
+
+${unresolved.map((criterion) => `- ${criterion.id}: ${criterion.text}`).join('\n')}
+`
+  await fse.writeFile(join(assignmentPath, 'brainstorm', 'contract.md'), contract, 'utf-8')
+  await writeAssignmentStatus(assignmentPath, {
+    predecessor_mission: {
+      id: mission.id,
+      handoff: relativeToRepo(targetDir, handoffPath),
+      contract_hash: mission.approved_contract_hash,
+    },
+  })
+  return emit(flags, {
+    command: 'mission handoff',
+    version: 1,
+    status: 'successor-drafted',
+    mission: mission.id,
+    assignment: created.id,
+    path: created.path,
+    handoff: relativeToRepo(targetDir, handoffPath),
+    candidate,
+    unresolved_criteria: handoff.unresolved_criteria,
+    next_action: `Review ${created.path}/brainstorm/contract.md, then checkpoint and explicitly approve the fresh Assignment.`,
+  })
+}
+
 async function missionStatus(selector, flags) {
   const context = await missionContext(selector, flags, { recoverCompleted: true })
   if (!context) return null
@@ -2746,6 +3178,14 @@ async function missionStatus(selector, flags) {
     context.mission.status === 'completed'
       ? await missionLanding(context, { attempt: false })
       : null
+  let executionPolicy = context.mission.execution_policy || null
+  if (!['completed', 'failed'].includes(context.mission.status)) {
+    try {
+      executionPolicy = await deriveApprovedExecutionPolicy(context)
+    } catch (error) {
+      executionPolicy = { status: 'invalid', error: error.message }
+    }
+  }
   const nextAction =
     (compatibility && !compatibility.compatible ? compatibility.next_action : null) ||
     landingNextAction(context.mission, landing) ||
@@ -2779,6 +3219,8 @@ async function missionStatus(selector, flags) {
         ? { attempt: interruptedController.id, state: interruptedController.liveness.state }
         : null,
     last_checkpoint: lastCheckpoint,
+    execution_policy: executionPolicy,
+    convergence_disposition: context.mission.convergence_disposition || null,
     activity,
     landing,
     blocker,
@@ -2801,6 +3243,44 @@ function emitMissionCompatibility(flags, mission, compatibility) {
     blocker: compatibility.message,
     next_action: compatibility.next_action,
   })
+}
+
+async function checkpointMissionBoundary(context, boundary) {
+  const snapshot = await gitSnapshot(context.targetDir)
+  const projectPaths = classifyWorkspaceChanges(snapshot.dirty_paths).projectPaths
+  const protectedPaths = new Set(context.mission.approval_dirty_paths || [])
+  const overlap = projectPaths.filter((path) => protectedPaths.has(path))
+  if (overlap.length > 0) {
+    throw new Error(
+      `Mission boundary ${boundary} overlaps user-owned approval paths: ${overlap.join(', ')}. ` +
+        'Checkpoint or relocate those changes explicitly, then resume the Mission.'
+    )
+  }
+  const checkpoint = await withSuppressedOutput(() =>
+    checkpointMission(
+      context.mission.id,
+      { target: context.targetDir, json: true },
+      { commitType: 'checkpoint' }
+    )
+  )
+  if (!checkpoint || checkpoint.status !== 'ok' || !checkpoint.revision) {
+    throw new Error(
+      checkpoint?.error || `Mission boundary ${boundary} could not create a recoverable checkpoint`
+    )
+  }
+  Object.assign(context.mission, await readMission(context.missionPath))
+  return checkpoint
+}
+
+async function assertMissionCandidateCheckpoint(context) {
+  const snapshot = await gitSnapshot(context.targetDir)
+  const changes = classifyWorkspaceChanges(snapshot.dirty_paths)
+  if (changes.projectPaths.length > 0) {
+    throw new Error(
+      `Mission convergence refuses uncheckpointed product changes: ${changes.projectPaths.join(', ')}. ` +
+        `Run specdev mission checkpoint ${context.mission.id}, then resume convergence.`
+    )
+  }
 }
 
 async function checkpointMission(selector, flags, metadata = {}) {
@@ -3168,7 +3648,7 @@ async function latestMissionCompletionRevision(cwd, branch, missionId) {
   return null
 }
 
-async function withSuppressedOutput(callback) {
+async function withSuppressedOutput(callback, capturedOutput = null) {
   const previousLog = console.log
   const previousError = console.error
   const previousExit = process.exitCode
@@ -3180,6 +3660,7 @@ async function withSuppressedOutput(callback) {
     const result = await callback()
     return result
   } finally {
+    if (capturedOutput) capturedOutput.push(...output)
     console.log = previousLog
     console.error = previousError
     process.exitCode = previousExit
@@ -3279,6 +3760,20 @@ function emit(flags, payload) {
       console.log(
         `Review note: the saved verdict covered older contract hash ${payload.review.reviewed_contract_hash}`
       )
+    if (payload.execution_policy?.version === 1) {
+      const policy = payload.execution_policy
+      console.log(
+        `Execution policy: ${policy.preflight.status}; command ${policy.verification.command}; ` +
+          `executors ${policy.approved_executors.join(', ') || 'none'}`
+      )
+      console.log(
+        `Review profiles: worker ${policy.review_profiles.worker.provider}/${policy.review_profiles.worker.model}/${policy.review_profiles.worker.effort || 'default'}; ` +
+          `reviewer ${policy.review_profiles.reviewer.provider}/${policy.review_profiles.reviewer.model}/${policy.review_profiles.reviewer.effort || 'default'}`
+      )
+      for (const decision of policy.preflight.decisions || []) {
+        console.log(`Execution decision: ${decision.requirement} — ${decision.action}`)
+      }
+    }
     for (const line of workspaceChangeSummaryLines(payload.dirty_paths)) console.log(line)
     if (payload.base_branch) console.log(`Base branch: ${payload.base_branch}`)
     if (payload.final_revision) console.log(`Final revision: ${payload.final_revision}`)
