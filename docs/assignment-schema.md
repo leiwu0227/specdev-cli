@@ -17,12 +17,21 @@ mechanical contract.
 │   └── progress.json
 ├── review/                     (created only when review runs)
 ├── outcome.md
+├── unsupported.md              (only for terminal unsupported conclusions)
 └── status.json
 ```
 
 `brainstorm/contract.md` carries inline acceptance IDs such as `AC-1`.
 `design/plan.md` maps ordered Task IDs to them. `outcome.md` contains the compact
 final acceptance/evidence/result table.
+
+`unsupported.md` is the canonical negative-result artifact when an approved
+standalone Assignment is explicitly closed as unsupported. Its matching
+`status.json` record preserves the approved contract hash, reason, evidence
+digests, source lifecycle, repository parent, exact owned manifest, and closure
+plan. The artifact and all tracked runtime/focus effects are published in one
+`unsupported-terminal` commit; the commit hash is derived from Git rather than
+written into its own tree.
 
 Required sections are authority boundaries, not invitations to repeat the
 repository's big picture. Keep each section to change-specific information (or

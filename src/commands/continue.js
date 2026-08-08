@@ -48,10 +48,9 @@ export async function continueCommand(flags = {}) {
               id: assignment.id,
               lifecycle: assignment.lifecycle,
               immutable: assignment.immutable,
-              message:
-                assignment.lifecycle === 'shelved'
-                  ? 'This Assignment is shelved and immutable; continuing creates a fresh successor ID and contract.'
-                  : `This Assignment is ${assignment.lifecycle} and cannot resume its old execution run.`,
+              message: ['shelved', 'unsupported'].includes(assignment.lifecycle)
+                ? `This Assignment is ${assignment.lifecycle} and immutable; continuing creates a fresh successor ID and contract.`
+                : `This Assignment is ${assignment.lifecycle} and cannot resume its old execution run.`,
               next_action: assignment.next_action,
             }
           : {

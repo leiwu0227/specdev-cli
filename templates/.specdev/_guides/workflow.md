@@ -23,6 +23,16 @@ product changes require an explicit inspect/checkpoint/adopt decision. A
 standalone Assignment ends in one host-owned delivery commit; Mission children
 remain owned by the Mission controller.
 
+An approved standalone Assignment may instead reach a successful negative
+conclusion with `specdev assignment close <id> --outcome=unsupported`. The user
+must provide a reason and written evidence, inspect the exact HEAD/ownership
+plan, and confirm it with `--snapshot=owned`. SpecDev then records
+`unsupported.md` and terminal status, compacts only owned runtime, clears focus,
+and publishes those effects as one exact commit. Concurrent or unattributed
+dirt remains unstaged and is reported by owner. Unsupported history is
+immutable; `specdev assignment --from-assignment=<id>` creates a fresh contract,
+approval, evidence, and delivery boundary.
+
 ## Mission
 
 A Mission is a static foreground workflow with a simple static-wave

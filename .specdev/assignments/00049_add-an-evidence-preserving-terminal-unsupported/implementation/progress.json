@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "./node_modules/.bin/prettier --write src/commands/assignment-close.js src/commands/assignment.js src/utils/artifact-retention.js && git diff --check",
+      "revision": "working-tree@17e0905c6bba1b3ce3b3add36aa53942768a3d57",
+      "scope": "Changed command and lifecycle source formatting plus repository whitespace integrity",
+      "status": "passed",
+      "duration_ms": 63,
+      "role": "qualification"
+    },
+    {
+      "command": "npm run test:assignment-unsupported",
+      "revision": "working-tree@17e0905c6bba1b3ce3b3add36aa53942768a3d57",
+      "scope": "AC-1 through AC-3 focused unsupported Assignment lifecycle regression",
+      "status": "passed",
+      "duration_ms": 2972,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "./node_modules/.bin/prettier --write src/commands/assignment-close.js tests/test-assignment-unsupported.js && git diff --check",
+      "revision": "working-tree@17e0905c6bba1b3ce3b3add36aa53942768a3d57",
+      "scope": "Blocking-review repair source and regression fixture formatting plus repository whitespace integrity",
+      "status": "passed",
+      "duration_ms": 71,
+      "role": "qualification"
+    },
+    {
+      "command": "npm run test:assignment-unsupported",
+      "revision": "working-tree@17e0905c6bba1b3ce3b3add36aa53942768a3d57",
+      "scope": "Blocking-review fixture with tracked null RippleGraph focus before unsupported closure",
+      "status": "failed",
+      "duration_ms": 1003,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:assignment-unsupported",
+      "revision": "working-tree@17e0905c6bba1b3ce3b3add36aa53942768a3d57",
+      "scope": "AC-1 through AC-3 focused regression including a predicted owned path that becomes byte-identical to the confirmed parent",
+      "status": "passed",
+      "duration_ms": 1003,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:assignment-unsupported",
+      "revision": "working-tree@17e0905c6bba1b3ce3b3add36aa53942768a3d57",
+      "scope": "Final blocking-review regression with net-clean tolerance restricted to confirmed prospective runtime effects",
+      "status": "passed",
+      "duration_ms": 1254,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "Blocking review showed that a confirmed predicted runtime path can become byte-identical to the parent during preparation. The repair preserves it in the authorized plan but commits and journals only the effective prepared subset; only confirmed prospective effects may be net-clean, while other owned paths remain required and terminal verification rejects any path outside the authorized manifest.",
+    "The first repair-focused test run used a trailing newline in the tracked null-focus fixture, so RippleGraph's canonical no-trailing-newline rewrite still produced a diff. The fixture was corrected to the exact canonical bytes and the same focused test passed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

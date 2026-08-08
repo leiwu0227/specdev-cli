@@ -60,6 +60,15 @@ export async function compactShelvedWorkflowRuntime(specdevPath, options) {
   )
 }
 
+export async function compactUnsupportedWorkflowRuntime(specdevPath, options) {
+  return compactTerminalWorkflowRuntime(
+    specdevPath,
+    options,
+    new Set(['abandoned']),
+    new Set(['unsupported'])
+  )
+}
+
 export async function recoverTerminalAssignmentRuntimeResidue(specdevPath) {
   const assignmentsPath = join(specdevPath, 'assignments')
   if (!(await fse.pathExists(assignmentsPath))) return []
@@ -72,23 +81,27 @@ export async function recoverTerminalAssignmentRuntimeResidue(specdevPath) {
     if (
       !status?.id ||
       !status?.run_id ||
-      !['completed', 'abandoned', 'shelved'].includes(status.status)
+      !['completed', 'abandoned', 'shelved', 'unsupported'].includes(status.status)
     ) {
       continue
     }
 
     const path = runDir(specdevPath, status.run_id)
-    if (
-      !(await fse.pathExists(path)) ||
-      (await fse.pathExists(join(path, 'checkpoint.json')))
-    ) {
+    if (status.status === 'unsupported' && (await fse.pathExists(join(path, 'checkpoint.json')))) {
+      throw new Error(
+        `Assignment ${status.id} has a prepared unsupported closure; recover it with specdev assignment close ${status.id} --outcome=unsupported`
+      )
+    }
+    if (!(await fse.pathExists(path)) || (await fse.pathExists(join(path, 'checkpoint.json')))) {
       continue
     }
 
     const compact =
       status.status === 'completed'
         ? compactCompletedWorkflowRuntime
-        : compactShelvedWorkflowRuntime
+        : status.status === 'unsupported'
+          ? compactUnsupportedWorkflowRuntime
+          : compactShelvedWorkflowRuntime
     recovered.push(
       await compact(specdevPath, {
         runId: status.run_id,

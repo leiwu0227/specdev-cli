@@ -46,7 +46,7 @@ const commandHandlers = {
 
 export async function dispatchCommand(command, positionalArgs, flags) {
   if (flags.help || flags.h) {
-    if (command === 'assignment' && positionalArgs[0] === 'shelf') {
+    if (command === 'assignment' && ['shelf', 'close'].includes(positionalArgs[0])) {
       await assignmentCommand(positionalArgs, flags)
       return
     }

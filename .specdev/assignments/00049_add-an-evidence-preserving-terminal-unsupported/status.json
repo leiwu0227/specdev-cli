@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00049",
+  "kind": "change",
+  "description": "Add an evidence-preserving terminal unsupported outcome for standalone Assignments, with explicit owned-state snapshot authority, immutable closure provenance, one durable terminal commit, safe runtime compaction, active-focus clearing, concurrent-workflow dirt reporting, and fresh-successor guidance",
+  "run_id": "assignment-lifecycle-20260808T08173056",
+  "created_at": "2026-08-08T08:17:30.571Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-08-08T09:04:23.986Z",
+  "review_policy_frozen_at": "2026-08-08T08:26:38.527Z",
+  "approved_at": "2026-08-08T08:26:38.527Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "17e0905c6bba1b3ce3b3add36aa53942768a3d57",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-08-08T08:27:41.853Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-08-08T09:04:23.956Z",
+  "activity": {
+    "attempt_count": 6,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 6,
+    "provider_attempts": {
+      "total": 6,
+      "completed": 5,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 2265429,
+    "agent_duration_ms": 2368567,
+    "provider_reported_tokens": 350676
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-08-08T09:04:23.986Z"
+}

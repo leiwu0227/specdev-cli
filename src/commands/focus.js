@@ -54,7 +54,7 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
     ...(lifecycle
       ? {
           lifecycle,
-          immutable: lifecycle === 'shelved',
+          immutable: ['shelved', 'unsupported'].includes(lifecycle),
           next_action: assignmentLifecycleNextAction(assignmentStatus, lifecycle),
         }
       : {}),

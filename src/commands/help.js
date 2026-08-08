@@ -24,7 +24,8 @@ export function helpCommand(flags = {}) {
     '  specdev approve brainstorm          # only after explicit user agreement',
     '  specdev implement                   # automatic plan + code + evidence + review',
     '  specdev assignment shelf 00001 --reason="pause useful unfinished work"',
-    '  specdev assignment --from-assignment=00001  # fresh successor from a shelf',
+    '  specdev assignment close 00001 --outcome=unsupported --reason="verified limit" --evidence=<path>',
+    '  specdev assignment --from-assignment=00001  # fresh successor from immutable history',
     '  specdev cancel "work is no longer wanted"   # irreversible abandonment',
   ])
   blankLine()

@@ -10,7 +10,9 @@ import { reserveEntityId } from '../utils/id-reservation.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { resolveTestAuditSelector, testAuditArtifactHash } from '../utils/test-audit.js'
 import { shelfAssignmentCommand, shelfAssignmentHelp } from './assignment-shelf.js'
+import { closeAssignmentCommand, closeAssignmentHelp } from './assignment-close.js'
 import { recoverTerminalAssignmentRuntimeResidue } from '../utils/artifact-retention.js'
+import { findCommitByTrailer, gitChangedPathsAtCommit } from '../utils/git-delivery.js'
 import {
   ASSIGNMENT_KINDS,
   assignmentContractTemplate,
@@ -28,11 +30,17 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   if (positionalArgs[0] === 'shelf' && (flags.help || flags.h)) {
     return shelfAssignmentHelp()
   }
+  if (positionalArgs[0] === 'close' && (flags.help || flags.h)) {
+    return closeAssignmentHelp()
+  }
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
   if (positionalArgs[0] === 'shelf') {
     return shelfAssignmentCommand(targetDir, specdevPath, positionalArgs.slice(1), flags)
+  }
+  if (positionalArgs[0] === 'close') {
+    return closeAssignmentCommand(targetDir, specdevPath, positionalArgs.slice(1), flags)
   }
   try {
     await recoverTerminalAssignmentRuntimeResidue(specdevPath)
@@ -136,47 +144,79 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
       return fail(flags, `Predecessor Assignment not found or ambiguous: ${assignmentSelector}`)
     }
     const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
-    if (status?.status !== 'shelved' || !status.shelf) {
+    if (!['shelved', 'unsupported'].includes(status?.status)) {
       return fail(
         flags,
-        `Assignment ${assignmentSelector} is not shelved. Only an immutable shelf can create a successor.`
+        `Assignment ${assignmentSelector} is not shelved or unsupported. Only an immutable terminal record can create a successor.`
       )
     }
     if (status.mission) {
       return fail(flags, `Mission child Assignment ${status.id} cannot be used as a shelf source`)
     }
-    const artifactPath = join(resolved.path, 'shelf.md')
+    const unsupported = status.status === 'unsupported'
+    const terminal = unsupported ? status.unsupported : status.shelf
+    if (!terminal)
+      return fail(flags, `Assignment ${status.id} has no canonical ${status.status} record`)
+    if (unsupported && !Array.isArray(terminal.evidence)) {
+      return fail(flags, `Unsupported closure ${status.id} has no canonical evidence manifest`)
+    }
+    const artifactPath = join(resolved.path, unsupported ? 'unsupported.md' : 'shelf.md')
     const expectedArtifact = relativeToRepo(targetDir, artifactPath)
+    const terminalCommit = unsupported
+      ? await findCommitByTrailer(targetDir, 'SpecDev-Assignment', status.id, { revision: 'HEAD' })
+      : terminal.repository?.commit
+    const terminalPaths = unsupported
+      ? await gitChangedPathsAtCommit(targetDir, terminalCommit || 'missing')
+      : []
     if (
-      status.shelf.artifact !== expectedArtifact ||
-      !/^[a-f0-9]{40}$/i.test(String(status.shelf.repository?.commit || '')) ||
+      terminal.artifact !== expectedArtifact ||
+      !/^[a-f0-9]{40}$/i.test(String(terminalCommit || '')) ||
+      (unsupported &&
+        (!terminalPaths.includes(expectedArtifact) ||
+          !terminalPaths.includes(
+            relativeToRepo(targetDir, join(resolved.path, 'status.json'))
+          ))) ||
       !(await fse.pathExists(artifactPath))
     ) {
       return fail(
         flags,
-        `Shelf ${status.id} is incomplete; restore its status.json and shelf.md before creating a successor`
+        `${unsupported ? 'Unsupported closure' : 'Shelf'} ${status.id} is incomplete; restore its canonical artifact and terminal commit before creating a successor`
       )
     }
     const artifact = await fse.readFile(artifactPath, 'utf-8')
-    sourceAssignment = {
-      id: String(status.id),
-      name: resolved.name,
-      artifact: expectedArtifact,
-      commit: status.shelf.repository.commit,
-      objective: shelfSummary(artifact, 'Prior objective', status.description),
-      decisions: shelfSummary(artifact, 'Prior decisions', 'No prior decisions recorded.'),
-      completed: shelfSummary(artifact, 'Completed work', 'No completed work recorded.'),
-      unresolved: shelfSummary(
-        artifact,
-        'Unresolved work',
-        'Reassess from the current repository state.'
-      ),
-      verification: shelfSummary(
-        artifact,
-        'Historical verification',
-        'No historical verification recorded.'
-      ),
-    }
+    sourceAssignment = unsupported
+      ? {
+          id: String(status.id),
+          name: resolved.name,
+          disposition: 'unsupported',
+          artifact: expectedArtifact,
+          commit: terminalCommit,
+          objective: status.description,
+          conclusion: status.unsupported.reason,
+          evidence: status.unsupported.evidence
+            .map((item) => `${item.path} (${item.digest})`)
+            .join('; '),
+        }
+      : {
+          id: String(status.id),
+          name: resolved.name,
+          disposition: 'shelved',
+          artifact: expectedArtifact,
+          commit: terminalCommit,
+          objective: shelfSummary(artifact, 'Prior objective', status.description),
+          decisions: shelfSummary(artifact, 'Prior decisions', 'No prior decisions recorded.'),
+          completed: shelfSummary(artifact, 'Completed work', 'No completed work recorded.'),
+          unresolved: shelfSummary(
+            artifact,
+            'Unresolved work',
+            'Reassess from the current repository state.'
+          ),
+          verification: shelfSummary(
+            artifact,
+            'Historical verification',
+            'No historical verification recorded.'
+          ),
+        }
   }
 
   const description =
@@ -289,7 +329,10 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
           predecessor_assignment: {
             id: sourceAssignment.id,
             artifact: sourceAssignment.artifact,
-            shelf_commit: sourceAssignment.commit,
+            disposition: sourceAssignment.disposition,
+            ...(sourceAssignment.disposition === 'unsupported'
+              ? { closure_commit: sourceAssignment.commit }
+              : { shelf_commit: sourceAssignment.commit }),
           },
         }
       : {}),
@@ -309,7 +352,10 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
           predecessor_assignment: {
             id: sourceAssignment.id,
             artifact: sourceAssignment.artifact,
-            shelf_commit: sourceAssignment.commit,
+            disposition: sourceAssignment.disposition,
+            ...(sourceAssignment.disposition === 'unsupported'
+              ? { closure_commit: sourceAssignment.commit }
+              : { shelf_commit: sourceAssignment.commit }),
           },
         }
       : {}),
@@ -376,7 +422,10 @@ async function descriptionFromTestAudit(source) {
 }
 
 function descriptionFromAssignment(source) {
-  return source ? `Continue work from shelved Assignment ${source.id}` : ''
+  if (!source) return ''
+  return source.disposition === 'unsupported'
+    ? `Reconsider unsupported Assignment ${source.id}`
+    : `Continue work from shelved Assignment ${source.id}`
 }
 
 function shelfSummary(content, heading, fallback) {

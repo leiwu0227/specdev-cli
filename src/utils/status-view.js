@@ -1,4 +1,6 @@
-import { gitStatusPaths, summarizeGitPaths } from './git-delivery.js'
+import { join } from 'node:path'
+import fse from 'fs-extra'
+import { concurrentCallablePathDetails, gitStatusPaths, summarizeGitPaths } from './git-delivery.js'
 import { readCurrentFocus } from './current.js'
 import { resolveMissionSelector, readMission } from './mission.js'
 import { attemptLiveness, listAttemptRecords } from './process-record.js'
@@ -12,8 +14,11 @@ export async function buildStatusViews({ targetDir, specdevPath, history, assign
   const liveness = runningAttempt ? await attemptLiveness(specdevPath, runningAttempt.id) : null
   const lifecycle = await focusedLifecycle(specdevPath, focus, assignment, history)
   const dirtyPaths = await gitStatusPaths(targetDir)
+  const assignmentHistory = await terminalAssignmentHistory(specdevPath)
+  const enrichedHistory =
+    assignmentHistory.length > 0 ? { ...history, assignment_history: assignmentHistory } : history
   return projectStatusViews({
-    history,
+    history: enrichedHistory,
     focus,
     assignment,
     lifecycle,
@@ -88,6 +93,10 @@ export function projectStatusViews({
         : {}),
     next_action: history.next_action || normalizeNextAction(assignment?.next_action),
     dirty_paths: summarizeGitPaths(dirtyPaths),
+    dirty_owners: dirtyPathOwners(dirtyPaths),
+    ...(!focus && history.assignment_history?.[0]
+      ? { last_workflow: history.assignment_history[0] }
+      : {}),
     ...(blocker ? { blocker } : {}),
   }
   return { active, history }
@@ -102,6 +111,11 @@ export function formatStatusView(active, history = null) {
     lines.push('Focus: none')
   }
   if (active.phase) lines.push(`Phase: ${active.phase}`)
+  if (active.last_workflow) {
+    lines.push(
+      `Last workflow: Assignment ${active.last_workflow.id} — closed ${active.last_workflow.status}`
+    )
+  }
   if (active.attempt) {
     lines.push(
       `Attempt: ${active.attempt.id} (${active.attempt.role}, ${active.attempt.status}; ${active.attempt.liveness})`
@@ -114,6 +128,10 @@ export function formatStatusView(active, history = null) {
     }
   }
   lines.push(`Dirty paths: ${formatDirtyPaths(active.dirty_paths)}`)
+  for (const group of active.dirty_owners || []) {
+    lines.push(`  ${group.owner}: ${group.count} (${group.paths.join(', ')})`)
+    lines.push(`    Next: ${group.next_action}`)
+  }
   if (active.blocker) lines.push(`Blocker: ${active.blocker}`)
   if (active.next_action) {
     lines.push(`Next: ${active.next_action.command_line || active.next_action}`)
@@ -172,4 +190,45 @@ function formatDirtyPaths(summary) {
 
 function capitalize(value) {
   return `${value.slice(0, 1).toUpperCase()}${value.slice(1)}`
+}
+
+async function terminalAssignmentHistory(specdevPath) {
+  const root = join(specdevPath, 'assignments')
+  if (!(await fse.pathExists(root))) return []
+  const history = []
+  for (const entry of await fse.readdir(root, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const status = await fse.readJson(join(root, entry.name, 'status.json')).catch(() => null)
+    if (status?.status !== 'unsupported' || !status.unsupported_at) continue
+    history.push({
+      kind: 'assignment',
+      id: String(status.id),
+      name: entry.name,
+      status: 'unsupported',
+      closed_at: status.unsupported_at,
+      artifact: status.unsupported?.artifact || null,
+      immutable: true,
+    })
+  }
+  return history.sort((left, right) => right.closed_at.localeCompare(left.closed_at))
+}
+
+function dirtyPathOwners(paths) {
+  const groups = new Map()
+  for (const path of paths) {
+    const callable = concurrentCallablePathDetails(path)
+    const detail = callable || {
+      owner: path.startsWith('.specdev/')
+        ? 'SpecDev workflow state'
+        : 'unattributed repository work',
+      next_action: path.startsWith('.specdev/')
+        ? 'Use the owning SpecDev workflow command to preserve or finish this state.'
+        : 'Inspect and separately checkpoint or adopt this work before starting another write lane.',
+    }
+    const key = `${detail.owner}\0${detail.next_action}`
+    if (!groups.has(key))
+      groups.set(key, { owner: detail.owner, next_action: detail.next_action, paths: [] })
+    groups.get(key).paths.push(path)
+  }
+  return [...groups.values()].map((group) => ({ ...group, count: group.paths.length }))
 }
