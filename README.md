@@ -114,6 +114,23 @@ command and candidate. Later passing evidence links to, rather than overwrites,
 the blocked attempt. Successful child and wave boundaries create recoverable
 checkpoints, and convergence refuses uncheckpointed product changes.
 
+An explicitly planned `execution: evidence-only` child succeeds by recording
+its exact authorized observation, even when that observation is negative. The
+failed receipt remains visible while the queue records
+`completed-with-follow-up` and returns control to Mission gap resolution.
+
+An active Mission already blocked inside such a historical child can inspect a
+reviewed standalone repair without mutation:
+
+```bash
+specdev mission adopt-successor M00001 --assignment=00042
+```
+
+Apply only the unchanged content-addressed plan by rerunning the printed command
+with `--confirm=<snapshot>`. Adoption preserves the failed child, requires exact
+candidate, command, policy, cleanup, review, and provenance identities, and
+replays the passing receipt without rerunning verification.
+
 If an evidence-only problem has already terminalized a Mission, keep that
 history immutable and draft a fresh approval boundary with:
 

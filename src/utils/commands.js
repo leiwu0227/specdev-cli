@@ -54,7 +54,8 @@ export const COMMANDS = [
   {
     name: 'mission',
     usage: 'mission <subcommand>',
-    description: 'Create, run, inspect, checkpoint, hand off, or land a foreground Mission',
+    description:
+      'Create, run, inspect, checkpoint, adopt a successor, hand off, or land a foreground Mission',
   },
   {
     name: 'focus',

@@ -5,7 +5,17 @@ import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
-import { getState, listRuns, readCheckpoint, resumeRun, suspendRun } from 'ripplegraph'
+import {
+  appendTransition,
+  getState,
+  listRuns,
+  nodeOutputKey,
+  readCheckpoint,
+  resumeRun,
+  suspendRun,
+  writeCheckpoint,
+  writeNodeOutput,
+} from 'ripplegraph'
 import { parse as parseYaml } from 'yaml'
 import { resolveAgentProfile } from '../utils/agent-profiles.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
@@ -121,6 +131,11 @@ import {
   missionExecutionPolicyTemplate,
   selectVerificationExecutor,
 } from '../utils/mission-execution.js'
+import {
+  applyMissionSuccessorAdoption,
+  planMissionSuccessorAdoption,
+} from '../utils/mission-successor-adoption.js'
+import { validateEvidenceOnlyObservation } from '../utils/mission-observation.js'
 
 const execFile = promisify(execFileCallback)
 const LOCAL_SPECDEV_BIN = fileURLToPath(new URL('../../bin/specdev.js', import.meta.url))
@@ -139,10 +154,55 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
   if (subcommand === 'pause') return pauseMission(rest[0], flags)
   if (subcommand === 'checkpoint') return checkpointMission(rest[0], flags)
   if (subcommand === 'handoff') return handoffMission(rest[0], flags)
+  if (subcommand === 'adopt-successor') return adoptMissionSuccessor(rest[0], flags)
   console.error(
-    'Usage: specdev mission <create | run | migrate | status | land | pause | checkpoint | handoff>'
+    'Usage: specdev mission <create | run | migrate | status | land | pause | checkpoint | handoff | adopt-successor>'
   )
   process.exitCode = 1
+}
+
+async function adoptMissionSuccessor(selector, flags) {
+  const context = await missionContext(selector, flags)
+  if (!context) return null
+  try {
+    const options = {
+      legacyAuthority:
+        typeof flags['legacy-authority'] === 'string' ? flags['legacy-authority'] : '',
+      interruptAfter: typeof flags['interrupt-after'] === 'string' ? flags['interrupt-after'] : '',
+    }
+    if (typeof flags.confirm === 'string') {
+      const applied = await applyMissionSuccessorAdoption(
+        context,
+        flags.assignment,
+        flags.confirm,
+        options
+      )
+      return emit(flags, {
+        command: 'mission adopt-successor',
+        version: 1,
+        status: 'adopted',
+        mission: context.mission.id,
+        successor: applied.plan.successor.id,
+        snapshot: applied.plan.snapshot,
+        idempotent: applied.idempotent,
+        journal: relativeToRepo(context.targetDir, applied.journal),
+        next_action: `Run specdev mission run ${context.mission.id}; the adopted receipt will be replayed without rerunning verification.`,
+      })
+    }
+    const { plan } = await planMissionSuccessorAdoption(context, flags.assignment, options)
+    return emit(flags, {
+      command: 'mission adopt-successor',
+      version: 1,
+      status: 'planned',
+      mission: context.mission.id,
+      successor: plan.successor.id,
+      snapshot: plan.snapshot,
+      plan,
+      confirmation: `specdev mission adopt-successor ${context.mission.id} --assignment=${plan.successor.id} --confirm=${plan.snapshot}`,
+    })
+  } catch (error) {
+    return fail(flags, error.message)
+  }
 }
 
 async function migrateMission(selector, flags) {
@@ -560,6 +620,10 @@ async function driveMission(context) {
       running.outcome = `.specdev/assignments/${running.folder}/outcome.md`
       running.completed_at = new Date().toISOString()
       running.follow_up = await missionChildFollowUp(specdevPath, running)
+      running.disposition =
+        running.execution === 'evidence-only' && running.follow_up === 'required'
+          ? 'completed-with-follow-up'
+          : 'completed'
       await writeMissionQueue(missionPath, queue)
       const remaining = missionQueueHasRemaining(queue)
       await recordMissionChildGap(context, running)
@@ -850,7 +914,7 @@ async function designMission(context) {
         'Design a static-wave Mission plan. Do not modify product code.',
         `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
         `Approved execution policy: ${JSON.stringify(mission.execution_policy)}`,
-        `Write ${relativeToRepo(targetDir, queuePath)} as YAML with version: 2, an ordered assignments list containing only title, kind, wave, status: pending, and a final_verification mapping with the exact contract-authorized command and scope.`,
+        `Write ${relativeToRepo(targetDir, queuePath)} as YAML with version: 2, an ordered assignments list containing title, kind, wave, status: pending, and optional execution: evidence-only plus observation_command, and a final_verification mapping with the exact contract-authorized command and scope.`,
         `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
         'Start by trying to express the entire Mission as one Assignment. Split only for a worker/reviewer context limit, an information dependency, an intermediate user/operational decision, or meaningfully independent verification/rollback.',
         'File count, architectural layers, and the existence of several implementation Tasks are not split reasons. When uncertain, write one Assignment.',
@@ -1023,6 +1087,10 @@ async function runMissionChild(context, options = {}) {
   if (result?.status !== 'approved' && result?.status !== 'completed') {
     const status = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => null)
     if (status?.status !== 'completed') {
+      if (await completeEvidenceOnlyObservation(context, child, assignmentPath, result)) {
+        process.exitCode = undefined
+        return { child, assignmentPath, result, observed: true }
+      }
       throw new Error(result?.error || `Child ${child.id} implementation blocked`)
     }
   }
@@ -1765,6 +1833,10 @@ async function recordIntegratedMissionChild(context, queue, child, integrationRe
   child.folder = resolved.name
   child.outcome = `.specdev/assignments/${resolved.name}/outcome.md`
   child.follow_up = await missionChildFollowUp(context.specdevPath, child)
+  child.disposition =
+    child.execution === 'evidence-only' && child.follow_up === 'required'
+      ? 'completed-with-follow-up'
+      : 'completed'
   child.status = 'integrated'
   child.integrated_at ||= new Date().toISOString()
   if (integrationRevision) {
@@ -1828,6 +1900,9 @@ async function authorChildContract(context, child, assignmentPath) {
       `Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Approved Mission contract hash: ${mission.approved_contract_hash}`,
       `Queue entry: ${child.title}`,
+      child.execution === 'evidence-only'
+        ? `Mission child execution: evidence-only observation of exactly \`${child.observation_command}\``
+        : 'Mission child execution: implementation',
       child.gap_id ? `Durable Mission gap: ${child.gap_id}` : null,
       child.gap_id ? `Gap stage: ${child.gap_stage}` : null,
       child.gap_id
@@ -1852,6 +1927,9 @@ async function authorChildContract(context, child, assignmentPath) {
       'Keep every exact required Assignment heading: ## Objective and context; ## Scope and non-goals; ## Expected behavior; ## Important decisions; ## Constraints and invariants; ## Delegated and reserved authority; ## Risks and assumptions; ## Verification authority; and ## Acceptance criteria. Do not rename, combine, or omit these headings.',
       'Use one short paragraph or list under each heading. Put prerequisite outcome references in Objective and context or Risks and assumptions instead of creating another heading. Include only the child objective and scope, child-specific decisions and risks, focused verification authority, and the fewest independent observable acceptance criteria (normally 1-3 for a bounded child).',
       'Do not turn implementation tasks, file lists, repository conventions, or generic code quality into acceptance criteria. Keep the child wholly within Mission authority.',
+      child.execution === 'evidence-only'
+        ? 'This child is explicitly evidence-only. Its acceptance criteria must require executing and recording the authorized observation, not require a positive command outcome. A negative observation remains failed evidence, sets follow_up: required, and returns completed-with-follow-up without product repair or a rerun.'
+        : 'This is an ordinary implementation child and cannot use evidence-only completion.',
     ]
       .filter(Boolean)
       .join('\n'),
@@ -2604,6 +2682,10 @@ async function validateAndReserveQueue(specdevPath, missionPath) {
     }
     if (item.status !== 'pending')
       throw new Error('Every new Mission queue item requires status: pending')
+    const execution = item.execution || 'implementation'
+    if (!['implementation', 'evidence-only'].includes(execution)) {
+      throw new Error(`Invalid Mission child execution classification: ${execution}`)
+    }
   }
   const command = String(queue.final_verification?.command || '').trim()
   if (!command) throw new Error('Mission Design requires final_verification.command')
@@ -2612,6 +2694,14 @@ async function validateAndReserveQueue(specdevPath, missionPath) {
     throw new Error(
       'Mission Design final_verification.command must exactly match the approved Mission contract'
     )
+  }
+  for (const item of queue.assignments) {
+    if ((item.execution || 'implementation') !== 'evidence-only') continue
+    if (String(item.observation_command || '').trim() !== command) {
+      throw new Error(
+        'An evidence-only Mission child observation_command must exactly match final_verification.command'
+      )
+    }
   }
 
   const suppliedIds = queue.assignments.filter((item) => item.id).map((item) => String(item.id))
@@ -2626,13 +2716,23 @@ async function validateAndReserveQueue(specdevPath, missionPath) {
   }
 
   const assignments = []
-  for (const item of normalizeMissionWaves(queue.assignments)) {
+  const normalized = normalizeMissionWaves(queue.assignments)
+  for (const item of normalized) {
+    if (
+      item.execution === 'evidence-only' &&
+      normalized.filter((candidate) => candidate.wave === item.wave).length !== 1
+    ) {
+      throw new Error('An evidence-only Mission child must occupy its own sequential wave')
+    }
     assignments.push({
       id: item.id ? String(item.id) : await reserveEntityId(specdevPath, 'assignment'),
       title: String(item.title).trim(),
       kind: item.kind || 'change',
       wave: item.wave,
       status: 'pending',
+      ...(item.execution === 'evidence-only'
+        ? { execution: 'evidence-only', observation_command: String(item.observation_command) }
+        : {}),
     })
   }
   return {
@@ -3221,6 +3321,7 @@ async function missionStatus(selector, flags) {
     last_checkpoint: lastCheckpoint,
     execution_policy: executionPolicy,
     convergence_disposition: context.mission.convergence_disposition || null,
+    successor_adoptions: context.mission.successor_adoptions || [],
     activity,
     landing,
     blocker,
@@ -3760,6 +3861,21 @@ function emit(flags, payload) {
       console.log(
         `Review note: the saved verdict covered older contract hash ${payload.review.reviewed_contract_hash}`
       )
+    if (payload.plan?.operation === 'mission-adopt-successor') {
+      const plan = payload.plan
+      console.log(`Blocked child: ${plan.blocked_child.id} (${plan.blocked_child.folder})`)
+      console.log(
+        `Successor: ${plan.successor.id} @ ${plan.successor.delivery_commit}; candidate ${plan.successor.candidate_identity}`
+      )
+      console.log(`Authority: ${plan.authority.source}`)
+      console.log(`Adopted command: ${plan.successor.authoritative_evidence.command}`)
+      console.log(`Included paths: ${plan.included_paths.join(', ')}`)
+      console.log(`Excluded dirty paths: ${plan.excluded_dirty_paths.join(', ') || 'none'}`)
+      console.log('Transitions:')
+      for (const transition of plan.transitions) console.log(`  - ${transition}`)
+      console.log(`Snapshot: ${plan.snapshot}`)
+      console.log(`Confirm: ${payload.confirmation}`)
+    }
     if (payload.execution_policy?.version === 1) {
       const policy = payload.execution_policy
       console.log(
@@ -3812,4 +3928,99 @@ function fail(flags, message) {
   else console.error(message)
   process.exitCode = 1
   return null
+}
+
+async function completeEvidenceOnlyObservation(context, child, assignmentPath, result) {
+  if (child.execution !== 'evidence-only') return false
+  const { targetDir, specdevPath, mission } = context
+  const contract = await validateContractPath(join(assignmentPath, 'brainstorm', 'contract.md'))
+  if (!contract.valid) throw new Error(`Evidence-only child ${child.id} contract is invalid`)
+
+  const delivery = await validateDeliveryArtifacts(
+    specdevPath,
+    assignmentPath,
+    contract.acceptanceIds
+  )
+  const observation = validateEvidenceOnlyObservation({
+    child,
+    progress: delivery.progress,
+    result,
+  })
+
+  const checkpoint = readCheckpoint(specdevPath, mission.run_id)
+  const frame = checkpoint.stack.at(-1)
+  if (
+    checkpoint.status !== 'active' ||
+    checkpoint.position.graph !== 'assignment-lifecycle' ||
+    checkpoint.stack.length !== 1 ||
+    frame?.parent.graph !== 'mission-lifecycle' ||
+    frame.parent.node !== 'child-assignment'
+  ) {
+    throw new Error(
+      `Evidence-only child ${child.id} is not the active Mission-owned nested Assignment`
+    )
+  }
+
+  const recordedAt = new Date().toISOString()
+  const recordPath = join(assignmentPath, 'review', 'observation-completion.json')
+  const record = {
+    version: 1,
+    disposition: 'completed-with-follow-up',
+    mission: mission.id,
+    child: child.id,
+    contract_hash: contract.hash,
+    observation: structuredClone(observation),
+    progress: relativeToRepo(targetDir, join(assignmentPath, 'implementation', 'progress.json')),
+    outcome: relativeToRepo(targetDir, join(assignmentPath, 'outcome.md')),
+    recorded_at: recordedAt,
+  }
+  await fse.ensureDir(join(assignmentPath, 'review'))
+  await writeMissionJsonAtomic(recordPath, record)
+  await writeAssignmentStatus(assignmentPath, {
+    mission_disposition: 'completed-with-follow-up',
+    observation_completion: relativeToRepo(targetDir, recordPath),
+  })
+
+  const output = {
+    approved: false,
+    observed: true,
+    follow_up_required: true,
+    disposition: 'completed-with-follow-up',
+    child: child.id,
+    evidence: relativeToRepo(targetDir, recordPath),
+  }
+  const from = structuredClone(checkpoint.position)
+  checkpoint.stack.pop()
+  const artifact = writeNodeOutput(
+    specdevPath,
+    checkpoint.runId,
+    frame.parent.node,
+    output,
+    frame.parent.scope
+  )
+  checkpoint.outputs[nodeOutputKey(frame.parent.scope, frame.parent.node)] = output
+  checkpoint.position = { graph: 'mission-lifecycle', node: 'advance-queue' }
+  checkpoint.updatedAt = recordedAt
+  writeCheckpoint(specdevPath, checkpoint)
+  appendTransition(specdevPath, checkpoint.runId, {
+    ts: recordedAt,
+    op: 'reconcile',
+    runId: checkpoint.runId,
+    from,
+    to: checkpoint.position,
+    actor: 'specdev:mission-evidence-observation',
+    input: { artifact },
+    output,
+    validation: { ok: true },
+    gateDecision: null,
+    reason: 'explicit evidence-only child completed its authorized negative observation',
+    error: null,
+  })
+  return true
+}
+
+async function writeMissionJsonAtomic(path, value) {
+  const temporary = `${path}.tmp-${process.pid}`
+  await fse.writeJson(temporary, value, { spaces: 2 })
+  await fse.move(temporary, path, { overwrite: true })
 }

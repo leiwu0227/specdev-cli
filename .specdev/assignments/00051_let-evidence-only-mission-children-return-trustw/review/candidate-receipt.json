@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "c4656a7ddf015369105a51ae6ef6b91303c1ff4f96b74cad2f678a25eca416c9",
+  "assignment": {
+    "id": "00051",
+    "folder": "00051_let-evidence-only-mission-children-return-trustw"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00051_let-evidence-only-mission-children-return-trustw/brainstorm/contract.md",
+    "hash": "b990aba61d9a130462c357ef1d9c2bfa1637b087fa93efe180dedf4cd858b3af"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`npm run test:mission-successor-adoption` passed evidence-only classification, strict negative-observation validation, completed-with-follow-up disposition, ordinary-child rejection, and return to sequential gap handling.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "The focused regression passed read-only planning and refusal cases for lifecycle, authority, ancestry, review, artifacts, exact command/policy/cleanup identity, stale confirmation, and excluded dirt.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "The focused regression passed immutable supersession, journaled crash recovery, transition-log repair, idempotent replay, excluded-dirt preservation, and provider/test/commit non-repetition.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 2,
+    "items": [
+      {
+        "command": "git diff --check",
+        "revision": "working-tree@569520383c8bcd49ef14fe4bcda81621830ac15a",
+        "scope": "tracked patch whitespace and conflict-marker integrity",
+        "status": "passed",
+        "duration_ms": 67,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "npm run test:mission-successor-adoption",
+        "revision": "working-tree@569520383c8bcd49ef14fe4bcda81621830ac15a",
+        "scope": "evidence-only provenance gate and fail-closed crash-safe successor adoption",
+        "status": "passed",
+        "duration_ms": 3228,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:mission-successor-adoption",
+        "revision": "working-tree@569520383c8bcd49ef14fe4bcda81621830ac15a",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 9,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "README.md",
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 5,
+        "paths": [
+          "src/commands/help.js",
+          "src/commands/mission.js",
+          "src/utils/commands.js",
+          "src/utils/mission-observation.js",
+          "src/utils/mission-successor-adoption.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 1,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-mission-successor-adoption.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "none",
+    "items": [],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00051_let-evidence-only-mission-children-return-trustw/brainstorm/contract.md",
+      "exists": true,
+      "digest": "b990aba61d9a130462c357ef1d9c2bfa1637b087fa93efe180dedf4cd858b3af"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00051_let-evidence-only-mission-children-return-trustw/design/plan.md",
+      "exists": true,
+      "digest": "285f7d7eba9cc41b55f15bd710760188e24fc09d4a8d03f7ff4b1891e1a08228"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00051_let-evidence-only-mission-children-return-trustw/implementation/progress.json",
+      "exists": true,
+      "digest": "edd65772a0fdcb76d8130152dea4c6445ed20ae135e6091a7571e9da37e455ec"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00051_let-evidence-only-mission-children-return-trustw/outcome.md",
+      "exists": true,
+      "digest": "c36b743e5451b57bae3842e583a7cab16bb2a7a53c219a0c2eccf7a599afe844"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

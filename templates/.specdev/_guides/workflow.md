@@ -65,6 +65,20 @@ foreground controller automatically runs up to three children in validated
 ignored worktrees and integrates reviewed deliveries in declared order. Users
 do not tune concurrency, and parallel speed is not a reason to split work.
 
+A planned child may use `execution: evidence-only` only with an exact
+`observation_command` equal to the Mission final-verification command. A
+negative observation remains failed evidence but returns as
+completed-with-follow-up so the Mission can open a repair gap. Ordinary
+implementation children cannot use that disposition.
+
+`specdev mission adopt-successor M00001 --assignment=00042` is exceptional
+recovery for an active Mission blocked inside its owned child. The first call is
+read-only and prints a content-addressed plan; `--confirm=<snapshot>` applies
+only that unchanged plan. Candidate ancestry, contract/review/evidence hashes,
+the exact command and environment policy, cleanup identity, predecessor
+authority, and excluded dirt all fail closed. Adoption links superseding
+evidence and returns the nested graph without rerunning a provider or command.
+
 ## Discussion
 
 A Discussion is a RippleGraph callable and never becomes the focused scheduler.

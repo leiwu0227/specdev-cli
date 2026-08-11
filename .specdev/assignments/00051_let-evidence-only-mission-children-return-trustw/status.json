@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00051",
+  "kind": "change",
+  "description": "Let evidence-only Mission children return trustworthy negative observations as completed-with-follow-up, and add a fail-closed crash-safe transition that adopts a completed reviewed standalone successor into an active blocked Mission without rewriting historical evidence",
+  "run_id": "assignment-lifecycle-20260811T10040809",
+  "created_at": "2026-08-11T10:04:08.100Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-08-11T10:54:39.895Z",
+  "review_policy_frozen_at": "2026-08-11T10:28:58.446Z",
+  "approved_at": "2026-08-11T10:28:58.446Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "569520383c8bcd49ef14fe4bcda81621830ac15a",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-08-11T10:29:38.180Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-08-11T10:54:39.842Z",
+  "activity": {
+    "attempt_count": 2,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 2,
+    "provider_attempts": {
+      "total": 2,
+      "completed": 1,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1541396,
+    "agent_duration_ms": 1454485,
+    "provider_reported_tokens": 339925
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-08-11T10:54:39.895Z"
+}

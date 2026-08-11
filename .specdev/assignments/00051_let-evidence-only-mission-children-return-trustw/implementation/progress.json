@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@569520383c8bcd49ef14fe4bcda81621830ac15a",
+      "scope": "tracked patch whitespace and conflict-marker integrity",
+      "status": "passed",
+      "duration_ms": 67,
+      "role": "qualification"
+    },
+    {
+      "command": "npm run test:mission-successor-adoption",
+      "revision": "working-tree@569520383c8bcd49ef14fe4bcda81621830ac15a",
+      "scope": "evidence-only provenance gate and fail-closed crash-safe successor adoption",
+      "status": "passed",
+      "duration_ms": 3228,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "The worker Attempt did not receive the host-level test authorization and returned with preserved work. The host then ran the exact focused command under the user's explicit authorization; it passed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}
