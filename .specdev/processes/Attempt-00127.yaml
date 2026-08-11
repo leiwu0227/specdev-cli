@@ -1,0 +1,20 @@
+id: Attempt-00127
+kind: worker
+status: blocked
+workspace: .
+base_revision: 05d045134b49b2d659a5c45204f6540adf8b7a1e
+started_at: 2026-08-11T04:03:47.555Z
+profile: worker
+provider: codex
+model: gpt-5.6-sol
+effort: high
+network: false
+result_path: null
+assignment: 00050_clarify-repository-ownership-and-lane-selection
+duration_ms: 164233
+usage:
+  provider_reported_tokens: 56699
+result_revision: working-tree@05d045134b49b2d659a5c45204f6540adf8b7a1e
+ended_at: 2026-08-11T04:06:31.845Z
+result_status: blocked
+result_retention: local-cache-only

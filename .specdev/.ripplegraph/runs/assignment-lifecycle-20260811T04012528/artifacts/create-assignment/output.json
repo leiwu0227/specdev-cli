@@ -1,0 +1,10 @@
+{
+  "id": "00050",
+  "name": "00050_clarify-repository-ownership-and-lane-selection",
+  "path": ".specdev/assignments/00050_clarify-repository-ownership-and-lane-selection",
+  "description": "Clarify repository ownership and lane selection so an explicitly requested handoff note written from repo A into repo B does not start Adhoc state in repo A, while allowing explicit SpecDev governance after re-anchoring in repo B",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

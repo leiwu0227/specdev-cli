@@ -20,6 +20,13 @@ Classify each request before creating workflow state. Questions and read-only
 inspection are Direct. Use Adhoc, Discussion, Assignment, or Mission only when
 the user selects that lane; never silently make every request an Assignment.
 
+An explicit request to write a bounded coordination or handoff note into another
+repository does not select Adhoc or create SpecDev state in the active
+repository. Write only that auxiliary note and honor the destination's
+instructions. If the request changes the destination repository's product,
+runtime, or workflow state, or explicitly requests SpecDev governance there,
+re-anchor in that repository and classify the work there before editing.
+
 IMPORTANT: Announce "Specdev: <what you're doing>" at meaningful phase
 boundaries and whenever the plan changes, verification fails, or work blocks.
 Repeated read-only probes within one announced phase need no extra announcement.
@@ -40,6 +47,14 @@ description: Make one bounded change without a RippleGraph workflow
 
 Use Adhoc only when the user selects a concrete bounded repository change and
 does not want an Assignment. Start with \`specdev adhoc start "<scope>"\`.
+
+A user selecting a bounded file write has not thereby selected Adhoc. In
+particular, an explicit coordination or handoff note written into another
+repository is an auxiliary artifact: write only that note, honor destination
+instructions, and do not create SpecDev state in the active repository. If the
+request instead changes the destination repository's product, runtime, or
+workflow state, or explicitly requests SpecDev governance there, re-anchor in
+that repository and classify the work there before editing.
 
 Start classifies every expanded dirty path before creating state. Independent
 Discussion and Test Audit paths remain outside Adhoc ownership; requesting

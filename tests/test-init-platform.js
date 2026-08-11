@@ -28,6 +28,10 @@ function cleanup() {
   if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true })
 }
 
+function normalizedProse(content) {
+  return content.replace(/\s+/g, ' ')
+}
+
 // ---- Test default init creates all three adapters ----
 console.log('\ndefault init creates all adapters:')
 cleanup()
@@ -52,6 +56,12 @@ assert(
   /repeated\s+read-only probes/.test(mainMd),
   '_main.md defines phase-level announcement granularity'
 )
+assert(
+  normalizedProse(mainMd).includes('coordination or handoff note') &&
+    normalizedProse(mainMd).includes('not an implicit Adhoc selection') &&
+    normalizedProse(mainMd).includes('re-anchor in that repository'),
+  '_main.md defines the cross-repository handoff-note ownership boundary'
+)
 const claudeMd = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
 assert(claudeMd.includes('.specdev/_main.md'), 'CLAUDE.md points to _main.md')
 const agentsMd = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8')
@@ -62,6 +72,18 @@ assert(
 )
 const cursorRules = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
 assert(cursorRules.includes('.specdev/_main.md'), '.cursor/rules points to _main.md')
+for (const [adapterName, adapter] of [
+  ['CLAUDE.md', claudeMd],
+  ['AGENTS.md', agentsMd],
+  ['.cursor/rules', cursorRules],
+]) {
+  assert(
+    adapter.includes('coordination or handoff note') &&
+      adapter.includes('does not select Adhoc') &&
+      adapter.includes('re-anchor in that repository'),
+    `${adapterName} preserves explicit lane selection and destination-repository re-anchoring`
+  )
+}
 
 // ---- Test default init installs Claude extras (skills, hooks, settings) ----
 console.log('\ndefault init installs Claude extras:')
@@ -117,6 +139,25 @@ assert(
   adhocSkill.includes('requested, committed, rejected, and remaining'),
   'Adhoc skill documents Git-derived delivery facts'
 )
+for (const skillRoot of ['.claude', '.codex']) {
+  const installedAdhocSkill = readFileSync(
+    join(TEST_DIR, skillRoot, 'skills', 'specdev-adhoc', 'SKILL.md'),
+    'utf-8'
+  )
+  const installedAdhocProse = normalizedProse(installedAdhocSkill)
+  assert(
+    installedAdhocProse.includes('selecting a bounded file write has not thereby selected Adhoc') &&
+      installedAdhocProse.includes('coordination or handoff note') &&
+      installedAdhocProse.includes('do not create SpecDev state in the active repository') &&
+      installedAdhocProse.includes('re-anchor in that repository'),
+    `${skillRoot} Adhoc skill preserves the handoff-note exemption and repo-B classification boundary`
+  )
+  assert(
+    installedAdhocSkill.includes('exact temporary-index transaction') &&
+      installedAdhocSkill.includes('requested, committed, rejected, and remaining'),
+    `${skillRoot} Adhoc skill retains ownership and transaction guidance`
+  )
+}
 
 const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
 assert(

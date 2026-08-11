@@ -7,6 +7,14 @@ user chooses a concrete bounded edit but the Assignment contract/review cycle
 would be ceremony. Adhoc has no RippleGraph run. `adhoc start` requires an
 existing Git HEAD and a clean worktree unless `--adopt-dirty` explicitly adopts
 the exact expanded eligible path manifest for all existing changes.
+
+Selecting a bounded file write does not itself select Adhoc. An explicitly
+requested coordination or handoff note in another repository is an auxiliary
+artifact: write only the note, follow destination instructions, and create no
+SpecDev state in the active repository. Re-anchor and classify in the
+destination repository when the request changes its product, runtime, or
+workflow state, or explicitly requests SpecDev governance there.
+
 Callable-owned paths refuse the whole adoption rather than being filtered.
 `adhoc finish` requires an unchanged HEAD, verifies the manifest, writes one
 small commit-derived receipt, and creates one delivery commit. `adhoc cancel` removes only the

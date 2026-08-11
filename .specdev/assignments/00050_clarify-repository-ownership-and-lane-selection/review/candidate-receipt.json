@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "65a67d2be1b930222f562fb29e33678ca70022367f1ae74576d62f22c20b3a55",
+  "assignment": {
+    "id": "00050",
+    "folder": "00050_clarify-repository-ownership-and-lane-selection"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00050_clarify-repository-ownership-and-lane-selection/brainstorm/contract.md",
+    "hash": "a30e96c9f8e1d1b000feec367c21bf23d5c90b27c8ffd3988c2583f99f790a66"
+  },
+  "acceptance": {
+    "total": 2,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Static inspection of `src/commands/init.js`, `templates/.specdev/_main.md`, and `templates/.specdev/_guides/workflow.md`; changed files pass `git diff --check`.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`node tests/test-init-platform.js` passed 64 assertions covering installed `_main.md`, all three adapters, both Adhoc skill roots, and retained transaction guidance.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 2,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 2,
+    "items": [
+      {
+        "command": "git diff --check -- package.json src/commands/init.js templates/.specdev/_main.md templates/.specdev/_guides/workflow.md tests/test-init-platform.js",
+        "revision": "working-tree@05d045134b49b2d659a5c45204f6540adf8b7a1e",
+        "scope": "The repaired five-path project candidate, including package.json delivery metadata, is whitespace-clean.",
+        "status": "passed",
+        "duration_ms": 100,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@05d045134b49b2d659a5c45204f6540adf8b7a1e",
+        "scope": "Newly initialized workflow, all supported adapters, and both command-skill roots preserve the repository-ownership boundary and existing Adhoc transaction guidance using line-wrap-insensitive prose checks.",
+        "status": "passed",
+        "duration_ms": 1878,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@05d045134b49b2d659a5c45204f6540adf8b7a1e",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 5,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 1,
+        "paths": [
+          "src/commands/init.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 2,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md",
+          "templates/.specdev/_main.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-init-platform.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "none",
+    "items": [],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00050_clarify-repository-ownership-and-lane-selection/brainstorm/contract.md",
+      "exists": true,
+      "digest": "a30e96c9f8e1d1b000feec367c21bf23d5c90b27c8ffd3988c2583f99f790a66"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00050_clarify-repository-ownership-and-lane-selection/design/plan.md",
+      "exists": true,
+      "digest": "5444b58cac982ac6ba9f7c1817d5f65ccddc94728dc0f393ea491db269fdb27a"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00050_clarify-repository-ownership-and-lane-selection/implementation/progress.json",
+      "exists": true,
+      "digest": "bfeb0a1cee655d94ec5c6a0427210b03fba73cabbf1fd10a3d649b7c84fd3253"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00050_clarify-repository-ownership-and-lane-selection/outcome.md",
+      "exists": true,
+      "digest": "8b47c5a3a762e42eed4b4edf199c751f03c62153b5ea1ac80e9da0b5b7adbd07"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

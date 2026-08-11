@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "mode": "automatic",
+  "stage": "complete",
+  "primary_round": 2,
+  "round": 2,
+  "history": [
+    {
+      "round": 1,
+      "candidate_digest": "d796a4e488d7d8c3c854ebe1fca534d67e402d3d33c5c7220813a58873b585e7",
+      "findings_digest": "17ca4e89368dabd039eac89e2c8662ff9c5dee6e14ef90158acf3e08896b7f38"
+    },
+    {
+      "round": 2,
+      "candidate_digest": "7c245368d390d4ab7659e046d416fd1af97cf38e4f530ac3c51a29ee562a0b9b",
+      "findings_digest": "6831a8a422700c1e67a6666feb58d8da3eac7f6ccf6462f7b97d341789c35500"
+    }
+  ],
+  "status": "approved",
+  "disposition": "repair",
+  "artifact_repair_round": 1,
+  "artifact_repair_limit": 1,
+  "artifact_preflight_issue": "candidate_receipt_incomplete: authoritative_verification_not_passed",
+  "updated_at": "2026-08-11T04:14:12.575Z",
+  "repair_attempt": "Attempt-00130",
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "high",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "contract_hash": "a30e96c9f8e1d1b000feec367c21bf23d5c90b27c8ffd3988c2583f99f790a66",
+  "candidate_receipt_identity": "65a67d2be1b930222f562fb29e33678ca70022367f1ae74576d62f22c20b3a55",
+  "candidate_digest": "7c245368d390d4ab7659e046d416fd1af97cf38e4f530ac3c51a29ee562a0b9b",
+  "findings_digest": "6831a8a422700c1e67a6666feb58d8da3eac7f6ccf6462f7b97d341789c35500",
+  "attempt": "Attempt-00131",
+  "material_divergence": false,
+  "scope_divergence": "clarifying",
+  "procedure_divergence": "disclosed",
+  "evidence_integrity": "complete",
+  "user_reapproval_required": false,
+  "taxonomy_source": "structured"
+}

@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check -- package.json src/commands/init.js templates/.specdev/_main.md templates/.specdev/_guides/workflow.md tests/test-init-platform.js",
+      "revision": "working-tree@05d045134b49b2d659a5c45204f6540adf8b7a1e",
+      "scope": "The repaired five-path project candidate, including package.json delivery metadata, is whitespace-clean.",
+      "status": "passed",
+      "duration_ms": 100,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@05d045134b49b2d659a5c45204f6540adf8b7a1e",
+      "scope": "Newly initialized workflow, all supported adapters, and both command-skill roots preserve the repository-ownership boundary and existing Adhoc transaction guidance using line-wrap-insensitive prose checks.",
+      "status": "passed",
+      "duration_ms": 1878,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "The first authorized focused run failed because the new assertions compared wrapped Markdown with exact-space substrings. The assertions now normalize whitespace before checking the same required semantics; the rerun passed 64 assertions with 0 failures. The superseded failure remains disclosed here rather than being retained as a current authoritative acceptance receipt.",
+    "Implementation review found that package.json still carried releaseDate 2026-08-08. Per repository delivery instructions, the repair updates it mechanically to the current date, 2026-08-11, and adds package.json to the Assignment-owned delivery paths; acceptance behavior and prior focused test evidence are unchanged."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

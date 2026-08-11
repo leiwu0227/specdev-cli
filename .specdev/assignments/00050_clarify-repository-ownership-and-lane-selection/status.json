@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00050",
+  "kind": "change",
+  "description": "Clarify repository ownership and lane selection so an explicitly requested handoff note written from repo A into repo B does not start Adhoc state in repo A, while allowing explicit SpecDev governance after re-anchoring in repo B",
+  "run_id": "assignment-lifecycle-20260811T04012528",
+  "created_at": "2026-08-11T04:01:25.289Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-08-11T04:14:12.697Z",
+  "review_policy_frozen_at": "2026-08-11T04:02:52.973Z",
+  "approved_at": "2026-08-11T04:02:52.973Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "05d045134b49b2d659a5c45204f6540adf8b7a1e",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-08-11T04:03:47.511Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-08-11T04:14:12.629Z",
+  "activity": {
+    "attempt_count": 5,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 5,
+    "provider_attempts": {
+      "total": 5,
+      "completed": 4,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 679656,
+    "agent_duration_ms": 548440,
+    "provider_reported_tokens": 143611
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-08-11T04:14:12.697Z"
+}

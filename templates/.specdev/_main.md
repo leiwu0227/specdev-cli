@@ -36,6 +36,14 @@ answer them without a graph or log. A user instruction such as “directly”, �
 do it”, “skip SpecDev”, or “no assignment” rules out an Assignment unless the
 user later chooses one.
 
+An explicit request to write a bounded coordination or handoff note into another
+repository is an auxiliary write, not an implicit Adhoc selection or a reason to
+create SpecDev state in the active repository. Write only that note, honor the
+destination repository's instructions, and report the write normally. If the
+request changes the destination repository's product, runtime, or workflow
+state, or explicitly requests SpecDev governance there, re-anchor in that
+repository and classify the work there before editing.
+
 Do not edit `.ripplegraph/` manually. Lifecycle state and approval events belong
 to RippleGraph while work is non-terminal; revisions and diffs belong to Git;
 contracts, outcomes, and receipts are the small durable human record. Successful
@@ -64,7 +72,7 @@ itself.
 
 - **Direct:** questions, explanations, status, and read-only inspection. No
   workflow and no durable receipt.
-- **Adhoc:** one user-selected bounded repository change with no graph,
+- **Adhoc:** one explicitly user-selected bounded repository change with no graph,
   scheduler, subagent, worktree, or approval gate. It records one concise
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.
 - **Assignment:** one readable contract, one user approval, then automatic
