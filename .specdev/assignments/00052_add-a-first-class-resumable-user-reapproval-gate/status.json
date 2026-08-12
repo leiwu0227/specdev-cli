@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00052",
+  "kind": "change",
+  "description": "Add a first-class resumable user-reapproval gate for Mission-owned Assignments whose reviewed candidate is substantively approved but exceeds automatic authority, with exact hash-bound approve/reject decisions, provider-free unchanged resume, and exhaustive parent routing for every valid nested disposition",
+  "run_id": "assignment-lifecycle-20260812T08215896",
+  "created_at": "2026-08-12T08:21:58.967Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-08-12T09:06:37.007Z",
+  "review_policy_frozen_at": "2026-08-12T08:23:29.681Z",
+  "approved_at": "2026-08-12T08:23:29.681Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-08-12T08:24:02.687Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-08-12T09:06:36.946Z",
+  "activity": {
+    "attempt_count": 4,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 4,
+    "provider_attempts": {
+      "total": 4,
+      "completed": 3,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 2587265,
+    "agent_duration_ms": 2486649,
+    "provider_reported_tokens": 400455
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-08-12T09:06:37.007Z"
+}

@@ -1,6 +1,6 @@
 {
   "id": "assignment-lifecycle",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "kind": "workflow",
   "title": "Assignment lifecycle",
   "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",
@@ -12,6 +12,30 @@
     "implement change"
   ],
   "entry": "create-assignment",
+  "outputSchema": {
+    "type": "object",
+    "required": ["approved", "verdict", "attempt", "disposition"],
+    "properties": {
+      "approved": { "type": "boolean" },
+      "verdict": { "type": "string" },
+      "attempt": { "type": "string" },
+      "disposition": {
+        "type": "string",
+        "enum": [
+          "approved",
+          "nonblocking-override",
+          "approved-with-user-reapproval",
+          "awaiting-user-reapproval",
+          "repair",
+          "objective-failure",
+          "semantic-failure",
+          "authority-failure",
+          "infrastructure-failure"
+        ]
+      },
+      "reapproval_identity": { "type": "string" }
+    }
+  },
   "nodes": {
     "create-assignment": {
       "purpose": "Create the Assignment identity and readable contract scaffold.",
@@ -138,7 +162,13 @@
           "attempt": { "type": "string" },
           "disposition": {
             "type": "string",
-            "enum": ["approved", "nonblocking-override", "repair", "objective-failure"]
+            "enum": [
+              "approved",
+              "nonblocking-override",
+              "awaiting-user-reapproval",
+              "repair",
+              "objective-failure"
+            ]
           }
         }
       },
@@ -148,6 +178,10 @@
       },
       "edges": [
         { "to": "done", "when": { "approved": true } },
+        {
+          "to": "awaiting-user-reapproval",
+          "when": { "approved": false, "disposition": "awaiting-user-reapproval" }
+        },
         { "to": "repair", "when": { "approved": false, "disposition": "repair" } },
         {
           "to": "failed",
@@ -171,6 +205,10 @@
     },
     "done": {
       "purpose": "Assignment lifecycle is complete.",
+      "terminal": true
+    },
+    "awaiting-user-reapproval": {
+      "purpose": "Assignment candidate is complete and reviewed but awaits exact Mission user authority.",
       "terminal": true
     },
     "failed": {

@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { execFile as execFileCallback } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
-import { basename, join } from 'node:path'
+import { basename, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
@@ -39,6 +39,7 @@ import { reserveEntityId } from '../utils/id-reservation.js'
 import {
   assertMissionTransitionRecorded,
   bindReplannedQueueToGap,
+  missionChildDisposition,
   missionChildFindings,
   missionChildFollowUp,
   readMission,
@@ -136,6 +137,12 @@ import {
   planMissionSuccessorAdoption,
 } from '../utils/mission-successor-adoption.js'
 import { validateEvidenceOnlyObservation } from '../utils/mission-observation.js'
+import {
+  decideMissionReapproval,
+  inspectMissionReapproval,
+  missionReapprovalPreview,
+  readMissionReapproval,
+} from '../utils/mission-reapproval.js'
 
 const execFile = promisify(execFileCallback)
 const LOCAL_SPECDEV_BIN = fileURLToPath(new URL('../../bin/specdev.js', import.meta.url))
@@ -155,8 +162,14 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
   if (subcommand === 'checkpoint') return checkpointMission(rest[0], flags)
   if (subcommand === 'handoff') return handoffMission(rest[0], flags)
   if (subcommand === 'adopt-successor') return adoptMissionSuccessor(rest[0], flags)
+  if (subcommand === 'approve-divergence') {
+    return decideMissionDivergence(rest[0], flags, 'approve')
+  }
+  if (subcommand === 'reject-divergence') {
+    return decideMissionDivergence(rest[0], flags, 'reject')
+  }
   console.error(
-    'Usage: specdev mission <create | run | migrate | status | land | pause | checkpoint | handoff | adopt-successor>'
+    'Usage: specdev mission <create | run | migrate | status | approve-divergence | reject-divergence | land | pause | checkpoint | handoff | adopt-successor>'
   )
   process.exitCode = 1
 }
@@ -345,6 +358,9 @@ async function runMission(selector, flags) {
   }
   const compatibility = await evaluateMissionCompatibility({ specdevPath, missionPath, mission })
   if (!compatibility.compatible) return emitMissionCompatibility(flags, mission, compatibility)
+  if (mission.pending_parallel_user_reapproval) {
+    return emitParallelMissionReapprovalGate(context, flags, 'mission run')
+  }
   try {
     await focusMissionRun(context)
     await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
@@ -493,6 +509,9 @@ async function runMission(selector, flags) {
     }
 
     graph = getState({ workflowRoot: workflowRootFor(targetDir) })
+    if (graph.position?.node === 'await-user-reapproval') {
+      return emitMissionReapprovalGate(context, flags, 'mission run')
+    }
     if (
       graph.position?.node === 'design' &&
       !(await fse.pathExists(join(missionPath, 'design', 'assignments.yaml'))) &&
@@ -620,10 +639,7 @@ async function driveMission(context) {
       running.outcome = `.specdev/assignments/${running.folder}/outcome.md`
       running.completed_at = new Date().toISOString()
       running.follow_up = await missionChildFollowUp(specdevPath, running)
-      running.disposition =
-        running.execution === 'evidence-only' && running.follow_up === 'required'
-          ? 'completed-with-follow-up'
-          : 'completed'
+      running.disposition = missionChildDisposition(running)
       await writeMissionQueue(missionPath, queue)
       const remaining = missionQueueHasRemaining(queue)
       await recordMissionChildGap(context, running)
@@ -639,6 +655,9 @@ async function driveMission(context) {
         parallel: remaining ? missionWaveIsParallel(queue) : false,
       })
       continue
+    }
+    if (node === 'await-user-reapproval') {
+      return emitMissionReapprovalGate(context, flags, 'mission run')
     }
     if (node === 'mission-review') {
       await assertMissionCandidateCheckpoint(context)
@@ -998,6 +1017,21 @@ async function runMissionChild(context, options = {}) {
     await writeMissionQueue(missionPath, queue)
   }
   const assignmentPath = join(specdevPath, 'assignments', child.folder)
+  const durableAssignmentStatus = await fse
+    .readJson(join(assignmentPath, 'status.json'))
+    .catch(() => null)
+  if (durableAssignmentStatus?.status === 'awaiting_user_reapproval') {
+    return {
+      child,
+      assignmentPath,
+      awaitingUserReapproval: true,
+      result: {
+        status: 'awaiting_user_reapproval',
+        disposition: 'awaiting-user-reapproval',
+        reapproval_identity: durableAssignmentStatus.reapproval_identity,
+      },
+    }
+  }
   graph = getState({ workflowRoot: workflowRootFor(targetDir) })
   const singleFullScope = queue.design_mode === 'single' && queue.assignments.length === 1
   if (graph.position.node === 'brainstorm') {
@@ -1085,6 +1119,28 @@ async function runMissionChild(context, options = {}) {
     }
   }
   if (result?.status !== 'approved' && result?.status !== 'completed') {
+    if (
+      result?.status === 'awaiting_user_reapproval' &&
+      result?.disposition === 'awaiting-user-reapproval'
+    ) {
+      process.exitCode = undefined
+      return { child, assignmentPath, result, awaitingUserReapproval: true }
+    }
+    const afterChild = getState({ workflowRoot: workflowRootFor(targetDir) })
+    if (
+      ['objective-failure', 'semantic-failure', 'repair'].includes(result?.disposition) &&
+      afterChild.position?.node === 'resolve-gap'
+    ) {
+      recordMissionSourceGap(mission, {
+        kind: 'child-assignment',
+        sourceId: child.id,
+        signalId: `child:${child.id}:${result.disposition}:${result.attempt || 'review'}`,
+        artifact: result.verdict || relativeToRepo(targetDir, join(assignmentPath, 'outcome.md')),
+      })
+      await writeMission(missionPath, mission)
+      process.exitCode = undefined
+      return { child, assignmentPath, result, failed: true }
+    }
     const status = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => null)
     if (status?.status !== 'completed') {
       if (await completeEvidenceOnlyObservation(context, child, assignmentPath, result)) {
@@ -1150,6 +1206,17 @@ async function runParallelMissionChild(selector, childId, flags) {
     }
 
     const delivered = await runMissionChild(context, { childId: child.id, parallelRoot: true })
+    if (delivered.awaitingUserReapproval) {
+      return emit(flags, {
+        command: 'mission child',
+        version: 1,
+        status: 'awaiting_user_reapproval',
+        mission: mission.id,
+        assignment: child.id,
+        folder: delivered.child.folder,
+        reapproval_identity: delivered.result.reapproval_identity,
+      })
+    }
     return emit(flags, {
       command: 'mission child',
       version: 1,
@@ -1285,6 +1352,15 @@ async function executeParallelMissionWave(context) {
         child.id
       )
       const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
+      if (status?.status === 'awaiting_user_reapproval') {
+        await recordParallelMissionReapproval(
+          context,
+          child,
+          settled.execution.worktree,
+          status
+        )
+        throw new Error(`Child ${child.id} awaits exact user reapproval`)
+      }
       if (status?.status !== 'completed') {
         throw new Error(`Child ${child.id} exited without a completed Assignment status`)
       }
@@ -3290,6 +3366,11 @@ async function missionStatus(selector, flags) {
     (compatibility && !compatibility.compatible ? compatibility.next_action : null) ||
     landingNextAction(context.mission, landing) ||
     missionNextAction(context.mission, phase, Boolean(liveController), interruptedController)
+  const userReapproval = context.mission.pending_parallel_user_reapproval
+    ? await parallelMissionReapprovalStatus(context)
+    : phase === 'await-user-reapproval' && context.mission.pending_user_reapproval
+      ? await missionReapprovalStatus(context)
+      : null
   return emit(flags, {
     command: 'mission status',
     version: 1,
@@ -3326,7 +3407,8 @@ async function missionStatus(selector, flags) {
     landing,
     blocker,
     compatibility,
-    next_action: nextAction,
+    user_reapproval: userReapproval,
+    next_action: userReapproval?.next_action || nextAction,
     outcome: (await fse.pathExists(join(context.missionPath, 'outcome.md')))
       ? relativeToRepo(context.targetDir, join(context.missionPath, 'outcome.md'))
       : null,
@@ -3801,12 +3883,339 @@ function missionNextAction(mission, phase, liveController, interruptedController
   if (mission.status === 'blocked')
     return mission.next_action || `Resolve the blocker, then run specdev mission run ${mission.id}.`
   if (mission.status === 'paused') return `Resume with specdev mission run ${mission.id}.`
+  if (phase === 'await-user-reapproval' || mission.status === 'awaiting_user_reapproval') {
+    return mission.next_action || `Inspect the exact pending decision with specdev mission status ${mission.id}.`
+  }
   if (phase === 'approve-mission' || mission.status === 'awaiting_approval') {
     return `After explicit user agreement, run specdev mission run ${mission.id} --approve.`
   }
   if (phase === 'brainstorm')
     return `Finish the Mission contract, then run specdev mission run ${mission.id}.`
   return mission.next_action || `Run specdev mission run ${mission.id}.`
+}
+
+async function decideMissionDivergence(selector, flags, decision) {
+  const context = await missionContext(selector, flags, { recoverCompleted: true })
+  if (!context) return null
+  const child = typeof flags.child === 'string' ? flags.child.trim() : ''
+  const identity = typeof flags.identity === 'string' ? flags.identity.trim() : ''
+  if (!/^\d{5}$/.test(child) || !/^[a-f0-9]{64}$/.test(identity)) {
+    return fail(flags, `${decision}-divergence requires --child=00001 and the exact --identity=<sha256>.`)
+  }
+  if (decision === 'reject' && typeof flags.reason !== 'string') {
+    return fail(flags, 'reject-divergence requires --reason="...".')
+  }
+  if (context.mission.pending_parallel_user_reapproval) {
+    return decideParallelMissionDivergence(context, flags, decision, child, identity)
+  }
+  try {
+    const existing = await readMissionReapproval(context.missionPath, child, identity)
+    if (existing.record.status !== 'pending') {
+      const expected = decision === 'approve' ? 'approved' : 'rejected'
+      if (existing.record.status !== expected) {
+        return fail(flags, `The exact reapproval identity was already ${existing.record.status}.`)
+      }
+      if (!context.mission.pending_user_reapproval) {
+        return emit(flags, {
+          command: `mission ${decision}-divergence`,
+          version: 1,
+          status: existing.record.status,
+          mission: context.mission.id,
+          child,
+          identity,
+          idempotent: true,
+          next_action: context.mission.next_action || null,
+        })
+      }
+    }
+    const pending = context.mission.pending_user_reapproval
+    if (!pending || pending.child !== child || pending.identity !== identity) {
+      return fail(flags, 'The supplied identity is not the Mission pending user-reapproval gate.')
+    }
+    const pendingAssignment = await findAssignmentFolder(context.specdevPath, child)
+    const pendingAssignmentStatus = await fse.readJson(
+      join(pendingAssignment.path, 'status.json')
+    )
+    const pendingCheckpoint = readCheckpoint(
+      context.specdevPath,
+      pendingAssignmentStatus.run_id
+    )
+    const parallelRoot =
+      pendingCheckpoint.rootGraph === 'assignment-lifecycle' &&
+      pendingCheckpoint.position?.graph === 'assignment-lifecycle' &&
+      pendingCheckpoint.position?.node === 'awaiting-user-reapproval' &&
+      pendingCheckpoint.stack?.length === 0
+    if (!parallelRoot) await focusMissionRun(context)
+    const graph = parallelRoot
+      ? { position: pendingCheckpoint.position }
+      : getState({ workflowRoot: workflowRootFor(context.targetDir) })
+    const resumedNode = decision === 'approve' ? 'advance-queue' : 'resolve-gap'
+    if (!parallelRoot && !['await-user-reapproval', resumedNode].includes(graph.position?.node)) {
+      return fail(flags, `Mission is not awaiting user reapproval at ${graph.position?.node || 'unknown'}.`)
+    }
+    const inspection = await inspectPendingMissionReapproval(context)
+    if (inspection.stale) {
+      return emit(flags, {
+        command: `mission ${decision}-divergence`,
+        version: 1,
+        status: 'stale',
+        mission: context.mission.id,
+        child,
+        identity,
+        stale_fields: inspection.stale_fields,
+        current_identity: inspection.current,
+        mutated: false,
+        next_action: `The reviewed identity changed. Reject this gate to bounded repair or restore the reviewed bytes before approving it.`,
+      })
+    }
+    const decided = await decideMissionReapproval({
+      path: inspection.path,
+      record: inspection.record,
+      decision,
+      actor: 'user',
+      ...(decision === 'reject' ? { reason: flags.reason.trim() } : {}),
+    })
+    const gateDecision = {
+      approved: decision === 'approve',
+      disposition: decision === 'approve' ? 'approved-with-user-reapproval' : 'repair',
+      mission: context.mission.id,
+      child,
+      identity,
+      actor: decided.record.decision.actor,
+      decided_at: decided.record.decision.decided_at,
+      ...(decision === 'reject' ? { reason: decided.record.decision.reason } : {}),
+    }
+    if (graph.position?.node === 'await-user-reapproval') {
+      const stepped = decideGuidedNode(context.targetDir, 'await-user-reapproval', gateDecision)
+      if (!stepped.synchronized) {
+        throw new Error('Could not record the Mission user-reapproval gate decision')
+      }
+    }
+    const assignment = await findAssignmentFolder(context.specdevPath, child)
+    if (decision === 'approve') {
+      await writeAssignmentStatus(assignment.path, {
+        status: 'completed',
+        completed_at: gateDecision.decided_at,
+        disposition: 'approved-with-user-reapproval',
+        reapproval_identity: identity,
+      })
+      const queue = await readMissionQueue(context.missionPath)
+      const queueChild = queue.assignments.find((item) => item.id === child)
+      if (!queueChild || queueChild.status !== 'running') {
+        throw new Error(`Mission queue does not have running child ${child}`)
+      }
+      queueChild.reapproval_identity = identity
+      queueChild.review_disposition = 'approved-with-user-reapproval'
+      await writeMissionQueue(context.missionPath, queue)
+      context.mission.status = 'running'
+      context.mission.next_action = `Resume normal convergence with specdev mission run ${context.mission.id}.`
+    } else {
+      const gap = recordMissionSourceGap(context.mission, {
+        kind: 'child-user-reapproval',
+        sourceId: child,
+        signalId: `user-reapproval:${identity}:rejected`,
+        artifact: relativeToRepo(context.targetDir, inspection.path),
+      })
+      context.mission.status = 'running'
+      context.mission.next_action = `Resume bounded repair for ${gap.id} with specdev mission run ${context.mission.id}.`
+    }
+    delete context.mission.pending_user_reapproval
+    delete context.mission.blocker
+    await writeMission(context.missionPath, context.mission)
+    return emit(flags, {
+      command: `mission ${decision}-divergence`,
+      version: 1,
+      status: decision === 'approve' ? 'approved' : 'rejected',
+      mission: context.mission.id,
+      child,
+      identity,
+      disposition: gateDecision.disposition,
+      idempotent: decided.idempotent,
+      next_action: context.mission.next_action,
+    })
+  } catch (error) {
+    return fail(flags, error.message)
+  }
+}
+
+async function emitMissionReapprovalGate(context, flags, command) {
+  const gate = await missionReapprovalStatus(context)
+  return emit(flags, {
+    command,
+    version: 1,
+    status: 'awaiting_user_reapproval',
+    mission: context.mission.id,
+    user_reapproval: gate,
+    next_action: gate.next_action,
+  })
+}
+
+async function missionReapprovalStatus(context) {
+  const inspection = await inspectPendingMissionReapproval(context)
+  const preview = missionReapprovalPreview(inspection.record)
+  return {
+    ...preview,
+    stale: inspection.stale,
+    stale_fields: inspection.stale_fields,
+    ...(inspection.stale ? { current_identity: inspection.current } : {}),
+    next_action: inspection.stale
+      ? 'The reviewed identity changed; restore it or reject the pending gate to bounded repair.'
+      : `Approve: specdev mission approve-divergence ${context.mission.id} --child=${preview.child} --identity=${preview.identity}. Reject: specdev mission reject-divergence ${context.mission.id} --child=${preview.child} --identity=${preview.identity} --reason="...".`,
+  }
+}
+
+async function recordParallelMissionReapproval(context, child, worktree, assignmentStatus) {
+  const worktreeMissionPath = join(
+    worktree.path,
+    '.specdev',
+    'missions',
+    basename(context.missionPath)
+  )
+  const worktreeMission = await readMission(worktreeMissionPath)
+  const pending = worktreeMission.pending_user_reapproval
+  if (
+    !pending ||
+    pending.child !== child.id ||
+    pending.identity !== assignmentStatus.reapproval_identity
+  ) {
+    throw new Error(`Parallel child ${child.id} has no matching durable user-reapproval gate`)
+  }
+  const stored = await readMissionReapproval(worktreeMissionPath, pending.child, pending.identity)
+  context.mission.pending_parallel_user_reapproval = {
+    child: pending.child,
+    identity: pending.identity,
+    workspace: worktree.relativePath,
+    preview: missionReapprovalPreview(stored.record),
+  }
+  context.mission.status = 'awaiting_user_reapproval'
+  context.mission.next_action = `Review the exact gate with specdev mission status ${context.mission.id}.`
+  await writeMission(context.missionPath, context.mission)
+}
+
+async function parallelMissionReapprovalStatus(context) {
+  const pending = context.mission.pending_parallel_user_reapproval
+  const worktreePath = confinedMissionWorktree(context.targetDir, pending.workspace)
+  const worktreeMissionPath = join(
+    worktreePath,
+    '.specdev',
+    'missions',
+    basename(context.missionPath)
+  )
+  const worktreeMission = await readMission(worktreeMissionPath)
+  const assignment = await findAssignmentFolder(
+    join(worktreePath, '.specdev'),
+    pending.child
+  )
+  const assignmentStatus = await fse.readJson(join(assignment.path, 'status.json'))
+  const inspection = await inspectMissionReapproval({
+    targetDir: worktreePath,
+    missionPath: worktreeMissionPath,
+    mission: worktreeMission,
+    assignmentPath: assignment.path,
+    assignmentStatus,
+    pending: worktreeMission.pending_user_reapproval,
+  })
+  const preview = missionReapprovalPreview(inspection.record)
+  return {
+    ...preview,
+    parallel: true,
+    workspace: pending.workspace,
+    stale: inspection.stale,
+    stale_fields: inspection.stale_fields,
+    ...(inspection.stale ? { current_identity: inspection.current } : {}),
+    next_action: inspection.stale
+      ? 'The reviewed parallel candidate changed; restore it or reject the gate to bounded repair.'
+      : `Approve: specdev mission approve-divergence ${context.mission.id} --child=${preview.child} --identity=${preview.identity}. Reject: specdev mission reject-divergence ${context.mission.id} --child=${preview.child} --identity=${preview.identity} --reason="...".`,
+  }
+}
+
+async function emitParallelMissionReapprovalGate(context, flags, command) {
+  const gate = await parallelMissionReapprovalStatus(context)
+  return emit(flags, {
+    command,
+    version: 1,
+    status: 'awaiting_user_reapproval',
+    mission: context.mission.id,
+    user_reapproval: gate,
+    next_action: gate.next_action,
+  })
+}
+
+async function decideParallelMissionDivergence(context, flags, decision, child, identity) {
+  const pending = context.mission.pending_parallel_user_reapproval
+  if (pending.child !== child || pending.identity !== identity) {
+    return fail(flags, 'The supplied identity is not the pending parallel user-reapproval gate.')
+  }
+  try {
+    const worktreePath = confinedMissionWorktree(context.targetDir, pending.workspace)
+    const nested = await withSuppressedOutput(() =>
+      decideMissionDivergence(
+        context.mission.id,
+        { ...flags, target: worktreePath, json: true },
+        decision
+      )
+    )
+    if (!nested || !['approved', 'rejected'].includes(nested.status)) return nested
+    const queue = await readMissionQueue(context.missionPath)
+    const queueChild = queue.assignments.find((item) => item.id === child)
+    if (!queueChild) throw new Error(`Mission queue does not contain parallel child ${child}`)
+    if (decision === 'approve') {
+      queueChild.status = 'running'
+      delete queueChild.blocker
+    } else {
+      queueChild.status = 'cancelled'
+      queueChild.blocker = flags.reason.trim()
+      recordMissionSourceGap(context.mission, {
+        kind: 'child-user-reapproval',
+        sourceId: child,
+        signalId: `parallel-user-reapproval:${identity}:rejected`,
+        artifact: pending.preview.verdict,
+      })
+    }
+    await writeMissionQueue(context.missionPath, queue)
+    delete context.mission.pending_parallel_user_reapproval
+    context.mission.status = 'running'
+    context.mission.next_action = `Resume the Mission with specdev mission run ${context.mission.id}.`
+    delete context.mission.blocker
+    await writeMission(context.missionPath, context.mission)
+    return emit(flags, {
+      command: `mission ${decision}-divergence`,
+      version: 1,
+      status: nested.status,
+      mission: context.mission.id,
+      child,
+      identity,
+      disposition: nested.disposition,
+      parallel: true,
+      next_action: context.mission.next_action,
+    })
+  } catch (error) {
+    return fail(flags, error.message)
+  }
+}
+
+function confinedMissionWorktree(targetDir, workspace) {
+  const root = resolve(targetDir, '.specdev', 'worktrees')
+  const path = resolve(targetDir, String(workspace || ''))
+  if (path === root || !path.startsWith(`${root}${sep}`)) {
+    throw new Error('Pending parallel user-reapproval workspace is outside the Mission pool')
+  }
+  return path
+}
+
+async function inspectPendingMissionReapproval(context) {
+  const pending = context.mission.pending_user_reapproval
+  if (!pending) throw new Error('Mission has no durable pending user-reapproval record')
+  const assignment = await findAssignmentFolder(context.specdevPath, pending.child)
+  const assignmentStatus = await fse.readJson(join(assignment.path, 'status.json'))
+  return inspectMissionReapproval({
+    targetDir: context.targetDir,
+    missionPath: context.missionPath,
+    mission: context.mission,
+    assignmentPath: assignment.path,
+    assignmentStatus,
+    pending,
+  })
 }
 
 function landingNextAction(mission, landing) {

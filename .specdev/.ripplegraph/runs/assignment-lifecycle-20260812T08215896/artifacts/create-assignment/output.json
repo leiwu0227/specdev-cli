@@ -1,0 +1,10 @@
+{
+  "id": "00052",
+  "name": "00052_add-a-first-class-resumable-user-reapproval-gate",
+  "path": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate",
+  "description": "Add a first-class resumable user-reapproval gate for Mission-owned Assignments whose reviewed candidate is substantively approved but exceeds automatic authority, with exact hash-bound approve/reject decisions, provider-free unchanged resume, and exhaustive parent routing for every valid nested disposition",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

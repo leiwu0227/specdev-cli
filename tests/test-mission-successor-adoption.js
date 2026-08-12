@@ -331,8 +331,8 @@ try {
     graphSource: {
       kind: 'package',
       graphId: 'mission-lifecycle',
-      graphVersion: '1.4.0',
-      packagePath: 'workflows/mission-lifecycle@1.4.0',
+      graphVersion: '1.5.0',
+      packagePath: 'workflows/mission-lifecycle@1.5.0',
     },
     stack: [
       {
@@ -342,16 +342,16 @@ try {
           graphSource: {
             kind: 'package',
             graphId: 'mission-lifecycle',
-            graphVersion: '1.4.0',
-            packagePath: 'workflows/mission-lifecycle@1.4.0',
+            graphVersion: '1.5.0',
+            packagePath: 'workflows/mission-lifecycle@1.5.0',
           },
           scope: '',
         },
         child: {
           kind: 'package',
           graphId: 'assignment-lifecycle',
-          graphVersion: '2.2.0',
-          packagePath: 'workflows/assignment-lifecycle@2.2.0',
+          graphVersion: '2.3.0',
+          packagePath: 'workflows/assignment-lifecycle@2.3.0',
         },
         scope: 'f1',
         enteredAt: '2026-08-11T00:01:00.000Z',

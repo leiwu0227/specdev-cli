@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:mission-user-reapproval",
+      "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+      "scope": "AC-1 and AC-2 exact identity, stale detection, and idempotency",
+      "status": "passed",
+      "duration_ms": 251,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-graphpackages",
+      "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+      "scope": "AC-3 graph package validity and exhaustive nested edge composition",
+      "status": "passed",
+      "duration_ms": 74,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:mission-compatibility",
+      "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+      "scope": "AC-1 and AC-3 restart, nested-frame migration, and compatibility",
+      "status": "passed",
+      "duration_ms": 12672,
+      "role": "qualification"
+    },
+    {
+      "command": "npm run test:mission-successor-adoption",
+      "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+      "scope": "AC-3 successor-adoption compatibility",
+      "status": "passed",
+      "duration_ms": 3189,
+      "role": "qualification"
+    },
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+      "scope": "AC-1 and AC-3 Mission evidence-only follow-up review and completed-with-follow-up routing regression",
+      "status": "passed",
+      "duration_ms": 6500,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "The worker Attempt did not receive the host-level test authorization and returned with preserved work. The host then ran all four exact focused commands under the user's explicit authorization; all passed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

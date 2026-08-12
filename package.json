@@ -1,7 +1,7 @@
 {
   "name": "@specdev/cli",
   "version": "0.0.4",
-  "releaseDate": "2026-08-11",
+  "releaseDate": "2026-08-12",
   "description": "Contract-governed workflow and Mission orchestration for coding agents",
   "type": "module",
   "bin": {
@@ -14,13 +14,14 @@
     "hooks/"
   ],
   "scripts": {
-    "test": "node ./tests/test-review-convergence.js && node ./tests/test-mission-gaps.js && node ./tests/test-mission-environment.js && node ./tests/test-mission-compatibility.js && node ./tests/test-mission-successor-adoption.js && node ./tests/test-mission-landing.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-attempt-progress.js && node ./tests/test-status-visibility.js && node ./tests/test-vnext-foundations.js && node ./tests/test-implement-recovery.js && node ./tests/test-engine-integration.js && node ./tests/test-assignment-shelf.js && node ./tests/test-assignment-unsupported.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
+    "test": "node ./tests/test-review-convergence.js && node ./tests/test-mission-gaps.js && node ./tests/test-mission-environment.js && node ./tests/test-mission-compatibility.js && node ./tests/test-mission-successor-adoption.js && node ./tests/test-mission-user-reapproval.js && node ./tests/test-mission-landing.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-attempt-progress.js && node ./tests/test-status-visibility.js && node ./tests/test-vnext-foundations.js && node ./tests/test-implement-recovery.js && node ./tests/test-engine-integration.js && node ./tests/test-assignment-shelf.js && node ./tests/test-assignment-unsupported.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
     "test:review-convergence": "node ./tests/test-review-convergence.js",
     "test:mission-gaps": "node ./tests/test-mission-gaps.js",
     "test:mission-environment": "node ./tests/test-mission-environment.js",
     "test:mission-landing": "node ./tests/test-mission-landing.js",
     "test:mission-compatibility": "node ./tests/test-mission-compatibility.js",
     "test:mission-successor-adoption": "node ./tests/test-mission-successor-adoption.js",
+    "test:mission-user-reapproval": "node ./tests/test-mission-user-reapproval.js",
     "test:reviewloop-modes": "node ./tests/test-reviewloop-modes.js",
     "test:update-skill-roots": "node ./tests/test-update-skill-roots.js",
     "test:update-workflow": "node ./tests/test-update-workflow.js",

@@ -162,7 +162,14 @@ export function normalizedFindingsDigest(markdown) {
 }
 
 function automaticStage(stage) {
-  return ['primary', 'resolver', 'arbiter', 'complete', 'failed'].includes(stage)
+  return [
+    'primary',
+    'resolver',
+    'arbiter',
+    'awaiting-user-reapproval',
+    'complete',
+    'failed',
+  ].includes(stage)
     ? stage
     : 'primary'
 }

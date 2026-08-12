@@ -1,6 +1,6 @@
 {
   "id": "mission-lifecycle",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "kind": "workflow",
   "title": "Mission lifecycle",
   "description": "Deliver an approved objective unattended through Assignment waves and durable gap convergence.",
@@ -104,7 +104,75 @@
       "purpose": "Run the next pending child through the normal Assignment lifecycle.",
       "workflowRef": { "graphId": "assignment-lifecycle" },
       "operatorContext": { "phase": "child-assignment" },
-      "edges": [{ "to": "advance-queue", "when": { "approved": true } }]
+      "edges": [
+        { "to": "advance-queue", "when": { "disposition": "approved" } },
+        {
+          "to": "advance-queue",
+          "when": { "disposition": "nonblocking-override" }
+        },
+        {
+          "to": "advance-queue",
+          "when": { "disposition": "approved-with-user-reapproval" }
+        },
+        {
+          "to": "await-user-reapproval",
+          "when": { "disposition": "awaiting-user-reapproval" }
+        },
+        { "to": "resolve-gap", "when": { "disposition": "repair" } },
+        { "to": "resolve-gap", "when": { "disposition": "objective-failure" } },
+        { "to": "resolve-gap", "when": { "disposition": "semantic-failure" } },
+        { "to": "failed", "when": { "disposition": "authority-failure" } },
+        { "to": "failed", "when": { "disposition": "infrastructure-failure" } }
+      ]
+    },
+    "await-user-reapproval": {
+      "purpose": "Hold an unchanged reviewed child until the user approves or rejects its exact disclosed identity.",
+      "gate": {
+        "type": "external_decision",
+        "decisionSchema": {
+          "type": "object",
+          "required": [
+            "approved",
+            "disposition",
+            "mission",
+            "child",
+            "identity",
+            "actor",
+            "decided_at"
+          ],
+          "properties": {
+            "approved": { "type": "boolean" },
+            "disposition": {
+              "type": "string",
+              "enum": ["approved-with-user-reapproval", "repair", "authority-failure"]
+            },
+            "mission": { "type": "string" },
+            "child": { "type": "string" },
+            "identity": { "type": "string" },
+            "actor": { "type": "string" },
+            "decided_at": { "type": "string" },
+            "reason": { "type": "string" }
+          }
+        }
+      },
+      "operatorContext": {
+        "phase": "user-reapproval",
+        "command": "specdev mission approve-divergence|reject-divergence <id>"
+      },
+      "edges": [
+        {
+          "to": "advance-queue",
+          "when": { "approved": true, "disposition": "approved-with-user-reapproval" }
+        },
+        {
+          "to": "resolve-gap",
+          "when": { "approved": false, "disposition": "repair" }
+        },
+        {
+          "to": "failed",
+          "when": { "approved": false, "disposition": "authority-failure" }
+        }
+      ]
     },
     "advance-queue": {
       "purpose": "Record the completed child and choose the next pending queue item.",

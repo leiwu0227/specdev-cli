@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { loadGraphPackage } from 'ripplegraph'
-import { installGraphPackages } from '../src/utils/engine.js'
+import { installGraphPackages, validateNestedWorkflowEdges } from '../src/utils/engine.js'
 
 const root = resolve(import.meta.dirname, '..')
 const workflowsRoot = join(root, 'templates', '.specdev', 'workflows')
@@ -78,15 +78,16 @@ assert.deepEqual(
   Object.keys(byId['mission-lifecycle'].nodes).filter(
     (id) => byId['mission-lifecycle'].nodes[id].gate
   ),
-  ['approve-mission']
+  ['approve-mission', 'await-user-reapproval']
 )
 assert.equal(
   byId['mission-lifecycle'].nodes['child-assignment'].workflowRef.graphId,
   'assignment-lifecycle'
 )
 assert.equal(byId['mission-lifecycle'].nodes['advance-queue'].edges[0].when.gap_open, true)
-assert.equal(byId['assignment-lifecycle'].version, '2.2.0')
-assert.equal(byId['mission-lifecycle'].version, '1.4.0')
+assert.equal(byId['assignment-lifecycle'].version, '2.3.0')
+assert.equal(byId['mission-lifecycle'].version, '1.5.0')
+assert.deepEqual(validateNestedWorkflowEdges(packages), [])
 assert.ok(byId['mission-lifecycle'].nodes['execute-wave'])
 assert.ok(byId['mission-lifecycle'].nodes['advance-wave'])
 assert.ok(byId['assignment-lifecycle'].nodes.failed.terminal)
@@ -129,9 +130,9 @@ try {
   const installed = await installGraphPackages(workflowsRoot, installRoot)
   assert.equal(installed.length, expectedIds.length)
   const catalog = JSON.parse(readFileSync(join(installRoot, 'catalog.json'), 'utf8'))
-  assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.2.0')
-  assert.equal(catalog.packages['mission-lifecycle'].path, 'mission-lifecycle@1.4.0')
-  const installedGraph = join(installRoot, 'assignment-lifecycle@2.2.0', 'graph.json')
+  assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.3.0')
+  assert.equal(catalog.packages['mission-lifecycle'].path, 'mission-lifecycle@1.5.0')
+  const installedGraph = join(installRoot, 'assignment-lifecycle@2.3.0', 'graph.json')
   writeFileSync(installedGraph, `${readFileSync(installedGraph, 'utf8')}\n`)
   await assert.rejects(
     installGraphPackages(workflowsRoot, installRoot),

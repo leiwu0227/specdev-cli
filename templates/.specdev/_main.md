@@ -124,6 +124,10 @@ a scheduler, but only one may be active in a worktree.
   `.specdev/worktrees/slot-N` pool for a parallel wave.
 - Raw provider output, PID state, SQLite, and scratch data belong in ignored
   `cache/`; ordinary interrupted source can be inspected and repaired.
+- A reviewed Mission child that only exceeds automatic authority pauses at an
+  exact user-reapproval identity. Repeated `mission run` and `mission status`
+  calls are provider-free until the user runs the displayed
+  `mission approve-divergence` or `mission reject-divergence` command.
 - A blocked Assignment worker preserves its result and returns a blocked
   outcome. Finish its artifacts and rerun to resume without another provider
   call, or use `specdev implement --retry-worker` to request one explicitly.

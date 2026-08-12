@@ -28,7 +28,7 @@ import { workflowRootFor } from '../utils/engine.js'
 import { resolveGuides } from '../utils/guides.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
-import { readMission, resolveMissionSelector } from '../utils/mission.js'
+import { readMission, resolveMissionSelector, writeMission } from '../utils/mission.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
@@ -36,6 +36,10 @@ import {
   formatStandaloneAssignmentReceipt,
   writeStandaloneAssignmentCandidateReceipt,
 } from '../utils/assignment-delivery.js'
+import {
+  buildMissionReapproval,
+  inspectMissionReapproval,
+} from '../utils/mission-reapproval.js'
 import {
   AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
   initialAutomaticReviewState,
@@ -772,30 +776,111 @@ export async function reviewImplementation(flags = {}) {
     })
   }
 
-  let candidateReceipt = null
-  let candidateReceiptPath = null
-  if (!mission) {
-    const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
-    candidateReceipt = await buildStandaloneAssignmentCandidateReceipt({
-      targetDir,
-      assignmentPath,
-      assignmentStatus,
+  const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
+  const candidateReceipt = await buildStandaloneAssignmentCandidateReceipt({
+    targetDir,
+    assignmentPath,
+    assignmentStatus,
+  })
+  const candidateReceiptPath = await writeStandaloneAssignmentCandidateReceipt(
+    assignmentPath,
+    candidateReceipt
+  )
+  if (candidateReceipt.completeness !== 'complete' && !mission) {
+    return requestArtifactRepair({
+      ...context,
+      flags,
+      graph,
+      verdictPath,
+      statePath,
+      reviewState,
+      issue: `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`,
     })
-    candidateReceiptPath = await writeStandaloneAssignmentCandidateReceipt(
-      assignmentPath,
-      candidateReceipt
-    )
-    if (candidateReceipt.completeness !== 'complete') {
-      return requestArtifactRepair({
-        ...context,
-        flags,
-        graph,
-        verdictPath,
-        statePath,
-        reviewState,
-        issue: `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`,
-      })
+  }
+
+  if (mission && reviewState.stage === 'awaiting-user-reapproval') {
+    const savedVerdict = await fse.readFile(verdictPath, 'utf8').catch(() => '')
+    const unchanged =
+      reviewState.candidate_receipt_identity === candidateReceipt.identity &&
+      reviewState.verdict_digest === hashText(savedVerdict)
+    const resolvedMission = await resolveMissionSelector(specdevPath, mission)
+    if (!resolvedMission || resolvedMission.ambiguous) {
+      throw new Error(`Mission not found or ambiguous while resuming reapproval: ${mission}`)
     }
+    const missionRecord = await readMission(resolvedMission.path)
+    if (unchanged) {
+      let pending = missionRecord.pending_user_reapproval
+      if (!pending) {
+        const rebuilt = await buildMissionReapproval({
+          targetDir,
+          missionPath: resolvedMission.path,
+          mission: missionRecord,
+          child: assignmentStatus.id,
+          assignmentPath,
+          assignmentStatus,
+          candidateReceipt,
+          verdictPath,
+          reviewState,
+        })
+        pending = {
+          child: assignmentStatus.id,
+          identity: rebuilt.record.identity,
+          artifact: relativeToRepo(targetDir, rebuilt.path),
+        }
+        missionRecord.pending_user_reapproval = pending
+      } else {
+        const inspection = await inspectMissionReapproval({
+          targetDir,
+          missionPath: resolvedMission.path,
+          mission: missionRecord,
+          assignmentPath,
+          assignmentStatus,
+          pending,
+        })
+        if (inspection.stale) throw new Error('Saved Mission user-reapproval identity is stale')
+      }
+      missionRecord.status = 'awaiting_user_reapproval'
+      missionRecord.next_action = `Review the exact gate with specdev mission status ${missionRecord.id}.`
+      await writeMission(resolvedMission.path, missionRecord)
+      stepGuidedNode(targetDir, 'implementation-review', {
+        approved: false,
+        verdict: relativeToRepo(targetDir, verdictPath),
+        attempt: reviewState.attempt,
+        disposition: 'awaiting-user-reapproval',
+        reapproval_identity: pending.identity,
+      })
+      await writeAssignmentStatus(assignmentPath, {
+        status: 'awaiting_user_reapproval',
+        reapproval_identity: pending.identity,
+      })
+      const payload = {
+        command: 'reviewloop',
+        version: 2,
+        status: 'awaiting_user_reapproval',
+        phase: 'implementation',
+        assignment: name,
+        verdict: relativeToRepo(targetDir, verdictPath),
+        disposition: 'awaiting-user-reapproval',
+        reapproval_identity: pending.identity,
+        recovered: true,
+        next_action: missionRecord.next_action,
+      }
+      emit(flags, payload)
+      return payload
+    }
+    reviewState = {
+      ...reviewState,
+      stage: 'primary',
+      status: 'converging',
+      disposition: 'repair',
+      updated_at: new Date().toISOString(),
+    }
+    delete missionRecord.pending_user_reapproval
+    missionRecord.status = 'running'
+    await Promise.all([
+      writeJsonAtomic(statePath, reviewState),
+      writeMission(resolvedMission.path, missionRecord),
+    ])
   }
 
   const profile = await reviewProfile(specdevPath, flags, reviewState.profile)
@@ -812,7 +897,7 @@ export async function reviewImplementation(flags = {}) {
     profile,
     guide_ids: guideIds,
     contract_hash: contract.hash,
-    ...(candidateReceipt ? { candidate_receipt_identity: candidateReceipt.identity } : {}),
+    candidate_receipt_identity: candidateReceipt.identity,
   }
   await writeJsonAtomic(statePath, reviewState)
 
@@ -849,7 +934,7 @@ export async function reviewImplementation(flags = {}) {
     `Design plan: ${relativeToRepo(targetDir, join(assignmentPath, 'design', 'plan.md'))}`,
     `Progress and verification receipts: ${relativeToRepo(targetDir, join(assignmentPath, 'implementation', 'progress.json'))}`,
     `Outcome: ${relativeToRepo(targetDir, join(assignmentPath, 'outcome.md'))}`,
-    candidateReceiptPath
+    candidateReceipt.completeness === 'complete' && candidateReceiptPath
       ? `Complete candidate receipt: ${relativeToRepo(targetDir, candidateReceiptPath)} @ ${candidateReceipt.identity}`
       : null,
     reviewState.round > 0 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
@@ -884,6 +969,79 @@ export async function reviewImplementation(flags = {}) {
     unsafeTransition && reviewerResult.verdict === 'approved' ? 'blocked' : reviewerResult.verdict
   const findings = await fse.readFile(verdictPath, 'utf-8')
   const candidateDigest = await productStateDigest(targetDir)
+
+  if (
+    mission &&
+    candidateReceipt.completeness === 'complete' &&
+    reviewerResult.verdict === 'approved' &&
+    reviewerResult.evidence_integrity === 'complete' &&
+    reviewerResult.user_reapproval_required === true
+  ) {
+    reviewState = {
+      ...reviewState,
+      stage: 'awaiting-user-reapproval',
+      status: 'awaiting-user-reapproval',
+      disposition: 'awaiting-user-reapproval',
+      attempt: result.attempt.id,
+      candidate_digest: candidateDigest,
+      verdict_digest: hashText(findings),
+      profile,
+      guide_ids: guideIds,
+      ...reviewTaxonomy(reviewerResult),
+      updated_at: new Date().toISOString(),
+    }
+    await writeJsonAtomic(statePath, reviewState)
+    const resolvedMission = await resolveMissionSelector(specdevPath, mission)
+    if (!resolvedMission || resolvedMission.ambiguous) {
+      throw new Error(`Mission not found or ambiguous while recording reapproval: ${mission}`)
+    }
+    const missionRecord = await readMission(resolvedMission.path)
+    const pending = await buildMissionReapproval({
+      targetDir,
+      missionPath: resolvedMission.path,
+      mission: missionRecord,
+      child: assignmentStatus.id,
+      assignmentPath,
+      assignmentStatus,
+      candidateReceipt,
+      verdictPath,
+      reviewState,
+    })
+    missionRecord.status = 'awaiting_user_reapproval'
+    missionRecord.pending_user_reapproval = {
+      child: assignmentStatus.id,
+      identity: pending.record.identity,
+      artifact: relativeToRepo(targetDir, pending.path),
+    }
+    missionRecord.next_action = `Review the exact gate with specdev mission status ${missionRecord.id}; then run specdev mission approve-divergence ${missionRecord.id} --child=${assignmentStatus.id} --identity=${pending.record.identity}, or specdev mission reject-divergence ${missionRecord.id} --child=${assignmentStatus.id} --identity=${pending.record.identity} --reason=\"...\".`
+    delete missionRecord.blocker
+    await writeMission(resolvedMission.path, missionRecord)
+    stepGuidedNode(targetDir, 'implementation-review', {
+      approved: false,
+      verdict: relativeToRepo(targetDir, verdictPath),
+      attempt: result.attempt.id,
+      disposition: 'awaiting-user-reapproval',
+      reapproval_identity: pending.record.identity,
+    })
+    await writeAssignmentStatus(assignmentPath, {
+      status: 'awaiting_user_reapproval',
+      reapproval_identity: pending.record.identity,
+    })
+    const payload = {
+      command: 'reviewloop',
+      version: 2,
+      status: 'awaiting_user_reapproval',
+      phase: 'implementation',
+      assignment: name,
+      round,
+      verdict: relativeToRepo(targetDir, verdictPath),
+      disposition: 'awaiting-user-reapproval',
+      reapproval_identity: pending.record.identity,
+      next_action: missionRecord.next_action,
+    }
+    emit(flags, payload)
+    return payload
+  }
 
   if (arbitration) {
     const arbitrationResult = recordArbitration(reviewState, {

@@ -1,0 +1,204 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "068ec361ab13397193599fa8cde470249a497e4443a5af6e35daba26c1922e49",
+  "assignment": {
+    "id": "00052",
+    "folder": "00052_add-a-first-class-resumable-user-reapproval-gate"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/brainstorm/contract.md",
+    "hash": "9e28380f00c1300efc6e524b7fcd05b545bc58b0d15819fbf35acea36df8539f"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`npm run test:mission-user-reapproval`, `npm run test:mission-compatibility`, and `npm run test:reviewloop-modes` passed authority-pause classification, provider-free unchanged resume, genuine-failure separation, evidence-only review com...",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`npm run test:mission-user-reapproval` passed exact decision binding, stale refusal, durable approve/reject handling, sequential/parallel routing, and idempotency.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`npm run test:engine-graphpackages`, `npm run test:mission-compatibility`, `npm run test:mission-successor-adoption`, and `npm run test:reviewloop-modes` passed exhaustive graph composition, chained migration, restart, evidence-only comp...",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 5,
+    "items": [
+      {
+        "command": "npm run test:mission-user-reapproval",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "scope": "AC-1 and AC-2 exact identity, stale detection, and idempotency",
+        "status": "passed",
+        "duration_ms": 251,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      },
+      {
+        "command": "npm run test:engine-graphpackages",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "scope": "AC-3 graph package validity and exhaustive nested edge composition",
+        "status": "passed",
+        "duration_ms": 74,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      },
+      {
+        "command": "npm run test:mission-compatibility",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "scope": "AC-1 and AC-3 restart, nested-frame migration, and compatibility",
+        "status": "passed",
+        "duration_ms": 12672,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "npm run test:mission-successor-adoption",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "scope": "AC-3 successor-adoption compatibility",
+        "status": "passed",
+        "duration_ms": 3189,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "scope": "AC-1 and AC-3 Mission evidence-only follow-up review and completed-with-follow-up routing regression",
+        "status": "passed",
+        "duration_ms": 6500,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:mission-user-reapproval",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:engine-graphpackages",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@536c864f6afbac49b1708b810935a7aa6a7d4cc6",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 21,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "QUICKSTART.md",
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 10,
+        "paths": [
+          "src/commands/help.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/commands.js",
+          "src/utils/engine.js",
+          "src/utils/mission-compatibility.js",
+          "src/utils/mission-migration.js",
+          "src/utils/mission-reapproval.js"
+        ],
+        "omitted": 2
+      },
+      {
+        "name": "templates",
+        "count": 4,
+        "paths": [
+          "templates/.specdev/_index.md"
+        ],
+        "omitted": 3
+      },
+      {
+        "name": "tests",
+        "count": 5,
+        "paths": [
+          "tests/test-engine-graphpackages.js"
+        ],
+        "omitted": 4
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "none",
+    "items": [],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/brainstorm/contract.md",
+      "exists": true,
+      "digest": "9e28380f00c1300efc6e524b7fcd05b545bc58b0d15819fbf35acea36df8539f"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/design/plan.md",
+      "exists": true,
+      "digest": "a39fc941556c00f9f80701da4ef9f3fdd94686978f8f9762c90566ffc6eca724"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/implementation/progress.json",
+      "exists": true,
+      "digest": "d4d1917dedb7e2215faf379af894fd3fa849dd9e81685cb1a18cdf876c946e18"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/outcome.md",
+      "exists": true,
+      "digest": "a2f514a01358b44085232f0eab017242389033324c8c56277f2be37b13bdfbc0"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

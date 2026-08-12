@@ -75,6 +75,15 @@ export async function missionChildFollowUp(specdevPath, child) {
   return 'none'
 }
 
+export function missionChildDisposition(child) {
+  if (child.review_disposition === 'approved-with-user-reapproval') {
+    return 'approved-with-user-reapproval'
+  }
+  return child.execution === 'evidence-only' && child.follow_up === 'required'
+    ? 'completed-with-follow-up'
+    : 'completed'
+}
+
 export async function missionChildFindings(specdevPath, child) {
   if (!child.folder) return []
   const assignmentPath = join(specdevPath, 'assignments', child.folder)

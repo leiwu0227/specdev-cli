@@ -1,0 +1,90 @@
+{
+  "runId": "assignment-lifecycle-20260812T08215896",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-08-12T08:21:58.962Z",
+  "updatedAt": "2026-08-12T09:06:36.946Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00052",
+      "name": "00052_add-a-first-class-resumable-user-reapproval-gate",
+      "path": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate",
+      "description": "Add a first-class resumable user-reapproval gate for Mission-owned Assignments whose reviewed candidate is substantively approved but exceeds automatic authority, with exact hash-bound approve/reject decisions, provider-free unchanged resume, and exhaustive parent routing for every valid nested disposition",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/brainstorm/contract.md",
+      "contract_hash": "9e28380f00c1300efc6e524b7fcd05b545bc58b0d15819fbf35acea36df8539f"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "9e28380f00c1300efc6e524b7fcd05b545bc58b0d15819fbf35acea36df8539f",
+      "actor": "user",
+      "approved_at": "2026-08-12T08:23:29.681Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "536c864f6afbac49b1708b810935a7aa6a7d4cc6"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/design/plan.md",
+      "attempt": "recovered-artifacts"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/implementation/progress.json",
+      "outcome": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/outcome.md",
+      "attempt": "recovered-artifacts"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/review/implementation-verdict.md",
+      "attempt": "Attempt-00137",
+      "disposition": "approved"
+    },
+    "repair": {
+      "attempt": "Attempt-00136",
+      "result": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/implementation/repair-result.md"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "9e28380f00c1300efc6e524b7fcd05b545bc58b0d15819fbf35acea36df8539f",
+      "actor": "user",
+      "approved_at": "2026-08-12T08:23:29.681Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "536c864f6afbac49b1708b810935a7aa6a7d4cc6"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.2.0",
+    "packagePath": "workflows/assignment-lifecycle@2.2.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00052_add-a-first-class-resumable-user-reapproval-gate/review/implementation-verdict.md",
+    "attempt": "Attempt-00137",
+    "disposition": "approved"
+  }
+}

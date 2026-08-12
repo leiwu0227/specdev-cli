@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { stepGuidedNode } from '../src/utils/engine-sync.js'
+import { missionChildDisposition, missionChildFollowUp } from '../src/utils/mission.js'
 
 const repoRoot = resolve(import.meta.dirname, '..')
 const bin = join(repoRoot, 'bin', 'specdev.js')
@@ -175,6 +176,10 @@ case "$prompt" in
     printf '%s\n' '---' 'status: completed' 'revision: null' 'follow_up: none' '---' '' '## Changes' '' 'Preserved the fixture artifacts without repairing them.'
     exit 0
     ;;
+  *"evidence-only-follow-up"*)
+    printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'The authorized negative observation is complete and requires bounded follow-up.'
+    exit 0
+    ;;
 esac
 count_file="${root}.review-count"
 count=0
@@ -309,6 +314,83 @@ fi
   assert.equal(childState.stage, 'complete')
 
   runJson(['cancel', 'finish automatic Mission child fixture'])
+
+  runJson(['do', 'start an assignment'])
+  const evidenceOnly = runJson([
+    'assignment',
+    'Review an evidence-only Mission child with required follow-up',
+    '--slug=evidence-only-follow-up',
+    '--json',
+  ])
+  const evidenceOnlyPath = join(root, evidenceOnly.path)
+  writeContract(evidenceOnlyPath, 'Review an authorized negative observation')
+  const evidenceOnlyContractPath = join(evidenceOnlyPath, 'brainstorm', 'contract.md')
+  writeFileSync(
+    evidenceOnlyContractPath,
+    readFileSync(evidenceOnlyContractPath, 'utf8')
+      .replace(
+        'The selected review mode completes its bounded command path.',
+        'The evidence-only child records the authorized observation regardless of outcome.'
+      )
+      .replace(
+        'The review command returns a structured result.',
+        'The authorized observation is recorded and a negative outcome requires follow-up.'
+      ),
+    'utf8'
+  )
+  runJson(['checkpoint', 'brainstorm', '--json'])
+  runJson(['approve', 'brainstorm', '--json'])
+  writeImplementationDelivery(evidenceOnlyPath)
+  const evidenceOnlyProgressPath = join(
+    evidenceOnlyPath,
+    'implementation',
+    'progress.json'
+  )
+  const evidenceOnlyProgress = JSON.parse(readFileSync(evidenceOnlyProgressPath, 'utf8'))
+  evidenceOnlyProgress.verification[0].status = 'failed'
+  evidenceOnlyProgress.follow_up = 'required'
+  writeFileSync(
+    evidenceOnlyProgressPath,
+    `${JSON.stringify(evidenceOnlyProgress, null, 2)}\n`,
+    'utf8'
+  )
+  writeFileSync(
+    join(evidenceOnlyPath, 'outcome.md'),
+    '# Outcome\n\n## Delivered behavior\n\nAuthorized negative observation recorded.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nBounded follow-up is required.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Focused negative observation. | Failed |\n',
+    'utf8'
+  )
+  const evidenceOnlyStatusPath = join(evidenceOnlyPath, 'status.json')
+  const evidenceOnlyStatus = JSON.parse(readFileSync(evidenceOnlyStatusPath, 'utf8'))
+  writeFileSync(
+    evidenceOnlyStatusPath,
+    `${JSON.stringify({ ...evidenceOnlyStatus, mission: mission.id }, null, 2)}\n`,
+    'utf8'
+  )
+  stepGuidedNode(root, 'design', {
+    plan: `${evidenceOnly.path}/design/plan.md`,
+    attempt: 'fixture-worker',
+  })
+  stepGuidedNode(root, 'implementation', {
+    progress: `${evidenceOnly.path}/implementation/progress.json`,
+    outcome: `${evidenceOnly.path}/outcome.md`,
+    attempt: 'fixture-worker',
+  })
+  const evidenceOnlyReview = runJson(['reviewloop', 'implementation', '--json'])
+  assert.equal(evidenceOnlyReview.status, 'approved')
+  assert.equal(evidenceOnlyReview.disposition, 'approved')
+  const reviewedEvidenceOnlyStatus = JSON.parse(readFileSync(evidenceOnlyStatusPath, 'utf8'))
+  assert.equal(reviewedEvidenceOnlyStatus.status, 'completed')
+  const evidenceOnlyChild = {
+    folder: evidenceOnly.path.split('/').at(-1),
+    execution: 'evidence-only',
+  }
+  evidenceOnlyChild.follow_up = await missionChildFollowUp(
+    join(root, '.specdev'),
+    evidenceOnlyChild
+  )
+  assert.equal(evidenceOnlyChild.follow_up, 'required')
+  assert.equal(missionChildDisposition(evidenceOnlyChild), 'completed-with-follow-up')
+
   runJson(['do', 'start an assignment'])
   const boundedRepair = runJson([
     'assignment',

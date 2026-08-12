@@ -155,6 +155,8 @@ Useful Mission commands:
 
 ```bash
 specdev mission status M00001
+specdev mission approve-divergence M00001 --child=00042 --identity=<sha256>
+specdev mission reject-divergence M00001 --child=00042 --identity=<sha256> --reason="..."
 specdev mission land M00001
 specdev mission pause M00001
 specdev mission run M00001 --takeover

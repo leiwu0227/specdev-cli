@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "mode": "automatic",
+  "stage": "complete",
+  "primary_round": 2,
+  "round": 2,
+  "history": [
+    {
+      "round": 1,
+      "candidate_digest": "a901dfc8c61aa383aec7b00248b43fa45bb8477d8baff4d49ef1528b5eccc39b",
+      "findings_digest": "e4145a1ca0190a1402c44cf64b3bac426077c35630ee2685430d3661f69105e8"
+    },
+    {
+      "round": 2,
+      "candidate_digest": "dccd65a2d2b32bb2838fc4b0aae3c6b9e24a86421eadf5a10e8db3135604b5cd",
+      "findings_digest": "99f5f879298e5cc05bbda12aa10ac3ad7b706c27fce4a152e20bb49a1e873b85"
+    }
+  ],
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "high",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "contract_hash": "9e28380f00c1300efc6e524b7fcd05b545bc58b0d15819fbf35acea36df8539f",
+  "candidate_receipt_identity": "068ec361ab13397193599fa8cde470249a497e4443a5af6e35daba26c1922e49",
+  "status": "approved",
+  "candidate_digest": "dccd65a2d2b32bb2838fc4b0aae3c6b9e24a86421eadf5a10e8db3135604b5cd",
+  "findings_digest": "99f5f879298e5cc05bbda12aa10ac3ad7b706c27fce4a152e20bb49a1e873b85",
+  "attempt": "Attempt-00137",
+  "updated_at": "2026-08-12T09:06:36.898Z",
+  "material_divergence": false,
+  "scope_divergence": "none",
+  "procedure_divergence": "disclosed",
+  "evidence_integrity": "complete",
+  "user_reapproval_required": false,
+  "taxonomy_source": "structured",
+  "repair_attempt": "Attempt-00136"
+}

@@ -10,9 +10,12 @@ import { readAttemptRecord } from './process-record.js'
 
 const GRAPH_ID = 'mission-lifecycle'
 const SOURCE_VERSION = '1.3.0'
-const TARGET_VERSION = '1.4.0'
-const MIGRATION_ID = `${GRAPH_ID}@${SOURCE_VERSION}-to-${TARGET_VERSION}`
+const SOURCE_VERSIONS = new Set(['1.3.0', '1.4.0'])
+const TARGET_VERSION = '1.5.0'
 const TARGET_PACKAGE_PATH = `workflows/${GRAPH_ID}@${TARGET_VERSION}`
+const ASSIGNMENT_GRAPH_ID = 'assignment-lifecycle'
+const ASSIGNMENT_TARGET_VERSION = '2.3.0'
+const ASSIGNMENT_TARGET_PACKAGE_PATH = `workflows/${ASSIGNMENT_GRAPH_ID}@${ASSIGNMENT_TARGET_VERSION}`
 const JOURNAL_NAME = 'mission-migration.json'
 const ROOT_NODE_MAP = Object.freeze({ replan: 'resolve-gap' })
 const PRE_DESIGN_PHASES = new Set(['create-mission', 'brainstorm', 'approve-mission'])
@@ -51,7 +54,7 @@ export async function inspectMissionMigration({ specdevPath, missionPath, missio
   let journal
   try {
     checkpoint = readCheckpoint(specdevPath, mission.run_id)
-    journal = readMissionMigrationJournal(specdevPath, mission.run_id)
+    journal = currentTargetJournal(readMissionMigrationJournal(specdevPath, mission.run_id))
     const plan = await planMigration({
       specdevPath,
       missionPath,
@@ -123,7 +126,9 @@ export async function migrateActiveMission({
   now = () => new Date().toISOString(),
 }) {
   const journalPath = missionMigrationJournalPath(specdevPath, mission.run_id)
-  const existingJournal = readMissionMigrationJournal(specdevPath, mission.run_id)
+  const existingJournal = currentTargetJournal(
+    readMissionMigrationJournal(specdevPath, mission.run_id)
+  )
   const currentCheckpoint = readCheckpoint(specdevPath, mission.run_id)
   const currentMission = await readMissionFile(missionPath)
 
@@ -176,7 +181,7 @@ export async function migrateActiveMission({
     const timestamp = now()
     journal = {
       version: 1,
-      migration: MIGRATION_ID,
+      migration: `${GRAPH_ID}@${plan.sourceCheckpoint.graphSource.graphVersion}-to-${TARGET_VERSION}`,
       mission: mission.id,
       run_id: mission.run_id,
       status: 'prepared',
@@ -191,6 +196,9 @@ export async function migrateActiveMission({
         mission_digest: digest(plan.sourceMission),
         checkpoint_digest: digest(plan.sourceCheckpoint),
         queue: plan.queueState,
+        ...(plan.sourceCheckpoint.stack?.at(-1)?.child
+          ? { active_child: structuredClone(plan.sourceCheckpoint.stack.at(-1).child) }
+          : {}),
         ...(plan.queueDigest ? { queue_digest: plan.queueDigest } : {}),
       },
       target: {
@@ -329,9 +337,9 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
   const checkpointVersion = pinnedVersion(checkpoint)
   const phase = rootMissionPhase(checkpoint)
   const mode = migrationMode(checkpoint)
-  if (![SOURCE_VERSION, TARGET_VERSION].includes(checkpointVersion)) {
+  if (![...SOURCE_VERSIONS, TARGET_VERSION].includes(checkpointVersion)) {
     throw new MissionMigrationError(
-      `Unsupported Mission migration source ${GRAPH_ID}@${checkpointVersion || 'unknown'}; only ${GRAPH_ID}@${SOURCE_VERSION} can migrate to @${TARGET_VERSION}.`,
+      `Unsupported Mission migration source ${GRAPH_ID}@${checkpointVersion || 'unknown'}; supported sources are ${[...SOURCE_VERSIONS].join(', ')} for @${TARGET_VERSION}.`,
       'unsupported-version'
     )
   }
@@ -370,9 +378,9 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
     )
   }
   const rootPackage =
-    checkpointVersion === SOURCE_VERSION
-      ? loadSourcePackage(specdevPath, checkpoint.graphSource)
-      : targetPackage
+    checkpointVersion === TARGET_VERSION
+      ? targetPackage
+      : loadSourcePackage(specdevPath, checkpoint.graphSource)
   validateDurablePosition(specdevPath, checkpoint, rootPackage.manifest)
 
   const missionMapping = mapMissionRecord(currentMission, checkpoint, targetPackage.manifest, {
@@ -382,13 +390,20 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
   })
   const targetCheckpoint = mapCheckpoint(checkpoint, targetPackage.manifest)
   validateMappedPosition(targetCheckpoint, targetPackage.manifest)
+  validateDurablePosition(specdevPath, targetCheckpoint, targetPackage.manifest)
 
   return {
     currentMission,
     currentCheckpoint: checkpoint,
     sourceMission: missionMapping.sourceMission,
     sourceCheckpoint:
-      checkpointVersion === SOURCE_VERSION ? checkpoint : reverseCheckpoint(checkpoint),
+      checkpointVersion === TARGET_VERSION
+        ? reverseCheckpoint(
+            checkpoint,
+            journal?.from?.version || SOURCE_VERSION,
+            journal?.source?.active_child || null
+          )
+        : checkpoint,
     targetMission: missionMapping.targetMission,
     targetCheckpoint,
     evidenceTransitionReused: missionMapping.evidenceTransitionReused,
@@ -942,20 +957,32 @@ function mapCheckpoint(checkpoint, targetGraph) {
     if (frame.parent.graph !== GRAPH_ID) continue
     frame.parent.node = mapRootNode(frame.parent.node)
     frame.parent.graphSource = targetGraphSource(targetGraph)
+    if (frame.child.graphId === ASSIGNMENT_GRAPH_ID) {
+      frame.child = assignmentTargetGraphSource()
+    }
   }
   return mapped
 }
 
-function reverseCheckpoint(checkpoint) {
+function reverseCheckpoint(checkpoint, sourceVersion = SOURCE_VERSION, activeChildSource = null) {
   const reversed = structuredClone(checkpoint)
-  reversed.graphSource = sourceGraphSource()
-  if (reversed.position.graph === GRAPH_ID && reversed.position.node === 'resolve-gap') {
+  reversed.graphSource = sourceGraphSource(sourceVersion)
+  if (
+    sourceVersion === SOURCE_VERSION &&
+    reversed.position.graph === GRAPH_ID &&
+    reversed.position.node === 'resolve-gap'
+  ) {
     reversed.position.node = 'replan'
   }
   for (const frame of reversed.stack || []) {
     if (frame.parent.graph !== GRAPH_ID) continue
-    if (frame.parent.node === 'resolve-gap') frame.parent.node = 'replan'
-    frame.parent.graphSource = sourceGraphSource()
+    if (sourceVersion === SOURCE_VERSION && frame.parent.node === 'resolve-gap') {
+      frame.parent.node = 'replan'
+    }
+    frame.parent.graphSource = sourceGraphSource(sourceVersion)
+    if (frame.child.graphId === ASSIGNMENT_GRAPH_ID) {
+      frame.child = activeChildSource || frame.child
+    }
   }
   return reversed
 }
@@ -1021,12 +1048,12 @@ function loadSourcePackage(specdevPath, source) {
   if (
     source?.kind !== 'package' ||
     source.graphId !== GRAPH_ID ||
-    source.graphVersion !== SOURCE_VERSION ||
+    !SOURCE_VERSIONS.has(source.graphVersion) ||
     !source.packagePath
   ) {
-    throw new MissionMigrationError(`Pinned run does not identify ${GRAPH_ID}@${SOURCE_VERSION}.`)
+    throw new MissionMigrationError(`Pinned run does not identify a supported ${GRAPH_ID} source.`)
   }
-  return loadPinnedPackage(specdevPath, source.packagePath, SOURCE_VERSION)
+  return loadPinnedPackage(specdevPath, source.packagePath, source.graphVersion)
 }
 
 function loadPinnedPackage(specdevPath, packagePath, expectedVersion) {
@@ -1088,7 +1115,8 @@ function loadGraphSourcePackage(specdevPath, source, label) {
 function validateJournal(journal, mission) {
   if (
     journal.version !== 1 ||
-    journal.migration !== MIGRATION_ID ||
+    !SOURCE_VERSIONS.has(journal.from?.version) ||
+    journal.migration !== `${GRAPH_ID}@${journal.from?.version}-to-${TARGET_VERSION}` ||
     journal.mission !== mission.id ||
     journal.run_id !== mission.run_id ||
     !journal.source ||
@@ -1156,6 +1184,11 @@ function alreadyMigratedResult(mission, checkpoint, journalPath, journal = null)
   }
 }
 
+function currentTargetJournal(journal) {
+  if (journal?.status === 'completed' && journal?.to?.version !== TARGET_VERSION) return null
+  return journal
+}
+
 function assertRecoverableDigest(label, actual, source, target) {
   if (actual !== source && actual !== target) {
     throw new MissionMigrationError(
@@ -1204,12 +1237,21 @@ function targetGraphSource(graph) {
   }
 }
 
-function sourceGraphSource() {
+function assignmentTargetGraphSource() {
+  return {
+    kind: 'package',
+    graphId: ASSIGNMENT_GRAPH_ID,
+    graphVersion: ASSIGNMENT_TARGET_VERSION,
+    packagePath: ASSIGNMENT_TARGET_PACKAGE_PATH,
+  }
+}
+
+function sourceGraphSource(version = SOURCE_VERSION) {
   return {
     kind: 'package',
     graphId: GRAPH_ID,
-    graphVersion: SOURCE_VERSION,
-    packagePath: `workflows/${GRAPH_ID}@${SOURCE_VERSION}`,
+    graphVersion: version,
+    packagePath: `workflows/${GRAPH_ID}@${version}`,
   }
 }
 

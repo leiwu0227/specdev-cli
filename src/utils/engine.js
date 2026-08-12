@@ -212,6 +212,69 @@ export function hasWorkspaceEngine(projectRoot) {
   }
 }
 
+export function validateNestedWorkflowEdges(graphs) {
+  const byId = new Map(graphs.map((graph) => [graph.id, graph]))
+  const diagnostics = []
+  for (const parent of graphs) {
+    for (const [nodeId, node] of Object.entries(parent.nodes || {})) {
+      const child = node.workflowRef ? byId.get(node.workflowRef.graphId) : null
+      if (!node.workflowRef) continue
+      if (!child) {
+        diagnostics.push(`${parent.id}.${nodeId} references missing ${node.workflowRef.graphId}`)
+        continue
+      }
+      const outputs = representativeSchemaOutputs(child.outputSchema)
+      if (outputs.length === 0) {
+        diagnostics.push(`${child.id} has no enumerable output contract`)
+        continue
+      }
+      for (const output of outputs) {
+        const matches = (node.edges || []).filter((edge) => edgeMatches(edge.when, output))
+        if (matches.length !== 1) {
+          diagnostics.push(
+            `${parent.id}.${nodeId} matches ${matches.length} edges for ${JSON.stringify(output)}`
+          )
+        }
+      }
+    }
+  }
+  return diagnostics
+}
+
+function representativeSchemaOutputs(schema) {
+  if (!schema || schema.type !== 'object' || !schema.properties) return []
+  const required = new Set(schema.required || [])
+  let outputs = [{}]
+  for (const [name, property] of Object.entries(schema.properties)) {
+    if (!required.has(name) && name !== 'disposition') continue
+    let values
+    if (Array.isArray(property.enum)) values = property.enum
+    else if (property.type === 'boolean') values = [false, true]
+    else if (property.type === 'string') values = ['value']
+    else if (property.type === 'number' || property.type === 'integer') values = [1]
+    else continue
+    outputs = outputs.flatMap((output) => values.map((value) => ({ ...output, [name]: value })))
+  }
+  return outputs
+}
+
+function edgeMatches(condition, output) {
+  if (!condition) return true
+  return Object.entries(condition).every(([key, value]) => deepEqual(value, output[key]))
+}
+
+function deepEqual(left, right) {
+  if (left === right) return true
+  if (!left || !right || typeof left !== 'object' || typeof right !== 'object') return false
+  if (Array.isArray(left) !== Array.isArray(right)) return false
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every((key) => rightKeys.includes(key) && deepEqual(left[key], right[key]))
+  )
+}
+
 function readWorkflowCatalog(packagesRoot) {
   const catalogPath = join(packagesRoot, WORKFLOW_CATALOG)
   let catalog
