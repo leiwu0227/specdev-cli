@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npx prettier --write QUICKSTART.md src/commands/init.js src/commands/knowledge.js src/utils/knowledge-curation.js src/utils/knowledge.js templates/.specdev/_guides/workflow.md templates/.specdev/_index.md templates/.specdev/_main.md templates/.specdev/knowledge/_index.md templates/.specdev/skills/core/brainstorming/SKILL.md tests/test-knowledge-curation.js",
+      "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+      "scope": "Parser-backed formatting of every modified product, template, documentation, and focused test file.",
+      "status": "passed",
+      "duration_ms": 500,
+      "role": "qualification"
+    },
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+      "scope": "Whitespace and patch-integrity qualification for the dirty candidate.",
+      "status": "passed",
+      "duration_ms": 100,
+      "role": "qualification"
+    },
+    {
+      "command": "node ./tests/test-knowledge-curation.js",
+      "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+      "scope": "Focused command-level acceptance for AC-1, AC-2, and AC-3.",
+      "status": "failed",
+      "duration_ms": 1948,
+      "role": "qualification"
+    },
+    {
+      "command": "node ./tests/test-knowledge-curation.js",
+      "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+      "scope": "Focused command-level acceptance for AC-1, AC-2, and AC-3 after repairing JSON receipt fixture selection.",
+      "status": "passed",
+      "duration_ms": 3672,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node ./tests/test-knowledge-curation.js",
+      "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+      "scope": "Focused repair acceptance for AC-1, including Mission knowledge injection when more than five higher-coverage history matches precede a living-knowledge result.",
+      "status": "passed",
+      "duration_ms": 3760,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "The first authorized focused run failed before product assertions because the test selected the empty knowledge-curations/.gitkeep instead of the generated JSON receipt. The fixture now selects a .json receipt; the separately authorized rerun passed.",
+    "Implementation review found that Mission planning inherited the new precise-default fallback cap through the shared search API, which could hide all living-knowledge matches behind verified history. The Mission consumer now explicitly requests broad discovery with its existing 50-result pool, and the authorized focused regression check passed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

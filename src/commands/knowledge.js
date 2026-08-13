@@ -35,14 +35,14 @@ export async function knowledgeCommand(positionalArgs = [], flags = {}) {
   console.error(`Unknown knowledge subcommand: ${subcommand || '(none)'}`)
   console.log('Usage: specdev knowledge rebuild')
   console.log(
-    '       specdev knowledge search <keywords> [--scope=default|history|workflow|all] [--include-stale]'
+    '       specdev knowledge search <keywords> [--mode=precise|broad] [--scope=default|history|workflow|all] [--include-stale]'
   )
   console.log('       specdev knowledge list')
   console.log(
     '       specdev knowledge distill [--assignment=<id> | --mission=<id> | --discussion=<id>]'
   )
   console.log(
-    '       specdev knowledge curate [--proposal=<path> | --approve=<sha256> [--approve-big-picture=<sha256>] | --status | --cancel]'
+    '       specdev knowledge curate [--repo-evidence=<path#Lx-Ly,...> | --proposal=<path> | --approve=<sha256> [--approve-big-picture=<sha256>] | --status | --cancel]'
   )
   process.exitCode = 1
 }
@@ -80,6 +80,8 @@ async function knowledgeCurateCommand(flags = {}) {
               mission: typeof flags.mission === 'string' ? flags.mission : undefined,
               discussion: typeof flags.discussion === 'string' ? flags.discussion : undefined,
               limit: typeof flags.limit === 'string' ? flags.limit : undefined,
+              repositoryEvidence:
+                typeof flags['repo-evidence'] === 'string' ? flags['repo-evidence'] : undefined,
             })
     }
 
@@ -113,6 +115,7 @@ function printKnowledgeCuration(result) {
     console.log(`Eligible sources: ${result.eligible_source_count}`)
     console.log(`Stale FAQs: ${result.stale_faq_count}`)
     console.log(`Existing owners: ${result.owner_count}`)
+    console.log(`Repository evidence: ${result.repository_evidence.length}`)
     console.log(`Excluded dirty paths: ${result.excluded_dirt.length}`)
     console.log(result.next_action)
     return
@@ -167,7 +170,9 @@ async function knowledgeSearchCommand(positionalArgs = [], flags = {}) {
 
   try {
     const limit = typeof flags.limit === 'string' ? Number(flags.limit) : undefined
+    const mode = typeof flags.mode === 'string' ? flags.mode : 'precise'
     const results = await searchKnowledgeIndex(specdevPath, query, {
+      mode,
       scope: flags.scope || 'default',
       includeStale: Boolean(flags['include-stale']),
       limit: Number.isInteger(limit) && limit > 0 ? limit : undefined,
@@ -179,8 +184,11 @@ async function knowledgeSearchCommand(positionalArgs = [], flags = {}) {
             command: 'knowledge search',
             status: 'ok',
             query,
+            mode,
             scope: flags.scope || 'default',
             include_stale: Boolean(flags['include-stale']),
+            fallback: results.some((result) => result.match_tier === 'partial_fallback'),
+            refinement_hint: searchRefinementHint(mode, results),
             results,
           },
           null,
@@ -191,8 +199,10 @@ async function knowledgeSearchCommand(positionalArgs = [], flags = {}) {
     }
 
     console.log(`Knowledge Search: ${query}`)
+    console.log(`Mode: ${mode}`)
     if (results.length === 0) {
       console.log('No matches found.')
+      console.log(searchRefinementHint(mode, results))
       if (!flags['include-stale'])
         console.log(
           'Retry with --include-stale to check older FAQ guidance; revalidate it before use.'
@@ -206,7 +216,14 @@ async function knowledgeSearchCommand(positionalArgs = [], flags = {}) {
         `  Kind: ${result.kind}${result.assignment_id ? ` | Assignment: ${result.assignment_id}` : ''}`
       )
       console.log(
-        `  Coverage: ${Math.round(result.coverage * 100)}% | Authority: ${result.authority}`
+        `  Match: ${result.match_tier} | Coverage: ${Math.round(result.coverage * 100)}% | Authority: ${result.authority}`
+      )
+      console.log(
+        `  Matched: ${
+          [...result.matched_terms, ...result.matched_phrases.map((phrase) => `"${phrase}"`)].join(
+            ', '
+          ) || 'none'
+        }`
       )
       if (result.kind === 'faq') {
         console.log(
@@ -215,14 +232,37 @@ async function knowledgeSearchCommand(positionalArgs = [], flags = {}) {
       }
       console.log(`  ${result.snippet}`)
     }
+    const refinementHint = searchRefinementHint(mode, results)
+    if (refinementHint) console.log(`\n${refinementHint}`)
   } catch (error) {
     if (error.code === 'KNOWLEDGE_INDEX_MISSING') {
       console.error(error.message)
       process.exitCode = 1
       return
     }
+    if (
+      error.code === 'KNOWLEDGE_QUERY_INVALID' ||
+      /invalid knowledge search mode/.test(error.message)
+    ) {
+      console.error(error.message)
+      process.exitCode = 1
+      return
+    }
     throw error
   }
+}
+
+function searchRefinementHint(mode, results) {
+  if (results.some((result) => result.match_tier === 'partial_fallback')) {
+    return 'Only partial evidence matched. Use --mode=broad for wider discovery, or remove generic terms and quote a distinguishing phrase to narrow the query.'
+  }
+  if (mode === 'broad') {
+    return 'Broad mode matches any term. Omit --mode=broad and quote a distinguishing phrase to narrow the results.'
+  }
+  if (results.length === 0) {
+    return 'Try --mode=broad for any-term discovery, or simplify the precise query without removing its distinguishing terms.'
+  }
+  return null
 }
 
 async function knowledgeListCommand(flags = {}) {

@@ -51,9 +51,16 @@ does not want an Assignment. Start with \`specdev adhoc start "<scope>"\`.
 Read \`.specdev/project_notes/big_picture.md\` unconditionally. When repository
 behavior, conventions, or a recurring failure is unfamiliar, run a bounded
 \`specdev knowledge search "<objective or symptom terms>"\` before planning.
-Do not bulk-read knowledge directories. Use \`--include-stale\` only to inspect
-older guidance and revalidate it before use. Search again with exact terms when
-implementation produces an unexpected symptom.
+Precise all-term and quoted-phrase matching is the default; narrow partial or
+noisy results with distinguishing terms or a quoted phrase, and use explicit
+\`--mode=broad\` only for any-term discovery. Do not bulk-read knowledge
+directories. Treat matches as historical leads, verify relevant behavior in
+current code, and check for hard-coded counts, enumerated families, or other
+closed-world assumptions. Use \`--include-stale\` only to inspect older guidance
+and revalidate it before use. Search again with exact terms when implementation
+produces an unexpected symptom. If code verification exposes a reusable missing
+constraint, send it through an evidence-bound, user-approved \`knowledge curate\`
+proposal; source code is not bulk-indexed or promoted by search alone.
 
 A user selecting a bounded file write has not thereby selected Adhoc. In
 particular, an explicit coordination or handoff note written into another
@@ -148,7 +155,14 @@ After reading \`.specdev/project_notes/big_picture.md\`, run one bounded
 Read only relevant fresh result paths, keep repository instructions and the
 approved contract authoritative, and never bulk-load the knowledge directory.
 Carry relevant paths into contract context or the implementation plan. Search
-again with symptom terms after an unexpected failure; stale results require
+again with symptom terms after an unexpected failure. Precise all-term and
+quoted-phrase matching is the default; narrow partial or noisy results first and
+use \`--mode=broad\` only for deliberate any-term discovery. Results are
+historical investigation leads, not current authority: inspect relevant current
+code and look for hard-coded counts, enumerated families, and other closed-world
+assumptions. Route reusable constraints missing from living knowledge through a
+repository-evidence-bound, user-approved \`knowledge curate\` proposal; never
+bulk-index source or publish the search result itself. Stale results require
 explicit retrieval and revalidation.
 
 Keep the contract proportional. Reference existing project context instead of
@@ -225,7 +239,13 @@ Read \`.specdev/project_notes/big_picture.md\` unconditionally and search fresh
 living knowledge once with Mission objective terms during planning. Record only
 relevant result paths for the queue and child context. Children search again
 only for child-specific unknowns or unexpected symptoms. Never bulk-load
-knowledge or silently use stale/superseded entries.
+knowledge or silently use stale/superseded entries. Default precise search uses
+all terms and quoted phrases; narrow partial/noisy results and reserve
+\`--mode=broad\` for deliberate any-term discovery. Treat matches as historical
+leads and verify them in current code, including hard-coded counts, enumerated
+families, and other closed-world assumptions. Route reusable constraints absent
+from living knowledge through repository-evidence-bound, user-approved
+\`knowledge curate\`; never bulk-index source or treat a match as current truth.
 
 Keep the Mission contract proportional just like an Assignment contract. Do not
 restate big-picture notes or turn implementation tasks into acceptance criteria.
@@ -252,6 +272,14 @@ manifest from \`proposal_template\` under ignored
 \`.specdev/cache/knowledge-curation/\`; include durable citations, current
 verification, owner search results, conflicts, and exclusions. Update or
 supersede the owning note instead of creating parallel truth.
+
+When direct code inspection establishes a reusable constraint absent from the
+durable source, rerun the scan with bounded
+\`--repo-evidence=project/path#Lstart-Lend\`. Keep the returned content-addressed
+\`repository_evidence\` unchanged and reference it from each supported change.
+Repository evidence verifies current code bytes and location; it never replaces
+an eligible durable source, owner checks, current verification, or exact user
+approval, and source code is never bulk-indexed.
 
 Run \`specdev knowledge curate --proposal=<path> --json\` to validate and bind
 the unchanged proposal. Show its exact paths and proposal ID. Only after user

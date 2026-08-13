@@ -50,8 +50,8 @@ specdev mission approve-divergence|reject-divergence M00001 --child=00042 --iden
 specdev mission handoff M00001 --successor-assignment
 
 specdev knowledge rebuild
-specdev knowledge search "<terms>" [--include-stale] [--scope=history|workflow|all]
-specdev knowledge curate [--status]
+specdev knowledge search "<terms>" [--mode=precise|broad] [--include-stale] [--scope=history|workflow|all]
+specdev knowledge curate [--repo-evidence=path#Lstart-Lend] [--status]
 specdev knowledge distill
 ```
 

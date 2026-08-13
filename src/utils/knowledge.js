@@ -10,10 +10,12 @@ export const KNOWLEDGE_DB_SUBPATH = 'cache/knowledge.sqlite'
 export const KNOWLEDGE_DB_RELATIVE_PATH = `.specdev/${KNOWLEDGE_DB_SUBPATH}`
 const SCHEMA_VERSION = 3
 const VALID_SCOPES = new Set(['default', 'history', 'workflow', 'all'])
+const VALID_SEARCH_MODES = new Set(['precise', 'broad'])
 const VALID_KNOWLEDGE_STATUSES = new Set(['active', 'superseded'])
+const MAX_PRECISE_FALLBACK_RESULTS = 5
 
 export function normalizeFtsTerms(query) {
-  const matches = String(query || '').match(/[A-Za-z0-9_./:@-]+/g) || []
+  const matches = tokenizeFtsTerms(query)
   const seen = new Set()
   const terms = []
   for (const raw of matches) {
@@ -26,10 +28,61 @@ export function normalizeFtsTerms(query) {
   return terms
 }
 
-export function normalizeFtsQuery(query) {
-  return normalizeFtsTerms(query)
-    .map((term) => `"${term.replaceAll('"', '""')}"`)
-    .join(' OR ')
+export function parseKnowledgeSearchQuery(query) {
+  const input = String(query || '').trim()
+  const atoms = []
+  let outside = ''
+  let phrase = ''
+  let quoted = false
+
+  const addTerms = (value) => {
+    for (const term of normalizeFtsTerms(value)) atoms.push({ type: 'term', value: term })
+  }
+  const addPhrase = (value) => {
+    const normalized = tokenizeFtsTerms(value).join(' ')
+    if (!normalized) throw invalidKnowledgeQuery('quoted phrases must contain searchable text')
+    atoms.push({ type: 'phrase', value: normalized })
+  }
+
+  for (const character of input) {
+    if (character === '"') {
+      if (quoted) {
+        addPhrase(phrase)
+        phrase = ''
+      } else {
+        addTerms(outside)
+        outside = ''
+      }
+      quoted = !quoted
+      continue
+    }
+    if (quoted) phrase += character
+    else outside += character
+  }
+  if (quoted) throw invalidKnowledgeQuery('quoted phrase is not closed')
+  addTerms(outside)
+
+  const seen = new Set()
+  const uniqueAtoms = atoms.filter((atom) => {
+    const key = `${atom.type}:${atom.value.toLowerCase()}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+  if (uniqueAtoms.length === 0) {
+    throw invalidKnowledgeQuery('query contains no searchable terms or phrases')
+  }
+  return {
+    atoms: uniqueAtoms,
+    terms: uniqueAtoms.filter((atom) => atom.type === 'term').map((atom) => atom.value),
+    phrases: uniqueAtoms.filter((atom) => atom.type === 'phrase').map((atom) => atom.value),
+  }
+}
+
+export function normalizeFtsQuery(query, mode = 'broad') {
+  if (!VALID_SEARCH_MODES.has(mode)) throw new Error(`invalid knowledge search mode: ${mode}`)
+  const separator = mode === 'precise' ? ' AND ' : ' OR '
+  return parseKnowledgeSearchQuery(query).atoms.map(escapeFtsAtom).join(separator)
 }
 
 export async function buildKnowledgeIndex(specdevPath) {
@@ -122,8 +175,9 @@ export async function buildKnowledgeIndex(specdevPath) {
 export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
   const scope = options.scope || 'default'
   if (!VALID_SCOPES.has(scope)) throw new Error(`invalid knowledge scope: ${scope}`)
-  const terms = normalizeFtsTerms(query)
-  if (terms.length === 0) return []
+  const mode = options.mode || 'precise'
+  if (!VALID_SEARCH_MODES.has(mode)) throw new Error(`invalid knowledge search mode: ${mode}`)
+  const parsedQuery = parseKnowledgeSearchQuery(query)
   if (await knowledgeIndexIsStale(specdevPath)) await buildKnowledgeIndex(specdevPath)
 
   const sqlite = await loadSqlite()
@@ -135,12 +189,7 @@ export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
     const freshnessClause = options.includeStale
       ? ''
       : 'AND (d.review_after IS NULL OR d.review_after >= ?)'
-    const parameters = [normalizeFtsQuery(query), ...eligibility]
-    if (!options.includeStale) parameters.push(today)
-    parameters.push(Math.max(limit * 50, 500))
-    const rows = db
-      .prepare(
-        `
+    const statement = db.prepare(`
       SELECT
         d.path, d.kind, d.authority, d.completion_status,
         d.assignment_id, d.mission_id, d.phase, d.title, d.content,
@@ -154,14 +203,29 @@ export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
         ${freshnessClause}
       ORDER BY score
       LIMIT ?
-    `
-      )
-      .all(...parameters)
+    `)
+    const runQuery = (ftsQuery) => {
+      const parameters = [ftsQuery, ...eligibility]
+      if (!options.includeStale) parameters.push(today)
+      parameters.push(Math.max(limit * 50, 500))
+      return statement.all(...parameters)
+    }
+
+    let tier = mode === 'broad' ? 'broad' : parsedQuery.phrases.length > 0 ? 'phrase' : 'complete'
+    let resultLimit = limit
+    let rows = runQuery(normalizeFtsQuery(query, mode))
+    if (mode === 'precise' && rows.length === 0 && parsedQuery.atoms.length > 1) {
+      tier = 'partial_fallback'
+      resultLimit = Math.min(limit, MAX_PRECISE_FALLBACK_RESULTS)
+      rows = runQuery(normalizeFtsQuery(query, 'broad'))
+    }
 
     return rows
       .map((row) => ({
         ...row,
-        coverage: matchedCoverage(row, terms),
+        ...matchDiagnostics(row, parsedQuery),
+        match_mode: mode,
+        match_tier: tier,
         freshness: knowledgeFreshness(row, today),
         applies_to: parseJsonValue(row.applies_to),
         sources: parseJsonValue(row.source_paths) || [],
@@ -174,7 +238,7 @@ export async function searchKnowledgeIndex(specdevPath, query, options = {}) {
           left.score - right.score ||
           left.path.localeCompare(right.path)
       )
-      .slice(0, limit)
+      .slice(0, resultLimit)
       .map(({ content, applies_to, source_paths, ...row }) => ({
         ...row,
         ...(applies_to ? { applies_to } : {}),
@@ -452,9 +516,57 @@ function scopeEligibility(scope) {
 }
 
 function matchedCoverage(row, terms) {
+  const diagnostics = matchDiagnostics(row, {
+    atoms: terms.map((term) => ({ type: 'term', value: term })),
+    terms,
+    phrases: [],
+  })
+  return diagnostics.coverage
+}
+
+function matchDiagnostics(row, parsedQuery) {
   const haystack = `${row.title}\n${row.path}\n${row.content}`.toLowerCase()
-  const matched = terms.filter((term) => haystack.includes(term.toLowerCase())).length
-  return matched / terms.length
+  const haystackTerms = tokenizeFtsTerms(haystack).map((term) => term.toLowerCase())
+  const termSet = new Set(haystackTerms)
+  const matchedTerms = parsedQuery.terms.filter(
+    (term) => termSet.has(term.toLowerCase()) || haystack.includes(term.toLowerCase())
+  )
+  const matchedPhrases = parsedQuery.phrases.filter((phrase) =>
+    containsTermSequence(
+      haystackTerms,
+      tokenizeFtsTerms(phrase).map((term) => term.toLowerCase())
+    )
+  )
+  const matchedAtomCount = matchedTerms.length + matchedPhrases.length
+  return {
+    coverage: matchedAtomCount / parsedQuery.atoms.length,
+    matched_terms: matchedTerms,
+    matched_phrases: matchedPhrases,
+  }
+}
+
+function tokenizeFtsTerms(value) {
+  return (String(value || '').match(/[A-Za-z0-9_./:@-]+/g) || [])
+    .map((term) => term.replace(/^[./:@-]+|[./:@-]+$/g, ''))
+    .filter(Boolean)
+}
+
+function containsTermSequence(haystack, needle) {
+  if (needle.length === 0 || needle.length > haystack.length) return false
+  for (let index = 0; index <= haystack.length - needle.length; index += 1) {
+    if (needle.every((term, offset) => haystack[index + offset] === term)) return true
+  }
+  return false
+}
+
+function escapeFtsAtom(atom) {
+  return `"${atom.value.replaceAll('"', '""')}"`
+}
+
+function invalidKnowledgeQuery(message) {
+  const error = new Error(`invalid knowledge query: ${message}`)
+  error.code = 'KNOWLEDGE_QUERY_INVALID'
+  return error
 }
 
 function sourceFingerprint(documents) {

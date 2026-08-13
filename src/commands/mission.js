@@ -2824,9 +2824,12 @@ async function validateAndReserveQueue(specdevPath, missionPath, knowledgePaths 
   }
 }
 
-async function missionKnowledgePaths(specdevPath, objective) {
+export async function missionKnowledgePaths(specdevPath, objective) {
   try {
-    const results = await searchKnowledgeIndex(specdevPath, objective, { limit: 50 })
+    const results = await searchKnowledgeIndex(specdevPath, objective, {
+      mode: 'broad',
+      limit: 50,
+    })
     return results
       .filter(
         (result) =>

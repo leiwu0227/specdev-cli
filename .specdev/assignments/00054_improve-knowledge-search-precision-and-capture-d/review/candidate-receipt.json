@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "b1c0c0aa59ad26d3f89e7dd2c86ebbf66abb07d0650167b7124a7d6dcfd35a77",
+  "assignment": {
+    "id": "00054",
+    "folder": "00054_improve-knowledge-search-precision-and-capture-d"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00054_improve-knowledge-search-precision-and-capture-d/brainstorm/contract.md",
+    "hash": "22fe2803e329a7b9f113588f4adaf018f20187af812f2ca9b38134834c30cf03"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`node ./tests/test-knowledge-curation.js` verifies precise, phrase, broad, bounded fallback, malformed-query, diagnostics, refinement behavior, and Mission broad-discovery injection beyond the five-row precise fallback cap.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`node ./tests/test-knowledge-curation.js` verifies bounded tracked repository evidence, content identity, approval invalidation, per-change attribution, and durable receipt behavior.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`node ./tests/test-knowledge-curation.js` verifies canonical installed Assignment, Mission, Adhoc, curation, and workflow guidance.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 5,
+    "items": [
+      {
+        "command": "npx prettier --write QUICKSTART.md src/commands/init.js src/commands/knowledge.js src/utils/knowledge-curation.js src/utils/knowledge.js templates/.specdev/_guides/workflow.md templates/.specdev/_index.md templates/.specdev/_main.md temp...",
+        "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+        "scope": "Parser-backed formatting of every modified product, template, documentation, and focused test file.",
+        "status": "passed",
+        "duration_ms": 500,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "git diff --check",
+        "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+        "scope": "Whitespace and patch-integrity qualification for the dirty candidate.",
+        "status": "passed",
+        "duration_ms": 100,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node ./tests/test-knowledge-curation.js",
+        "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+        "scope": "Focused command-level acceptance for AC-1, AC-2, and AC-3.",
+        "status": "failed",
+        "duration_ms": 1948,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node ./tests/test-knowledge-curation.js",
+        "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+        "scope": "Focused command-level acceptance for AC-1, AC-2, and AC-3 after repairing JSON receipt fixture selection.",
+        "status": "passed",
+        "duration_ms": 3672,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node ./tests/test-knowledge-curation.js",
+        "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+        "scope": "Focused repair acceptance for AC-1, including Mission knowledge injection when more than five higher-coverage history matches precede a living-knowledge result.",
+        "status": "passed",
+        "duration_ms": 3760,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 1,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "node ./tests/test-knowledge-curation.js",
+        "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+        "status": "passed"
+      },
+      {
+        "command": "node ./tests/test-knowledge-curation.js",
+        "revision": "working-tree@b9a1313eb153eb21c8ea90cb4fdeb728d00f6224",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 12,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "QUICKSTART.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 5,
+        "paths": [
+          "src/commands/init.js",
+          "src/commands/knowledge.js",
+          "src/commands/mission.js",
+          "src/utils/knowledge-curation.js",
+          "src/utils/knowledge.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 5,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md",
+          "templates/.specdev/_index.md",
+          "templates/.specdev/_main.md",
+          "templates/.specdev/knowledge/_index.md",
+          "templates/.specdev/skills/core/brainstorming/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-knowledge-curation.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "None identified after the focused command-level repair acceptance. No full suite was run or needed for this bounded change."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00054_improve-knowledge-search-precision-and-capture-d/brainstorm/contract.md",
+      "exists": true,
+      "digest": "22fe2803e329a7b9f113588f4adaf018f20187af812f2ca9b38134834c30cf03"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00054_improve-knowledge-search-precision-and-capture-d/design/plan.md",
+      "exists": true,
+      "digest": "a82833534403382944c1fd683afc7443df03f30502b0c15d3cc855b0f35b4141"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00054_improve-knowledge-search-precision-and-capture-d/implementation/progress.json",
+      "exists": true,
+      "digest": "a743947ff050e651311a81c8c867670f935a04b8204d914eea0fe40c2aa529ff"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00054_improve-knowledge-search-precision-and-capture-d/outcome.md",
+      "exists": true,
+      "digest": "68262f8cc5b5350d9210f9ada282c6476289b16e50646c1a3486941b5655271c"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

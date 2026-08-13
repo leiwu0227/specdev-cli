@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
+import { execFile as execFileCallback } from 'node:child_process'
 import { dirname, join, relative, sep } from 'node:path'
+import { promisify } from 'node:util'
 import fse from 'fs-extra'
 import { gitStatusEntries, requireGitHead, currentGitBranch } from './git-delivery.js'
 import {
@@ -21,12 +23,22 @@ const KNOWLEDGE_BRANCHES = new Set([
 const CURATION_VERSION = 1
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 100
+const MAX_REPOSITORY_EVIDENCE = 8
+const MAX_REPOSITORY_EVIDENCE_LINES = 200
+const MAX_REPOSITORY_EVIDENCE_BYTES = 32 * 1024
+const MAX_REPOSITORY_FILE_BYTES = 512 * 1024
 const BIG_PICTURE_PATH = 'project_notes/big_picture.md'
+const execFile = promisify(execFileCallback)
 
 export async function scanKnowledgeCuration(targetDir, specdevPath, options = {}) {
   const limit = boundedLimit(options.limit)
   const documents = await collectKnowledgeDocuments(specdevPath)
   const boundary = await readGitBoundary(targetDir)
+  const repositoryEvidence = await inspectRepositoryEvidence(
+    targetDir,
+    options.repositoryEvidence || [],
+    boundary
+  )
   const dirty = new Set(boundary.entries.map((entry) => fromRepoPath(entry.path)))
   const brief = await buildKnowledgeDistillationBrief(specdevPath, {
     assignment: options.assignment,
@@ -63,6 +75,7 @@ export async function scanKnowledgeCuration(targetDir, specdevPath, options = {}
     branch: boundary.branch,
     git_entries: boundary.entries,
     documents: documentHashes,
+    repository_evidence: repositoryEvidence,
   }
   const scanId = digest(scanIdentity)
 
@@ -102,10 +115,12 @@ export async function scanKnowledgeCuration(targetDir, specdevPath, options = {}
       authority: 'separate_explicit_approval',
     },
     excluded_dirt: excludedDirt,
+    repository_evidence: repositoryEvidence,
     proposal_template: {
       version: CURATION_VERSION,
       scan_id: scanId,
       summary: '',
+      repository_evidence: repositoryEvidence,
       changes: [],
       big_picture: null,
       conflicts: [],
@@ -118,7 +133,10 @@ export async function scanKnowledgeCuration(targetDir, specdevPath, options = {}
 
 export async function prepareKnowledgeCuration(targetDir, specdevPath, proposalPath) {
   const rawProposal = await fse.readJson(proposalPath)
-  const scan = await scanKnowledgeCuration(targetDir, specdevPath, rawProposal.scope || {})
+  const scan = await scanKnowledgeCuration(targetDir, specdevPath, {
+    ...(rawProposal.scope || {}),
+    repositoryEvidence: repositoryEvidenceSelectors(rawProposal.repository_evidence),
+  })
   const documents = await collectKnowledgeDocuments(specdevPath)
   const documentHashes = Object.fromEntries(
     documents.map((document) => [document.path, document.contentHash])
@@ -154,6 +172,7 @@ export async function prepareKnowledgeCuration(targetDir, specdevPath, proposalP
       scan_id: scan.scan_id,
       boundary: scan.boundary,
       document_hashes: documentHashes,
+      repository_evidence: scan.repository_evidence,
     },
     proposal,
     published_paths: [],
@@ -311,6 +330,13 @@ function validateProposal(proposal, scan, documentHashes) {
   if (proposal.changes.length > MAX_LIMIT)
     throw new Error(`Curation proposal exceeds ${MAX_LIMIT} changes`)
 
+  const repositoryEvidence = validateRepositoryEvidence(
+    proposal.repository_evidence,
+    scan.repository_evidence
+  )
+  const evidenceReferences = new Set(repositoryEvidence.map((evidence) => evidence.reference))
+  const usedEvidenceReferences = new Set()
+
   const knownDocuments = new Map(Object.entries(documentHashes))
   const dirtyPaths = new Set(scan.boundary.entries.map((entry) => fromRepoPath(entry.path)))
   const paths = new Set()
@@ -342,6 +368,12 @@ function validateProposal(proposal, scan, documentHashes) {
     validateOwnerCheck(change.owner_check, change.action, path, scan, field)
     validateVerification(change.verification, field)
     validateKnowledgeContent(change, path, knownDocuments, dirtyPaths, scan)
+    const changeRepositoryEvidence = normalizeEvidenceReferences(
+      change.repository_evidence,
+      evidenceReferences,
+      field
+    )
+    for (const reference of changeRepositoryEvidence) usedEvidenceReferences.add(reference)
     return {
       path,
       action: change.action,
@@ -349,6 +381,9 @@ function validateProposal(proposal, scan, documentHashes) {
       content: change.content,
       owner_check: normalizeOwnerCheck(change.owner_check),
       verification: normalizeVerification(change.verification),
+      ...(changeRepositoryEvidence.length > 0
+        ? { repository_evidence: changeRepositoryEvidence }
+        : {}),
     }
   })
   const proposedPaths = new Set(changes.map((change) => change.path))
@@ -358,6 +393,14 @@ function validateProposal(proposal, scan, documentHashes) {
     if (!knownDocuments.has(replacement) && !proposedPaths.has(replacement)) {
       throw new Error(
         `${change.path} superseded_by target is not current or proposed: ${replacement}`
+      )
+    }
+  }
+
+  for (const evidence of repositoryEvidence) {
+    if (!usedEvidenceReferences.has(evidence.reference)) {
+      throw new Error(
+        `repository evidence ${evidence.reference} is not attributed to a proposed knowledge change`
       )
     }
   }
@@ -394,6 +437,7 @@ function validateProposal(proposal, scan, documentHashes) {
     scan_id: proposal.scan_id,
     ...(proposal.scope ? { scope: normalizeScope(proposal.scope) } : {}),
     summary: String(proposal.summary || '').trim(),
+    repository_evidence: repositoryEvidence,
     changes,
     big_picture: bigPicture,
     conflicts: normalizeFindings(proposal.conflicts, 'conflicts'),
@@ -516,6 +560,7 @@ async function assertPublicationBoundary(targetDir, specdevPath, journal, publis
       throw new Error(`${documentPath} appeared after proposal approval; rescan before publication`)
     }
   }
+  await assertRepositoryEvidence(targetDir, journal.proposal.repository_evidence, current.revision)
 }
 
 function buildReceipt(journal, selectedChanges, publishBigPicture) {
@@ -532,7 +577,9 @@ function buildReceipt(journal, selectedChanges, publishBigPicture) {
       content_hash: hashText(change.content),
       sources: parseKnowledgeMetadata(change.content, change.path).sources,
       verification: change.verification,
+      ...(change.repository_evidence ? { repository_evidence: change.repository_evidence } : {}),
     })),
+    repository_evidence: journal.proposal.repository_evidence,
     big_picture: publishBigPicture
       ? { approved: true, content_hash: hashText(journal.proposal.big_picture.content) }
       : { approved: false, proposed: Boolean(journal.proposal.big_picture) },
@@ -571,6 +618,7 @@ function publicJournal(journal) {
     proposal_id: journal.proposal_id,
     big_picture_approval: journal.big_picture_approval,
     proposed_paths: journal.proposal.changes.map((change) => change.path),
+    repository_evidence_count: journal.proposal.repository_evidence.length,
     big_picture_proposed: Boolean(journal.proposal.big_picture),
     published_paths: journal.published_paths,
     index: journal.index,
@@ -598,6 +646,260 @@ async function readGitBoundary(targetDir) {
     gitStatusEntries(targetDir),
   ])
   return { revision, branch, entries }
+}
+
+async function inspectRepositoryEvidence(targetDir, value, boundary) {
+  const selectors = normalizeRepositoryEvidenceSelectors(value)
+  if (selectors.length > MAX_REPOSITORY_EVIDENCE) {
+    throw new Error(`Repository evidence accepts at most ${MAX_REPOSITORY_EVIDENCE} locations`)
+  }
+  const dirtyPaths = new Set(boundary.entries.map((entry) => normalizeProjectPath(entry.path)))
+  const references = new Set()
+  const evidence = []
+  for (const selector of selectors) {
+    const reference = evidenceReference(selector)
+    if (references.has(reference)) {
+      throw new Error(`Repository evidence location is ambiguous or duplicated: ${reference}`)
+    }
+    references.add(reference)
+    if (dirtyPaths.has(selector.path)) {
+      throw new Error(
+        `Repository evidence ${selector.path} is dirty; restore or commit it, then rescan before proposing curation`
+      )
+    }
+    if (isGeneratedRepositoryEvidencePath(selector.path)) {
+      throw new Error(`Repository evidence ${selector.path} appears generated and is not eligible`)
+    }
+
+    const absolute = join(targetDir, selector.path)
+    const back = relative(targetDir, absolute).split(sep).join('/')
+    if (back !== selector.path) {
+      throw new Error(`Repository evidence escapes the project: ${selector.path}`)
+    }
+    const stat = await fse.lstat(absolute).catch(() => null)
+    if (!stat || !stat.isFile() || stat.isSymbolicLink()) {
+      throw new Error(`Repository evidence ${selector.path} must be a readable regular file`)
+    }
+    const real = await fse.realpath(absolute).catch(() => null)
+    if (!real || relative(targetDir, real).split(sep).join('/').startsWith('../')) {
+      throw new Error(`Repository evidence ${selector.path} resolves outside the project`)
+    }
+    if (stat.size > MAX_REPOSITORY_FILE_BYTES) {
+      throw new Error(
+        `Repository evidence ${selector.path} exceeds the ${MAX_REPOSITORY_FILE_BYTES}-byte file bound`
+      )
+    }
+
+    const tracked = await gitProbe(targetDir, ['ls-files', '--error-unmatch', '--', selector.path])
+    if (!tracked.ok) {
+      throw new Error(
+        `Repository evidence ${selector.path} must be an unambiguous tracked file at ${boundary.revision}`
+      )
+    }
+    const ignored = await gitProbe(targetDir, [
+      'check-ignore',
+      '--no-index',
+      '-q',
+      '--',
+      selector.path,
+    ])
+    if (ignored.ok) {
+      throw new Error(
+        `Repository evidence ${selector.path} is ignored and not eligible; choose tracked source and rescan`
+      )
+    }
+    const attributes = await gitProbe(targetDir, ['check-attr', '--all', '--', selector.path])
+    if (
+      attributes.ok &&
+      /(?:^|\n)[^\n]+:\s*(?:linguist-generated|generated):\s*(?:set|true)\s*$/m.test(
+        attributes.stdout
+      )
+    ) {
+      throw new Error(
+        `Repository evidence ${selector.path} is marked generated and is not eligible`
+      )
+    }
+
+    const bytes = await fse.readFile(absolute).catch(() => null)
+    if (!bytes) throw new Error(`Repository evidence ${selector.path} is not readable`)
+    const text = bytes.toString('utf8')
+    if (!Buffer.from(text, 'utf8').equals(bytes)) {
+      throw new Error(`Repository evidence ${selector.path} must be UTF-8 text`)
+    }
+    const lines = text.match(/[^\n]*\n|[^\n]+$/g) || []
+    if (selector.line_end > lines.length) {
+      throw new Error(
+        `Repository evidence ${reference} exceeds the file's ${lines.length} attributable lines`
+      )
+    }
+    const lineCount = selector.line_end - selector.line_start + 1
+    if (lineCount > MAX_REPOSITORY_EVIDENCE_LINES) {
+      throw new Error(
+        `Repository evidence ${reference} exceeds the ${MAX_REPOSITORY_EVIDENCE_LINES}-line bound`
+      )
+    }
+    const selectedBytes = Buffer.from(
+      lines.slice(selector.line_start - 1, selector.line_end).join(''),
+      'utf8'
+    )
+    if (selectedBytes.length > MAX_REPOSITORY_EVIDENCE_BYTES) {
+      throw new Error(
+        `Repository evidence ${reference} exceeds the ${MAX_REPOSITORY_EVIDENCE_BYTES}-byte selection bound`
+      )
+    }
+    evidence.push({
+      reference,
+      path: selector.path,
+      line_start: selector.line_start,
+      line_end: selector.line_end,
+      revision: boundary.revision,
+      content_hash: hashText(selectedBytes),
+      file_hash: hashText(bytes),
+      byte_length: selectedBytes.length,
+    })
+  }
+  return evidence.sort((left, right) => left.reference.localeCompare(right.reference))
+}
+
+async function assertRepositoryEvidence(targetDir, expected, revision) {
+  if (!Array.isArray(expected) || expected.length === 0) return
+  const boundary = await readGitBoundary(targetDir)
+  if (boundary.revision !== revision) {
+    throw new Error('Repository evidence Git boundary changed; rescan before publication')
+  }
+  const actual = await inspectRepositoryEvidence(
+    targetDir,
+    repositoryEvidenceSelectors(expected),
+    boundary
+  )
+  if (stableStringify(actual) !== stableStringify(expected)) {
+    throw new Error(
+      'Repository evidence bytes or attributable locations changed; rescan before publication'
+    )
+  }
+}
+
+function validateRepositoryEvidence(value, expected) {
+  const proposed = Array.isArray(value) ? value : value === undefined ? [] : null
+  if (!proposed) throw new Error('repository_evidence must be a list')
+  if (stableStringify(proposed) !== stableStringify(expected || [])) {
+    throw new Error('repository_evidence does not match the current bounded scan')
+  }
+  return (expected || []).map((evidence) => ({ ...evidence }))
+}
+
+function normalizeEvidenceReferences(value, knownReferences, field) {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) throw new Error(`${field}.repository_evidence must be a list`)
+  const references = [...new Set(value.map((item) => String(item || '').trim()))]
+  for (const reference of references) {
+    if (!knownReferences.has(reference)) {
+      throw new Error(`${field}.repository_evidence references unknown evidence ${reference}`)
+    }
+  }
+  return references.sort()
+}
+
+function repositoryEvidenceSelectors(value) {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) throw new Error('repository_evidence must be a list')
+  return value.map((item) => {
+    if (typeof item === 'string') return item
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      throw new Error('repository_evidence entries must be bound evidence objects')
+    }
+    return {
+      path: item.path,
+      line_start: item.line_start,
+      line_end: item.line_end,
+    }
+  })
+}
+
+function normalizeRepositoryEvidenceSelectors(value) {
+  const items =
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : Array.isArray(value)
+        ? value
+        : value === undefined || value === null
+          ? []
+          : [value]
+  return items.map((item, index) => {
+    if (typeof item === 'string') {
+      const match = item.match(/^(.+)#L([1-9]\d*)(?:-L?([1-9]\d*))?$/)
+      if (!match) {
+        throw new Error(`Repository evidence ${index + 1} must use project/path#Lstart-Lend`)
+      }
+      return normalizeRepositoryEvidenceSelector(match[1], match[2], match[3] || match[2])
+    }
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      throw new Error(`Repository evidence ${index + 1} must be a location string or object`)
+    }
+    return normalizeRepositoryEvidenceSelector(item.path, item.line_start, item.line_end)
+  })
+}
+
+function normalizeRepositoryEvidenceSelector(pathValue, startValue, endValue) {
+  const path = normalizeProjectPath(pathValue)
+  if (
+    !path ||
+    path.startsWith('/') ||
+    path === '..' ||
+    path.startsWith('../') ||
+    path.includes('/../') ||
+    path === '.specdev' ||
+    path.startsWith('.specdev/') ||
+    path === '.git' ||
+    path.startsWith('.git/')
+  ) {
+    throw new Error('Repository evidence paths must be safe project-relative product paths')
+  }
+  const lineStart = Number(startValue)
+  const lineEnd = Number(endValue)
+  if (
+    !Number.isInteger(lineStart) ||
+    !Number.isInteger(lineEnd) ||
+    lineStart < 1 ||
+    lineEnd < lineStart
+  ) {
+    throw new Error(`Repository evidence ${path} requires a valid ascending line range`)
+  }
+  return { path, line_start: lineStart, line_end: lineEnd }
+}
+
+function evidenceReference(selector) {
+  return `${selector.path}#L${selector.line_start}-L${selector.line_end}`
+}
+
+function normalizeProjectPath(value) {
+  return String(value || '')
+    .trim()
+    .replaceAll('\\', '/')
+}
+
+function isGeneratedRepositoryEvidencePath(path) {
+  const parts = path.toLowerCase().split('/')
+  if (
+    parts.some((part) =>
+      ['node_modules', 'dist', 'build', 'coverage', '.next', 'generated'].includes(part)
+    )
+  ) {
+    return true
+  }
+  return /(?:\.min\.[^.]+|\.map|\.generated\.[^.]+)$/.test(parts.at(-1))
+}
+
+async function gitProbe(targetDir, args) {
+  try {
+    const { stdout = '' } = await execFile('git', args, { cwd: targetDir, encoding: 'utf8' })
+    return { ok: true, stdout }
+  } catch (error) {
+    return { ok: false, stdout: error.stdout || '', stderr: error.stderr || '' }
+  }
 }
 
 function normalizeOwnerCheck(value) {

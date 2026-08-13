@@ -21,7 +21,9 @@ reusable finding into living knowledge.
 
 `specdev knowledge rebuild` derives ignored `cache/knowledge.sqlite` from
 Markdown. Search rebuilds it synchronously when missing or stale. Default search
-uses authoritative current notes, fresh FAQs, and verified outcomes. Use
+uses precise all-term and quoted-phrase matching over authoritative current
+notes, fresh FAQs, and verified outcomes, with a bounded labeled partial fallback.
+Use `--mode=broad` for explicit any-term discovery. Use
 `--include-stale` only when older guidance is useful and verify it before reuse;
 use explicit scopes for broader history, superseded entries, or workflow
 material.

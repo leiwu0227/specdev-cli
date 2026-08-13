@@ -1,0 +1,10 @@
+{
+  "id": "00054",
+  "name": "00054_improve-knowledge-search-precision-and-capture-d",
+  "path": ".specdev/assignments/00054_improve-knowledge-search-precision-and-capture-d",
+  "description": "Improve knowledge search precision and capture durable implementation assumptions discovered during code inspection",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

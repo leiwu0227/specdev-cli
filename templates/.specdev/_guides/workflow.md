@@ -109,13 +109,19 @@ Markdown must not be treated as a SpecDev verdict.
 ## Knowledge
 
 Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.
-Always read `project_notes/big_picture.md`. Use default OR search at the planning
-or uncertainty boundary instead of reading every note: Assignment uses objective
-terms and records useful paths in its plan; Mission searches once and passes
-relevant paths to children; Adhoc searches only for unfamiliar behavior or
-conventions. Search unexpected symptoms again. FAQ entries past `review_after`
-require explicit `--include-stale` and revalidation; `status: superseded` stays
-outside default scope.
+Always read `project_notes/big_picture.md`. Use default precise all-term or
+quoted-phrase search at the planning or uncertainty boundary instead of reading
+every note; reserve `--mode=broad` for explicit any-term discovery. Narrow noisy
+partial matches with distinguishing terms or phrases. Assignment records useful
+paths in its plan; Mission searches once and passes relevant paths to children;
+Adhoc searches only for unfamiliar behavior or conventions. Search unexpected
+symptoms again. Treat matches as historical leads and verify relevant current
+code, including hard-coded counts, enumerated families, or other closed-world
+assumptions. Reusable constraints missing from living knowledge go through an
+evidence-bound, user-approved curation proposal; source is not bulk-indexed or
+promoted by search. FAQ entries past `review_after` require explicit
+`--include-stale` and revalidation; `status: superseded` stays outside default
+scope.
 
 `specdev knowledge curate` scans without authoritative mutation, validates an
 exact content-addressed proposal, separates big-picture approval, publishes only
@@ -123,6 +129,9 @@ approved Markdown, writes one idempotent receipt, and automatically rebuilds the
 disposable index. Resume with `--status`. A failed rebuild leaves published truth
 in place and reports `specdev knowledge rebuild`. The legacy `knowledge distill`
 brief remains read-only compatibility and is not a publication workflow.
+Bounded `--repo-evidence=path#Lstart-Lend` attaches clean tracked current-code
+bytes and their Git boundary to a proposal, but never replaces durable-source,
+verification, owner, destination-approval, receipt, or rebuild requirements.
 
 ## Verification
 

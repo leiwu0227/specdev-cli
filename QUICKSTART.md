@@ -200,16 +200,21 @@ rebuildable FTS cache.
 ```bash
 specdev knowledge rebuild
 specdev knowledge search "routing retry timeout"
+specdev knowledge search '"routing retry" timeout'
+specdev knowledge search "routing retry timeout" --mode=broad
 specdev knowledge search "old workaround" --include-stale
 specdev knowledge curate --json
+specdev knowledge curate --repo-evidence=src/router.js#L20-L28 --json
 specdev knowledge distill
 ```
 
-Keyword eligibility uses OR semantics by default, then ranks results by term
-coverage and BM25. Curation scans completed work, stale FAQs, existing owners,
-and project context without changing authoritative Markdown. An exact validated
-proposal requires user approval, publishes idempotently, records one receipt,
-and rebuilds the derived index. `knowledge distill` remains a read-only
+Search uses precise all-term and quoted-phrase semantics by default, with a
+bounded labeled partial fallback; `--mode=broad` explicitly enables any-term
+discovery. Results report coverage and matched terms or phrases. Curation scans
+completed work, stale FAQs, existing owners, bounded tracked repository
+evidence, and project context without changing authoritative Markdown. An exact
+validated proposal requires user approval, publishes idempotently, records one
+receipt, and rebuilds the derived index. `knowledge distill` remains a read-only
 compatibility brief.
 
 ## Compact command reference
@@ -235,7 +240,7 @@ compatibility brief.
 | `specdev mission land M00001`          | Retry a completed Mission's safe fast-forward    |
 | `specdev reviewloop <phase>`           | Run the configured bounded reviewer loop         |
 | `specdev knowledge rebuild`            | Rebuild disposable SQLite search                 |
-| `specdev knowledge search "<terms>"`   | OR-search authoritative Markdown                 |
+| `specdev knowledge search "<terms>"`   | Precise-default search with explicit broad mode  |
 | `specdev knowledge curate`             | Verify, approve, publish, and reindex knowledge  |
 | `specdev knowledge distill`            | Prepare an on-demand curation brief              |
 | `specdev continue`                     | Diagnose durable state and the next action       |

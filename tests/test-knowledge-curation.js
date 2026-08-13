@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { missionKnowledgePaths } from '../src/commands/mission.js'
 import { applyKnowledgeCuration } from '../src/utils/knowledge-curation.js'
 
 const repoRoot = resolve(import.meta.dirname, '..')
@@ -75,9 +76,21 @@ try {
   )
   const bigPicturePath = join(specdevPath, 'project_notes', 'big_picture.md')
   writeFileSync(bigPicturePath, '# Project Big Picture\n\nCurrent project context.\n')
+  const repositoryEvidencePath = join(root, 'src', 'router.js')
+  mkdirSync(join(root, 'src'), { recursive: true })
+  writeFileSync(
+    repositoryEvidencePath,
+    "const retryOwners = ['primary', 'recovery']\nexport const retryOwnerCount = retryOwners.length\n"
+  )
   commit('knowledge fixture')
 
-  const initialScan = runJson(['knowledge', 'curate'])
+  const invalidEvidence = runJson(
+    ['knowledge', 'curate', '--repo-evidence=src/router.js#L1-L999'],
+    1
+  )
+  assert.match(invalidEvidence.error, /attributable lines/)
+
+  const initialScan = runJson(['knowledge', 'curate', '--repo-evidence=src/router.js#L1-L2'])
   assert.equal(initialScan.status, 'scan_ready')
   assert.equal(initialScan.mutation_free, true)
   assert.equal(initialScan.excluded_dirt.length, 0)
@@ -87,6 +100,10 @@ try {
     ),
     true
   )
+  assert.equal(initialScan.repository_evidence.length, 1)
+  assert.equal(initialScan.repository_evidence[0].path, 'src/router.js')
+  assert.equal(initialScan.repository_evidence[0].revision.length, 40)
+  assert.match(initialScan.repository_evidence[0].content_hash, /^[a-f0-9]{64}$/)
 
   const architectureContent = `---\nstatus: active\nsources:\n  - assignments/00001_knowledge-source/outcome.md\n---\n\n# Router retry ownership\n\nUse one deterministic retry owner.\n`
   const firstProposal = {
@@ -104,6 +121,7 @@ try {
           decision: 'create',
         },
         verification: evidence(),
+        repository_evidence: [initialScan.repository_evidence[0].reference],
       },
     ],
     big_picture: {
@@ -120,6 +138,16 @@ try {
   assert.equal(prepared.status, 'awaiting_approval')
   assert.match(prepared.proposal_id, /^[a-f0-9]{64}$/)
   assert.match(prepared.big_picture_approval, /^[a-f0-9]{64}$/)
+  assert.equal(prepared.repository_evidence_count, 1)
+
+  const originalRepositoryEvidence = readFileSync(repositoryEvidencePath, 'utf8')
+  writeFileSync(repositoryEvidencePath, originalRepositoryEvidence.replace('recovery', 'fallback'))
+  const changedEvidenceApproval = runJson(
+    ['knowledge', 'curate', `--approve=${prepared.proposal_id}`],
+    1
+  )
+  assert.match(changedEvidenceApproval.error, /boundary changed|Repository evidence|dirty/)
+  writeFileSync(repositoryEvidencePath, originalRepositoryEvidence)
 
   const changedSource = join(assignment, 'outcome.md')
   const originalSource = readFileSync(changedSource, 'utf8')
@@ -140,6 +168,59 @@ try {
     runJson(['knowledge', 'search', 'deterministic retry owner']).results[0].path,
     'knowledge/architecture/router-retry.md'
   )
+  const preciseSearch = runJson(['knowledge', 'search', 'deterministic retry owner'])
+  assert.equal(preciseSearch.mode, 'precise')
+  assert.equal(preciseSearch.fallback, false)
+  assert.equal(preciseSearch.results[0].match_mode, 'precise')
+  assert.equal(preciseSearch.results[0].match_tier, 'complete')
+  assert.equal(preciseSearch.results[0].coverage, 1)
+  assert.deepEqual(preciseSearch.results[0].matched_terms, ['deterministic', 'retry', 'owner'])
+  const phraseSearch = runJson(['knowledge', 'search', '"deterministic retry owner"'])
+  assert.equal(phraseSearch.results[0].match_tier, 'phrase')
+  assert.deepEqual(phraseSearch.results[0].matched_phrases, ['deterministic retry owner'])
+  const fallbackSearch = runJson(['knowledge', 'search', 'deterministic absent-token'])
+  assert.equal(fallbackSearch.fallback, true)
+  assert.equal(fallbackSearch.results.length <= 5, true)
+  assert.equal(fallbackSearch.results[0].match_tier, 'partial_fallback')
+  assert.match(fallbackSearch.refinement_hint, /--mode=broad/)
+  const broadSearch = runJson(['knowledge', 'search', 'deterministic absent-token', '--mode=broad'])
+  assert.equal(broadSearch.mode, 'broad')
+  assert.equal(broadSearch.results[0].match_tier, 'broad')
+  assert.match(broadSearch.refinement_hint, /quote a distinguishing phrase/)
+  const historyFixtures = Array.from({ length: 6 }, (_, index) => {
+    const path = join(specdevPath, 'assignments', `0001${index}_mission-history-${index}`)
+    mkdirSync(path, { recursive: true })
+    writeFileSync(
+      join(path, 'status.json'),
+      JSON.stringify({ version: 1, status: 'completed' }, null, 2) + '\n'
+    )
+    writeFileSync(
+      join(path, 'outcome.md'),
+      `# Outcome\n\nMission planning deterministic recovery verification historical lead ${index}.\n`
+    )
+    return path
+  })
+  const missionPaths = await missionKnowledgePaths(
+    specdevPath,
+    'mission planning deterministic recovery verification router ownership constraint'
+  )
+  assert.equal(missionPaths.includes('knowledge/architecture/router-retry.md'), true)
+  for (const path of historyFixtures) rmSync(path, { recursive: true, force: true })
+  const malformedSearch = run(['knowledge', 'search', '"deterministic retry'], 1)
+  assert.match(malformedSearch.stderr, /quoted phrase is not closed/)
+
+  const receipt = JSON.parse(
+    readFileSync(
+      join(
+        specdevPath,
+        'knowledge-curations',
+        readdirSync(join(specdevPath, 'knowledge-curations')).find((name) => name.endsWith('.json'))
+      ),
+      'utf8'
+    )
+  )
+  assert.equal(receipt.repository_evidence[0].path, 'src/router.js')
+  assert.deepEqual(receipt.knowledge_changes[0].repository_evidence, ['src/router.js#L1-L2'])
   const repeated = runJson(['knowledge', 'curate', `--approve=${prepared.proposal_id}`])
   assert.equal(repeated.status, 'completed')
   assert.equal(
@@ -268,8 +349,13 @@ try {
     'utf8'
   )
   assert.match(assignmentSkill, /knowledge search.*objective terms/)
+  assert.match(assignmentSkill, /historical investigation leads/)
+  assert.match(assignmentSkill, /hard-coded counts/)
+  assert.match(assignmentSkill, /repository-evidence-bound/)
   assert.match(adhocSkill, /unexpected symptom/)
+  assert.match(adhocSkill, /closed-world assumptions/)
   assert.match(missionSkill, /Mission objective terms/)
+  assert.match(missionSkill, /--mode=broad/)
   assert.equal(
     existsSync(join(root, '.codex', 'skills', 'specdev-knowledge-curation', 'SKILL.md')),
     true
