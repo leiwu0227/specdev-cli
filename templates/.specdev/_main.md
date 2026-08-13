@@ -64,9 +64,17 @@ human summaries should count or group them instead of enumerating every file.
 When an unfamiliar repository-specific failure or recurring hazard appears,
 search living knowledge with `specdev knowledge search "<keyword bag>"`. Use
 `--include-stale` only to recover older guidance and verify it before relying on
-it. `specdev knowledge distill` is an optional read-only brief for the current
-coding CLI; it never launches a distillation agent or rewrites knowledge by
-itself.
+it. Assignment planning searches with objective terms and carries useful paths
+into its plan. Mission planning searches once, gives relevant paths to children,
+and lets children search again only for child-specific unknowns. Adhoc searches
+only when behavior or conventions are unfamiliar. Unexpected symptoms trigger a
+second symptom-focused search. Never bulk-load knowledge directories.
+
+`specdev knowledge curate` is the bounded publication workflow: scan, draft,
+validate, exact user approval, journaled Markdown publication, durable receipt,
+and automatic index rebuild. Big-picture proposals require a separate exact
+approval. `specdev knowledge distill` remains a compatibility-only read-only
+brief; it never launches an agent or rewrites knowledge.
 
 ## Work types
 

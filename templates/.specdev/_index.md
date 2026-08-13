@@ -15,6 +15,7 @@
   discussions/D<id>_<slug>/           concurrent thought work
   test-audits/TA<id>_<slug>/           concurrent read-only test pruning proposals
   knowledge/faq/                       current, freshness-aware troubleshooting
+  knowledge-curations/KC-<hash>.json   verified publication receipts
   processes/ATT-<id>.yaml              durable invocation summaries
   cache/                               ignored machine-local state
   worktrees/slot-N/                    ignored, bounded Mission child leases
@@ -50,6 +51,7 @@ specdev mission handoff M00001 --successor-assignment
 
 specdev knowledge rebuild
 specdev knowledge search "<terms>" [--include-stale] [--scope=history|workflow|all]
+specdev knowledge curate [--status]
 specdev knowledge distill
 ```
 

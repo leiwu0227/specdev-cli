@@ -7,11 +7,12 @@ may declare `verified_at`, `review_after`, applicability, source outcomes, and
 explicit supersession through `status: superseded` and `superseded_by`.
 
 Completed Assignment and Mission outcomes are searchable history; they are not
-automatically promoted into living truth. `specdev knowledge distill` prepares a
-bounded read-only brief of completed outcomes and hash-valid completed
-Discussion designs not cited by active knowledge, plus stale FAQs. The current
-coding CLI classifies and edits Markdown; there is no spawned distillation
-agent, confidence engine, processed ledger, or automatic rewrite.
+automatically promoted into living truth. `specdev knowledge curate` prepares a
+bounded read-only scan, validates an exact evidence-backed proposal, waits for
+destination-specific user approval, publishes through an idempotent journal,
+records a receipt, and rebuilds the disposable index. `knowledge distill`
+remains a compatibility-only source brief; it does not publish or spawn an
+agent.
 
 Adhoc receipts are intentionally outside the knowledge index. They are concise,
 high-volume historical evidence rather than curated guidance. See

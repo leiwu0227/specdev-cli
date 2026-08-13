@@ -189,6 +189,7 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
   return {
     version: 2,
     design_mode: 'replanned',
+    knowledge_paths: Array.isArray(original.knowledge_paths) ? original.knowledge_paths : [],
     assignments,
     final_verification: original.final_verification,
   }

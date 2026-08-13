@@ -192,7 +192,7 @@ specdev test-audit TA00001 --complete
 specdev assignment --from-test-audit=TA00001
 ```
 
-## 7. Search and distill knowledge
+## 7. Search and curate knowledge
 
 Markdown under `.specdev/knowledge/` is authoritative. SQLite is only a local,
 rebuildable FTS cache.
@@ -201,12 +201,16 @@ rebuildable FTS cache.
 specdev knowledge rebuild
 specdev knowledge search "routing retry timeout"
 specdev knowledge search "old workaround" --include-stale
+specdev knowledge curate --json
 specdev knowledge distill
 ```
 
 Keyword eligibility uses OR semantics by default, then ranks results by term
-coverage and BM25. Distillation gives the current coding CLI a bounded list of
-completed work and stale FAQs that may deserve curated knowledge updates.
+coverage and BM25. Curation scans completed work, stale FAQs, existing owners,
+and project context without changing authoritative Markdown. An exact validated
+proposal requires user approval, publishes idempotently, records one receipt,
+and rebuilds the derived index. `knowledge distill` remains a read-only
+compatibility brief.
 
 ## Compact command reference
 
@@ -232,6 +236,7 @@ completed work and stale FAQs that may deserve curated knowledge updates.
 | `specdev reviewloop <phase>`           | Run the configured bounded reviewer loop         |
 | `specdev knowledge rebuild`            | Rebuild disposable SQLite search                 |
 | `specdev knowledge search "<terms>"`   | OR-search authoritative Markdown                 |
+| `specdev knowledge curate`             | Verify, approve, publish, and reindex knowledge  |
 | `specdev knowledge distill`            | Prepare an on-demand curation brief              |
 | `specdev continue`                     | Diagnose durable state and the next action       |
 | `specdev help`                         | Show the complete compact command list           |

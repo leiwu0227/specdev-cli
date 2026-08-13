@@ -17,6 +17,7 @@ import {
   validateDeliveryArtifacts,
 } from '../utils/delivery-artifacts.js'
 import { listAttemptRecords, updateAttemptRecord } from '../utils/process-record.js'
+import { readMissionQueue, resolveMissionSelector } from '../utils/mission.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { reviewImplementation } from './reviewloop.js'
@@ -118,7 +119,13 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           specdevPath,
           role: 'worker',
           profile,
-          prompt: workerPrompt({ targetDir, assignmentPath, contract, catalog }),
+          prompt: workerPrompt({
+            targetDir,
+            assignmentPath,
+            contract,
+            catalog,
+            knowledgePaths: await assignmentKnowledgePaths(specdevPath, assignmentStatus),
+          }),
           resultPath,
           resultKind: 'worker',
           assignment: name,
@@ -333,7 +340,7 @@ async function recoverWorkerArtifacts({ specdevPath, assignmentPath, resultPath,
   }
 }
 
-function workerPrompt({ targetDir, assignmentPath, contract, catalog }) {
+function workerPrompt({ targetDir, assignmentPath, contract, catalog, knowledgePaths = [] }) {
   const rel = (path) => relativeToRepo(targetDir, path)
   const catalogText =
     catalog.length > 0
@@ -352,6 +359,7 @@ function workerPrompt({ targetDir, assignmentPath, contract, catalog }) {
     `Write the ordered plan: ${rel(join(assignmentPath, 'design', 'plan.md'))}`,
     `Write progress and verification receipts: ${rel(join(assignmentPath, 'implementation', 'progress.json'))}`,
     `Write the concise final outcome: ${rel(join(assignmentPath, 'outcome.md'))}`,
+    `Before writing the plan, run a bounded fresh knowledge search with objective terms. Parent-selected Mission knowledge paths: ${knowledgePaths.length > 0 ? knowledgePaths.join(', ') : 'none'}. Read only relevant paths, record them in the plan, and search again only for an unexpected symptom. Never silently use stale or superseded guidance.`,
     '',
     'The plan must include a `## Tasks` section with ordered Task IDs, reference acceptance IDs, and include:',
     '**Implementation Guides:** [at most three IDs]',
@@ -368,6 +376,14 @@ function workerPrompt({ targetDir, assignmentPath, contract, catalog }) {
     'progress.json must use this exact top-level shape: { "version": 1, "tasks": [{ "id": "T-1", "status": "completed" }], "selected_guides": { "implementation": ["guide-id"], "review": ["guide-id"] }, "verification": [{ "command": "...", "revision": "...", "scope": "...", "status": "passed|failed|skipped", "duration_ms": 123, "role": "qualification|authoritative_acceptance" }], "deviations": [], "follow_up": "none|required" }. Do not rename these keys. Record every material contract or plan deviation in deviations. Use follow_up: required only when another bounded Assignment is actually needed. For a dirty tested candidate, record revision as `working-tree@<HEAD>` rather than implying HEAD contains the changes. Every Task must be completed before returning completed. Verification role records evidence classification only and never authorizes or reruns a command.',
     'outcome.md must use this exact skeleton: # Outcome, ## Delivered behavior, ## Deviations, ## Unresolved risks, then one compact table with exactly three columns: Acceptance, Evidence, Result. Put only Passed, Failed, or Blocked (optional terminal punctuation is allowed) in the Result cell for every acceptance ID.',
   ].join('\n')
+}
+
+async function assignmentKnowledgePaths(specdevPath, assignmentStatus) {
+  if (!assignmentStatus?.mission) return []
+  const mission = await resolveMissionSelector(specdevPath, assignmentStatus.mission)
+  if (!mission?.path || mission.ambiguous) return []
+  const queue = await readMissionQueue(mission.path)
+  return Array.isArray(queue?.knowledge_paths) ? queue.knowledge_paths : []
 }
 
 function profileOverrides(flags) {

@@ -1,0 +1,10 @@
+{
+  "id": "00053",
+  "name": "00053_add-a-dedicated-knowledge-curation-workflow-that",
+  "path": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that",
+  "description": "Add a dedicated knowledge curation workflow that scans durable sources and stale knowledge, drafts and verifies bounded updates, requires destination-appropriate user approval, publishes authoritative FAQ and other knowledge Markdown, optionally proposes big-picture changes under stronger approval, automatically rebuilds the derived knowledge index after publication, and records a recoverable receipt",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

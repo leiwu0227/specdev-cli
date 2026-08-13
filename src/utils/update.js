@@ -135,6 +135,7 @@ export async function updateSpecdevSystem(source, destination) {
       'knowledge/domain',
       'knowledge/workflow',
       'knowledge/workflow/adhoc-history.md',
+      'knowledge-curations/.gitkeep',
       'guides/project/catalog.yaml',
       'skills/tools/README.md',
       'skills/tools/.gitkeep',

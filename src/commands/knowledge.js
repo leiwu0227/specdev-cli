@@ -7,6 +7,13 @@ import {
   knowledgeFreshness,
   searchKnowledgeIndex,
 } from '../utils/knowledge.js'
+import {
+  applyKnowledgeCuration,
+  cancelKnowledgeCuration,
+  knowledgeCurationStatus,
+  prepareKnowledgeCuration,
+  scanKnowledgeCuration,
+} from '../utils/knowledge-curation.js'
 
 const KNOWLEDGE_BRANCHES = [
   'faq',
@@ -23,6 +30,7 @@ export async function knowledgeCommand(positionalArgs = [], flags = {}) {
   if (subcommand === 'search') return knowledgeSearchCommand(positionalArgs.slice(1), flags)
   if (subcommand === 'list') return knowledgeListCommand(flags)
   if (subcommand === 'distill') return knowledgeDistillCommand(flags)
+  if (subcommand === 'curate') return knowledgeCurateCommand(flags)
 
   console.error(`Unknown knowledge subcommand: ${subcommand || '(none)'}`)
   console.log('Usage: specdev knowledge rebuild')
@@ -33,7 +41,89 @@ export async function knowledgeCommand(positionalArgs = [], flags = {}) {
   console.log(
     '       specdev knowledge distill [--assignment=<id> | --mission=<id> | --discussion=<id>]'
   )
+  console.log(
+    '       specdev knowledge curate [--proposal=<path> | --approve=<sha256> [--approve-big-picture=<sha256>] | --status | --cancel]'
+  )
   process.exitCode = 1
+}
+
+async function knowledgeCurateCommand(flags = {}) {
+  const targetDir = resolveTargetDir(flags)
+  const specdevPath = join(targetDir, '.specdev')
+  await requireSpecdevDirectory(specdevPath)
+
+  try {
+    let result
+    if (flags.cancel) {
+      result = await cancelKnowledgeCuration(specdevPath)
+      if (!result) result = { command: 'knowledge curate', version: 1, status: 'idle' }
+    } else if (flags.status) {
+      result = await knowledgeCurationStatus(specdevPath)
+      if (!result) result = { command: 'knowledge curate', version: 1, status: 'idle' }
+    } else if (typeof flags.proposal === 'string') {
+      result = await prepareKnowledgeCuration(targetDir, specdevPath, flags.proposal)
+    } else if (typeof flags.approve === 'string') {
+      result = await applyKnowledgeCuration(targetDir, specdevPath, {
+        proposal: flags.approve,
+        bigPicture:
+          typeof flags['approve-big-picture'] === 'string'
+            ? flags['approve-big-picture']
+            : undefined,
+      })
+    } else {
+      const active = await knowledgeCurationStatus(specdevPath)
+      result =
+        active && active.status !== 'completed'
+          ? active
+          : await scanKnowledgeCuration(targetDir, specdevPath, {
+              assignment: typeof flags.assignment === 'string' ? flags.assignment : undefined,
+              mission: typeof flags.mission === 'string' ? flags.mission : undefined,
+              discussion: typeof flags.discussion === 'string' ? flags.discussion : undefined,
+              limit: typeof flags.limit === 'string' ? flags.limit : undefined,
+            })
+    }
+
+    if (flags.json) {
+      console.log(JSON.stringify(result, null, 2))
+      return result
+    }
+    printKnowledgeCuration(result)
+    return result
+  } catch (error) {
+    if (flags.json) {
+      console.log(
+        JSON.stringify(
+          { command: 'knowledge curate', version: 1, status: 'error', error: error.message },
+          null,
+          2
+        )
+      )
+    } else {
+      console.error(`Knowledge curation stopped: ${error.message}`)
+    }
+    process.exitCode = 1
+    return null
+  }
+}
+
+function printKnowledgeCuration(result) {
+  if (result.status === 'scan_ready') {
+    console.log('Knowledge Curation Scan')
+    console.log(`Scan: ${result.scan_id}`)
+    console.log(`Eligible sources: ${result.eligible_source_count}`)
+    console.log(`Stale FAQs: ${result.stale_faq_count}`)
+    console.log(`Existing owners: ${result.owner_count}`)
+    console.log(`Excluded dirty paths: ${result.excluded_dirt.length}`)
+    console.log(result.next_action)
+    return
+  }
+  console.log(`Knowledge curation: ${result.status}`)
+  if (result.proposal_id) console.log(`Proposal: ${result.proposal_id}`)
+  if (result.confirmation) console.log(`Approve knowledge: ${result.confirmation}`)
+  if (result.big_picture_confirmation)
+    console.log(`Approve project context separately: ${result.big_picture_confirmation}`)
+  if (result.receipt) console.log(`Receipt: .specdev/${result.receipt}`)
+  if (result.recovery_command) console.log(`Recovery: ${result.recovery_command}`)
 }
 
 async function knowledgeIndexCommand(flags = {}) {

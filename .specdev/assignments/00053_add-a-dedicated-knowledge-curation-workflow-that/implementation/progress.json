@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": [
+      "api-security"
+    ]
+  },
+  "verification": [
+    {
+      "command": "node ./tests/test-knowledge-curation.js",
+      "revision": "working-tree@HEAD",
+      "scope": "Focused content-addressing, approval separation, publication, recovery, indexing, help, and installed retrieval guidance",
+      "status": "passed",
+      "duration_ms": 2837,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ]
+  }
+}

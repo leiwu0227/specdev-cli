@@ -31,6 +31,7 @@ assert.equal(files.has('node_modules/ripplegraph/package.json'), false)
 assert.equal(files.has('templates/.specdev/workflow.json'), true)
 assert.equal(files.has('templates/.specdev/_templates/faq.md'), true)
 assert.equal(files.has('templates/.specdev/knowledge/faq/.gitkeep'), true)
+assert.equal(files.has('templates/.specdev/knowledge-curations/.gitkeep'), true)
 for (const id of [
   'assignment-lifecycle',
   'discussion-lifecycle',

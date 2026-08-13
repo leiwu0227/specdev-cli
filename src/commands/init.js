@@ -48,6 +48,13 @@ description: Make one bounded change without a RippleGraph workflow
 Use Adhoc only when the user selects a concrete bounded repository change and
 does not want an Assignment. Start with \`specdev adhoc start "<scope>"\`.
 
+Read \`.specdev/project_notes/big_picture.md\` unconditionally. When repository
+behavior, conventions, or a recurring failure is unfamiliar, run a bounded
+\`specdev knowledge search "<objective or symptom terms>"\` before planning.
+Do not bulk-read knowledge directories. Use \`--include-stale\` only to inspect
+older guidance and revalidate it before use. Search again with exact terms when
+implementation produces an unexpected symptom.
+
 A user selecting a bounded file write has not thereby selected Adhoc. In
 particular, an explicit coordination or handoff note written into another
 repository is an auxiliary artifact: write only that note, honor destination
@@ -136,6 +143,14 @@ description: Create an Assignment and collaborate on its single contract
 Run \`specdev assignment "<objective>"\`. Collaborate directly with the user in
 \`brainstorm/contract.md\`; do not spawn a Brainstorm author.
 
+After reading \`.specdev/project_notes/big_picture.md\`, run one bounded
+\`specdev knowledge search "<objective terms>"\` while shaping the contract.
+Read only relevant fresh result paths, keep repository instructions and the
+approved contract authoritative, and never bulk-load the knowledge directory.
+Carry relevant paths into contract context or the implementation plan. Search
+again with symptom terms after an unexpected failure; stale results require
+explicit retrieval and revalidation.
+
 Keep the contract proportional. Reference existing project context instead of
 restating it, record only change-specific decisions and constraints, and use the
 fewest independent observable acceptance criteria (normally 1-3 for a small
@@ -206,6 +221,12 @@ the contract. Before requesting agreement, show the exact contract path and hash
 plus the command's concise contract-preview bullets. Only after explicit
 agreement run \`specdev mission run M00001 --approve\`.
 
+Read \`.specdev/project_notes/big_picture.md\` unconditionally and search fresh
+living knowledge once with Mission objective terms during planning. Record only
+relevant result paths for the queue and child context. Children search again
+only for child-specific unknowns or unexpected symptoms. Never bulk-load
+knowledge or silently use stale/superseded entries.
+
 Keep the Mission contract proportional just like an Assignment contract. Do not
 restate big-picture notes or turn implementation tasks into acceptance criteria.
 Multi-child Assignment contracts are narrow deltas that inherit unchanged
@@ -217,6 +238,31 @@ execution, dependency, decision, or verification boundary. Planned children
 receive static waves; independent children in one wave automatically use up to
 three validated ignored worktrees and integrate in declared order. Use
 \`--takeover\` only after inspecting an interrupted controller.
+
+Announce every subtask with "Specdev: <action>".
+`,
+  'specdev-knowledge-curation': `---
+name: specdev-knowledge-curation
+description: Propose, approve, publish, and reindex bounded living-knowledge updates
+---
+
+Run \`specdev knowledge curate --json\` for a mutation-free bounded scan. Inspect
+only relevant eligible sources and owner candidates. Draft the exact JSON
+manifest from \`proposal_template\` under ignored
+\`.specdev/cache/knowledge-curation/\`; include durable citations, current
+verification, owner search results, conflicts, and exclusions. Update or
+supersede the owning note instead of creating parallel truth.
+
+Run \`specdev knowledge curate --proposal=<path> --json\` to validate and bind
+the unchanged proposal. Show its exact paths and proposal ID. Only after user
+approval run the displayed \`--approve=<proposal-id>\` command. A big-picture
+proposal has a separate \`--approve-big-picture=<id>\` token and must never be
+inferred from ordinary knowledge approval.
+
+Resume with \`specdev knowledge curate --status\` or the unchanged approval
+command. Publication and its receipt are idempotent. If the index is stale, use
+the exact \`specdev knowledge rebuild\` recovery command and do not roll back
+authoritative Markdown.
 
 Announce every subtask with "Specdev: <action>".
 `,
@@ -481,6 +527,7 @@ export async function initCommand(flags = {}) {
       '   specdev-continue      Resume from current phase',
       '   specdev-discussion    Concurrent code-read-only exploration',
       '   specdev-mission       Foreground orchestration with automatic bounded waves',
+      '   specdev-knowledge-curation  Verified living-knowledge publication',
       '   specdev-reviewloop    Configured reviewer loop',
       '   specdev-rewind        Full workflow re-read',
     ])

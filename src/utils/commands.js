@@ -84,6 +84,11 @@ export const COMMANDS = [
   },
   { name: 'knowledge list', usage: 'knowledge list', description: 'List curated knowledge files' },
   {
+    name: 'knowledge curate',
+    usage: 'knowledge curate',
+    description: 'Propose, approve, publish, and reindex living knowledge',
+  },
+  {
     name: 'knowledge distill',
     usage: 'knowledge distill',
     description: 'Prepare an on-demand brief for the current coding CLI',

@@ -109,11 +109,20 @@ Markdown must not be treated as a SpecDev verdict.
 ## Knowledge
 
 Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.
-Use default OR search for unfamiliar repository behavior. FAQ entries past
-`review_after` require explicit `--include-stale` and revalidation; entries with
-`status: superseded` are outside default scope. `specdev knowledge distill`
-prepares a bounded, read-only source brief for the current coding CLI and never
-spawns another agent.
+Always read `project_notes/big_picture.md`. Use default OR search at the planning
+or uncertainty boundary instead of reading every note: Assignment uses objective
+terms and records useful paths in its plan; Mission searches once and passes
+relevant paths to children; Adhoc searches only for unfamiliar behavior or
+conventions. Search unexpected symptoms again. FAQ entries past `review_after`
+require explicit `--include-stale` and revalidation; `status: superseded` stays
+outside default scope.
+
+`specdev knowledge curate` scans without authoritative mutation, validates an
+exact content-addressed proposal, separates big-picture approval, publishes only
+approved Markdown, writes one idempotent receipt, and automatically rebuilds the
+disposable index. Resume with `--status`. A failed rebuild leaves published truth
+in place and reports `specdev knowledge rebuild`. The legacy `knowledge distill`
+brief remains read-only compatibility and is not a publication workflow.
 
 ## Verification
 

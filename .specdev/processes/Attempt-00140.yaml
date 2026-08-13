@@ -1,0 +1,20 @@
+id: Attempt-00140
+kind: worker
+status: blocked
+workspace: .
+base_revision: b6ad90828a749b68c4f4b941ce0b47ee44641822
+started_at: 2026-08-13T01:35:08.898Z
+profile: worker
+provider: codex
+model: gpt-5.6-sol
+effort: high
+network: false
+result_path: null
+assignment: 00053_add-a-dedicated-knowledge-curation-workflow-that
+duration_ms: 966249
+usage:
+  provider_reported_tokens: 234050
+result_revision: working-tree@b6ad90828a749b68c4f4b941ce0b47ee44641822
+ended_at: 2026-08-13T01:51:15.226Z
+result_status: blocked
+result_retention: local-cache-only

@@ -1,0 +1,86 @@
+{
+  "runId": "assignment-lifecycle-20260813T01193733",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-08-13T01:19:37.334Z",
+  "updatedAt": "2026-08-13T01:58:50.685Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00053",
+      "name": "00053_add-a-dedicated-knowledge-curation-workflow-that",
+      "path": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that",
+      "description": "Add a dedicated knowledge curation workflow that scans durable sources and stale knowledge, drafts and verifies bounded updates, requires destination-appropriate user approval, publishes authoritative FAQ and other knowledge Markdown, optionally proposes big-picture changes under stronger approval, automatically rebuilds the derived knowledge index after publication, and records a recoverable receipt",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/brainstorm/contract.md",
+      "contract_hash": "7aadd29815e589727e5c9327cb05084d82d9b7c36a10c3b01963f851853fc8cd"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "7aadd29815e589727e5c9327cb05084d82d9b7c36a10c3b01963f851853fc8cd",
+      "actor": "user",
+      "approved_at": "2026-08-13T01:35:03.048Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "b6ad90828a749b68c4f4b941ce0b47ee44641822"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/design/plan.md",
+      "attempt": "recovered-artifacts"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/implementation/progress.json",
+      "outcome": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/outcome.md",
+      "attempt": "recovered-artifacts"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/review/implementation-verdict.md",
+      "attempt": "Attempt-00141",
+      "disposition": "approved"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "7aadd29815e589727e5c9327cb05084d82d9b7c36a10c3b01963f851853fc8cd",
+      "actor": "user",
+      "approved_at": "2026-08-13T01:35:03.048Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "b6ad90828a749b68c4f4b941ce0b47ee44641822"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.2.0",
+    "packagePath": "workflows/assignment-lifecycle@2.2.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/review/implementation-verdict.md",
+    "attempt": "Attempt-00141",
+    "disposition": "approved"
+  }
+}

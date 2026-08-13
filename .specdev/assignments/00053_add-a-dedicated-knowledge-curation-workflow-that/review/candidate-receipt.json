@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "9369804a8eac3252ca3e37e657d834760d365728e665806eccf591a4d2ad8b6f",
+  "assignment": {
+    "id": "00053",
+    "folder": "00053_add-a-dedicated-knowledge-curation-workflow-that"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/brainstorm/contract.md",
+    "hash": "7aadd29815e589727e5c9327cb05084d82d9b7c36a10c3b01963f851853fc8cd"
+  },
+  "acceptance": {
+    "total": 4,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`node ./tests/test-knowledge-curation.js` exercises bounded source/owner discovery, proposal hashing, validation, and stale confirmation.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`node ./tests/test-knowledge-curation.js` exercises authority-separated exact publication, idempotency, dirty-path protection, and durable receipts.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`node ./tests/test-knowledge-curation.js` exercises automatic rebuild, stale-index recovery, retry, no-change behavior, and standalone rebuild compatibility.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-4",
+        "evidence": "`node ./tests/test-knowledge-curation.js` verifies Assignment, Mission, Adhoc, worker, template, help, and installed retrieval guidance.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 1,
+    "items": [
+      {
+        "command": "node ./tests/test-knowledge-curation.js",
+        "revision": "working-tree@HEAD",
+        "scope": "Focused content-addressing, approval separation, publication, recovery, indexing, help, and installed retrieval guidance",
+        "status": "passed",
+        "duration_ms": 2837,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "node ./tests/test-knowledge-curation.js",
+        "revision": "working-tree@HEAD",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 17,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "QUICKSTART.md",
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 8,
+        "paths": [
+          "src/commands/implement.js",
+          "src/commands/init.js",
+          "src/commands/knowledge.js",
+          "src/commands/mission.js",
+          "src/utils/commands.js",
+          "src/utils/knowledge-curation.js",
+          "src/utils/mission.js",
+          "src/utils/update.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 5,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 4
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-engine-packaging.js"
+        ],
+        "omitted": 1
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "None identified by the focused command-level verification."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/brainstorm/contract.md",
+      "exists": true,
+      "digest": "7aadd29815e589727e5c9327cb05084d82d9b7c36a10c3b01963f851853fc8cd"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/design/plan.md",
+      "exists": true,
+      "digest": "947457282b267bddadecf585e5c4945d01cc9e693c2e68ede75c27451011ac0d"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/implementation/progress.json",
+      "exists": true,
+      "digest": "e8cc8dcc6e65f2224316aed13006cdf0107b7f9dcdce5ae6ae81c9963e506945"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00053_add-a-dedicated-knowledge-curation-workflow-that/outcome.md",
+      "exists": true,
+      "digest": "97f68fa4cb765d88493d1af1ac1ed1fb5b212785c501f62043b80efe88a62329"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

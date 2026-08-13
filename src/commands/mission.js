@@ -36,6 +36,7 @@ import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { decideGuidedNode, startGuidedRun, stepGuidedNode } from '../utils/engine-sync.js'
 import { workflowRootFor } from '../utils/engine.js'
 import { reserveEntityId } from '../utils/id-reservation.js'
+import { searchKnowledgeIndex } from '../utils/knowledge.js'
 import {
   assertMissionTransitionRecorded,
   bindReplannedQueueToGap,
@@ -883,10 +884,12 @@ async function designMission(context) {
   const { targetDir, specdevPath, missionPath, mission } = context
   const queuePath = join(missionPath, 'design', 'assignments.yaml')
   const contract = await validateMissionContract(missionPath)
+  const knowledgePaths = await missionKnowledgePaths(specdevPath, mission.objective)
   if (contract.executionShape === 'single') {
     const queue = {
       version: 2,
       design_mode: 'single',
+      knowledge_paths: knowledgePaths,
       assignments: [
         {
           id: await reserveEntityId(specdevPath, 'assignment'),
@@ -934,6 +937,7 @@ async function designMission(context) {
         `Approved Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
         `Approved execution policy: ${JSON.stringify(mission.execution_policy)}`,
         `Write ${relativeToRepo(targetDir, queuePath)} as YAML with version: 2, an ordered assignments list containing title, kind, wave, status: pending, and optional execution: evidence-only plus observation_command, and a final_verification mapping with the exact contract-authorized command and scope.`,
+        `Parent-selected fresh knowledge paths from the one Mission planning search: ${knowledgePaths.length > 0 ? knowledgePaths.join(', ') : 'none'}. Record these exact paths in top-level knowledge_paths; do not bulk-read other notes.`,
         `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
         'Start by trying to express the entire Mission as one Assignment. Split only for a worker/reviewer context limit, an information dependency, an intermediate user/operational decision, or meaningfully independent verification/rollback.',
         'File count, architectural layers, and the existence of several implementation Tasks are not split reasons. When uncertain, write one Assignment.',
@@ -947,7 +951,7 @@ async function designMission(context) {
   if (result.status !== 'completed' || result.result.frontmatter.status !== 'completed') {
     throw new Error(result.error || 'Mission Design worker blocked')
   }
-  const queue = await validateAndReserveQueue(specdevPath, missionPath)
+  const queue = await validateAndReserveQueue(specdevPath, missionPath, knowledgePaths)
   await writeMissionQueue(missionPath, queue)
   stepGuidedNode(targetDir, 'design', {
     queue: relativeToRepo(targetDir, queuePath),
@@ -1353,12 +1357,7 @@ async function executeParallelMissionWave(context) {
       )
       const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
       if (status?.status === 'awaiting_user_reapproval') {
-        await recordParallelMissionReapproval(
-          context,
-          child,
-          settled.execution.worktree,
-          status
-        )
+        await recordParallelMissionReapproval(context, child, settled.execution.worktree, status)
         throw new Error(`Child ${child.id} awaits exact user reapproval`)
       }
       if (status?.status !== 'completed') {
@@ -1976,6 +1975,7 @@ async function authorChildContract(context, child, assignmentPath) {
       `Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Approved Mission contract hash: ${mission.approved_contract_hash}`,
       `Queue entry: ${child.title}`,
+      `Parent-selected knowledge paths: ${(await missionKnowledgeContext(missionPath)).join(', ') || 'none'}. Read only relevant paths and search again only for child-specific unknowns or unexpected symptoms.`,
       child.execution === 'evidence-only'
         ? `Mission child execution: evidence-only observation of exactly \`${child.observation_command}\``
         : 'Mission child execution: implementation',
@@ -2022,7 +2022,8 @@ async function deriveSingleChildContract(context, child, assignmentPath) {
   const acceptance = contractSection(missionContract.content, 'Acceptance criteria')
   if (!acceptance.trim()) throw new Error('Mission contract has no reusable acceptance criteria')
   const parentPath = relativeToRepo(targetDir, missionContractPath)
-  const content = `# Assignment contract\n\nKind: ${child.kind || 'change'}\n\nParent Mission contract: \`${parentPath}\`\nParent approved hash: \`${mission.approved_contract_hash}\`\n\n## Objective and context\n\nDeliver the complete approved Mission objective: ${mission.objective}\n\n## Scope and non-goals\n\nInherit the complete parent scope and non-goals without expansion.\n\n## Expected behavior\n\nInherit the parent behavior unchanged.\n\n## Important decisions\n\nNo child-specific decision; ordinary implementation details are delegated.\n\n## Constraints and invariants\n\nInherit the parent constraints and invariants unchanged.\n\n## Delegated and reserved authority\n\n- Delegated: implementation details within the approved parent authority.\n- Reserved for the user: parent-reserved decisions and any material contract change.\n\n## Risks and assumptions\n\nInherit the parent risks and assumptions; report material deviations in progress.json.\n\n## Verification authority\n\n- Focused tests for changed modules: allowed after repository instructions are satisfied.\n- Parent final verification: reserved for the Mission controller.\n- Full suite: prohibited unless this child contract is amended and reapproved.\n\n## Acceptance criteria\n\n${acceptance.trim()}\n`
+  const knowledgePaths = await missionKnowledgeContext(missionPath)
+  const content = `# Assignment contract\n\nKind: ${child.kind || 'change'}\n\nParent Mission contract: \`${parentPath}\`\nParent approved hash: \`${mission.approved_contract_hash}\`\n\n## Objective and context\n\nDeliver the complete approved Mission objective: ${mission.objective}\n\nParent-selected knowledge paths: ${knowledgePaths.length > 0 ? knowledgePaths.map((path) => `\`${path}\``).join(', ') : 'none'}.\n\n## Scope and non-goals\n\nInherit the complete parent scope and non-goals without expansion.\n\n## Expected behavior\n\nInherit the parent behavior unchanged.\n\n## Important decisions\n\nNo child-specific decision; ordinary implementation details are delegated.\n\n## Constraints and invariants\n\nInherit the parent constraints and invariants unchanged.\n\n## Delegated and reserved authority\n\n- Delegated: implementation details within the approved parent authority.\n- Reserved for the user: parent-reserved decisions and any material contract change.\n\n## Risks and assumptions\n\nInherit the parent risks and assumptions; report material deviations in progress.json.\n\n## Verification authority\n\n- Focused tests for changed modules: allowed after repository instructions are satisfied.\n- Parent final verification: reserved for the Mission controller.\n- Full suite: prohibited unless this child contract is amended and reapproved.\n\n## Acceptance criteria\n\n${acceptance.trim()}\n`
   await fse.writeFile(join(assignmentPath, 'brainstorm', 'contract.md'), content, 'utf-8')
   await writeAssignmentStatus(assignmentPath, {
     contract_source: {
@@ -2743,7 +2744,7 @@ async function completeMissionFailure(context, reason, disposition = 'semantic-f
   )
 }
 
-async function validateAndReserveQueue(specdevPath, missionPath) {
+async function validateAndReserveQueue(specdevPath, missionPath, knowledgePaths = []) {
   const queue = await readMissionQueue(missionPath)
   if (!queue || !Array.isArray(queue.assignments) || queue.assignments.length === 0) {
     throw new Error('Mission Design requires a non-empty assignments list')
@@ -2814,12 +2815,35 @@ async function validateAndReserveQueue(specdevPath, missionPath) {
   return {
     version: 2,
     design_mode: 'planned',
+    knowledge_paths: knowledgePaths,
     assignments,
     final_verification: {
       command,
       scope: String(queue.final_verification?.scope || 'integrated').trim() || 'integrated',
     },
   }
+}
+
+async function missionKnowledgePaths(specdevPath, objective) {
+  try {
+    const results = await searchKnowledgeIndex(specdevPath, objective, { limit: 50 })
+    return results
+      .filter(
+        (result) =>
+          result.path.startsWith('knowledge/') &&
+          result.freshness !== 'stale' &&
+          result.freshness !== 'superseded'
+      )
+      .map((result) => result.path)
+      .slice(0, 5)
+  } catch {
+    return []
+  }
+}
+
+async function missionKnowledgeContext(missionPath) {
+  const queue = await readMissionQueue(missionPath)
+  return Array.isArray(queue?.knowledge_paths) ? queue.knowledge_paths : []
 }
 
 async function recoverCompletedDesignResult({
@@ -3884,7 +3908,10 @@ function missionNextAction(mission, phase, liveController, interruptedController
     return mission.next_action || `Resolve the blocker, then run specdev mission run ${mission.id}.`
   if (mission.status === 'paused') return `Resume with specdev mission run ${mission.id}.`
   if (phase === 'await-user-reapproval' || mission.status === 'awaiting_user_reapproval') {
-    return mission.next_action || `Inspect the exact pending decision with specdev mission status ${mission.id}.`
+    return (
+      mission.next_action ||
+      `Inspect the exact pending decision with specdev mission status ${mission.id}.`
+    )
   }
   if (phase === 'approve-mission' || mission.status === 'awaiting_approval') {
     return `After explicit user agreement, run specdev mission run ${mission.id} --approve.`
@@ -3900,7 +3927,10 @@ async function decideMissionDivergence(selector, flags, decision) {
   const child = typeof flags.child === 'string' ? flags.child.trim() : ''
   const identity = typeof flags.identity === 'string' ? flags.identity.trim() : ''
   if (!/^\d{5}$/.test(child) || !/^[a-f0-9]{64}$/.test(identity)) {
-    return fail(flags, `${decision}-divergence requires --child=00001 and the exact --identity=<sha256>.`)
+    return fail(
+      flags,
+      `${decision}-divergence requires --child=00001 and the exact --identity=<sha256>.`
+    )
   }
   if (decision === 'reject' && typeof flags.reason !== 'string') {
     return fail(flags, 'reject-divergence requires --reason="...".')
@@ -3933,13 +3963,8 @@ async function decideMissionDivergence(selector, flags, decision) {
       return fail(flags, 'The supplied identity is not the Mission pending user-reapproval gate.')
     }
     const pendingAssignment = await findAssignmentFolder(context.specdevPath, child)
-    const pendingAssignmentStatus = await fse.readJson(
-      join(pendingAssignment.path, 'status.json')
-    )
-    const pendingCheckpoint = readCheckpoint(
-      context.specdevPath,
-      pendingAssignmentStatus.run_id
-    )
+    const pendingAssignmentStatus = await fse.readJson(join(pendingAssignment.path, 'status.json'))
+    const pendingCheckpoint = readCheckpoint(context.specdevPath, pendingAssignmentStatus.run_id)
     const parallelRoot =
       pendingCheckpoint.rootGraph === 'assignment-lifecycle' &&
       pendingCheckpoint.position?.graph === 'assignment-lifecycle' &&
@@ -3951,7 +3976,10 @@ async function decideMissionDivergence(selector, flags, decision) {
       : getState({ workflowRoot: workflowRootFor(context.targetDir) })
     const resumedNode = decision === 'approve' ? 'advance-queue' : 'resolve-gap'
     if (!parallelRoot && !['await-user-reapproval', resumedNode].includes(graph.position?.node)) {
-      return fail(flags, `Mission is not awaiting user reapproval at ${graph.position?.node || 'unknown'}.`)
+      return fail(
+        flags,
+        `Mission is not awaiting user reapproval at ${graph.position?.node || 'unknown'}.`
+      )
     }
     const inspection = await inspectPendingMissionReapproval(context)
     if (inspection.stale) {
@@ -4102,10 +4130,7 @@ async function parallelMissionReapprovalStatus(context) {
     basename(context.missionPath)
   )
   const worktreeMission = await readMission(worktreeMissionPath)
-  const assignment = await findAssignmentFolder(
-    join(worktreePath, '.specdev'),
-    pending.child
-  )
+  const assignment = await findAssignmentFolder(join(worktreePath, '.specdev'), pending.child)
   const assignmentStatus = await fse.readJson(join(assignment.path, 'status.json'))
   const inspection = await inspectMissionReapproval({
     targetDir: worktreePath,
