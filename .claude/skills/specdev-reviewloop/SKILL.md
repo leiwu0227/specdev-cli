@@ -22,4 +22,5 @@ Only `specdev reviewloop` produces a transition-authorizing strict result
 envelope. Native coding-CLI review sessions are advisory and cannot advance
 SpecDev state.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.

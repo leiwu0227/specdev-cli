@@ -11,4 +11,5 @@ Optional review: `specdev reviewloop discussion --discussion=D00001`.
 Complete only when the user is satisfied: `specdev discussion D00001
 --complete`. Promotion creates fresh identity and a fresh contract.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.

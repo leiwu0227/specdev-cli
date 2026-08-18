@@ -13,4 +13,5 @@ when the exact contract is ready. Promotion through `specdev assignment
 --from-test-audit=TA00001` is the first step that may later grant write
 authority after normal user approval.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.

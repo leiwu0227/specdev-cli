@@ -16,9 +16,18 @@ export function adapterContent(heading) {
 
 Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
 
-Classify each request before creating workflow state. Questions and read-only
-inspection are Direct. Use Adhoc, Discussion, Assignment, or Mission only when
-the user selects that lane; never silently make every request an Assignment.
+Classify each request before creating workflow state. Questions, read-only
+inspection, and small requested documentation artifacts that do not change
+product, runtime, public-contract, or workflow behavior are Direct. Direct
+writes create no graph, receipt, or automatic commit. Use Adhoc, Discussion,
+Assignment, or Mission only when the user explicitly selects that lane; never
+silently make every request an Assignment.
+
+For a Direct documentation write, announce once, read destination instructions
+and only the facts needed for the artifact, write it, and verify it narrowly.
+Do not require broad project orientation for a low-risk note. For example,
+writing an HTTP usage manual under project notes is Direct; "Use SpecDev Adhoc
+to update the public API manual and commit it" is explicitly selected Adhoc.
 
 An explicit request to write a bounded coordination or handoff note into another
 repository does not select Adhoc or create SpecDev state in the active
@@ -42,7 +51,7 @@ export const ADAPTERS = {
 export const SKILL_FILES = {
   'specdev-adhoc': `---
 name: specdev-adhoc
-description: Make one bounded change without a RippleGraph workflow
+description: Run a user-explicitly-selected Adhoc change without a RippleGraph workflow
 ---
 
 Use Adhoc only when the user selects a concrete bounded repository change and
@@ -62,13 +71,18 @@ produces an unexpected symptom. If code verification exposes a reusable missing
 constraint, send it through an evidence-bound, user-approved \`knowledge curate\`
 proposal; source code is not bulk-indexed or promoted by search alone.
 
-A user selecting a bounded file write has not thereby selected Adhoc. In
-particular, an explicit coordination or handoff note written into another
+A bounded file write request has not thereby selected Adhoc. In particular, an
+explicit coordination or handoff note written into another
 repository is an auxiliary artifact: write only that note, honor destination
 instructions, and do not create SpecDev state in the active repository. If the
 request instead changes the destination repository's product, runtime, or
 workflow state, or explicitly requests SpecDev governance there, re-anchor in
 that repository and classify the work there before editing.
+
+For example, "write an HTTP usage manual under project notes" is Direct when
+the artifact does not change product behavior or public contracts. "Use SpecDev
+Adhoc to update the public API manual and commit it" explicitly selects this
+governed lane and retains its receipt and final-commit guarantees.
 
 Start classifies every expanded dirty path before creating state. Independent
 Discussion and Test Audit paths remain outside Adhoc ownership; requesting
@@ -91,7 +105,7 @@ than outcome prose.
 \`specdev adhoc cancel\` leaves source changes untouched.
 
 Announce meaningful phases, plan changes, failed verification, and blockers
-with "Specdev: <action>"; do not announce every repeated read-only probe.
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-start': `---
 name: specdev-start
@@ -104,7 +118,8 @@ update. Otherwise ask one focused question at a time about purpose, users,
 technology, architecture, and constraints. Draft the complete file, show it to
 the user, and write only after confirmation.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-rewind': `---
 name: specdev-rewind
@@ -119,7 +134,8 @@ You have drifted from the specdev workflow. Stop what you're doing and:
    for a Mission, or \`specdev discussion <id>\` for a Discussion.
 4. Treat the durable graph and folder artifacts as authoritative.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-layout-migration': `---
 name: specdev-layout-migration
@@ -140,7 +156,8 @@ Follow the guide as an interactive migration workflow:
 
 If the user only needs the old deterministic assignment-file migration, discuss \`specdev migrate legacy-assignments --dry-run\` first.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-assignment': `---
 name: specdev-assignment
@@ -188,7 +205,8 @@ brainstorm\` once more to present the final hash. Only after explicit user
 agreement run \`specdev approve brainstorm\`, then \`specdev implement\` for the
 automatic section.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-continue': `---
 name: specdev-continue
@@ -206,7 +224,8 @@ A shelved or unsupported Assignment is terminal and immutable: translate “resu
 and contract. Never reactivate the old graph or treat its approval or historical
 verification as current. Abandoned work remains terminal and is not a shelf.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-discussion': `---
 name: specdev-discussion
@@ -221,7 +240,8 @@ Optional review: \`specdev reviewloop discussion --discussion=D00001\`.
 Complete only when the user is satisfied: \`specdev discussion D00001
 --complete\`. Promotion creates fresh identity and a fresh contract.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-mission': `---
 name: specdev-mission
@@ -259,7 +279,8 @@ receive static waves; independent children in one wave automatically use up to
 three validated ignored worktrees and integrate in declared order. Use
 \`--takeover\` only after inspecting an interrupted controller.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-knowledge-curation': `---
 name: specdev-knowledge-curation
@@ -292,7 +313,8 @@ command. Publication and its receipt are idempotent. If the index is stale, use
 the exact \`specdev knowledge rebuild\` recovery command and do not roll back
 authoritative Markdown.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-test-audit': `---
 name: specdev-test-audit
@@ -309,7 +331,8 @@ when the exact contract is ready. Promotion through \`specdev assignment
 --from-test-audit=TA00001\` is the first step that may later grant write
 authority after normal user approval.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
   'specdev-reviewloop': `---
 name: specdev-reviewloop
@@ -335,7 +358,8 @@ Only \`specdev reviewloop\` produces a transition-authorizing strict result
 envelope. Native coding-CLI review sessions are advisory and cannot advance
 SpecDev state.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
 }
 

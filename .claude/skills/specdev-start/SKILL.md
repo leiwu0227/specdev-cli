@@ -9,4 +9,5 @@ update. Otherwise ask one focused question at a time about purpose, users,
 technology, architecture, and constraints. Draft the complete file, show it to
 the user, and write only after confirmation.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.

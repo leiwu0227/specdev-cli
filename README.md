@@ -7,8 +7,10 @@ inspectable, restartable, and portable across agents and machines.
 
 Choose the lightest workflow that fits the job:
 
-- **Direct** for questions and read-only inspection.
-- **Adhoc** for one small, bounded edit.
+- **Direct** for questions, read-only inspection, and small non-behavioral
+  documentation writes with no workflow state, receipt, or automatic commit.
+- **Adhoc** for one explicitly selected bounded edit with a receipt and final
+  commit.
 - **Assignment** for a contracted change with approval, implementation, and review.
 - **Mission** for a larger objective coordinated across multiple assignments.
 
@@ -38,6 +40,17 @@ In normal use, you do not drive SpecDev by memorizing commands. Tell your coding
 agent what you want in natural language. The agent discusses scope and
 approvals with you, then runs the workflow commands. The snippets below show
 what the agent does behind the scenes.
+
+### Ask for a small documentation artifact
+
+> Write an HTTP usage manual under project notes.
+
+The agent announces once, reads only the destination instructions and facts the
+manual needs, writes it, and checks it narrowly. This is Direct when it records
+existing behavior: it creates no SpecDev state, receipt, or automatic commit.
+A handoff note explicitly requested in another repository follows the same
+Direct path while honoring that destination's instructions. Documentation that
+changes product behavior or a public contract still needs a governed lane.
 
 ### Ask for a bounded edit
 

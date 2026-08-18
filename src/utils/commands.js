@@ -10,7 +10,7 @@ export const COMMANDS = [
   {
     name: 'adhoc',
     usage: 'adhoc <start|verify|finish|status|show|cancel>',
-    description: 'Make one bounded change with a receipt and final commit, without a graph',
+    description: 'Run one user-selected bounded change with a receipt and final commit',
   },
   { name: 'next', usage: 'next', description: 'Show the canonical focused-workflow action' },
   { name: 'step', usage: 'step --json=<output>', description: 'Submit explicit workflow evidence' },

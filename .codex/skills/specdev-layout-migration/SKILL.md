@@ -17,4 +17,5 @@ Follow the guide as an interactive migration workflow:
 
 If the user only needs the old deterministic assignment-file migration, discuss `specdev migrate legacy-assignments --dry-run` first.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.

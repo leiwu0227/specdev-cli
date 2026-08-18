@@ -2,11 +2,19 @@
 
 ## Direct and Adhoc
 
-Direct work answers or inspects without creating state. Use Adhoc only when the
-user chooses a concrete bounded edit but the Assignment contract/review cycle
-would be ceremony. Adhoc has no RippleGraph run. `adhoc start` requires an
-existing Git HEAD and a clean worktree unless `--adopt-dirty` explicitly adopts
-the exact expanded eligible path manifest for all existing changes.
+Direct work answers, inspects, or writes a small user-requested documentation
+artifact without creating workflow state, a receipt, or an automatic commit.
+The write qualifies only when it does not change product, runtime,
+public-contract, or governed workflow behavior. For low-risk Direct
+documentation, announce once, read destination instructions and only the facts
+needed, write first, and verify narrowly; broad project orientation is not a
+prerequisite.
+
+Use Adhoc only when the user explicitly chooses it for a concrete bounded edit
+but the Assignment contract/review cycle would be ceremony. Adhoc has no
+RippleGraph run. `adhoc start` requires an existing Git HEAD and a clean
+worktree unless `--adopt-dirty` explicitly adopts the exact expanded eligible
+path manifest for all existing changes.
 
 Selecting a bounded file write does not itself select Adhoc. An explicitly
 requested coordination or handoff note in another repository is an auxiliary
@@ -14,6 +22,15 @@ artifact: write only the note, follow destination instructions, and create no
 SpecDev state in the active repository. Re-anchor and classify in the
 destination repository when the request changes its product, runtime, or
 workflow state, or explicitly requests SpecDev governance there.
+
+Examples make the routing boundary concrete:
+
+- “Write an HTTP usage manual under `project_notes/manual/`” is Direct when it
+  documents existing behavior.
+- “Write this workflow handoff note into the SpecDev CLI thoughts directory” is
+  a Direct auxiliary write governed by that destination's instructions.
+- “Use SpecDev Adhoc to update the public API manual and commit it” is Adhoc and
+  retains the receipt and final delivery commit.
 
 Callable-owned paths refuse the whole adoption rather than being filtered.
 `adhoc finish` requires an unchanged HEAD, verifies the manifest, writes one

@@ -11,4 +11,5 @@ You have drifted from the specdev workflow. Stop what you're doing and:
    for a Mission, or `specdev discussion <id>` for a Discussion.
 4. Treat the durable graph and folder artifacts as authoritative.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.

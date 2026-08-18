@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@4b6e42617e13a2600d4fd4ff992122761a26e0e6",
+      "scope": "Changed product, generated host, regression, and Assignment artifact paths",
+      "status": "passed",
+      "duration_ms": 1,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@4b6e42617e13a2600d4fd4ff992122761a26e0e6",
+      "scope": "AC-1, AC-2, and AC-3 focused generated guidance, adapter, skill, hook, and tracked host-copy regression coverage",
+      "status": "passed",
+      "duration_ms": 2006,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "The automatic worker sandbox could not write repository-tracked .codex outputs or observe the foreground test authorization; the foreground recovered the preserved work by synchronizing byte-identical generated host copies and running the authorized focused test."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

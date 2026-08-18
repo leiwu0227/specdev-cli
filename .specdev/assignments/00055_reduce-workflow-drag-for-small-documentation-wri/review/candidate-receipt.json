@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "e082dc889734cf0fe14432e544d92fb5c9bb2da275ddd61394fcc2ea0195a574",
+  "assignment": {
+    "id": "00055",
+    "folder": "00055_reduce-workflow-drag-for-small-documentation-wri"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00055_reduce-workflow-drag-for-small-documentation-wri/brainstorm/contract.md",
+    "hash": "7267ade9f915bf32a1da401b1eca3acb4098c67bd136320204bf1ac41dda7143"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Canonical guidance and generated adapters passed `node tests/test-init-platform.js`.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Explicit Adhoc descriptions/examples and retained governance passed the focused regression.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Meaningful-phase guidance and byte-identical tracked `.claude`/`.codex` host copies passed the focused regression.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 2,
+    "items": [
+      {
+        "command": "git diff --check",
+        "revision": "working-tree@4b6e42617e13a2600d4fd4ff992122761a26e0e6",
+        "scope": "Changed product, generated host, regression, and Assignment artifact paths",
+        "status": "passed",
+        "duration_ms": 1,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@4b6e42617e13a2600d4fd4ff992122761a26e0e6",
+        "scope": "AC-1, AC-2, and AC-3 focused generated guidance, adapter, skill, hook, and tracked host-copy regression coverage",
+        "status": "passed",
+        "duration_ms": 2006,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@4b6e42617e13a2600d4fd4ff992122761a26e0e6",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 32,
+    "groups": [
+      {
+        "name": ".claude",
+        "count": 12,
+        "paths": [
+          ".claude/hooks/specdev-session-start.sh",
+          ".claude/skills/specdev-adhoc/SKILL.md",
+          ".claude/skills/specdev-assignment/SKILL.md",
+          ".claude/skills/specdev-continue/SKILL.md",
+          ".claude/skills/specdev-discussion/SKILL.md",
+          ".claude/skills/specdev-knowledge-curation/SKILL.md"
+        ],
+        "omitted": 6
+      },
+      {
+        "name": ".codex",
+        "count": 11,
+        "paths": [
+          ".codex/skills/specdev-adhoc/SKILL.md"
+        ],
+        "omitted": 10
+      },
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "README.md"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "hooks",
+        "count": 1,
+        "paths": [
+          "hooks/session-start.sh"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 2,
+        "paths": [
+          "src/commands/init.js"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "templates",
+        "count": 3,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 2
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-init-platform.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "none",
+    "items": [],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00055_reduce-workflow-drag-for-small-documentation-wri/brainstorm/contract.md",
+      "exists": true,
+      "digest": "7267ade9f915bf32a1da401b1eca3acb4098c67bd136320204bf1ac41dda7143"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00055_reduce-workflow-drag-for-small-documentation-wri/design/plan.md",
+      "exists": true,
+      "digest": "8ee3c5b1470747aad926a4f55ad1e7c31951408547c39787407f6171663cc05e"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00055_reduce-workflow-drag-for-small-documentation-wri/implementation/progress.json",
+      "exists": true,
+      "digest": "42d92dad8ab9b0dcb4e590381a687ffbf9c7c4d3f9e670e8ca137a99f41f6a76"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00055_reduce-workflow-drag-for-small-documentation-wri/outcome.md",
+      "exists": true,
+      "digest": "a359cd29b6055c59a0de5d0f8688e3dd286a6eed9ee91bf0382ddb6f8e7abe7a"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

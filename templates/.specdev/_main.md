@@ -20,7 +20,9 @@ fi
 
 ## Start here
 
-1. Read `.specdev/project_notes/big_picture.md` and repository instructions.
+1. For governed product work, read `.specdev/project_notes/big_picture.md` and
+   repository instructions. For a Direct documentation write, read destination
+   instructions and only the narrowly necessary facts instead.
 2. Classify the user's request before creating anything: Direct, Adhoc,
    Discussion, Assignment, or Mission. Recommend a lane when useful, but let the
    user select it. Never silently turn every request into an Assignment.
@@ -31,10 +33,21 @@ discussion D00001`.
    plan changes, failed verification, and blockers immediately; repeated
    read-only probes within an announced phase need no additional message.
 
-Questions, explanations, status checks, and read-only inspection are **Direct**:
-answer them without a graph or log. A user instruction such as “directly”, “just
-do it”, “skip SpecDev”, or “no assignment” rules out an Assignment unless the
-user later chooses one.
+Questions, explanations, status checks, read-only inspection, and small
+user-requested documentation artifacts are **Direct** when they do not change
+product, runtime, public-contract, or governed workflow behavior. Handle them
+without a graph, receipt, or automatic commit. A Markdown extension alone does
+not make an artifact Direct. A user instruction such as “directly”, “just do
+it”, “skip SpecDev”, or “no assignment” rules out an Assignment unless the user
+later chooses one.
+
+For a Direct documentation write, announce the write once, read destination
+instructions and only the facts needed for the artifact, write first, and
+verify narrowly. Do not require `big_picture.md`, broad source inspection, or a
+nearby example unless the requested document or an uncertain fact needs them.
+For example, writing an HTTP usage manual under `project_notes/manual/` is
+Direct when it only records existing behavior. “Use SpecDev Adhoc to update the
+public API manual and commit it” explicitly selects governed Adhoc work.
 
 An explicit request to write a bounded coordination or handoff note into another
 repository is an auxiliary write, not an implicit Adhoc selection or a reason to
@@ -86,8 +99,9 @@ verification, ownership, destination approval, or rebuild requirements.
 
 ## Work types
 
-- **Direct:** questions, explanations, status, and read-only inspection. No
-  workflow and no durable receipt.
+- **Direct:** questions, explanations, status, read-only inspection, and small
+  non-behavioral user-requested documentation artifacts. No workflow, durable
+  receipt, or automatic commit.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,
   scheduler, subagent, worktree, or approval gate. It records one concise
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.

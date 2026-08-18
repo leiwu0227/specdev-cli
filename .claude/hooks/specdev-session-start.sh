@@ -57,8 +57,8 @@ if [ -n "$NEXT_JSON" ]; then
       const instructions = state.instructions || state.prompt || "";
       if (state.state === "idle" || workflow === "none") {
         process.stdout.write(
-          "SpecDev installed. Classify the user request before creating state: Direct for questions/read-only inspection, or user-selected Adhoc, Discussion, Assignment, or Mission. Never silently create an Assignment for every request." +
-          "\n\nAnnounce every subtask with \"Specdev: <action>\"."
+          "SpecDev installed. Classify the user request before creating state: Direct for questions, read-only inspection, and small non-behavioral documentation writes; or explicitly user-selected Adhoc, Discussion, Assignment, or Mission. Direct writes create no workflow state, receipt, or automatic commit. Never silently create an Assignment for every request." +
+          "\n\nAnnounce meaningful phases, plan changes, failed verification, and blockers with \"Specdev: <action>\"; repeated read-only probes need no separate announcement."
         );
         process.exit(0);
       }
@@ -66,7 +66,7 @@ if [ -n "$NEXT_JSON" ]; then
         "SpecDev active. Workflow: " + workflow + " | State: " + state.state + " | Phase: " + phase +
         "\n\nNext: " + command +
         (instructions ? "\n\nInstructions: " + instructions : "") +
-        "\n\nAnnounce every subtask with \"Specdev: <action>\"."
+        "\n\nAnnounce meaningful phases, plan changes, failed verification, and blockers with \"Specdev: <action>\"; repeated read-only probes need no separate announcement."
       );
     } catch {
       process.exit(1);
@@ -115,13 +115,13 @@ else
   # Fallback: filesystem detection (for older specdev versions)
   ASSIGNMENTS_DIR="$SPECDEV_DIR/assignments"
   if [ ! -d "$ASSIGNMENTS_DIR" ]; then
-    emit_hook_json "You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce every subtask with \"Specdev: <action>\".\nIf you stop announcing subtasks, the user will assume you've stopped following the workflow."
+    emit_hook_json "You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce meaningful phases, plan changes, failed verification, and blockers with \"Specdev: <action>\"; repeated read-only probes need no separate announcement."
     exit 0
   fi
 
   LATEST=$(ls -1d "$ASSIGNMENTS_DIR"/*/ 2>/dev/null | sort | tail -1 || true)
   if [ -z "$LATEST" ]; then
-    emit_hook_json "You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce every subtask with \"Specdev: <action>\".\nIf you stop announcing subtasks, the user will assume you've stopped following the workflow."
+    emit_hook_json "You have specdev installed. Read .specdev/_main.md for the full workflow.\n\nAnnounce meaningful phases, plan changes, failed verification, and blockers with \"Specdev: <action>\"; repeated read-only probes need no separate announcement."
     exit 0
   fi
 
@@ -196,7 +196,7 @@ if [ -n "$TOOL_SKILLS" ]; then
   CONTEXT="${CONTEXT}\n\nTool skills available: ${TOOL_SKILLS}. Declare in plan tasks via Skills: field."
 fi
 
-CONTEXT="${CONTEXT}\n\nAnnounce every subtask with \"Specdev: <action>\".\nIf you stop announcing subtasks, the user will assume you've stopped following the workflow."
+CONTEXT="${CONTEXT}\n\nAnnounce meaningful phases, plan changes, failed verification, and blockers with \"Specdev: <action>\"; repeated read-only probes need no separate announcement."
 
 emit_hook_json "$CONTEXT"
 exit 0

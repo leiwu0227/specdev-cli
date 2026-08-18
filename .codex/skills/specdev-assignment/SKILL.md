@@ -6,6 +6,21 @@ description: Create an Assignment and collaborate on its single contract
 Run `specdev assignment "<objective>"`. Collaborate directly with the user in
 `brainstorm/contract.md`; do not spawn a Brainstorm author.
 
+After reading `.specdev/project_notes/big_picture.md`, run one bounded
+`specdev knowledge search "<objective terms>"` while shaping the contract.
+Read only relevant fresh result paths, keep repository instructions and the
+approved contract authoritative, and never bulk-load the knowledge directory.
+Carry relevant paths into contract context or the implementation plan. Search
+again with symptom terms after an unexpected failure. Precise all-term and
+quoted-phrase matching is the default; narrow partial or noisy results first and
+use `--mode=broad` only for deliberate any-term discovery. Results are
+historical investigation leads, not current authority: inspect relevant current
+code and look for hard-coded counts, enumerated families, and other closed-world
+assumptions. Route reusable constraints missing from living knowledge through a
+repository-evidence-bound, user-approved `knowledge curate` proposal; never
+bulk-index source or publish the search result itself. Stale results require
+explicit retrieval and revalidation.
+
 Keep the contract proportional. Reference existing project context instead of
 restating it, record only change-specific decisions and constraints, and use the
 fewest independent observable acceptance criteria (normally 1-3 for a small
@@ -29,4 +44,5 @@ brainstorm` once more to present the final hash. Only after explicit user
 agreement run `specdev approve brainstorm`, then `specdev implement` for the
 automatic section.
 
-Announce every subtask with "Specdev: <action>".
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.

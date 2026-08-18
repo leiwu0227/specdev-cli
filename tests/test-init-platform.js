@@ -1,9 +1,10 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const REPO_ROOT = join(__dirname, '..')
 const CLI = join(__dirname, '..', 'bin', 'specdev.js')
 const TEST_DIR = join(__dirname, 'test-init-platform-output')
 
@@ -57,6 +58,14 @@ assert(
   '_main.md defines phase-level announcement granularity'
 )
 assert(
+  normalizedProse(mainMd).includes('small user-requested documentation artifacts') &&
+    normalizedProse(mainMd).includes('without a graph, receipt, or automatic commit') &&
+    normalizedProse(mainMd).includes('write first, and verify narrowly') &&
+    mainMd.includes('project_notes/manual/') &&
+    normalizedProse(mainMd).includes('Use SpecDev Adhoc to update the public API manual'),
+  '_main.md defines Direct documentation eligibility, proportional orientation, and explicit Adhoc routing'
+)
+assert(
   normalizedProse(mainMd).includes('coordination or handoff note') &&
     normalizedProse(mainMd).includes('not an implicit Adhoc selection') &&
     normalizedProse(mainMd).includes('re-anchor in that repository'),
@@ -82,6 +91,13 @@ for (const [adapterName, adapter] of [
       adapter.includes('does not select Adhoc') &&
       adapter.includes('re-anchor in that repository'),
     `${adapterName} preserves explicit lane selection and destination-repository re-anchoring`
+  )
+  assert(
+    normalizedProse(adapter).includes('small requested documentation artifacts') &&
+      normalizedProse(adapter).includes('create no graph, receipt, or automatic commit') &&
+      normalizedProse(adapter).includes('read destination instructions') &&
+      normalizedProse(adapter).includes('Use SpecDev Adhoc to update the public API manual'),
+    `${adapterName} exposes the Direct documentation fast path and explicit Adhoc example`
   )
 }
 
@@ -146,11 +162,19 @@ for (const skillRoot of ['.claude', '.codex']) {
   )
   const installedAdhocProse = normalizedProse(installedAdhocSkill)
   assert(
-    installedAdhocProse.includes('selecting a bounded file write has not thereby selected Adhoc') &&
+    installedAdhocProse.includes('bounded file write request has not thereby selected Adhoc') &&
       installedAdhocProse.includes('coordination or handoff note') &&
       installedAdhocProse.includes('do not create SpecDev state in the active repository') &&
       installedAdhocProse.includes('re-anchor in that repository'),
     `${skillRoot} Adhoc skill preserves the handoff-note exemption and repo-B classification boundary`
+  )
+  assert(
+    installedAdhocSkill.includes(
+      'description: Run a user-explicitly-selected Adhoc change without a RippleGraph workflow'
+    ) &&
+      installedAdhocProse.includes('write an HTTP usage manual under project notes') &&
+      installedAdhocProse.includes('Use SpecDev Adhoc to update the public API manual and commit it'),
+    `${skillRoot} Adhoc skill makes explicit activation and documentation routing visible`
   )
   assert(
     installedAdhocSkill.includes('exact temporary-index transaction') &&
@@ -193,12 +217,52 @@ assert(
   'reviewloop skill requires a contract preview before approval'
 )
 
+const installedSkillNames = readdirSync(join(TEST_DIR, '.claude', 'skills'), {
+  withFileTypes: true,
+})
+  .filter((entry) => entry.isDirectory() && entry.name.startsWith('specdev-'))
+  .map((entry) => entry.name)
+  .sort()
+for (const skillRoot of ['.claude', '.codex']) {
+  for (const skillName of installedSkillNames) {
+    const installedSkill = readFileSync(
+      join(TEST_DIR, skillRoot, 'skills', skillName, 'SKILL.md'),
+      'utf-8'
+    )
+    const trackedSkill = readFileSync(
+      join(REPO_ROOT, skillRoot, 'skills', skillName, 'SKILL.md'),
+      'utf-8'
+    )
+    assert(
+      trackedSkill === installedSkill,
+      `${skillRoot}/${skillName} tracked host copy matches generated skill prose`
+    )
+    assert(
+      !installedSkill.includes('Announce every subtask') &&
+        normalizedProse(installedSkill).includes(
+          'Announce meaningful phases, plan changes, failed verification, and blockers'
+        ) &&
+        normalizedProse(installedSkill).includes(
+          'repeated read-only probes need no separate announcement'
+        ),
+      `${skillRoot}/${skillName} uses meaningful-phase announcement guidance`
+    )
+  }
+}
+
 // ---- Test hook installation ----
 console.log('\nhook installation:')
 const hookScript = join(TEST_DIR, '.claude', 'hooks', 'specdev-session-start.sh')
 assert(existsSync(hookScript), '.claude/hooks/specdev-session-start.sh exists')
 const hookContent = readFileSync(hookScript, 'utf-8')
 assert(hookContent.startsWith('#!/usr/bin/env bash'), 'hook script starts with bash shebang')
+assert(
+  !hookContent.includes('Announce every subtask') &&
+    hookContent.includes('Announce meaningful phases') &&
+    hookContent.includes('small non-behavioral documentation writes') &&
+    hookContent.includes('Direct writes create no workflow state, receipt, or automatic commit'),
+  'SessionStart guidance exposes Direct writes and meaningful-phase announcements'
+)
 const settingsFile = join(TEST_DIR, '.claude', 'settings.json')
 assert(existsSync(settingsFile), '.claude/settings.json exists')
 const settings = JSON.parse(readFileSync(settingsFile, 'utf-8'))
