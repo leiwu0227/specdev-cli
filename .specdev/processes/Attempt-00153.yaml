@@ -1,0 +1,20 @@
+id: Attempt-00153
+kind: worker
+status: blocked
+workspace: .
+base_revision: c627bf330ba9b1534b3ae9c9c28d7f17d59a5291
+started_at: 2026-08-21T06:04:15.891Z
+profile: worker
+provider: codex
+model: gpt-5.6-sol
+effort: high
+network: false
+result_path: null
+assignment: 00056_prevent-adhoc-from-implicitly-shelving-active-as
+duration_ms: 555727
+usage:
+  provider_reported_tokens: 224158
+result_revision: working-tree@c627bf330ba9b1534b3ae9c9c28d7f17d59a5291
+ended_at: 2026-08-21T06:13:31.666Z
+result_status: blocked
+result_retention: local-cache-only

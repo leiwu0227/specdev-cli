@@ -1,3 +1,5 @@
+import { join } from 'node:path'
+import fse from 'fs-extra'
 import { initCommand } from './init.js'
 import { updateCommand } from './update.js'
 import { helpCommand } from './help.js'
@@ -21,6 +23,25 @@ import { engineCommand } from './engine.js'
 import { missionCommand } from './mission.js'
 import { testAuditCommand } from './test-audit.js'
 import { adhocCommand } from './adhoc.js'
+import { resolveTargetDir } from '../utils/command-context.js'
+
+const ASSIGNMENT_ADVANCING_COMMANDS = new Set([
+  'start',
+  'assignment',
+  'checkpoint',
+  'approve',
+  'continue',
+  'next',
+  'reviewloop',
+  'implement',
+  'focus',
+  'mission',
+  'do',
+  'decide',
+  'step',
+  'action',
+  'cancel',
+])
 
 const commandHandlers = {
   init: ({ flags }) => initCommand(flags),
@@ -53,6 +74,7 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     helpCommand(flags)
     return
   }
+  if (await blockAssignmentAdvanceDuringAdhoc(command, flags)) return
   if (['do', 'decide', 'step', 'action', 'cancel'].includes(command)) {
     await engineCommand(command, positionalArgs, flags)
     return
@@ -97,4 +119,31 @@ export async function dispatchCommand(command, positionalArgs, flags) {
   }
 
   await handler({ positionalArgs, flags })
+}
+
+async function blockAssignmentAdvanceDuringAdhoc(command, flags) {
+  if (!ASSIGNMENT_ADVANCING_COMMANDS.has(command)) return false
+  const activePath = join(resolveTargetDir(flags), '.specdev', 'cache', 'adhoc.json')
+  if (!(await fse.pathExists(activePath))) return false
+  const active = await fse.readJson(activePath).catch(() => null)
+  const assignment = active?.assignment_coexistence || null
+  const payload = {
+    command,
+    version: 1,
+    status: 'blocked',
+    state: 'adhoc_detour_active',
+    adhoc: active ? { id: active.id, scope: active.scope } : null,
+    assignment,
+    next_action:
+      'Finish or cancel the active Adhoc before advancing, reviewing, replacing, shelving, or changing Assignment focus.',
+  }
+  if (flags.json) console.log(JSON.stringify(payload, null, 2))
+  else {
+    const label = active?.id || '(unreadable active state)'
+    const assignmentLabel = assignment ? ` preserves Assignment ${assignment.id}` : ''
+    console.error(`Command blocked while Adhoc ${label}${assignmentLabel}.`)
+    console.error(`Next: ${payload.next_action}`)
+  }
+  process.exitCode = 1
+  return true
 }

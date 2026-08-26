@@ -500,6 +500,206 @@ try {
     secondFinished.delivery_commit
   )
 
+  const assignmentAdhocRoot = tempProject('assignment-adhoc')
+  runGit(assignmentAdhocRoot, ['init', '--quiet'])
+  configureGit(assignmentAdhocRoot)
+  runJson(assignmentAdhocRoot, ['init', '--platform=none', '--json'])
+  writeBigPicture(assignmentAdhocRoot)
+  writeFileSync(join(assignmentAdhocRoot, 'README.md'), '# Assignment Adhoc fixture\n', 'utf8')
+  runGit(assignmentAdhocRoot, ['add', '--all'])
+  runGit(assignmentAdhocRoot, ['commit', '--quiet', '-m', 'initialize coexistence fixture'])
+  const coexistenceBase = gitText(assignmentAdhocRoot, ['rev-parse', 'HEAD'])
+  const preservedAssignment = runJson(assignmentAdhocRoot, [
+    'assignment',
+    'Preserve this active assignment through a bounded detour',
+    '--slug=preserved-through-adhoc',
+    '--json',
+  ])
+  const preservedAssignmentPath = join(assignmentAdhocRoot, preservedAssignment.path)
+  writeContract(preservedAssignmentPath, 'Preserve this active Assignment through Adhoc')
+  runJson(assignmentAdhocRoot, ['checkpoint', 'brainstorm', '--json'])
+  runJson(assignmentAdhocRoot, ['approve', 'brainstorm', '--json'])
+  const preservedStatusPath = join(preservedAssignmentPath, 'status.json')
+  const preservedStatus = JSON.parse(readFileSync(preservedStatusPath, 'utf8'))
+  assert.equal(preservedStatus.git_boundary, undefined)
+  const preservedRunPath = join(
+    assignmentAdhocRoot,
+    '.specdev',
+    '.ripplegraph',
+    'runs',
+    preservedStatus.run_id,
+    'checkpoint.json'
+  )
+  const preservedBefore = {
+    focus: readFileSync(join(assignmentAdhocRoot, '.specdev', '.current'), 'utf8'),
+    current: readFileSync(
+      join(assignmentAdhocRoot, '.specdev', '.ripplegraph', 'current.json'),
+      'utf8'
+    ),
+    status: readFileSync(preservedStatusPath, 'utf8'),
+    run: readFileSync(preservedRunPath, 'utf8'),
+  }
+
+  const coexistence = runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'start',
+    'Correct one detached help example',
+    '--json',
+  ])
+  assert.equal(coexistence.status, 'started')
+  assert.equal(coexistence.assignment_coexistence.id, preservedAssignment.id)
+  assert.equal(coexistence.assignment_coexistence.run_id, preservedStatus.run_id)
+  assert.equal(coexistence.worktree.product_dirty.count, 0)
+  assert(coexistence.worktree.preserved_workflow_state.paths.includes('.specdev/.current'))
+  assert(
+    coexistence.worktree.preserved_workflow_state.paths.some((path) =>
+      path.startsWith(preservedAssignment.path)
+    )
+  )
+  const guardedNext = runJson(assignmentAdhocRoot, ['next', '--json'], 1)
+  assert.equal(guardedNext.state, 'adhoc_detour_active')
+  assert.equal(guardedNext.assignment.id, preservedAssignment.id)
+  writeFileSync(join(assignmentAdhocRoot, 'detour.txt'), 'bounded detour\n', 'utf8')
+  const coexistenceFinished = runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'finish',
+    '--outcome=Corrected the detached help example',
+    '--verification=Inspected the focused coexistence fixture',
+    '--json',
+  ])
+  assert.equal(coexistenceFinished.status, 'completed')
+  assert.equal(coexistenceFinished.assignment_coexistence.id, preservedAssignment.id)
+  const coexistenceCommittedPaths = gitText(assignmentAdhocRoot, [
+    'diff-tree',
+    '--no-commit-id',
+    '--name-only',
+    '-r',
+    coexistenceFinished.delivery_commit,
+  ]).split('\n')
+  assert(coexistenceCommittedPaths.includes('detour.txt'))
+  assert(coexistenceCommittedPaths.includes(coexistenceFinished.receipt))
+  assert.equal(
+    coexistenceCommittedPaths.some((path) => path.startsWith('.specdev/assignments/')),
+    false
+  )
+  assert.equal(coexistenceCommittedPaths.includes('.specdev/.current'), false)
+  assert.equal(
+    readFileSync(join(assignmentAdhocRoot, '.specdev', '.current'), 'utf8'),
+    preservedBefore.focus
+  )
+  assert.equal(
+    readFileSync(join(assignmentAdhocRoot, '.specdev', '.ripplegraph', 'current.json'), 'utf8'),
+    preservedBefore.current
+  )
+  assert.equal(readFileSync(preservedStatusPath, 'utf8'), preservedBefore.status)
+  assert.equal(readFileSync(preservedRunPath, 'utf8'), preservedBefore.run)
+  assert.equal(existsSync(join(preservedAssignmentPath, 'shelved.md')), false)
+  assert.equal(runJson(assignmentAdhocRoot, ['next', '--json']).phase, 'design')
+
+  const cancelledDetour = runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'start',
+    'Try then cancel a second detached edit',
+    '--json',
+  ])
+  writeFileSync(join(assignmentAdhocRoot, 'cancelled-detour.txt'), 'left untouched\n', 'utf8')
+  const cancelled = runJson(assignmentAdhocRoot, ['adhoc', 'cancel', '--json'])
+  assert.equal(cancelled.id, cancelledDetour.id)
+  assert.equal(cancelled.assignment_coexistence.id, preservedAssignment.id)
+  assert.equal(existsSync(join(assignmentAdhocRoot, 'cancelled-detour.txt')), true)
+  assert.equal(readFileSync(preservedStatusPath, 'utf8'), preservedBefore.status)
+  rmSync(join(assignmentAdhocRoot, 'cancelled-detour.txt'))
+
+  writeFileSync(
+    join(assignmentAdhocRoot, 'ambiguous-product.txt'),
+    'unowned product work\n',
+    'utf8'
+  )
+  const dirtyAssignmentBlock = runJson(
+    assignmentAdhocRoot,
+    ['adhoc', 'start', 'Do not absorb Assignment work', '--adopt-dirty', '--json'],
+    1
+  )
+  assert.equal(dirtyAssignmentBlock.state, 'assignment_dirty_product_conflict')
+  assert.equal(existsSync(join(assignmentAdhocRoot, '.specdev', 'cache', 'adhoc.json')), false)
+  rmSync(join(assignmentAdhocRoot, 'ambiguous-product.txt'))
+
+  const attemptId = 'Attempt-99999'
+  const attemptPath = join(assignmentAdhocRoot, '.specdev', 'processes', `${attemptId}.yaml`)
+  const markerPath = join(
+    assignmentAdhocRoot,
+    '.specdev',
+    'cache',
+    'processes',
+    `${attemptId}.json`
+  )
+  mkdirSync(join(assignmentAdhocRoot, '.specdev', 'processes'), { recursive: true })
+  writeFileSync(
+    attemptPath,
+    `id: ${attemptId}\nkind: worker\nstatus: running\nworkspace: .\nstarted_at: 2026-08-21T00:00:00.000Z\nassignment: ${preservedAssignment.name}\n`,
+    'utf8'
+  )
+  mkdirSync(join(assignmentAdhocRoot, '.specdev', 'cache', 'processes'), { recursive: true })
+  writeFileSync(markerPath, JSON.stringify({ attempt: attemptId, pid: process.pid }), 'utf8')
+  const liveAttemptBlock = runJson(
+    assignmentAdhocRoot,
+    ['adhoc', 'start', 'Do not overlap a live worker', '--json'],
+    1
+  )
+  assert.equal(liveAttemptBlock.state, 'assignment_attempt_conflict')
+  assert.equal(liveAttemptBlock.conflicts[0].reason, 'live_attempt')
+  rmSync(markerPath)
+  const ambiguousAttemptBlock = runJson(
+    assignmentAdhocRoot,
+    ['adhoc', 'start', 'Do not overlap an ambiguous worker', '--json'],
+    1
+  )
+  assert.equal(ambiguousAttemptBlock.conflicts[0].reason, 'ambiguous_running_attempt')
+  rmSync(attemptPath)
+
+  const boundaryStatus = {
+    ...preservedStatus,
+    git_boundary: {
+      version: 1,
+      starting_git_commit_hash: coexistenceFinished.delivery_commit,
+      starting_branch: 'main',
+      starting_worktree: 'clean',
+      adopted_path_count: 0,
+      established_at: new Date().toISOString(),
+    },
+  }
+  writeFileSync(preservedStatusPath, `${JSON.stringify(boundaryStatus, null, 2)}\n`, 'utf8')
+  const boundaryBlock = runJson(
+    assignmentAdhocRoot,
+    ['adhoc', 'start', 'Do not rebase implementation', '--json'],
+    1
+  )
+  assert.equal(boundaryBlock.state, 'assignment_boundary_conflict')
+  assert.equal(boundaryBlock.conflicts[0].boundary, coexistenceFinished.delivery_commit)
+  writeFileSync(preservedStatusPath, preservedBefore.status, 'utf8')
+
+  writeFileSync(
+    join(assignmentAdhocRoot, '.specdev', '.ripplegraph', 'current.json'),
+    `${JSON.stringify({ focusedRunId: 'assignment-lifecycle-uncertain' }, null, 2)}\n`,
+    'utf8'
+  )
+  const uncertainBlock = runJson(
+    assignmentAdhocRoot,
+    ['adhoc', 'start', 'Do not guess workflow ownership', '--json'],
+    1
+  )
+  assert.equal(uncertainBlock.state, 'assignment_state_ambiguous')
+  assert.match(uncertainBlock.conflicts[0].problem, /ownership disagree/)
+  writeFileSync(
+    join(assignmentAdhocRoot, '.specdev', '.ripplegraph', 'current.json'),
+    preservedBefore.current,
+    'utf8'
+  )
+  assert.equal(
+    gitText(assignmentAdhocRoot, ['rev-parse', `${coexistenceFinished.delivery_commit}^`]),
+    coexistenceBase
+  )
+
   const root = tempProject('main')
   runGit(root, ['init', '--quiet'])
   configureGit(root)
@@ -517,8 +717,8 @@ try {
   const registryPath = join(root, '.specdev', '.ripplegraph', 'registry.json')
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
   assert.equal(Object.keys(registry.graphs).length, 8)
-  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.2\.0$/)
-  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.4\.0$/)
+  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.3\.0$/)
+  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.5\.0$/)
   assert.equal(registry.graphs['discussion-lifecycle'].kind, 'callable')
 
   assert.equal(runJson(root, ['next', '--json']).state, 'idle')

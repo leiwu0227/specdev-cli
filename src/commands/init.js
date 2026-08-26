@@ -55,7 +55,9 @@ description: Run a user-explicitly-selected Adhoc change without a RippleGraph w
 ---
 
 Use Adhoc only when the user selects a concrete bounded repository change and
-does not want an Assignment. Start with \`specdev adhoc start "<scope>"\`.
+does not want that detour to become another Assignment. This does not reject or
+terminate an unrelated active Assignment. Start with \`specdev adhoc start
+"<scope>"\`.
 
 Read \`.specdev/project_notes/big_picture.md\` unconditionally. When repository
 behavior, conventions, or a recurring failure is unfamiliar, run a bounded
@@ -90,6 +92,16 @@ Discussion and Test Audit paths remain outside Adhoc ownership; requesting
 reports every rejected owner and recovery action. An accepted adoption persists
 the exact path/status manifest at the starting revision. Use \`--title="..."\`
 when the commit needs a short subject independent of the full receipt scope.
+
+An active standalone Assignment may coexist only at its quiescent approved
+pre-implementation boundary: its focus, lifecycle run, artifacts, and Attempt
+records remain preserved outside Adhoc ownership. An implementation Git
+boundary, a live or ambiguous worker/reviewer Attempt, dirty product paths, or
+uncertain ownership blocks Adhoc before state is created. \`--adopt-dirty\`
+cannot absorb those conflicts. Finish and cancel retain the same Assignment
+identity for continuation; shelving is explicit terminal user authority, never
+an automatic pause or prerequisite. Assignment-advancing commands remain
+blocked until the detour finishes or is cancelled.
 
 Make the change directly without a scheduler, worktree, subagent, or approval
 gate. Verification execution always requires repository/user authorization.

@@ -155,6 +155,12 @@ assert(
   adhocSkill.includes('requested, committed, rejected, and remaining'),
   'Adhoc skill documents Git-derived delivery facts'
 )
+assert(
+  normalizedProse(adhocSkill).includes('quiescent approved pre-implementation boundary') &&
+    normalizedProse(adhocSkill).includes('shelving is explicit terminal user authority') &&
+    normalizedProse(adhocSkill).includes('Finish and cancel retain the same Assignment identity'),
+  'Adhoc skill documents non-terminal active Assignment coexistence and blocking boundaries'
+)
 for (const skillRoot of ['.claude', '.codex']) {
   const installedAdhocSkill = readFileSync(
     join(TEST_DIR, skillRoot, 'skills', 'specdev-adhoc', 'SKILL.md'),
@@ -173,13 +179,21 @@ for (const skillRoot of ['.claude', '.codex']) {
       'description: Run a user-explicitly-selected Adhoc change without a RippleGraph workflow'
     ) &&
       installedAdhocProse.includes('write an HTTP usage manual under project notes') &&
-      installedAdhocProse.includes('Use SpecDev Adhoc to update the public API manual and commit it'),
+      installedAdhocProse.includes(
+        'Use SpecDev Adhoc to update the public API manual and commit it'
+      ),
     `${skillRoot} Adhoc skill makes explicit activation and documentation routing visible`
   )
   assert(
     installedAdhocSkill.includes('exact temporary-index transaction') &&
       installedAdhocSkill.includes('requested, committed, rejected, and remaining'),
     `${skillRoot} Adhoc skill retains ownership and transaction guidance`
+  )
+  assert(
+    installedAdhocProse.includes('quiescent approved pre-implementation boundary') &&
+      installedAdhocProse.includes('Assignment-advancing commands remain blocked') &&
+      installedAdhocProse.includes('never an automatic pause or prerequisite'),
+    `${skillRoot} Adhoc skill preserves active Assignment ownership without implicit shelving`
   )
 }
 

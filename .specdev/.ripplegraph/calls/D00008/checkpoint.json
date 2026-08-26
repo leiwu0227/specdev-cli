@@ -1,0 +1,25 @@
+{
+  "callId": "D00008",
+  "status": "active",
+  "graphId": "discussion-lifecycle",
+  "graphVersion": "2.0.0",
+  "packagePath": "workflows/discussion-lifecycle@2.0.0",
+  "position": {
+    "graph": "discussion-lifecycle",
+    "node": "finalize"
+  },
+  "input": {
+    "id": "D00008",
+    "path": ".specdev/discussions/D00008_expand-discussion-artifact-workspace-and-governe",
+    "description": "Expand Discussion artifact workspace and governed shared-note publication",
+    "start_revision": "c627bf330ba9b1534b3ae9c9c28d7f17d59a5291"
+  },
+  "outputs": {
+    "brainstorm": {
+      "proposal": ".specdev/discussions/D00008_expand-discussion-artifact-workspace-and-governe/brainstorm/proposal.md",
+      "design": ".specdev/discussions/D00008_expand-discussion-artifact-workspace-and-governe/brainstorm/design.md"
+    }
+  },
+  "createdAt": "2026-08-26T03:45:59.228Z",
+  "updatedAt": "2026-08-26T03:48:23.858Z"
+}

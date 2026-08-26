@@ -1,0 +1,10 @@
+{
+  "id": "00056",
+  "name": "00056_prevent-adhoc-from-implicitly-shelving-active-as",
+  "path": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as",
+  "description": "Prevent Adhoc from implicitly shelving active Assignments and support safe temporary coexistence",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

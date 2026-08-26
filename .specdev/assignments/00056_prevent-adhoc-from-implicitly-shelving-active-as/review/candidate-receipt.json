@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "14d3d87fca0e6475d02b8e3524823d38a05d7a22f57530da25d318bd48d9e6c3",
+  "assignment": {
+    "id": "00056",
+    "folder": "00056_prevent-adhoc-from-implicitly-shelving-active-as"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/brainstorm/contract.md",
+    "hash": "a36356a67762bf3cf52c395deea9d8390169b04c263a3a2e87fe8ef80e20f6a8"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`npm run test:engine-integration` passed the active-Assignment coexistence, preserved identity/state, and boundary fixtures.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "The same engine integration run passed finish, cancel, exact commit ownership, and unchanged-Assignment continuation fixtures.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Engine integration passed default-deny conflict diagnostics, and `node tests/test-init-platform.js` passed all 118 generated-guidance assertions.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 2,
+    "items": [
+      {
+        "command": "node --check src/commands/adhoc.js && node --check src/commands/dispatch.js && node --check src/commands/init.js && node --check src/utils/adhoc-assignment.js && node --check tests/test-engine-integration.js && node --check tests/test-in...",
+        "revision": "working-tree@c627bf330ba9b1534b3ae9c9c28d7f17d59a5291",
+        "scope": "Changed source and focused fixture syntax plus repository whitespace integrity",
+        "status": "passed",
+        "duration_ms": 400,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "npm run test:engine-integration && node tests/test-init-platform.js",
+        "revision": "working-tree@c627bf330ba9b1534b3ae9c9c28d7f17d59a5291",
+        "scope": "AC-1, AC-2, and AC-3 focused authoritative acceptance",
+        "status": "passed",
+        "duration_ms": 18694,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:engine-integration && node tests/test-init-platform.js",
+        "revision": "working-tree@c627bf330ba9b1534b3ae9c9c28d7f17d59a5291",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 11,
+    "groups": [
+      {
+        "name": ".claude",
+        "count": 1,
+        "paths": [
+          ".claude/skills/specdev-adhoc/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": ".codex",
+        "count": 1,
+        "paths": [
+          ".codex/skills/specdev-adhoc/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 4,
+        "paths": [
+          "src/commands/adhoc.js",
+          "src/commands/dispatch.js",
+          "src/commands/init.js",
+          "src/utils/adhoc-assignment.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 2,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md",
+          "templates/.specdev/_main.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-engine-integration.js",
+          "tests/test-init-platform.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "None identified after focused acceptance passed."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/brainstorm/contract.md",
+      "exists": true,
+      "digest": "a36356a67762bf3cf52c395deea9d8390169b04c263a3a2e87fe8ef80e20f6a8"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/design/plan.md",
+      "exists": true,
+      "digest": "2d30658ee60c5293d17630b4fd496c07d96dab8c7bed354b86fd1bdc6dbec57d"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/implementation/progress.json",
+      "exists": true,
+      "digest": "81e08dde7b64df63187c473909d6f06ee3b641ecf5c9911d68443d231ad0e478"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/outcome.md",
+      "exists": true,
+      "digest": "5796ef6ad757fe59cead15ba768abe9e585be9e8bafbc1d210d6346bc87b1bfe"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

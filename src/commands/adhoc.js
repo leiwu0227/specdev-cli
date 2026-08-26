@@ -19,6 +19,10 @@ import {
   synchronizeIndexPaths,
 } from '../utils/git-delivery.js'
 import { relativeToRepo } from '../utils/assignment-vnext.js'
+import {
+  assignmentOwnedPathDetails,
+  resolveAdhocAssignmentCoexistence,
+} from '../utils/adhoc-assignment.js'
 
 export async function adhocCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -56,20 +60,43 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
     })
   }
 
+  const coexistence = await resolveAdhocAssignmentCoexistence(specdevPath)
+  if (coexistence.status === 'blocked') return blocked(flags, coexistence)
+
   const startingGitCommitHash = await requireGitHead(targetDir)
   const branch = await currentGitBranch(targetDir)
   const allEntries = await gitStatusEntries(targetDir)
   const allPaths = allEntries.map((entry) => entry.path)
+  const assignmentCoexistence = coexistence.status === 'safe' ? coexistence.assignment : null
   const rejectedPaths = flags['adopt-dirty']
     ? allPaths.flatMap((path) => {
+        if (assignmentOwnedPathDetails(path, assignmentCoexistence)) return []
         const rejection = concurrentCallablePathDetails(path)
         return rejection ? [rejection] : []
       })
     : []
   const decision = classifyWorktree(allPaths, {
-    adoptedPaths: flags['adopt-dirty'] && rejectedPaths.length === 0 ? allPaths : [],
+    adoptedPaths:
+      flags['adopt-dirty'] && rejectedPaths.length === 0 && !assignmentCoexistence ? allPaths : [],
     phase: 'start',
+    assignmentCoexistence,
   })
+  if (assignmentCoexistence && decision.product_dirty.count > 0) {
+    return blocked(flags, {
+      state: 'assignment_dirty_product_conflict',
+      assignment: assignmentCoexistence,
+      worktree: { ...decision, decision: 'blocked' },
+      conflicts: decision.product_dirty.paths.map((path) => ({
+        path,
+        owner: `Assignment ${assignmentCoexistence.id} or unresolved repository work`,
+        reason: 'dirty_product_ownership_ambiguous',
+        next_action:
+          'Inspect and separately resolve this path before starting Adhoc; --adopt-dirty cannot absorb work beside an active Assignment.',
+      })),
+      next_action:
+        'Resolve or separately checkpoint every dirty product path, then retry. The Assignment remains active and was not shelved.',
+    })
+  }
   if (decision.product_dirty.count > 0 && !flags['adopt-dirty']) {
     return blocked(flags, {
       state: 'dirty_worktree',
@@ -125,9 +152,12 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
       version: 1,
       starting_revision: startingGitCommitHash,
       paths: flags['adopt-dirty']
-        ? allEntries.map(({ path, status, role }) => ({ path, status, role }))
+        ? allEntries
+            .filter(({ path }) => !assignmentOwnedPathDetails(path, assignmentCoexistence))
+            .map(({ path, status, role }) => ({ path, status, role }))
         : [],
     },
+    assignment_coexistence: assignmentCoexistence,
     starting_worktree_decision: { ...decision, decision: 'allowed' },
     receipt: receiptRelative,
   }
@@ -142,6 +172,7 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
     starting_worktree: state.starting_worktree,
     adopted_path_count: state.adopted_path_count,
     adoption_manifest: state.adoption_manifest,
+    assignment_coexistence: state.assignment_coexistence,
     worktree: state.starting_worktree_decision,
     next_action:
       'Make the bounded change directly. Optionally capture commands with adhoc verify, then finish with an outcome and passing evidence or --verification.',
@@ -264,7 +295,7 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
   )
   const currentPaths = currentEntries
     .map((entry) => entry.path)
-    .filter((path) => !isProtectedAdhocPath(path))
+    .filter((path) => !isProtectedAdhocPath(path, active))
   if (currentPaths.length === 0) {
     return blocked(flags, {
       state: 'no_changes',
@@ -378,6 +409,7 @@ async function statusAdhoc(targetDir, specdevPath, flags) {
     scope: active.scope,
     starting_worktree: active.starting_worktree,
     adoption_manifest: active.adoption_manifest || null,
+    assignment_coexistence: active.assignment_coexistence || null,
     changed_paths: summarizeGitPaths(await gitStatusPaths(targetDir)),
   })
 }
@@ -414,6 +446,7 @@ async function cancelAdhoc(specdevPath, flags) {
     status: 'cancelled',
     id: active.id,
     source_changes: 'left_untouched',
+    assignment_coexistence: active.assignment_coexistence || null,
   })
 }
 
@@ -430,7 +463,10 @@ async function completedPayload(
   const startingGitCommitHash = verification.starting_git_commit_hash
   const committedPaths = verification.path_facts.committed
   const remainingPaths = verification.remaining_paths
-  const worktree = classifyWorktree(remainingPaths, { phase: 'finish' })
+  const worktree = classifyWorktree(remainingPaths, {
+    phase: 'finish',
+    assignmentCoexistence: active.assignment_coexistence,
+  })
   const verificationAttempts = active.verification_attempts || []
   return emit(flags, {
     command: 'adhoc finish',
@@ -457,6 +493,7 @@ async function completedPayload(
     remaining_worktree: worktree,
     product_worktree_clean: worktree.product_dirty.count === 0,
     recovered,
+    assignment_coexistence: active.assignment_coexistence || null,
   })
 }
 
@@ -533,7 +570,7 @@ async function verifyDeliveryCommit(targetDir, active, endingGitCommitHash) {
     })
   }
   for (const path of committed) {
-    const protectedPath = concurrentCallablePathDetails(path)
+    const protectedPath = protectedAdhocPathDetails(path, active)
     if (protectedPath) issues.push(protectedPath)
   }
   if (!committed.includes(active.receipt)) {
@@ -566,7 +603,7 @@ async function verifyDeliveryCommit(targetDir, active, endingGitCommitHash) {
   await synchronizeIndexPaths(targetDir, committed, endingGitCommitHash)
   const remainingPaths = await gitStatusPaths(targetDir)
   const remainingOwnedPaths = remainingPaths.filter(
-    (path) => path !== active.receipt && !isProtectedAdhocPath(path)
+    (path) => path !== active.receipt && !isProtectedAdhocPath(path, active)
   )
   const remainingIssues = remainingOwnedPaths.map((path) => ({
     path,
@@ -739,22 +776,35 @@ function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\\''")}'`
 }
 
-function classifyWorktree(paths, { adoptedPaths = [], phase } = {}) {
-  const workflowPaths = paths.filter(isProtectedAdhocPath)
-  const productPaths = paths.filter((path) => !isProtectedAdhocPath(path))
+function classifyWorktree(paths, { adoptedPaths = [], phase, assignmentCoexistence = null } = {}) {
+  const workflowPaths = paths.filter((path) =>
+    isProtectedAdhocPath(path, { assignment_coexistence: assignmentCoexistence })
+  )
+  const productPaths = paths.filter(
+    (path) => !isProtectedAdhocPath(path, { assignment_coexistence: assignmentCoexistence })
+  )
   return {
     version: 1,
     phase,
     product_dirty: pathClassification(productPaths),
     preserved_workflow_state: pathClassification(workflowPaths),
     adopted: pathClassification(adoptedPaths),
-    applied_policy: 'preserve_concurrent_discussion_and_test_audit_state',
+    applied_policy: assignmentCoexistence
+      ? 'preserve_active_assignment_and_concurrent_callable_state'
+      : 'preserve_concurrent_discussion_and_test_audit_state',
     decision: productPaths.length > 0 && adoptedPaths.length === 0 ? 'blocked' : 'allowed',
   }
 }
 
-function isProtectedAdhocPath(path) {
-  return Boolean(concurrentCallablePathDetails(path))
+function isProtectedAdhocPath(path, active = null) {
+  return Boolean(protectedAdhocPathDetails(path, active))
+}
+
+function protectedAdhocPathDetails(path, active = null) {
+  return (
+    assignmentOwnedPathDetails(path, active?.assignment_coexistence) ||
+    concurrentCallablePathDetails(path)
+  )
 }
 
 function pathClassification(paths) {
@@ -855,6 +905,7 @@ function emit(flags, payload) {
     if (payload.title) console.log(`Title: ${payload.title}`)
     if (payload.worktree) printWorktree(payload.worktree)
     if (payload.adoption_manifest) printAdoptionManifest(payload.adoption_manifest)
+    if (payload.assignment_coexistence) printAssignmentCoexistence(payload.assignment_coexistence)
     if (payload.start_worktree) printWorktree(payload.start_worktree, 'Starting')
     if (payload.receipt) console.log(`Receipt: ${payload.receipt}`)
     if (payload.delivery_commit) console.log(`Delivery commit: ${payload.delivery_commit}`)
@@ -895,6 +946,17 @@ function blocked(flags, details) {
         console.error(`  - +${details.working_tree.omitted} more path(s)`)
     }
     if (details.worktree) printWorktree(details.worktree, 'Worktree', console.error)
+    if (details.assignment) printAssignmentCoexistence(details.assignment, console.error)
+    if (details.conflicts?.length) {
+      console.error('Conflicts:')
+      for (const conflict of details.conflicts) {
+        const subject = conflict.path || conflict.attempt || conflict.owner || '(workflow state)'
+        console.error(`  - ${subject}: ${conflict.reason}`)
+        if (conflict.problem) console.error(`    Problem: ${conflict.problem}`)
+        if (conflict.boundary) console.error(`    Boundary: ${conflict.boundary}`)
+        if (conflict.next_action) console.error(`    Next: ${conflict.next_action}`)
+      }
+    }
     if (details.rejected_paths?.length) {
       console.error('Rejected paths:')
       for (const rejection of details.rejected_paths) {
@@ -936,6 +998,12 @@ function printAdoptionManifest(manifest, write = console.log) {
     write(`  - ${entry.status} ${entry.path}`)
   }
   if (manifest.paths.length > 12) write(`  - +${manifest.paths.length - 12} more path(s)`)
+}
+
+function printAssignmentCoexistence(assignment, write = console.log) {
+  write(
+    `Preserved Assignment: ${assignment.id} (${assignment.lifecycle || 'active'}, run ${assignment.run_id})`
+  )
 }
 
 function printPathFacts(facts, write = console.log) {

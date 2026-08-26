@@ -1,0 +1,34 @@
+{
+  "callId": "D00007",
+  "status": "completed",
+  "graphId": "discussion-lifecycle",
+  "graphVersion": "2.0.0",
+  "packagePath": "workflows/discussion-lifecycle@2.0.0",
+  "position": {
+    "graph": "discussion-lifecycle",
+    "node": "done"
+  },
+  "input": {
+    "id": "D00007",
+    "path": ".specdev/discussions/D00007_add-an-architecture-folder-alongside-project-not",
+    "description": "Add an architecture folder alongside project_notes/big_picture.md",
+    "start_revision": "c627bf330ba9b1534b3ae9c9c28d7f17d59a5291"
+  },
+  "outputs": {
+    "brainstorm": {
+      "proposal": ".specdev/discussions/D00007_add-an-architecture-folder-alongside-project-not/brainstorm/proposal.md",
+      "design": ".specdev/discussions/D00007_add-an-architecture-folder-alongside-project-not/brainstorm/design.md"
+    },
+    "finalize": {
+      "completed_revision": "c627bf330ba9b1534b3ae9c9c28d7f17d59a5291",
+      "artifact_hash": "46adb20f95bad36e93937dbaa366192f57857e33a821d35f25f4f47895acb558"
+    }
+  },
+  "createdAt": "2026-08-26T01:08:36.766Z",
+  "updatedAt": "2026-08-26T03:04:18.096Z",
+  "finalOutput": {
+    "completed_revision": "c627bf330ba9b1534b3ae9c9c28d7f17d59a5291",
+    "artifact_hash": "46adb20f95bad36e93937dbaa366192f57857e33a821d35f25f4f47895acb558"
+  },
+  "outputArtifact": "artifacts/finalize/output.json"
+}

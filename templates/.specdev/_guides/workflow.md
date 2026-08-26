@@ -16,6 +16,16 @@ RippleGraph run. `adhoc start` requires an existing Git HEAD and a clean
 worktree unless `--adopt-dirty` explicitly adopts the exact expanded eligible
 path manifest for all existing changes.
 
+“Does not want an Assignment” means the bounded detour should not become a new
+Assignment; it does not terminate an unrelated active one. A focused standalone
+Assignment may be preserved through Adhoc only while it is quiescent at the
+approved pre-implementation boundary. Its identity, focus, run, artifacts, and
+Attempt records remain outside Adhoc ownership. An implementation Git boundary,
+live or ambiguous worker/reviewer Attempt, dirty product work, or uncertain
+ownership blocks before state creation, and `--adopt-dirty` cannot absorb the
+conflict. Finish and cancel retain the same resumable Assignment. Shelving is an
+explicit terminal user choice, never an automatic pause or prerequisite.
+
 Selecting a bounded file write does not itself select Adhoc. An explicitly
 requested coordination or handoff note in another repository is an auxiliary
 artifact: write only the note, follow destination instructions, and create no

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node --check src/commands/adhoc.js && node --check src/commands/dispatch.js && node --check src/commands/init.js && node --check src/utils/adhoc-assignment.js && node --check tests/test-engine-integration.js && node --check tests/test-init-platform.js && git diff --check",
+      "revision": "working-tree@c627bf330ba9b1534b3ae9c9c28d7f17d59a5291",
+      "scope": "Changed source and focused fixture syntax plus repository whitespace integrity",
+      "status": "passed",
+      "duration_ms": 400,
+      "role": "qualification"
+    },
+    {
+      "command": "npm run test:engine-integration && node tests/test-init-platform.js",
+      "revision": "working-tree@c627bf330ba9b1534b3ae9c9c28d7f17d59a5291",
+      "scope": "AC-1, AC-2, and AC-3 focused authoritative acceptance",
+      "status": "passed",
+      "duration_ms": 18694,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "Focused verification exposed and repaired narrow fixture drift before passing: the synthetic Attempt directory was missing, workflow package assertions still named superseded versions, and tracked Adhoc host skills had not been synchronized with generated prose."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

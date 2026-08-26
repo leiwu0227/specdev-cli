@@ -1,0 +1,86 @@
+{
+  "runId": "assignment-lifecycle-20260821T05530369",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-08-21T05:53:03.699Z",
+  "updatedAt": "2026-08-26T04:17:30.641Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00056",
+      "name": "00056_prevent-adhoc-from-implicitly-shelving-active-as",
+      "path": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as",
+      "description": "Prevent Adhoc from implicitly shelving active Assignments and support safe temporary coexistence",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/brainstorm/contract.md",
+      "contract_hash": "a36356a67762bf3cf52c395deea9d8390169b04c263a3a2e87fe8ef80e20f6a8"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "a36356a67762bf3cf52c395deea9d8390169b04c263a3a2e87fe8ef80e20f6a8",
+      "actor": "user",
+      "approved_at": "2026-08-21T06:04:08.803Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "c627bf330ba9b1534b3ae9c9c28d7f17d59a5291"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/design/plan.md",
+      "attempt": "recovered-artifacts"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/implementation/progress.json",
+      "outcome": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/outcome.md",
+      "attempt": "recovered-artifacts"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/review/implementation-verdict.md",
+      "attempt": "Attempt-00154",
+      "disposition": "approved"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "a36356a67762bf3cf52c395deea9d8390169b04c263a3a2e87fe8ef80e20f6a8",
+      "actor": "user",
+      "approved_at": "2026-08-21T06:04:08.803Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "c627bf330ba9b1534b3ae9c9c28d7f17d59a5291"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.2.0",
+    "packagePath": "workflows/assignment-lifecycle@2.2.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00056_prevent-adhoc-from-implicitly-shelving-active-as/review/implementation-verdict.md",
+    "attempt": "Attempt-00154",
+    "disposition": "approved"
+  }
+}
