@@ -123,9 +123,11 @@ verification, ownership, destination approval, or rebuild requirements.
   (maximum 199). For design notes, report the intended final destination and
   concise scope, then write an approved `*_draft.md` draft and report only the
   draft path. After user approval, promote it to the final `.md` path and
-  report only the final path. Do not echo full content or diffs unless asked.
-  Product code and every other path are read-only. Roadmap creates no ID,
-  workflow state, receipt, snapshot, or automatic commit and grants no
+  automatically commit the published design-note change. Report only the final
+  path and commit. Do not echo full content or diffs unless asked. Product code
+  and every other path are read-only. Roadmap creates no ID, workflow state,
+  receipt, or snapshot. Draft writes are not committed automatically; published
+  design-note changes are committed after user approval. Roadmap grants no
   implementation authority. It has no active lifecycle and applies only during
   explicit roadmap collaboration. Selecting another lane immediately supersedes
   Roadmap without an exit command or state transition.

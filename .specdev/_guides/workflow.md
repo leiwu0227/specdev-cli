@@ -136,11 +136,13 @@ reports the intended final destination and a concise scope, then writes only
 after explicit user approval. Approval authorizes a `*_draft.md` draft within
 that agreed direction. After writing the draft, the agent reports only the
 draft Markdown path for user inspection. After user approval, the draft is
-promoted to the final `.md` path and the agent reports only that final path.
+promoted to the final `.md` path and the agent automatically commits the
+published design-note change. The agent reports only that final path and commit.
 The agent does not echo the full document or diff unless asked. Product code and
-all other paths remain read-only. Roadmap creates no identity, graph, receipt,
-snapshot, or automatic commit and does not authorize implementation of a
-forecast item. It has no active lifecycle and applies only during explicit
+all other paths remain read-only. Roadmap creates no identity, graph, receipt, or
+snapshot. Draft writes are not committed automatically; published design-note
+changes are committed after user approval. Roadmap does not authorize
+implementation of a forecast item. It has no active lifecycle and applies only during explicit
 roadmap collaboration. Selecting another lane immediately supersedes Roadmap;
 no exit command or state transition is required.
 

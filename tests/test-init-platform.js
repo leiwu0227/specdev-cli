@@ -98,7 +98,9 @@ assert(
     roadmapPayload.design_rules.presentation.includes('intended final destination') &&
     roadmapPayload.design_rules.presentation.includes('*_draft.md') &&
     roadmapPayload.design_rules.presentation.includes('promote the draft') &&
+    roadmapPayload.design_rules.presentation.includes('automatically commit') &&
     roadmapPayload.design_rules.presentation.includes('Do not echo full content') &&
+    roadmapPayload.history.includes('published design-note changes are committed') &&
     roadmapPayload.next_action.includes('approval before writing a draft') &&
     roadmapPayload.forecast_rules.derivation.includes('inspect current code read-only') &&
     roadmapPayload.forecast_rules.comparison_direction.includes('code gaps versus the designs') &&
@@ -333,9 +335,9 @@ assert(
   roadmapSkillProse.includes('only when the user explicitly selects it') &&
     roadmapSkillProse.includes('wait for explicit user approval to write') &&
     !roadmapSkillProse.includes('complete proposed content or diff') &&
-    roadmapSkillProse.includes(
-      'creates no ID, RippleGraph state, receipt, snapshot, or automatic commit'
-    ) &&
+    roadmapSkillProse.includes('creates no ID, RippleGraph state, receipt, or snapshot') &&
+    roadmapSkillProse.includes('Draft writes are not committed automatically') &&
+    roadmapSkillProse.includes('published design-note changes are committed after user approval') &&
     roadmapSkillProse.includes('fewer than 800 words (maximum 799)') &&
     roadmapSkillProse.includes('conceptual parent-child hierarchy') &&
     roadmapSkillProse.includes('one independent feature or module') &&
@@ -345,6 +347,7 @@ assert(
     roadmapSkillProse.includes('Write the draft as `*_draft.md`') &&
     roadmapSkillProse.includes('report only the draft Markdown path') &&
     roadmapSkillProse.includes('promote the draft to the final `.md` path') &&
+    roadmapSkillProse.includes('automatically commit the published design-note change') &&
     roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
     roadmapSkillProse.includes('never design gaps versus current code') &&
     roadmapSkillProse.includes('extra code-only features do not create forecast items') &&

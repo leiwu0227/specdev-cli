@@ -12,8 +12,8 @@ only absent or incomplete code in dependency order, limited to fewer than 200
 words per numbered Markdown section, with each section citing the Roadmap
 design note or notes it is based on. Code may be a superset; code-only features do not
 create forecast items or automatic design updates. Design notes are drafted as
-`*_draft.md`, reported by path only, and promoted to final `.md` only after user
-approval. Roadmap has no active lifecycle; selecting
+`*_draft.md`, reported by path only, promoted to final `.md` only after user
+approval, and automatically committed when published. Roadmap has no active lifecycle; selecting
 another lane immediately supersedes it without an exit command or state
 transition. Explicitly user-selected Adhoc work creates one receipt and final
 commit but no RippleGraph run.

@@ -308,10 +308,12 @@ report the intended final destination and a concise scope, then wait for
 explicit user approval to write a draft within that agreed direction. Write the
 draft as \`*_draft.md\` and report only the draft Markdown path so the user can
 inspect it. After user approval, promote the draft to the final \`.md\` path and
-report only that final path. Do not echo the full document or diff unless the
-user asks. Invocation alone never authorizes a write. Roadmap creates no ID,
-RippleGraph state, receipt, snapshot, or automatic commit, and it does not grant
-authority to implement forecast items.
+automatically commit the published design-note change. Report only the final
+path and commit. Do not echo the full document or diff unless the user asks.
+Invocation alone never authorizes a write. Roadmap creates no ID, RippleGraph
+state, receipt, or snapshot. Draft writes are not committed automatically;
+published design-note changes are committed after user approval. Roadmap does
+not grant authority to implement forecast items.
 
 Roadmap has no active lifecycle. It applies only while the user is explicitly
 collaborating on roadmap notes. Selecting another lane immediately supersedes
