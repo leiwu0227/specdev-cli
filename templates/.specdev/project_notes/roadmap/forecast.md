@@ -1,3 +1,3 @@
 # Forecast
 
-<!-- Record user-agreed design-to-code gaps in dependency order. Use one Markdown section per gap and keep every section below 200 words. -->
+<!-- Treat designs as the target. Record absent or incomplete code requirements in dependency order. Ignore code-only features. Use one section per gap, below 200 words. -->

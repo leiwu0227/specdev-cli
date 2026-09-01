@@ -114,12 +114,15 @@ It reports the standard files and the writable `roadmap/designs/*.md` plus
 Markdown file must contain fewer than 800 words (maximum 799). Besides
 `core_concepts.md` and `source_code_folder_structure.md`, each design note must
 cover one independent feature or module and minimize overlap with the standard
-notes and its peers. `forecast.md` is a future-work roadmap of gaps between the
-approved designs and current code. When creating or revising it, the coding
-agent quickly inspects current code read-only against the designs, identifies
-design-note sections not yet reflected in code, and lists the gaps in dependency
-order. Each gap is its own Markdown section containing fewer than 200 words
-(maximum 199). The coding agent must show the destination and complete proposed
+notes and its peers. `forecast.md` is a future-work roadmap of approved design
+requirements absent or incomplete in current code. The designs are the target
+state: forecast identifies code gaps versus designs, never design gaps versus
+code. Code may be a superset; code-only features create neither forecast items
+nor automatic design updates. The user separately initiates Roadmap
+collaboration to incorporate those features into the designs. When creating or
+revising the forecast, the coding agent quickly inspects current code read-only
+and lists code gaps in dependency order. Each gap is its own Markdown section
+containing fewer than 200 words (maximum 199). The coding agent must show the destination and complete proposed
 content or diff, and writes only after explicit user approval. Product code and
 all other paths remain read-only. Roadmap creates no identity, graph, receipt,
 snapshot, or automatic commit and does not authorize implementation of a

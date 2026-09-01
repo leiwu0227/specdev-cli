@@ -26,9 +26,16 @@ export async function roadmapCommand(flags = {}) {
         'Each note other than core_concepts.md and source_code_folder_structure.md covers one independent feature or module with minimal overlap.',
     },
     forecast_rules: {
-      purpose: 'A future-work roadmap of gaps between the approved designs and current code.',
+      purpose:
+        'A future-work roadmap of approved design requirements that are absent or incomplete in current code.',
       derivation:
         'When creating or revising forecast.md, quickly inspect current code read-only against the Roadmap designs and identify design-note sections not yet reflected in code.',
+      comparison_direction:
+        'Treat approved designs as the target state: identify code gaps versus the designs, never design gaps versus current code.',
+      code_superset:
+        'Current code may be a superset of the designs; extra code-only features do not create forecast items or automatic design-note updates.',
+      design_updates:
+        'The user separately initiates Roadmap collaboration to incorporate code-only features into design notes.',
       ordering: 'List gaps in dependency order, with each gap as its own Markdown section.',
       section_word_limit: 'fewer than 200 words per section (maximum 199)',
     },
@@ -56,6 +63,9 @@ export async function roadmapCommand(flags = {}) {
   console.log(`Additional design notes: ${payload.design_rules.additional_notes}`)
   console.log(`Forecast purpose: ${payload.forecast_rules.purpose}`)
   console.log(`Forecast derivation: ${payload.forecast_rules.derivation}`)
+  console.log(`Forecast comparison: ${payload.forecast_rules.comparison_direction}`)
+  console.log(`Code superset: ${payload.forecast_rules.code_superset}`)
+  console.log(`Design updates: ${payload.forecast_rules.design_updates}`)
   console.log(`Forecast ordering: ${payload.forecast_rules.ordering}`)
   console.log(`Forecast section word limit: ${payload.forecast_rules.section_word_limit}`)
   console.log(`Authority: ${payload.authority.writes}`)

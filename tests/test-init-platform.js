@@ -92,6 +92,9 @@ assert(
     roadmapPayload.design_rules.word_limit.includes('maximum 799') &&
     roadmapPayload.design_rules.additional_notes.includes('one independent feature or module') &&
     roadmapPayload.forecast_rules.derivation.includes('inspect current code read-only') &&
+    roadmapPayload.forecast_rules.comparison_direction.includes('code gaps versus the designs') &&
+    roadmapPayload.forecast_rules.code_superset.includes('Current code may be a superset') &&
+    roadmapPayload.forecast_rules.design_updates.includes('user separately initiates') &&
     roadmapPayload.forecast_rules.ordering.includes('dependency order') &&
     roadmapPayload.forecast_rules.section_word_limit.includes('maximum 199') &&
     JSON.stringify(snapshotTree(TEST_DIR)) === JSON.stringify(beforeRoadmap),
@@ -297,6 +300,9 @@ assert(
     roadmapSkillProse.includes('fewer than 800 words (maximum 799)') &&
     roadmapSkillProse.includes('one independent feature or module') &&
     roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
+    roadmapSkillProse.includes('never design gaps versus current code') &&
+    roadmapSkillProse.includes('extra code-only features do not create forecast items') &&
+    roadmapSkillProse.includes('user separately initiates Roadmap collaboration') &&
     roadmapSkillProse.includes('list those gaps in dependency order') &&
     roadmapSkillProse.includes('fewer than 200 words (maximum 199)') &&
     roadmapSkillProse.includes('Selecting another lane immediately supersedes') &&

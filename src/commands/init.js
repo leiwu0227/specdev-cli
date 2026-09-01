@@ -280,6 +280,12 @@ sections not yet reflected in code, and list those gaps in dependency order.
 Write each gap as its own Markdown section containing fewer than 200 words
 (maximum 199).
 
+Treat approved designs as the target state: identify code gaps versus the
+designs, never design gaps versus current code. Current code may be a superset
+of the designs; extra code-only features do not create forecast items or
+automatic design-note updates. The user separately initiates Roadmap
+collaboration to incorporate such features into the design notes.
+
 Collaborate with the user on one exact candidate edit at a time. Show the exact
 destination and complete proposed content or diff, then wait for explicit user
 approval before writing. Invocation alone never authorizes a write. Roadmap

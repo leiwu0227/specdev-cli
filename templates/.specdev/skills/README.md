@@ -7,9 +7,10 @@ Request routing is deliberately outside the graph: Direct questions,
 inspection, and small non-behavioral documentation writes create no state,
 receipt, or automatic commit; explicitly user-selected Roadmap collaboration is
 stateless and restricted to `roadmap/forecast.md` plus bounded design Markdown
-files after exact user approval. Forecast gaps are derived by quickly comparing
-the designs with current code, ordered by dependency, and limited to fewer than
-200 words per Markdown section. Roadmap has no active lifecycle; selecting
+files after exact user approval. Forecast treats designs as the target and lists
+only absent or incomplete code in dependency order, limited to fewer than 200
+words per Markdown section. Code may be a superset; code-only features do not
+create forecast items or automatic design updates. Roadmap has no active lifecycle; selecting
 another lane immediately supersedes it without an exit command or state
 transition. Explicitly user-selected Adhoc work creates one receipt and final
 commit but no RippleGraph run.

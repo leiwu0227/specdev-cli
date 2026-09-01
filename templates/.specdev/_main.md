@@ -109,9 +109,12 @@ verification, ownership, destination approval, or rebuild requirements.
   contain fewer than 800 words (maximum 799). Besides `core_concepts.md` and
   `source_code_folder_structure.md`, each note covers one independent feature
   or module with minimal overlap. `forecast.md` is a future-work roadmap of
-  gaps between approved designs and current code. When creating or revising it,
-  quickly inspect current code read-only against the designs, identify sections
-  not yet reflected in code, and list those gaps in dependency order, one
+  approved design requirements absent or incomplete in current code. Treat the
+  designs as the target state: identify code gaps versus designs, never design
+  gaps versus code. Code may be a superset; code-only features create neither
+  forecast items nor automatic design updates. The user separately initiates
+  Roadmap collaboration to incorporate those features into the designs. Quickly
+  inspect current code read-only and list code gaps in dependency order, one
   Markdown section per gap. Every forecast section must contain fewer than 200
   words (maximum 199). Product code and every other path are read-only. Roadmap
   creates no ID, workflow state, receipt, snapshot, or automatic commit and
