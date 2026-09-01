@@ -123,7 +123,9 @@ order. Each gap is its own Markdown section containing fewer than 200 words
 content or diff, and writes only after explicit user approval. Product code and
 all other paths remain read-only. Roadmap creates no identity, graph, receipt,
 snapshot, or automatic commit and does not authorize implementation of a
-forecast item.
+forecast item. It has no active lifecycle and applies only during explicit
+roadmap collaboration. Selecting another lane immediately supersedes Roadmap;
+no exit command or state transition is required.
 
 ## Discussion
 

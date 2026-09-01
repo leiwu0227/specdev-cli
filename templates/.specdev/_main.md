@@ -115,7 +115,9 @@ verification, ownership, destination approval, or rebuild requirements.
   Markdown section per gap. Every forecast section must contain fewer than 200
   words (maximum 199). Product code and every other path are read-only. Roadmap
   creates no ID, workflow state, receipt, snapshot, or automatic commit and
-  grants no implementation authority.
+  grants no implementation authority. It has no active lifecycle and applies
+  only during explicit roadmap collaboration. Selecting another lane
+  immediately supersedes Roadmap without an exit command or state transition.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,
   scheduler, subagent, worktree, or approval gate. It records one concise
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.

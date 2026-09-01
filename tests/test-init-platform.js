@@ -298,7 +298,9 @@ assert(
     roadmapSkillProse.includes('one independent feature or module') &&
     roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
     roadmapSkillProse.includes('list those gaps in dependency order') &&
-    roadmapSkillProse.includes('fewer than 200 words (maximum 199)'),
+    roadmapSkillProse.includes('fewer than 200 words (maximum 199)') &&
+    roadmapSkillProse.includes('Selecting another lane immediately supersedes') &&
+    roadmapSkillProse.includes('no exit command or state transition is required'),
   'roadmap skill requires explicit selection and approval without workflow history'
 )
 

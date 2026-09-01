@@ -9,8 +9,10 @@ receipt, or automatic commit; explicitly user-selected Roadmap collaboration is
 stateless and restricted to `roadmap/forecast.md` plus bounded design Markdown
 files after exact user approval. Forecast gaps are derived by quickly comparing
 the designs with current code, ordered by dependency, and limited to fewer than
-200 words per Markdown section. Explicitly user-selected Adhoc work creates one
-receipt and final commit but no RippleGraph run.
+200 words per Markdown section. Roadmap has no active lifecycle; selecting
+another lane immediately supersedes it without an exit command or state
+transition. Explicitly user-selected Adhoc work creates one receipt and final
+commit but no RippleGraph run.
 
 - `brainstorming`: interactive contract or Discussion authoring.
 - `reviewloop`: configured reviewer protocol and bounded rerun policy.

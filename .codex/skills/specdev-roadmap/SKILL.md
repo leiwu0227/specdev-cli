@@ -17,11 +17,21 @@ words (maximum 799). `core_concepts.md` and
 other design note must cover one independent feature or module and minimize
 overlap with the standard notes and its peers.
 
+`forecast.md` is a future-work roadmap. When creating or revising it, quickly
+inspect current code read-only against the Roadmap designs, identify design-note
+sections not yet reflected in code, and list those gaps in dependency order.
+Write each gap as its own Markdown section containing fewer than 200 words
+(maximum 199).
+
 Collaborate with the user on one exact candidate edit at a time. Show the exact
 destination and complete proposed content or diff, then wait for explicit user
 approval before writing. Invocation alone never authorizes a write. Roadmap
 creates no ID, RippleGraph state, receipt, snapshot, or automatic commit, and it
 does not grant authority to implement forecast items.
+
+Roadmap has no active lifecycle. It applies only while the user is explicitly
+collaborating on roadmap notes. Selecting another lane immediately supersedes
+Roadmap collaboration; no exit command or state transition is required.
 
 Announce meaningful phases, plan changes, failed verification, and blockers
 with "Specdev: <action>"; repeated read-only probes need no separate announcement.

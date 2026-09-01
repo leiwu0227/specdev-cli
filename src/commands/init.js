@@ -286,6 +286,10 @@ approval before writing. Invocation alone never authorizes a write. Roadmap
 creates no ID, RippleGraph state, receipt, snapshot, or automatic commit, and it
 does not grant authority to implement forecast items.
 
+Roadmap has no active lifecycle. It applies only while the user is explicitly
+collaborating on roadmap notes. Selecting another lane immediately supersedes
+Roadmap collaboration; no exit command or state transition is required.
+
 Announce meaningful phases, plan changes, failed verification, and blockers
 with "Specdev: <action>"; repeated read-only probes need no separate announcement.
 `,
