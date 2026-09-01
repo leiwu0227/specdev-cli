@@ -35,16 +35,14 @@ import { readGuidedCall } from '../utils/callable-sync.js'
 import { readMission, resolveMissionSelector, writeMission } from '../utils/mission.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
+import { listAttemptRecords } from '../utils/process-record.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
   completeStandaloneAssignmentDelivery,
   formatStandaloneAssignmentReceipt,
   writeStandaloneAssignmentCandidateReceipt,
 } from '../utils/assignment-delivery.js'
-import {
-  buildMissionReapproval,
-  inspectMissionReapproval,
-} from '../utils/mission-reapproval.js'
+import { buildMissionReapproval, inspectMissionReapproval } from '../utils/mission-reapproval.js'
 import {
   AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
   initialAutomaticReviewState,
@@ -740,7 +738,33 @@ export async function reviewImplementation(flags = {}) {
   let reviewState = initialAutomaticReviewState((await readJsonIfPresent(statePath)) || {})
 
   if (graph.position.node === 'repair') {
-    if (!mission && implementationExecution?.effective_mode === 'inline') {
+    const recovered = mission
+      ? await recoverMissionReviewContinuation({
+          targetDir,
+          specdevPath,
+          assignmentPath,
+          name,
+          mission,
+          resultFile: 'repair-result.md',
+          acceptanceIds: contract.acceptanceIds,
+        })
+      : null
+    if (recovered) {
+      stepGuidedNode(targetDir, 'repair', {
+        attempt: recovered.attempt.id,
+        result: relativeToRepo(targetDir, recovered.resultPath),
+      })
+      await retireTransientArtifact(targetDir, specdevPath, recovered.resultPath)
+      graph = await currentAssignmentNode(targetDir)
+      reviewState = {
+        ...reviewState,
+        stage: 'primary',
+        repair_attempt: recovered.attempt.id,
+        repair_source_attempt: recovered.sourceAttempt.id,
+        updated_at: new Date().toISOString(),
+      }
+      await writeJsonAtomic(statePath, reviewState)
+    } else if (!mission && implementationExecution?.effective_mode === 'inline') {
       const repairResultPath = join(assignmentPath, 'implementation', 'repair-result.md')
       const repairResult = await readInlineContinuationResult(repairResultPath)
       if (repairResult.status !== 'completed') {
@@ -939,8 +963,20 @@ export async function reviewImplementation(flags = {}) {
   await writeJsonAtomic(statePath, reviewState)
 
   if (reviewState.stage === 'resolver') {
+    const recovered = mission
+      ? await recoverMissionReviewContinuation({
+          targetDir,
+          specdevPath,
+          assignmentPath,
+          name,
+          mission,
+          resultFile: 'resolver-result.md',
+          acceptanceIds: contract.acceptanceIds,
+        })
+      : null
     const resolved =
-      !mission && implementationExecution?.effective_mode === 'inline'
+      recovered ||
+      (!mission && implementationExecution?.effective_mode === 'inline'
         ? await readInlineResolver({
             flags,
             targetDir,
@@ -956,7 +992,7 @@ export async function reviewImplementation(flags = {}) {
             flags,
             verdictPath,
             guides: delivery.implementationGuides,
-          })
+          }))
     if (!resolved) return null
     if (resolved.result.frontmatter.status === 'completed') {
       delivery = await validateDeliveryArtifacts(
@@ -969,6 +1005,10 @@ export async function reviewImplementation(flags = {}) {
       attempt: resolved.attempt.id,
       status: resolved.result.frontmatter.status,
     })
+    if (recovered) {
+      reviewState.resolver_source_attempt = recovered.sourceAttempt.id
+      await retireTransientArtifact(targetDir, specdevPath, recovered.resultPath)
+    }
     await writeJsonAtomic(statePath, reviewState)
     return reviewImplementation(flags)
   }
@@ -1439,6 +1479,40 @@ async function readInlineContinuationResult(path) {
       status: 'invalid',
       issue: `Foreground continuation result is invalid: ${error.message}`,
     }
+  }
+}
+
+async function recoverMissionReviewContinuation({
+  targetDir,
+  specdevPath,
+  assignmentPath,
+  name,
+  mission,
+  resultFile,
+  acceptanceIds,
+}) {
+  const resultPath = join(assignmentPath, 'implementation', resultFile)
+  const continuation = await readInlineContinuationResult(resultPath)
+  if (continuation.status !== 'completed') return null
+
+  const expectedResultPath = relativeToRepo(targetDir, resultPath)
+  const attempts = await listAttemptRecords(specdevPath, {
+    kind: 'worker',
+    assignment: name,
+    mission,
+  })
+  const sourceAttempt = attempts
+    .filter((attempt) => attempt.result_path === expectedResultPath)
+    .at(-1)
+  if (!sourceAttempt || !['blocked', 'failed'].includes(sourceAttempt.status)) return null
+
+  await validateDeliveryArtifacts(specdevPath, assignmentPath, acceptanceIds)
+  return {
+    attempt: { id: 'mission-foreground' },
+    sourceAttempt,
+    resultPath,
+    result: continuation.result,
+    recovered: true,
   }
 }
 

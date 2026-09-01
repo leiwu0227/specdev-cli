@@ -27,6 +27,7 @@ import {
   selectVerificationExecutor,
 } from '../src/utils/mission-execution.js'
 import { openMissionGap, supersedeMissionGap } from '../src/utils/mission-gaps.js'
+import { recoverPersistedMissionQueueAdvance } from '../src/utils/mission.js'
 
 const CLI = fileURLToPath(new URL('../bin/specdev.js', import.meta.url))
 const roots = []
@@ -178,6 +179,73 @@ try {
   roots.push(root)
   const specdevPath = join(root, '.specdev')
   mkdirSync(specdevPath, { recursive: true })
+  const recoveredChildFolder = '00001_recovered-child'
+  const recoveredChildPath = join(specdevPath, 'assignments', recoveredChildFolder)
+  mkdirSync(join(recoveredChildPath, 'review'), { recursive: true })
+  writeFileSync(
+    join(recoveredChildPath, 'status.json'),
+    `${JSON.stringify(
+      {
+        version: 1,
+        id: '00001',
+        mission: 'M00001',
+        run_id: 'mission-run-1',
+        status: 'completed',
+        completed_at: '2026-09-01T00:00:00.001Z',
+      },
+      null,
+      2
+    )}\n`
+  )
+  writeFileSync(join(recoveredChildPath, 'outcome.md'), '# Outcome\n')
+  writeFileSync(join(recoveredChildPath, 'review', 'implementation-verdict.md'), '# Verdict\n')
+  const recoveredQueue = {
+    version: 2,
+    design_mode: 'planned',
+    assignments: [
+      {
+        id: '00001',
+        folder: recoveredChildFolder,
+        status: 'integrated',
+        outcome: `.specdev/assignments/${recoveredChildFolder}/outcome.md`,
+        completed_at: '2026-09-01T00:00:00.002Z',
+        follow_up: 'none',
+        disposition: 'completed',
+      },
+      { id: '00002', status: 'pending' },
+    ],
+  }
+  const recoveredCheckpoint = {
+    updatedAt: '2026-09-01T00:00:00.000Z',
+    outputs: {
+      'child-assignment': {
+        approved: true,
+        verdict: `.specdev/assignments/${recoveredChildFolder}/review/implementation-verdict.md`,
+      },
+    },
+  }
+  const recoveredChild = await recoverPersistedMissionQueueAdvance({
+    specdevPath,
+    mission: { id: 'M00001', run_id: 'mission-run-1' },
+    queue: recoveredQueue,
+    checkpoint: recoveredCheckpoint,
+  })
+  assert.equal(recoveredChild.id, '00001')
+  await assert.rejects(
+    recoverPersistedMissionQueueAdvance({
+      specdevPath,
+      mission: { id: 'M00001', run_id: 'mission-run-1' },
+      queue: {
+        ...recoveredQueue,
+        assignments: [
+          { ...recoveredQueue.assignments[0], completed_at: '2026-08-31T23:59:59.999Z' },
+          recoveredQueue.assignments[1],
+        ],
+      },
+      checkpoint: recoveredCheckpoint,
+    }),
+    /is incomplete/
+  )
   writeFileSync(
     join(specdevPath, 'agents.yaml'),
     'worker:\n  provider: codex\n  model: worker-test\n  effort: medium\n  timeout: 1m\nreviewer:\n  provider: claude\n  model: reviewer-test\n  effort: high\n  timeout: 1m\n'

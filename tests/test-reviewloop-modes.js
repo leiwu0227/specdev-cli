@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict'
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { stepGuidedNode } from '../src/utils/engine-sync.js'
 import { missionChildDisposition, missionChildFollowUp } from '../src/utils/mission.js'
+import { createAttemptRecord, updateAttemptRecord } from '../src/utils/process-record.js'
 
 const repoRoot = resolve(import.meta.dirname, '..')
 const bin = join(repoRoot, 'bin', 'specdev.js')
@@ -155,6 +164,14 @@ function writeImplementationDelivery(path) {
   )
 }
 
+function writeCompletedContinuation(path) {
+  writeFileSync(
+    path,
+    '---\nstatus: completed\nrevision: null\nfollow_up: none\n---\n\n## Changes\n\nForeground continuation completed the bounded review work.\n',
+    'utf8'
+  )
+}
+
 function mutateDuringNextReview(relativePath) {
   writeFileSync(join(root, '.git', 'specdev-review-mutation'), relativePath, 'utf8')
 }
@@ -167,6 +184,37 @@ try {
     `#!/bin/sh
 prompt=$(cat)
 case "$prompt" in
+  *"Continue the existing Assignment"*"mission-preserved-repair"*)
+    mission_repair_count_file="${root}.mission-repair-count"
+    mission_repair_count=0
+    if [ -f "$mission_repair_count_file" ]; then mission_repair_count=$(cat "$mission_repair_count_file"); fi
+    mission_repair_count=$((mission_repair_count + 1))
+    printf '%s' "$mission_repair_count" >"$mission_repair_count_file"
+    printf '%s\n' '---' 'status: blocked' 'revision: null' 'follow_up: required' '---' '' '## Changes' '' 'Foreground completion is required for this fixture.'
+    exit 0
+    ;;
+  *"mission-preserved-repair"*)
+    mission_review_count_file="${root}.mission-review-count"
+    mission_review_count=0
+    if [ -f "$mission_review_count_file" ]; then mission_review_count=$(cat "$mission_review_count_file"); fi
+    mission_review_count=$((mission_review_count + 1))
+    printf '%s' "$mission_review_count" >"$mission_review_count_file"
+    if [ "$mission_review_count" -eq 1 ]; then
+      printf '%s\n' '---' 'verdict: needs_changes' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'Complete the bounded foreground repair.'
+    else
+      printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'The foreground repair satisfies the contract.'
+    fi
+    exit 0
+    ;;
+  *"mission-preserved-resolver"*)
+    mission_resolver_review_count_file="${root}.mission-resolver-review-count"
+    mission_resolver_review_count=0
+    if [ -f "$mission_resolver_review_count_file" ]; then mission_resolver_review_count=$(cat "$mission_resolver_review_count_file"); fi
+    mission_resolver_review_count=$((mission_resolver_review_count + 1))
+    printf '%s' "$mission_resolver_review_count" >"$mission_resolver_review_count_file"
+    printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'The foreground resolver satisfies the contract.'
+    exit 0
+    ;;
   *"Continue the existing Assignment"*)
     repair_count_file="${root}.repair-count"
     repair_count=0
@@ -341,11 +389,7 @@ fi
   runJson(['checkpoint', 'brainstorm', '--json'])
   runJson(['approve', 'brainstorm', '--json'])
   writeImplementationDelivery(evidenceOnlyPath)
-  const evidenceOnlyProgressPath = join(
-    evidenceOnlyPath,
-    'implementation',
-    'progress.json'
-  )
+  const evidenceOnlyProgressPath = join(evidenceOnlyPath, 'implementation', 'progress.json')
   const evidenceOnlyProgress = JSON.parse(readFileSync(evidenceOnlyProgressPath, 'utf8'))
   evidenceOnlyProgress.verification[0].status = 'failed'
   evidenceOnlyProgress.follow_up = 'required'
@@ -392,6 +436,128 @@ fi
   assert.equal(missionChildDisposition(evidenceOnlyChild), 'completed-with-follow-up')
 
   runJson(['do', 'start an assignment'])
+  const missionRepair = runJson([
+    'assignment',
+    'Resume a blocked Mission repair from foreground completion',
+    '--slug=mission-preserved-repair',
+    '--json',
+  ])
+  const missionRepairPath = join(root, missionRepair.path)
+  writeContract(missionRepairPath, 'Resume an exact blocked Mission repair Attempt')
+  runJson(['checkpoint', 'brainstorm', '--json'])
+  runJson(['approve', 'brainstorm', '--json'])
+  writeImplementationDelivery(missionRepairPath)
+  const missionRepairStatusPath = join(missionRepairPath, 'status.json')
+  const missionRepairStatus = JSON.parse(readFileSync(missionRepairStatusPath, 'utf8'))
+  writeFileSync(
+    missionRepairStatusPath,
+    `${JSON.stringify({ ...missionRepairStatus, mission: mission.id }, null, 2)}\n`,
+    'utf8'
+  )
+  stepGuidedNode(root, 'design', {
+    plan: `${missionRepair.path}/design/plan.md`,
+    attempt: 'fixture-worker',
+  })
+  stepGuidedNode(root, 'implementation', {
+    progress: `${missionRepair.path}/implementation/progress.json`,
+    outcome: `${missionRepair.path}/outcome.md`,
+    attempt: 'fixture-worker',
+  })
+  runJson(['reviewloop', 'implementation', '--json'], 1)
+  assert.equal(readFileSync(`${root}.mission-repair-count`, 'utf8'), '1')
+  const missionRepairResultPath = join(missionRepairPath, 'implementation', 'repair-result.md')
+  writeCompletedContinuation(missionRepairResultPath)
+  const resumedMissionRepair = runJson(['reviewloop', 'implementation', '--json'])
+  assert.equal(resumedMissionRepair.status, 'approved')
+  assert.equal(readFileSync(`${root}.mission-repair-count`, 'utf8'), '1')
+  assert.equal(existsSync(missionRepairResultPath), false)
+  const missionRepairState = JSON.parse(
+    readFileSync(join(missionRepairPath, 'review', 'implementation-state.json'), 'utf8')
+  )
+  assert.equal(missionRepairState.repair_attempt, 'mission-foreground')
+  assert.match(missionRepairState.repair_source_attempt, /^(Attempt|ATT)-/)
+
+  runJson(['do', 'start an assignment'])
+  const missionResolver = runJson([
+    'assignment',
+    'Resume a blocked Mission resolver from foreground completion',
+    '--slug=mission-preserved-resolver',
+    '--json',
+  ])
+  const missionResolverPath = join(root, missionResolver.path)
+  const missionResolverName = missionResolver.path.split('/').at(-1)
+  writeContract(missionResolverPath, 'Resume an exact blocked Mission resolver Attempt')
+  runJson(['checkpoint', 'brainstorm', '--json'])
+  runJson(['approve', 'brainstorm', '--json'])
+  writeImplementationDelivery(missionResolverPath)
+  const missionResolverStatusPath = join(missionResolverPath, 'status.json')
+  const missionResolverStatus = JSON.parse(readFileSync(missionResolverStatusPath, 'utf8'))
+  writeFileSync(
+    missionResolverStatusPath,
+    `${JSON.stringify({ ...missionResolverStatus, mission: mission.id }, null, 2)}\n`,
+    'utf8'
+  )
+  stepGuidedNode(root, 'design', {
+    plan: `${missionResolver.path}/design/plan.md`,
+    attempt: 'fixture-worker',
+  })
+  stepGuidedNode(root, 'implementation', {
+    progress: `${missionResolver.path}/implementation/progress.json`,
+    outcome: `${missionResolver.path}/outcome.md`,
+    attempt: 'fixture-worker',
+  })
+  const missionResolverResultPath = join(
+    missionResolverPath,
+    'implementation',
+    'resolver-result.md'
+  )
+  const missionResolverAttempt = await createAttemptRecord(join(root, '.specdev'), {
+    kind: 'worker',
+    workspace: '.',
+    base_revision: null,
+    profile: 'worker',
+    provider: 'claude',
+    model: 'fixture',
+    effort: 'low',
+    network: false,
+    result_path: `${missionResolver.path}/implementation/resolver-result.md`,
+    assignment: missionResolverName,
+    mission: mission.id,
+  })
+  await updateAttemptRecord(join(root, '.specdev'), missionResolverAttempt.id, {
+    status: 'blocked',
+    result_status: 'blocked',
+  })
+  writeCompletedContinuation(missionResolverResultPath)
+  mkdirSync(join(missionResolverPath, 'review'), { recursive: true })
+  writeFileSync(
+    join(missionResolverPath, 'review', 'implementation-state.json'),
+    `${JSON.stringify(
+      {
+        version: 2,
+        mode: 'automatic',
+        stage: 'resolver',
+        primary_round: 2,
+        round: 2,
+        status: 'converging',
+        history: [],
+      },
+      null,
+      2
+    )}\n`,
+    'utf8'
+  )
+  const resumedMissionResolver = runJson(['reviewloop', 'implementation', '--json'])
+  assert.equal(resumedMissionResolver.status, 'approved')
+  assert.equal(readFileSync(`${root}.mission-resolver-review-count`, 'utf8'), '1')
+  assert.equal(existsSync(missionResolverResultPath), false)
+  const missionResolverState = JSON.parse(
+    readFileSync(join(missionResolverPath, 'review', 'implementation-state.json'), 'utf8')
+  )
+  assert.equal(missionResolverState.resolver_attempt, 'mission-foreground')
+  assert.equal(missionResolverState.resolver_source_attempt, missionResolverAttempt.id)
+
+  runJson(['do', 'start an assignment'])
   const boundedRepair = runJson([
     'assignment',
     'Bound artifact preflight repair',
@@ -414,7 +580,10 @@ fi
   })
   writeFileSync(join(boundedRepairPath, 'outcome.md'), '# Outcome\n\nInvalid fixture.\n', 'utf8')
   const exhaustedRepair = runJson(['reviewloop', 'implementation', '--json'], 1)
-  assert.match(exhaustedRepair.error, /awaits manual artifact repair after 1 automatic repair Attempt/)
+  assert.match(
+    exhaustedRepair.error,
+    /awaits manual artifact repair after 1 automatic repair Attempt/
+  )
   assert.equal(readFileSync(`${root}.repair-count`, 'utf8'), '1')
   const repairState = JSON.parse(
     readFileSync(join(boundedRepairPath, 'review', 'implementation-state.json'), 'utf8')
@@ -432,4 +601,7 @@ fi
   rmSync(root, { recursive: true, force: true })
   rmSync(`${root}.review-count`, { force: true })
   rmSync(`${root}.repair-count`, { force: true })
+  rmSync(`${root}.mission-repair-count`, { force: true })
+  rmSync(`${root}.mission-review-count`, { force: true })
+  rmSync(`${root}.mission-resolver-review-count`, { force: true })
 }

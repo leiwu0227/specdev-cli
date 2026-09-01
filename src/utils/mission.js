@@ -84,6 +84,100 @@ export function missionChildDisposition(child) {
     : 'completed'
 }
 
+export async function recoverPersistedMissionQueueAdvance({
+  specdevPath,
+  mission,
+  queue,
+  checkpoint,
+}) {
+  const childOutput = checkpoint?.outputs?.['child-assignment']
+  if (childOutput?.approved !== true && childOutput?.observed !== true) return null
+  const artifact = [childOutput.verdict, childOutput.evidence].find(
+    (value) => typeof value === 'string' && value.startsWith('.specdev/assignments/')
+  )
+  if (!artifact) return null
+
+  const expectedStatus = queue?.design_mode === 'single' ? 'completed' : 'integrated'
+  const candidates = (queue?.assignments || []).filter(
+    (child) =>
+      child.status === expectedStatus &&
+      child.folder &&
+      artifact.startsWith(`.specdev/assignments/${child.folder}/`)
+  )
+  if (candidates.length === 0) return null
+  if (candidates.length !== 1) {
+    throw new Error('Persisted Mission queue advance is ambiguous across multiple children')
+  }
+
+  const child = candidates[0]
+  const checkpointTime = Date.parse(String(checkpoint.updatedAt || checkpoint.updated_at || ''))
+  const completionTime = Date.parse(String(child.completed_at || ''))
+  const prefix = `.specdev/assignments/${child.folder}`
+  const observed = childOutput.observed === true
+  const expectedArtifact = observed
+    ? `${prefix}/review/observation-completion.json`
+    : `${prefix}/review/implementation-verdict.md`
+  if (
+    !Number.isFinite(checkpointTime) ||
+    !Number.isFinite(completionTime) ||
+    completionTime < checkpointTime ||
+    artifact !== expectedArtifact ||
+    child.outcome !== `${prefix}/outcome.md` ||
+    !['none', 'required'].includes(child.follow_up) ||
+    !['completed', 'completed-with-follow-up', 'approved-with-user-reapproval'].includes(
+      child.disposition
+    )
+  ) {
+    throw new Error(`Persisted Mission queue advance for child ${child.id} is incomplete`)
+  }
+
+  const assignmentPath = join(specdevPath, 'assignments', child.folder)
+  const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json')).catch(() => null)
+  if (
+    assignmentStatus?.id !== child.id ||
+    assignmentStatus?.mission !== mission.id ||
+    assignmentStatus?.run_id !== mission.run_id ||
+    !(await fse.pathExists(join(assignmentPath, 'outcome.md'))) ||
+    !(await fse.pathExists(join(specdevPath, artifact.replace(/^\.specdev\//, ''))))
+  ) {
+    throw new Error(
+      `Persisted Mission queue advance for child ${child.id} does not match its completed Assignment`
+    )
+  }
+  if (observed) {
+    const observation = await fse.readJson(join(specdevPath, artifact.replace(/^\.specdev\//, '')))
+    const recordedAt = Date.parse(String(observation?.recorded_at || ''))
+    if (
+      child.follow_up !== 'required' ||
+      child.disposition !== 'completed-with-follow-up' ||
+      assignmentStatus?.mission_disposition !== 'completed-with-follow-up' ||
+      assignmentStatus?.observation_completion !== artifact ||
+      observation?.mission !== mission.id ||
+      observation?.child !== child.id ||
+      observation?.disposition !== 'completed-with-follow-up' ||
+      observation?.outcome !== child.outcome ||
+      !Number.isFinite(recordedAt) ||
+      recordedAt < checkpointTime
+    ) {
+      throw new Error(
+        `Persisted Mission queue advance for child ${child.id} does not match its evidence-only observation`
+      )
+    }
+  } else {
+    const assignmentCompletion = Date.parse(String(assignmentStatus?.completed_at || ''))
+    if (
+      assignmentStatus?.status !== 'completed' ||
+      !Number.isFinite(assignmentCompletion) ||
+      assignmentCompletion < checkpointTime
+    ) {
+      throw new Error(
+        `Persisted Mission queue advance for child ${child.id} does not match its completed Assignment`
+      )
+    }
+  }
+  return child
+}
+
 export async function missionChildFindings(specdevPath, child) {
   if (!child.folder) return []
   const assignmentPath = join(specdevPath, 'assignments', child.folder)

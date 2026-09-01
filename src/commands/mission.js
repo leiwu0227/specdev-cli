@@ -45,6 +45,7 @@ import {
   missionChildFollowUp,
   readMission,
   readMissionQueue,
+  recoverPersistedMissionQueueAdvance,
   resolveMissionSelector,
   validateAndReserveReplannedQueue,
   writeMission,
@@ -634,14 +635,25 @@ async function driveMission(context) {
     }
     if (node === 'advance-queue') {
       const queue = await readMissionQueue(missionPath)
-      const running = queue.assignments.find((item) => item.status === 'running')
+      let running = queue.assignments.find((item) => item.status === 'running')
+      const recovered = !running
+      if (!running) {
+        running = await recoverPersistedMissionQueueAdvance({
+          specdevPath,
+          mission,
+          queue,
+          checkpoint: readCheckpoint(specdevPath, mission.run_id),
+        })
+      }
       if (!running) throw new Error('Mission queue has no running child to advance')
-      running.status = queue.design_mode === 'single' ? 'completed' : 'integrated'
-      running.outcome = `.specdev/assignments/${running.folder}/outcome.md`
-      running.completed_at = new Date().toISOString()
-      running.follow_up = await missionChildFollowUp(specdevPath, running)
-      running.disposition = missionChildDisposition(running)
-      await writeMissionQueue(missionPath, queue)
+      if (!recovered) {
+        running.status = queue.design_mode === 'single' ? 'completed' : 'integrated'
+        running.outcome = `.specdev/assignments/${running.folder}/outcome.md`
+        running.completed_at = new Date().toISOString()
+        running.follow_up = await missionChildFollowUp(specdevPath, running)
+        running.disposition = missionChildDisposition(running)
+        await writeMissionQueue(missionPath, queue)
+      }
       const remaining = missionQueueHasRemaining(queue)
       await recordMissionChildGap(context, running)
       const gap = actionableMissionGap(mission)
