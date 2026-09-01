@@ -95,7 +95,9 @@ assert(
     roadmapPayload.design_rules.abstraction.includes('high-level stable abstractions') &&
     roadmapPayload.design_rules.explanation.includes('using examples') &&
     roadmapPayload.design_rules.separation.includes('runtime mechanics') &&
-    roadmapPayload.design_rules.presentation.includes('report its Markdown path') &&
+    roadmapPayload.design_rules.presentation.includes('concise intended scope') &&
+    roadmapPayload.design_rules.presentation.includes('report only its Markdown path') &&
+    roadmapPayload.next_action.includes('approval to draft it') &&
     roadmapPayload.forecast_rules.derivation.includes('inspect current code read-only') &&
     roadmapPayload.forecast_rules.comparison_direction.includes('code gaps versus the designs') &&
     roadmapPayload.forecast_rules.code_superset.includes('Current code may be a superset') &&
@@ -325,7 +327,8 @@ const roadmapSkill = readFileSync(join(skillsDir, 'specdev-roadmap', 'SKILL.md')
 const roadmapSkillProse = normalizedProse(roadmapSkill)
 assert(
   roadmapSkillProse.includes('only when the user explicitly selects it') &&
-    roadmapSkillProse.includes('wait for explicit user approval before writing') &&
+    roadmapSkillProse.includes('wait for explicit user approval to write') &&
+    !roadmapSkillProse.includes('complete proposed content or diff') &&
     roadmapSkillProse.includes(
       'creates no ID, RippleGraph state, receipt, snapshot, or automatic commit'
     ) &&
@@ -335,7 +338,7 @@ assert(
     roadmapSkillProse.includes('high-level stable abstractions') &&
     roadmapSkillProse.includes('reusable conceptual templates') &&
     roadmapSkillProse.includes('runtime mechanics, verification history') &&
-    roadmapSkillProse.includes('report its Markdown path') &&
+    roadmapSkillProse.includes('report only its Markdown path') &&
     roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
     roadmapSkillProse.includes('never design gaps versus current code') &&
     roadmapSkillProse.includes('extra code-only features do not create forecast items') &&

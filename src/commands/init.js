@@ -302,10 +302,11 @@ of the designs; extra code-only features do not create forecast items or
 automatic design-note updates. The user separately initiates Roadmap
 collaboration to incorporate such features into the design notes.
 
-Collaborate with the user on one exact candidate edit at a time. Show the exact
-destination and complete proposed content or diff, then wait for explicit user
-approval before writing. After writing an approved draft, report its Markdown
-path; do not echo the full document unless the user asks. Invocation alone never authorizes a write. Roadmap
+Collaborate with the user on one intended edit at a time. Before drafting,
+report the exact destination and a concise scope, then wait for explicit user
+approval to write within that agreed direction. After writing, report only its
+Markdown path so the user can inspect it; do not echo the full document or diff
+unless the user asks. Invocation alone never authorizes a write. Roadmap
 creates no ID, RippleGraph state, receipt, snapshot, or automatic commit, and it
 does not grant authority to implement forecast items.
 
