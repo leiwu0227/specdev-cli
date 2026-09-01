@@ -33,11 +33,12 @@ M00001 --approve` after the same contract preview and explicit user agreement.
 ## Implementation
 
 `specdev implement` normally starts implementation review automatically. Direct
-resume is `specdev reviewloop implementation`. Automatic review uses two primary
-rounds, a conditional third round only while the candidate and findings are
-changing, one resolver, and one final arbiter. Approved results and
-host-validated nonblocking disagreements may advance; objective failures
-terminate explicitly.
+resume is `specdev reviewloop implementation`. Review uses two primary rounds,
+a conditional third round only while the candidate and findings are changing,
+one resolver, and one final arbiter. Inline repair and resolver obligations
+return to the foreground implementation owner; spawned execution uses bounded
+continuation workers. Approved results and host-validated nonblocking
+disagreements may advance; objective failures terminate explicitly.
 
 ## Discussion
 

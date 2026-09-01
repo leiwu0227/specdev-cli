@@ -108,9 +108,19 @@ verification, ownership, destination approval, or rebuild requirements.
   proposed edit and obtain user approval before writing. Every design file must
   contain fewer than 800 words (maximum 799). Besides `core_concepts.md` and
   `source_code_folder_structure.md`, each note covers one independent feature
-  or module with minimal overlap. Product code and every other path are
-  read-only. Roadmap creates no ID, workflow state, receipt, snapshot, or
-  automatic commit and grants no implementation authority.
+  or module with minimal overlap. `forecast.md` is a future-work roadmap of
+  approved design requirements absent or incomplete in current code. Treat the
+  designs as the target state: identify code gaps versus designs, never design
+  gaps versus code. Code may be a superset; code-only features create neither
+  forecast items nor automatic design updates. The user separately initiates
+  Roadmap collaboration to incorporate those features into the designs. Quickly
+  inspect current code read-only and list code gaps in dependency order, one
+  Markdown section per gap. Every forecast section must contain fewer than 200
+  words (maximum 199). Product code and every other path are read-only. Roadmap
+  creates no ID, workflow state, receipt, snapshot, or automatic commit and
+  grants no implementation authority. It has no active lifecycle and applies
+  only during explicit roadmap collaboration. Selecting another lane
+  immediately supersedes Roadmap without an exit command or state transition.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,
   scheduler, subagent, worktree, or approval gate. It records one concise
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.
@@ -174,8 +184,10 @@ a scheduler, but only one may be active in a worktree.
   exact user-reapproval identity. Repeated `mission run` and `mission status`
   calls are provider-free until the user runs the displayed
   `mission approve-divergence` or `mission reject-divergence` command.
-- A blocked Assignment worker preserves its result and returns a blocked
-  outcome. Finish its artifacts and rerun to resume without another provider
-  call, or use `specdev implement --retry-worker` to request one explicitly.
+- Assignment implementation mode freezes at its Git boundary. Inline work and
+  repairs return resumable foreground obligations; spawned work preserves its
+  worker result and returns a blocked outcome. Finish the owned artifacts and
+  rerun to resume. Use `specdev implement --retry-worker` only for a frozen
+  spawned implementation that needs a replacement Attempt.
 
 See `_index.md` for paths and `_guides/workflow.md` for the concise lifecycle.

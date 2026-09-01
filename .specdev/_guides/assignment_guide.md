@@ -4,10 +4,11 @@
 interactive Brainstorm
   -> optional configured review
   -> one hash-bound user approval
-  -> one normal worker Attempt for Design + Implementation
+  -> one frozen implementation decision (auto | inline | spawned)
+  -> foreground inline Design + Implementation by default, or one spawned worker Attempt
   -> focused evidence
   -> required reviewer or evidence-safe policy waiver
-  -> one repair continuation and same-reviewer verification when needed
+  -> owner-preserving repair continuation and same-reviewer verification when needed
   -> complete
 ```
 
@@ -37,12 +38,25 @@ authority to run a command. A waived implementation review completes only when e
 criterion is Passed, all receipts passed, deviations are empty, and follow-up
 is `none`.
 
-When the worker returns blocked, its partial code and artifacts remain in
+Installed configuration uses `implementation.mode: auto | inline | spawned` in
+`.specdev/agents.yaml`; omission is `auto`. For an ordinary standalone
+Assignment, `auto` freezes to `inline` at the Git boundary and returns a
+structured contract for the foreground agent to write the plan, progress,
+outcome, result, product changes, and authorized evidence. Rerun
+`specdev implement` to validate those artifacts and advance to independent
+review. Use fixed `spawned` configuration for unattended automation that relied
+on the former mandatory worker launch, or select `--spawned` before the boundary
+with a bounded `--execution-reason`. Mission-controlled execution remains
+spawned.
+
+When a spawned worker returns blocked, its partial code and artifacts remain in
 place. A normal rerun reports the same blocker instead of launching another
 provider call. Once the current coding session has completed the artifacts and
 changed `worker-result.md` to `status: completed`, rerun `specdev implement` to
-reuse them. Use `specdev implement --retry-worker` only when a fresh automatic
-Attempt is intended.
+reuse them. Use `specdev implement --retry-worker` only when the frozen mode is
+spawned and a fresh automatic Attempt is intended. Inline review and artifact
+repairs return bounded obligations to the foreground owner; they do not launch
+a repair worker.
 
 Review policy is separate from behavior authority:
 

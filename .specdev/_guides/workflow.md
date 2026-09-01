@@ -114,11 +114,21 @@ It reports the standard files and the writable `roadmap/designs/*.md` plus
 Markdown file must contain fewer than 800 words (maximum 799). Besides
 `core_concepts.md` and `source_code_folder_structure.md`, each design note must
 cover one independent feature or module and minimize overlap with the standard
-notes and its peers. The coding agent must show the destination and complete
-proposed content or diff, and writes only after explicit user approval. Product
-code and all other paths remain read-only. Roadmap creates no identity, graph,
-receipt, snapshot, or automatic commit and does not authorize implementation of
-a forecast item.
+notes and its peers. `forecast.md` is a future-work roadmap of approved design
+requirements absent or incomplete in current code. The designs are the target
+state: forecast identifies code gaps versus designs, never design gaps versus
+code. Code may be a superset; code-only features create neither forecast items
+nor automatic design updates. The user separately initiates Roadmap
+collaboration to incorporate those features into the designs. When creating or
+revising the forecast, the coding agent quickly inspects current code read-only
+and lists code gaps in dependency order. Each gap is its own Markdown section
+containing fewer than 200 words (maximum 199). The coding agent must show the destination and complete proposed
+content or diff, and writes only after explicit user approval. Product code and
+all other paths remain read-only. Roadmap creates no identity, graph, receipt,
+snapshot, or automatic commit and does not authorize implementation of a
+forecast item. It has no active lifecycle and applies only during explicit
+roadmap collaboration. Selecting another lane immediately supersedes Roadmap;
+no exit command or state transition is required.
 
 ## Discussion
 
@@ -139,10 +149,13 @@ workflow before any test is changed.
 
 ## Profiles and guides
 
-`.specdev/agents.yaml` chooses worker/reviewer provider, model, effort, and
-timeout. Ignored `cache/agents.local.yaml` overrides it on one machine. Prompts
-and up to three selected guides define temporary work; there are no permanent
-reviewer personas.
+`.specdev/agents.yaml` chooses `implementation.mode: auto | inline | spawned`
+and the worker/reviewer provider, model, effort, and timeout. Omission defaults
+to `auto`, which freezes to inline for an ordinary standalone Assignment;
+Mission-controlled execution remains spawned. Ignored
+`cache/agents.local.yaml` overrides repository configuration on one machine.
+Prompts and up to three selected guides define temporary work; there are no
+permanent reviewer personas.
 Only `specdev reviewloop` produces a transition-authorizing result envelope.
 Native Codex, Claude, or Cursor review sessions remain advisory and their plain
 Markdown must not be treated as a SpecDev verdict.
