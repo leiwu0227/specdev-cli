@@ -102,13 +102,15 @@ verification, ownership, destination approval, or rebuild requirements.
 - **Direct:** questions, explanations, status, read-only inspection, and small
   non-behavioral user-requested documentation artifacts. No workflow, durable
   receipt, or automatic commit.
-- **Roadmap:** explicitly user-selected, stateless collaboration on only
-  `project_notes/roadmap/designs/core_concepts.md`,
-  `project_notes/roadmap/designs/source_code_folder_structure.md`, and
-  `project_notes/roadmap/forecast.md`. Run `specdev roadmap`; show the exact
-  proposed edit and obtain user approval before writing. Product code and every
-  other path are read-only. Roadmap creates no ID, workflow state, receipt,
-  snapshot, or automatic commit and grants no implementation authority.
+- **Roadmap:** explicitly user-selected, stateless collaboration on
+  `project_notes/roadmap/forecast.md` and direct Markdown files under
+  `project_notes/roadmap/designs/`. Run `specdev roadmap`; show the exact
+  proposed edit and obtain user approval before writing. Every design file must
+  contain fewer than 800 words (maximum 799). Besides `core_concepts.md` and
+  `source_code_folder_structure.md`, each note covers one independent feature
+  or module with minimal overlap. Product code and every other path are
+  read-only. Roadmap creates no ID, workflow state, receipt, snapshot, or
+  automatic commit and grants no implementation authority.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,
   scheduler, subagent, worktree, or approval gate. It records one concise
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.

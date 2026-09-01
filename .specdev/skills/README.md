@@ -6,9 +6,9 @@ semantic CLI commands own lifecycle transitions and durable state.
 Request routing is deliberately outside the graph: Direct questions,
 inspection, and small non-behavioral documentation writes create no state,
 receipt, or automatic commit; explicitly user-selected Roadmap collaboration is
-stateless and restricted to its three fixed project-note files after exact user
-approval; and explicitly user-selected Adhoc work creates one receipt and final
-commit but no RippleGraph run.
+stateless and restricted to `roadmap/forecast.md` plus bounded design Markdown
+files after exact user approval; and explicitly user-selected Adhoc work creates
+one receipt and final commit but no RippleGraph run.
 
 - `brainstorming`: interactive contract or Discussion authoring.
 - `reviewloop`: configured reviewer protocol and bounded rerun policy.
