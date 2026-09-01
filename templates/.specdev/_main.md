@@ -118,8 +118,9 @@ verification, ownership, destination approval, or rebuild requirements.
   forecast items nor automatic design updates. The user separately initiates
   Roadmap collaboration to incorporate those features into the designs. Quickly
   inspect current code read-only and list code gaps in dependency order, one
-  Markdown section per gap. Every forecast section must contain fewer than 200
-  words (maximum 199). Product code and every other path are read-only. Roadmap
+  numbered Markdown section per gap. Every forecast section must identify the
+  Roadmap design note or notes it is based on and contain fewer than 200 words
+  (maximum 199). Product code and every other path are read-only. Roadmap
   creates no ID, workflow state, receipt, snapshot, or automatic commit and
   grants no implementation authority. It has no active lifecycle and applies
   only during explicit roadmap collaboration. Selecting another lane

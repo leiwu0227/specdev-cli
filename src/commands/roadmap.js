@@ -46,7 +46,10 @@ export async function roadmapCommand(flags = {}) {
         'Current code may be a superset of the designs; extra code-only features do not create forecast items or automatic design-note updates.',
       design_updates:
         'The user separately initiates Roadmap collaboration to incorporate code-only features into design notes.',
-      ordering: 'List gaps in dependency order, with each gap as its own Markdown section.',
+      ordering:
+        'List gaps in dependency order, with each gap as its own numbered Markdown section.',
+      references:
+        'Each forecast section must identify the Roadmap design note or notes it is based on.',
       section_word_limit: 'fewer than 200 words per section (maximum 199)',
     },
     authority: {
@@ -82,6 +85,7 @@ export async function roadmapCommand(flags = {}) {
   console.log(`Code superset: ${payload.forecast_rules.code_superset}`)
   console.log(`Design updates: ${payload.forecast_rules.design_updates}`)
   console.log(`Forecast ordering: ${payload.forecast_rules.ordering}`)
+  console.log(`Forecast references: ${payload.forecast_rules.references}`)
   console.log(`Forecast section word limit: ${payload.forecast_rules.section_word_limit}`)
   console.log(`Authority: ${payload.authority.writes}`)
   console.log(`History: ${payload.history}`)

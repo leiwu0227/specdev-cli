@@ -103,6 +103,8 @@ assert(
     roadmapPayload.forecast_rules.code_superset.includes('Current code may be a superset') &&
     roadmapPayload.forecast_rules.design_updates.includes('user separately initiates') &&
     roadmapPayload.forecast_rules.ordering.includes('dependency order') &&
+    roadmapPayload.forecast_rules.ordering.includes('numbered Markdown section') &&
+    roadmapPayload.forecast_rules.references.includes('design note or notes') &&
     roadmapPayload.forecast_rules.section_word_limit.includes('maximum 199') &&
     JSON.stringify(snapshotTree(TEST_DIR)) === JSON.stringify(beforeRoadmap),
   'roadmap reports the stateless exact-path boundary without creating state'
@@ -344,6 +346,8 @@ assert(
     roadmapSkillProse.includes('extra code-only features do not create forecast items') &&
     roadmapSkillProse.includes('user separately initiates Roadmap collaboration') &&
     roadmapSkillProse.includes('list those gaps in dependency order') &&
+    roadmapSkillProse.includes('numbered Markdown section') &&
+    roadmapSkillProse.includes('design note or notes the section') &&
     roadmapSkillProse.includes('fewer than 200 words (maximum 199)') &&
     roadmapSkillProse.includes('Selecting another lane immediately supersedes') &&
     roadmapSkillProse.includes('no exit command or state transition is required'),

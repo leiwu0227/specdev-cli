@@ -293,8 +293,9 @@ the code.
 \`forecast.md\` is a future-work roadmap. When creating or revising it, quickly
 inspect current code read-only against the Roadmap designs, identify design-note
 sections not yet reflected in code, and list those gaps in dependency order.
-Write each gap as its own Markdown section containing fewer than 200 words
-(maximum 199).
+Write each gap as its own numbered Markdown section containing fewer than 200
+words (maximum 199), and identify the Roadmap design note or notes the section
+is based on.
 
 Treat approved designs as the target state: identify code gaps versus the
 designs, never design gaps versus current code. Current code may be a superset
