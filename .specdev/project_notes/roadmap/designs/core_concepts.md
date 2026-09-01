@@ -2,54 +2,72 @@
 
 ## Purpose
 
-SpecDev is a local-first, repository-resident framework for software work with coding agents. It turns human intent into explicit decisions, governed work, recoverable state, evidence, and reviewable delivery.
+SpecDev is a repository development framework for coding agents. Its main purpose is to keep software development traceable, structured, and bounded even when an agent performs most of the work freely.
 
-Important decisions live in durable project artifacts so later work can rely on approved intent instead of reconstructing it from conversations or code. This preserves continuity and makes silent drift easier to detect.
+SpecDev bounds what an agent may decide, inspect, change, verify, and deliver. Inside an approved boundary, it executes without the human directing every detail. Outside it, the agent surfaces the decision instead of expanding its authority.
 
-The user remains the source of product authority. SpecDev may automate work within an approved boundary, but it is not an autonomous product owner, a provider-specific agent framework, or an opaque hosted control plane.
+Durable artifacts provide project memory beyond sessions, providers, and context windows. Later work selectively recovers approved intent, design, workflow position, evidence, and outcomes instead of reconstructing conversation.
 
-## Design Principles
+The human retains ultimate product control. “No surprises” does not make discovery predictable; it makes unexpected findings, divergence, missing evidence, changed scope, and unresolved review visible before delivery.
 
-SpecDev draws from spec-driven development, human-in-the-loop systems, state machines, Git-backed engineering history, and local-first Unix-style tooling.
+## Problem Example
 
-Its core principles are:
+Suppose a user develops one software project over several years. The codebase, design history, dependencies, and accumulated decisions eventually grow far beyond any coding agent’s context window. Each new session sees only a fragment.
 
-- Intent and authority should be explicit, readable, and portable.
-- The lightest lane that provides sufficient governance should be used.
-- Automation must remain inside a user-approved boundary.
-- Durable state must not depend on one agent session or provider.
-- Workflow state, product revisions, and human decisions have distinct owners.
-- Generated indexes, caches, and raw provider output are operational aids, never the sole durable truth.
+Without a durable harness, agents reconstruct intent, overlook decisions, duplicate work, or conflict with unseen parts of the system. Conversations disappear, evidence becomes detached from candidates, and the user repeatedly explains the project. The software may compile, but its authority, verification, and recoverability become unclear.
 
-## Framework Responsibilities
+SpecDev does not claim to eliminate mistakes or hallucination. It prevents unanchored agent work from silently becoming accepted project history.
 
-SpecDev separates four responsibilities:
+## Design
 
-- **Decisions:** users approve contracts, roadmap designs, and shared project records.
-- **Orchestration:** RippleGraph keeps governed workflows explicit and recoverable.
-- **Execution:** workers implement and reviewers assess within assigned authority.
-- **History:** Git records exact revisions and deliveries; workflow receipts record evidence only when required by their owning lane.
+### Repository-Resident Project Layer
 
-Living knowledge holds current, revisable facts. Roadmap notes hold user-agreed design direction and implementation forecasts without granting implementation authority.
+SpecDev establishes a `.specdev/` layer at the repository root. It holds managed guidance and durable project context: design direction, living knowledge, contracts, workflow artifacts, evidence, findings, and outcomes.
 
-## Work Lanes
+Git remains authoritative for source code and revision history. Agent sessions, caches, and transcripts remain replaceable operational context. A fresh agent selectively loads durable sources relevant to its task rather than reading the entire project or trusting previous conversation.
 
-SpecDev uses distinct lanes according to the work’s authority and risk:
+This division lets a project be much larger than one context window while keeping its important decisions recoverable and inspectable.
 
-- **Direct** handles questions, read-only work, and bounded non-behavioral documentation.
-- **Roadmap** collaborates on agreed designs and implementation forecasts without workflow state, receipts, or product-code authority.
-- **Adhoc** performs one bounded governed change with a receipt and final commit.
-- **Discussion** explores a design without modifying product code.
-- **Assignment** delivers one approved contract through planning, implementation, evidence, and review.
-- **Mission** coordinates a broader approved objective through Assignment work.
-- **Test Audit** examines test redundancy read-only and can prepare an Assignment.
+### Workflow Lanes
 
-Functional impact determines the required governance; file extension and line count do not.
+Every request is classified into a lane whose authority matches the work:
 
-## RippleGraph
+- **Direct** answers, inspects, or writes bounded non-behavioral documentation.
+- **Roadmap** collaborates on agreed designs and future code gaps.
+- **Adhoc** delivers one bounded governed repository change.
+- **Discussion** explores a design question without product mutation.
+- **Assignment** delivers one change under an exact approved contract.
+- **Mission** coordinates a broader approved objective through Assignments.
+- **Test Audit** analyzes test redundancy without changing tests.
 
-SpecDev uses RippleGraph as its workflow backbone. Graph nodes describe work or decision steps, while edges define allowed transitions.
+Material product mutation requires a lane with mutation authority. Selection follows semantic impact, uncertainty, evidence, and coordination needs—not file type, line count, or how easy the change appears.
 
-RippleGraph owns workflow flow, validates outputs, enforces gates, and returns the next action. The coding agent still performs the work. Assignments and Missions use durable runs, while Discussions and Test Audits use isolated callable graphs. Direct, Roadmap, and Adhoc are graph-free.
+The lanes form practical groups, but authority—not size alone—sets their boundaries. Roadmap records agreed design thinking, while Discussion allows user to form thinking pieces without touching the codebase. Adhoc, Assignment, and Mission deliver product changes with different governance and coordination. Direct handles immediate, read-only, and non-behavioral work. Test Audit diagnoses test redundancy and prepares possible future changes without modifying tests.
 
-RippleGraph owns flow, not intent or revision history. Approved human artifacts describe what should happen, and Git records what changed.
+### Bounded Agent Autonomy
+
+Inside an approved boundary, an agent may inspect, plan, choose implementation details, use tools, and repair its work without asking the human to direct every step. That freedom is delegation, not ownership.
+
+The agent cannot silently expand scope, redefine an approved outcome, waive evidence, merge author and required-reviewer authority, or deliver a materially different candidate. Unexpected findings outside the boundary return to the human. This is how SpecDev aims for no surprises while preserving useful agent autonomy.
+
+### RippleGraph Orchestration
+
+RippleGraph is the orchestration kernel for SpecDev’s stateful workflows and isolated callables. Versioned graphs define meaningful states, allowed transitions, gates, and recoverable position so an agent cannot advance workflow meaning merely by claiming a step is complete.
+
+RippleGraph owns workflow flow, not human intent, implementation judgment, evidence truth, or Git history. Lightweight Direct, Roadmap, and Adhoc work remains graph-free because their bounded interaction or transaction does not justify a recoverable graph lifecycle.
+
+### Durable Responsibility Boundaries
+
+Human-readable `.specdev` artifacts own approved intent and durable conclusions. RippleGraph state owns orchestration position. Git owns exact product revisions and delivery identity. Agent sessions and generated indexes help execution but never become the sole durable truth.
+
+When these sources disagree, SpecDev exposes the inconsistency and returns to the owning authority instead of choosing the most convenient representation.
+
+Detailed models live in `foundations/system_state_model.md`, `foundations/agent_model.md`, `workflow/workflow_model.md`, and `workflow/lanes/workflow_lanes.md`.
+
+## Design Choices and Tradeoffs
+
+- Human control is preserved through explicit reserved decisions and visible divergence boundaries.
+- Agents receive broad execution freedom only inside approved authority.
+- Durable selective context supports projects larger than any single context window.
+- Governance stays lightweight for simple work and becomes structured when risk or recoverability justifies it.
+- Traceability adds deliberate ceremony, but that cost is concentrated where silent drift would be more expensive.

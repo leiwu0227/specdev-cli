@@ -26,6 +26,16 @@ Workflow state records where governed work currently stands. Git records product
 
 These responsibilities remain separate even when one command coordinates several of them.
 
+## Evidence, Review, and Delivery Vocabulary
+
+**Qualification evidence** establishes that work is ready to cross a particular workflow boundary, such as entering review. It supports that transition but does not substitute for evidence that the approved objective was achieved.
+
+**Acceptance evidence** connects an exact candidate to the observable criteria in its authority. It remains valid only while its scope, candidate identity, and relevant conditions still match.
+
+A **review round** is one independent assessment of one candidate under a frozen review policy. Repair produces a new candidate and round; earlier findings may remain useful context, but an earlier verdict does not transfer.
+
+**Delivery** is the governed binding of an accepted candidate, its evidence and review decision, an exact Git revision, and a durable outcome. An ordinary commit outside a delivery lane remains revision history without acquiring SpecDev delivery semantics.
+
 ## Stateful and Graph-Free Work
 
 Not every lane requires a durable state machine.

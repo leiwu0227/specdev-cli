@@ -40,6 +40,16 @@ Work moves to another lane when it requires product mutation, collaborative desi
 
 Importance alone does not force workflow state. Conversely, a small textual edit is not Direct when it changes behavior, authority, compatibility, or another normative contract.
 
+## Boundary Examples
+
+A comment inside a source file may remain Direct when it only explains existing behavior and cannot affect execution. The file type does not turn clarification into product mutation.
+
+A one-line schema, dependency, behavior-changing configuration, or managed runtime-template edit is not Direct. Its small size and textual form do not remove its functional consequences; it requires at least Adhoc authority.
+
+A Markdown file also follows its semantic owner. Revising an agreed Roadmap design uses Roadmap collaboration, while publishing a reusable project fact uses knowledge curation. Neither becomes Direct merely because the destination is documentation.
+
+A public compatibility promise or operational instruction may warrant governed delivery even when it changes no code, because the document itself creates a consequential external or normative commitment.
+
 ## Concurrency
 
 Because Direct owns no scheduler or lifecycle, it may occur alongside other work. It must preserve the authority and artifacts of every active lane and cannot use its stateless nature to bypass their mutation boundaries.

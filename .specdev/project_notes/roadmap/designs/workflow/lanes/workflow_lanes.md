@@ -25,13 +25,7 @@ Changing one of these dimensions can materially redefine a lane even if its publ
 
 ## Lane Families
 
-**Immediate and stateless lanes** minimize machinery when durable lifecycle state is unnecessary. Direct handles immediate work. Roadmap supports user-approved design collaboration without becoming implementation authority.
-
-**Transactional work** uses a bounded delivery boundary without a stateful workflow. Adhoc owns one selected change and its durable delivery result.
-
-**Isolated callables** perform concurrent analysis without acquiring product mutation authority. Discussion and Test Audit preserve their own identities and artifacts while remaining separate from focused delivery work.
-
-**Focused workflows** govern work that needs an approved contract, recoverable lifecycle, evidence, and coordinated delivery. Assignment governs one product change. Mission coordinates a broader objective through Assignment authority.
+Lanes fall into four workflow families: immediate and stateless work, transactional delivery, isolated callables, and focused workflows. The family describes shared state and concurrency characteristics; each concrete lane still owns its distinct intent and authority.
 
 ## Lane Taxonomy
 
@@ -44,6 +38,14 @@ Changing one of these dimensions can materially redefine a lane even if its publ
 | **Assignment** | Deliver one contract-bounded product change | Exact standalone or parent-delegated contract | Focused workflow |
 | **Mission** | Coordinate an approved objective through Assignment work | Parent contract delegating bounded child authority | Focused controller |
 | **Test Audit** | Analyze redundant testing and prepare possible future work | Product and tests read-only; audit artifacts only | Isolated callable |
+
+## Lane-Independent Governed Actions
+
+The lane taxonomy is not an exhaustive list of approval-bound actions. A governed action may own one narrow authority transition without becoming a user-facing work lane, scheduler, or general-purpose lifecycle.
+
+Knowledge curation is the canonical example. Any lane may reveal a reusable project fact, but publication requires the separate authority defined by `../knowledge_curation.md`. The discovering lane’s approval, evidence, or execution authority does not transfer to curation, and proposing curation does not advance or terminate that lane.
+
+A lane-independent action must define its exact authority, durable outcome, and interaction with active work. If it begins owning a general class of work, product delivery, or a focused lifecycle, it must be evaluated as a lane addition or redefinition instead.
 
 ## Selection and Escalation
 
@@ -66,3 +68,4 @@ Composition preserves the parent boundary. Mission delegates work through Assign
 - Read-only exploration and product mutation remain separate authorities.
 - Concurrency depends on ownership isolation.
 - Parent lane designs define shared rules; child lane documents own concrete behavior.
+- Lane-independent governed actions retain separate authority without expanding the lane taxonomy.
