@@ -23,9 +23,9 @@ fi
 1. For governed product work, read `.specdev/project_notes/big_picture.md` and
    repository instructions. For a Direct documentation write, read destination
    instructions and only the narrowly necessary facts instead.
-2. Classify the user's request before creating anything: Direct, Adhoc,
-   Discussion, Assignment, or Mission. Recommend a lane when useful, but let the
-   user select it. Never silently turn every request into an Assignment.
+2. Classify the user's request before creating anything: Direct, Roadmap,
+   Adhoc, Discussion, Assignment, or Mission. Recommend a lane when useful, but
+   let the user select it. Never silently turn every request into an Assignment.
 3. Run `specdev next --json` only when resuming a focused RippleGraph workflow.
 4. For explicit identities use `specdev mission status M00001` or `specdev
 discussion D00001`.
@@ -102,6 +102,13 @@ verification, ownership, destination approval, or rebuild requirements.
 - **Direct:** questions, explanations, status, read-only inspection, and small
   non-behavioral user-requested documentation artifacts. No workflow, durable
   receipt, or automatic commit.
+- **Roadmap:** explicitly user-selected, stateless collaboration on only
+  `project_notes/roadmap/designs/core_concepts.md`,
+  `project_notes/roadmap/designs/source_code_folder_structure.md`, and
+  `project_notes/roadmap/forecast.md`. Run `specdev roadmap`; show the exact
+  proposed edit and obtain user approval before writing. Product code and every
+  other path are read-only. Roadmap creates no ID, workflow state, receipt,
+  snapshot, or automatic commit and grants no implementation authority.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,
   scheduler, subagent, worktree, or approval gate. It records one concise
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.

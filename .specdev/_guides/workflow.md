@@ -106,6 +106,16 @@ the exact command and environment policy, cleanup identity, predecessor
 authority, and excluded dirt all fail closed. Adoption links superseding
 evidence and returns the nested graph without rerunning a provider or command.
 
+## Roadmap
+
+`specdev roadmap` is an explicitly user-selected, stateless collaboration lane.
+It reports the three fixed roadmap Markdown files without creating or changing
+state. The coding agent may draft an exact change only for those files, must
+show the destination and complete proposed content or diff, and writes only
+after explicit user approval. Product code and all other paths remain read-only.
+Roadmap creates no identity, graph, receipt, snapshot, or automatic commit and
+does not authorize implementation of a forecast item.
+
 ## Discussion
 
 A Discussion is a RippleGraph callable and never becomes the focused scheduler.
