@@ -1,6 +1,6 @@
 # Workflow Lanes
 
-Parent design: `workflow_model.md`
+Parent design: `../workflow_model.md`
 
 ## Purpose
 

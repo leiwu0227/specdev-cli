@@ -1,6 +1,6 @@
 # System State Model
 
-Parent design: `core_concepts.md`
+Parent design: `../core_concepts.md`
 
 ## Purpose
 

@@ -1,6 +1,6 @@
 # Assignment Lane
 
-Parent design: `workflow_lanes.md`
+Parent design: `../workflow_lanes.md`
 
 ## Purpose
 
@@ -10,7 +10,15 @@ An Assignment is larger in governance than Adhoc, not necessarily larger in code
 
 ## Authority
 
-A standalone Assignment receives authority from the user’s approval of the exact contract. The contract defines the objective, scope, expected behavior, constraints, delegated decisions, reserved decisions, and observable acceptance criteria.
+An Assignment contract is a readable authority template with five parts:
+
+- **Objective:** the outcome the work exists to produce.
+- **Scope and behavior:** what may change and what observable result is expected.
+- **Constraints:** boundaries the implementation must preserve.
+- **Decision boundary:** choices delegated to execution and choices reserved for the user.
+- **Acceptance model:** observable criteria, verification boundaries, and required review policy.
+
+A standalone Assignment receives authority from the user’s approval of the exact completed template for one product change.
 
 A Mission-owned Assignment receives bounded authority from its approved parent contract. Child authority may specialize the parent objective but cannot expand it.
 
@@ -48,7 +56,11 @@ Successful completion produces one exact delivery revision and a concise durable
 
 ## Concurrency and Composition
 
-Only one standalone Assignment or Mission owns the focused scheduler. Discussion and Test Audit may coexist through isolated read-only state. Graph-free detours may coexist only where product ownership and the Assignment lifecycle remain unambiguous.
+Only one standalone Assignment or Mission owns the focused scheduler. Discussion and Test Audit may coexist through isolated read-only state.
+
+Direct and Roadmap have no lifecycle that replaces the Assignment identity. Any changes they leave in the worktree remain under their own authority and must be resolved before the Assignment advances across a Git boundary.
+
+A mutating Adhoc detour follows the narrower boundary defined by the Adhoc lane: it may coexist only at the quiescent approved pre-implementation boundary, and the Assignment cannot advance while Adhoc owns repository mutation.
 
 ## Child Designs
 

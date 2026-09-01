@@ -1,6 +1,6 @@
 # Assignment Candidate Preflight
 
-Parent design: `assignment_lane.md`
+Parent design: `./assignment_lane.md`
 
 ## Purpose
 

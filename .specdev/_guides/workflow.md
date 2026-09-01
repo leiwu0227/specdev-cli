@@ -109,12 +109,20 @@ evidence and returns the nested graph without rerunning a provider or command.
 ## Roadmap
 
 `specdev roadmap` is an explicitly user-selected, stateless collaboration lane.
-It reports the standard files and the writable `roadmap/designs/*.md` plus
+It reports the standard files and the writable recursive
+`roadmap/designs/**/*.md` plus
 `roadmap/forecast.md` boundary without creating or changing state. Every design
 Markdown file must contain fewer than 800 words (maximum 799). Besides
 `core_concepts.md` and `source_code_folder_structure.md`, each design note must
 cover one independent feature or module and minimize overlap with the standard
-notes and its peers. `forecast.md` is a future-work roadmap of approved design
+notes and its peers. The standard notes remain at the designs root; other notes
+may use folders that mirror their conceptual parent-child hierarchy. Designs
+retain high-level stable abstractions, general concepts, reusable conceptual
+templates, deliberate design choices, and their tradeoffs. Examples may clarify
+the intended design, but implementation details must not be reproduced.
+Conceptual design notes exclude runtime mechanics, verification history, and
+incidental source-code references rather than duplicating the code.
+`forecast.md` is a future-work roadmap of approved design
 requirements absent or incomplete in current code. The designs are the target
 state: forecast identifies code gaps versus designs, never design gaps versus
 code. Code may be a superset; code-only features create neither forecast items
@@ -123,7 +131,9 @@ collaboration to incorporate those features into the designs. When creating or
 revising the forecast, the coding agent quickly inspects current code read-only
 and lists code gaps in dependency order. Each gap is its own Markdown section
 containing fewer than 200 words (maximum 199). The coding agent must show the destination and complete proposed
-content or diff, and writes only after explicit user approval. Product code and
+content or diff, and writes only after explicit user approval. After writing an
+approved draft, it reports the Markdown path without echoing the full document
+unless the user asks. Product code and
 all other paths remain read-only. Roadmap creates no identity, graph, receipt,
 snapshot, or automatic commit and does not authorize implementation of a
 forecast item. It has no active lifecycle and applies only during explicit
@@ -163,9 +173,13 @@ Markdown must not be treated as a SpecDev verdict.
 ## Knowledge
 
 Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.
-Always read `project_notes/big_picture.md`. Use default precise all-term or
-quoted-phrase search at the planning or uncertainty boundary instead of reading
-every note; reserve `--mode=broad` for explicit any-term discovery. Narrow noisy
+Read `project_notes/big_picture.md` unconditionally when starting a new
+Assignment or Mission. In every other lane, read it only when project-wide
+intent is materially relevant; resumed work relies first on its durable
+contract and artifacts unless that context is missing, stale, or changed. Use
+default precise all-term or quoted-phrase search at the planning or uncertainty
+boundary instead of reading every note; reserve `--mode=broad` for explicit
+any-term discovery. Narrow noisy
 partial matches with distinguishing terms or phrases. Assignment records useful
 paths in its plan; Mission searches once and passes relevant paths to children;
 Adhoc searches only for unfamiliar behavior or conventions. Search unexpected

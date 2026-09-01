@@ -20,9 +20,12 @@ fi
 
 ## Start here
 
-1. For governed product work, read `.specdev/project_notes/big_picture.md` and
-   repository instructions. For a Direct documentation write, read destination
-   instructions and only the narrowly necessary facts instead.
+1. Read repository instructions. When starting a new Assignment or Mission,
+   also read `.specdev/project_notes/big_picture.md` unconditionally. For every
+   other lane, read it only when project-wide intent is materially relevant;
+   resumed work relies first on its durable contract and artifacts unless that
+   context is missing, stale, or changed. A command whose purpose is to inspect
+   or edit `big_picture.md` still reads its target file.
 2. Classify the user's request before creating anything: Direct, Roadmap,
    Adhoc, Discussion, Assignment, or Mission. Recommend a lane when useful, but
    let the user select it. Never silently turn every request into an Assignment.

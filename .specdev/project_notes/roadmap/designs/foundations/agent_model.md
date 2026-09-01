@@ -1,6 +1,6 @@
 # Agent Model
 
-Parent design: `core_concepts.md`
+Parent design: `../core_concepts.md`
 
 ## Purpose
 
@@ -17,6 +17,10 @@ A **worker** implements a bounded objective under a contract or selected change 
 A **reviewer** independently evaluates an exact candidate against its authority and evidence. A required reviewer is product-read-only and reports findings; it does not repair the candidate it judges.
 
 A **controller** coordinates a parent workflow, delegates child authority, integrates results, and decides workflow actions within the approved parent boundary. Control does not grant independent product direction.
+
+A **resolver** is a fresh corrective executor used when ordinary repair has not produced convergence. It performs one bounded resolution under existing authority, but cannot reinterpret the contract, expand scope, or judge its own result.
+
+An **arbiter** is a fresh independent reviewer used when a resolved outcome still requires final disposition. It evaluates the exact candidate, authority, findings, and evidence without repairing the work or granting new product authority.
 
 One agent session may perform different roles at different times, but the authority and separation of each role remain explicit. Required author and reviewer authority cannot collapse merely because one provider supports both.
 
@@ -55,6 +59,7 @@ Session reuse cannot cross unrelated workflow identities or merge independent ro
 - Roles define authority; providers supply execution capabilities.
 - Attempts are replaceable and distinct from workflow identity.
 - Required reviewers remain independent and product-read-only.
+- Resolver and arbiter roles start fresh and preserve executor-reviewer separation.
 - Provider adapters fail closed when requested isolation cannot be enforced.
 - Durable artifacts outrank transcripts and private session state.
 - Optional provider capabilities never redefine core workflow semantics.

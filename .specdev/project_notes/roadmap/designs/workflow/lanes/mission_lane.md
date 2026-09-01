@@ -1,6 +1,6 @@
 # Mission Lane
 
-Parent design: `workflow_lanes.md`
+Parent design: `./workflow_lanes.md`
 
 ## Purpose
 
@@ -10,7 +10,7 @@ It is a foreground controller, not a synonym for large work and not an autonomou
 
 ## Authority
 
-Mission receives authority from the user’s approval of the exact parent contract. The contract defines the integrated objective, shared constraints, reserved decisions, acceptance criteria, and final verification boundary.
+Mission receives authority from the user’s approval of the exact parent contract. It uses the contract template defined by the Assignment lane at integrated scope. Its authority boundary governs decomposition, child delegation, and integration; its acceptance model covers the integrated candidate and exact final verification boundary.
 
 The Mission delegates subsets of that authority to child Assignments. Child contracts inherit unchanged parent decisions and add only the bounded detail needed for their own work. No child may expand the parent objective or convert an unresolved product decision into implementation discretion.
 

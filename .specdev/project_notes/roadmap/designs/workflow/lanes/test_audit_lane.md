@@ -1,6 +1,6 @@
 # Test Audit Lane
 
-Parent design: `workflow_lanes.md`
+Parent design: `./workflow_lanes.md`
 
 ## Purpose
 
