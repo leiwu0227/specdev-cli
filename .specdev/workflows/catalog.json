@@ -3,9 +3,9 @@
   "packages": {
     "assignment-lifecycle": {
       "id": "assignment-lifecycle",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "kind": "workflow",
-      "path": "assignment-lifecycle@2.3.0"
+      "path": "assignment-lifecycle@2.4.0"
     },
     "discussion-lifecycle": {
       "id": "discussion-lifecycle",

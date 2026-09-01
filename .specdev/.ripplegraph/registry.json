@@ -3,7 +3,7 @@
   "graphs": {
     "assignment-lifecycle": {
       "id": "assignment-lifecycle",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "kind": "workflow",
       "title": "Assignment lifecycle",
       "description": "Guide one contract-governed change from interactive Brainstorm through automatic delivery.",
@@ -16,8 +16,8 @@
       ],
       "requires": [],
       "effects": [],
-      "path": "workflows/assignment-lifecycle@2.3.0",
-      "registeredAt": "2026-09-01T04:06:28.461Z"
+      "path": "workflows/assignment-lifecycle@2.4.0",
+      "registeredAt": "2026-09-01T06:19:59.012Z"
     },
     "discussion-lifecycle": {
       "id": "discussion-lifecycle",

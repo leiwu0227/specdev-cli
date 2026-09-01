@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { loadGraphPackage } from 'ripplegraph'
@@ -85,7 +93,7 @@ assert.equal(
   'assignment-lifecycle'
 )
 assert.equal(byId['mission-lifecycle'].nodes['advance-queue'].edges[0].when.gap_open, true)
-assert.equal(byId['assignment-lifecycle'].version, '2.3.0')
+assert.equal(byId['assignment-lifecycle'].version, '2.4.0')
 assert.equal(byId['mission-lifecycle'].version, '1.5.0')
 assert.deepEqual(validateNestedWorkflowEdges(packages), [])
 assert.ok(byId['mission-lifecycle'].nodes['execute-wave'])
@@ -130,9 +138,17 @@ try {
   const installed = await installGraphPackages(workflowsRoot, installRoot)
   assert.equal(installed.length, expectedIds.length)
   const catalog = JSON.parse(readFileSync(join(installRoot, 'catalog.json'), 'utf8'))
-  assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.3.0')
+  assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.4.0')
   assert.equal(catalog.packages['mission-lifecycle'].path, 'mission-lifecycle@1.5.0')
-  const installedGraph = join(installRoot, 'assignment-lifecycle@2.3.0', 'graph.json')
+  const legacyRoot = join(installRoot, 'assignment-lifecycle@2.3.0')
+  const legacyGraph = join(legacyRoot, 'graph.json')
+  const legacyBytes = '{"legacy":true}\n'
+  mkdirSync(legacyRoot)
+  writeFileSync(legacyGraph, legacyBytes)
+  await installGraphPackages(workflowsRoot, installRoot)
+  assert.equal(readFileSync(legacyGraph, 'utf8'), legacyBytes)
+
+  const installedGraph = join(installRoot, 'assignment-lifecycle@2.4.0', 'graph.json')
   writeFileSync(installedGraph, `${readFileSync(installedGraph, 'utf8')}\n`)
   await assert.rejects(
     installGraphPackages(workflowsRoot, installRoot),
