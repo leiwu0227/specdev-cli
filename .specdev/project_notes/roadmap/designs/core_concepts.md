@@ -62,7 +62,7 @@ Human-readable `.specdev` artifacts own approved intent and durable conclusions.
 
 When these sources disagree, SpecDev exposes the inconsistency and returns to the owning authority instead of choosing the most convenient representation.
 
-Detailed models live in `foundations/system_state_model.md`, `foundations/agent_model.md`, `workflow/workflow_model.md`, and `workflow/lanes/workflow_lanes.md`.
+Detailed models live in `foundations/specdev_state_model.md`, `foundations/coding_agent_role.md`, `workflow/workflow_model.md`, and `workflow/lanes/workflow_lanes.md`.
 
 ## Design Choices and Tradeoffs
 

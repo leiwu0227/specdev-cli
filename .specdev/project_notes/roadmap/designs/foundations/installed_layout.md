@@ -1,6 +1,6 @@
 # Installed SpecDev Layout
 
-Parent design: `./system_state_model.md`
+Parent design: `./specdev_state_model.md`
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-# System State Model
+# SpecDev State Model
 
 Parent design: `../core_concepts.md`
 
@@ -6,7 +6,7 @@ Parent design: `../core_concepts.md`
 
 SpecDev keeps project intent, workflow recovery, operational execution, and product history understandable from the repository without requiring a hosted control plane or one agent session.
 
-The system-state model separates information by ownership and durability. This prevents generated runtime, workflow checkpoints, caches, and human decisions from becoming interchangeable merely because they share the same installation.
+The SpecDev state model separates information by ownership and durability. This prevents generated runtime, workflow checkpoints, caches, and human decisions from becoming interchangeable merely because they share the same installation.
 
 ## State Classes
 
