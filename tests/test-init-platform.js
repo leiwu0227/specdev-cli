@@ -95,9 +95,11 @@ assert(
     roadmapPayload.design_rules.abstraction.includes('high-level stable abstractions') &&
     roadmapPayload.design_rules.explanation.includes('using examples') &&
     roadmapPayload.design_rules.separation.includes('runtime mechanics') &&
-    roadmapPayload.design_rules.presentation.includes('concise intended scope') &&
-    roadmapPayload.design_rules.presentation.includes('report only its Markdown path') &&
-    roadmapPayload.next_action.includes('approval to draft it') &&
+    roadmapPayload.design_rules.presentation.includes('intended final destination') &&
+    roadmapPayload.design_rules.presentation.includes('*_draft.md') &&
+    roadmapPayload.design_rules.presentation.includes('promote the draft') &&
+    roadmapPayload.design_rules.presentation.includes('Do not echo full content') &&
+    roadmapPayload.next_action.includes('approval before writing a draft') &&
     roadmapPayload.forecast_rules.derivation.includes('inspect current code read-only') &&
     roadmapPayload.forecast_rules.comparison_direction.includes('code gaps versus the designs') &&
     roadmapPayload.forecast_rules.code_superset.includes('Current code may be a superset') &&
@@ -340,7 +342,9 @@ assert(
     roadmapSkillProse.includes('high-level stable abstractions') &&
     roadmapSkillProse.includes('reusable conceptual templates') &&
     roadmapSkillProse.includes('runtime mechanics, verification history') &&
-    roadmapSkillProse.includes('report only its Markdown path') &&
+    roadmapSkillProse.includes('Write the draft as `*_draft.md`') &&
+    roadmapSkillProse.includes('report only the draft Markdown path') &&
+    roadmapSkillProse.includes('promote the draft to the final `.md` path') &&
     roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
     roadmapSkillProse.includes('never design gaps versus current code') &&
     roadmapSkillProse.includes('extra code-only features do not create forecast items') &&

@@ -303,13 +303,15 @@ of the designs; extra code-only features do not create forecast items or
 automatic design-note updates. The user separately initiates Roadmap
 collaboration to incorporate such features into the design notes.
 
-Collaborate with the user on one intended edit at a time. Before drafting,
-report the exact destination and a concise scope, then wait for explicit user
-approval to write within that agreed direction. After writing, report only its
-Markdown path so the user can inspect it; do not echo the full document or diff
-unless the user asks. Invocation alone never authorizes a write. Roadmap
-creates no ID, RippleGraph state, receipt, snapshot, or automatic commit, and it
-does not grant authority to implement forecast items.
+Collaborate with the user on one intended edit at a time. For design notes,
+report the intended final destination and a concise scope, then wait for
+explicit user approval to write a draft within that agreed direction. Write the
+draft as \`*_draft.md\` and report only the draft Markdown path so the user can
+inspect it. After user approval, promote the draft to the final \`.md\` path and
+report only that final path. Do not echo the full document or diff unless the
+user asks. Invocation alone never authorizes a write. Roadmap creates no ID,
+RippleGraph state, receipt, snapshot, or automatic commit, and it does not grant
+authority to implement forecast items.
 
 Roadmap has no active lifecycle. It applies only while the user is explicitly
 collaborating on roadmap notes. Selecting another lane immediately supersedes

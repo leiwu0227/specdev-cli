@@ -120,11 +120,15 @@ verification, ownership, destination approval, or rebuild requirements.
   inspect current code read-only and list code gaps in dependency order, one
   numbered Markdown section per gap. Every forecast section must identify the
   Roadmap design note or notes it is based on and contain fewer than 200 words
-  (maximum 199). Product code and every other path are read-only. Roadmap
-  creates no ID, workflow state, receipt, snapshot, or automatic commit and
-  grants no implementation authority. It has no active lifecycle and applies
-  only during explicit roadmap collaboration. Selecting another lane
-  immediately supersedes Roadmap without an exit command or state transition.
+  (maximum 199). For design notes, report the intended final destination and
+  concise scope, then write an approved `*_draft.md` draft and report only the
+  draft path. After user approval, promote it to the final `.md` path and
+  report only the final path. Do not echo full content or diffs unless asked.
+  Product code and every other path are read-only. Roadmap creates no ID,
+  workflow state, receipt, snapshot, or automatic commit and grants no
+  implementation authority. It has no active lifecycle and applies only during
+  explicit roadmap collaboration. Selecting another lane immediately supersedes
+  Roadmap without an exit command or state transition.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,
   scheduler, subagent, worktree, or approval gate. It records one concise
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.

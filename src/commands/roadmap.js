@@ -33,7 +33,7 @@ export async function roadmapCommand(flags = {}) {
       separation:
         'Keep runtime mechanics, verification history, and incidental source-code references out of conceptual design notes; retain only stable abstractions and deliberate tradeoffs.',
       presentation:
-        'Before drafting, report the exact destination and concise intended scope; after approval and writing, report only its Markdown path unless the user asks for content.',
+        'For design notes, report the intended final destination and concise scope, then write an approved draft as *_draft.md. After writing a draft, report only the draft Markdown path. After user approval, promote the draft to the final .md path and report only the final path. Do not echo full content or diffs unless the user asks.',
     },
     forecast_rules: {
       purpose:
@@ -58,7 +58,7 @@ export async function roadmapCommand(flags = {}) {
     },
     history: 'No Roadmap IDs, workflow state, receipts, snapshots, or automatic commits.',
     next_action:
-      'Read the current roadmap, agree one intended edit, report its destination and concise scope, and wait for explicit user approval to draft it.',
+      'Read the current roadmap, agree one intended edit, report its destination and concise scope, and wait for explicit user approval before writing a draft.',
   }
 
   if (flags.json) {

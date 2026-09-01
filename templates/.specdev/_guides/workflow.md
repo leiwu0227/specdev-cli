@@ -131,11 +131,13 @@ collaboration to incorporate those features into the designs. When creating or
 revising the forecast, the coding agent quickly inspects current code read-only
 and lists code gaps in dependency order. Each gap is its own numbered Markdown
 section containing fewer than 200 words (maximum 199) and identifies the
-Roadmap design note or notes it is based on. Before drafting, the coding agent
-reports the exact destination and a concise intended scope, then writes only
-after explicit user approval. Approval authorizes drafting within that agreed
-direction. After writing, the agent reports only the Markdown path for user
-inspection and does not echo the full document or diff unless asked. Product code and
+Roadmap design note or notes it is based on. For design notes, the coding agent
+reports the intended final destination and a concise scope, then writes only
+after explicit user approval. Approval authorizes a `*_draft.md` draft within
+that agreed direction. After writing the draft, the agent reports only the
+draft Markdown path for user inspection. After user approval, the draft is
+promoted to the final `.md` path and the agent reports only that final path.
+The agent does not echo the full document or diff unless asked. Product code and
 all other paths remain read-only. Roadmap creates no identity, graph, receipt,
 snapshot, or automatic commit and does not authorize implementation of a
 forecast item. It has no active lifecycle and applies only during explicit
