@@ -27,9 +27,14 @@ import {
 import { workflowRootFor } from '../utils/engine.js'
 import { resolveGuides } from '../utils/guides.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
+import {
+  assignmentExecutionProjection,
+  inlineImplementationObligations,
+} from '../utils/assignment-execution.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { readMission, resolveMissionSelector, writeMission } from '../utils/mission.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
+import { parseResultEnvelope } from '../utils/result-envelope.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
   completeStandaloneAssignmentDelivery,
@@ -719,7 +724,7 @@ async function emitAutomaticBrainstormResult({
 
 export async function reviewImplementation(flags = {}) {
   const context = await assignmentContext(flags)
-  const { targetDir, specdevPath, assignmentPath, name, mission } = context
+  const { targetDir, specdevPath, assignmentPath, name, mission, implementationExecution } = context
   const { contract } = await assertApprovedContract(targetDir, assignmentPath)
   let graph = await currentAssignmentNode(targetDir)
   if (!graph || !['implementation-review', 'repair'].includes(graph.position.node)) {
@@ -735,29 +740,61 @@ export async function reviewImplementation(flags = {}) {
   let reviewState = initialAutomaticReviewState((await readJsonIfPresent(statePath)) || {})
 
   if (graph.position.node === 'repair') {
-    const implementationGuideIds = await selectedImplementationGuides(assignmentPath)
-    const implementationGuides = await resolveGuides(specdevPath, implementationGuideIds, {
-      phase: 'implementation',
-    })
-    const repaired = await runRepairWorker({
-      ...context,
-      flags,
-      verdictPath,
-      guides: implementationGuides,
-    })
-    if (!repaired) return null
-    stepGuidedNode(targetDir, 'repair', {
-      attempt: repaired.attempt.id,
-      result: relativeToRepo(targetDir, repaired.resultPath),
-    })
-    graph = await currentAssignmentNode(targetDir)
-    reviewState = {
-      ...reviewState,
-      stage: 'primary',
-      repair_attempt: repaired.attempt.id,
-      updated_at: new Date().toISOString(),
+    if (!mission && implementationExecution?.effective_mode === 'inline') {
+      const repairResultPath = join(assignmentPath, 'implementation', 'repair-result.md')
+      const repairResult = await readInlineContinuationResult(repairResultPath)
+      if (repairResult.status !== 'completed') {
+        return emitInlineRepair(flags, {
+          targetDir,
+          assignmentPath,
+          name,
+          contract,
+          implementationExecution,
+          graphNode: graph.position.node,
+          verdictPath,
+          issue: repairResult.issue || 'Independent review requires foreground repair.',
+          resultFile: 'repair-result.md',
+        })
+      }
+      await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+      stepGuidedNode(targetDir, 'repair', {
+        attempt: 'inline-foreground',
+        result: relativeToRepo(targetDir, repairResultPath),
+      })
+      await retireTransientArtifact(targetDir, specdevPath, repairResultPath)
+      graph = await currentAssignmentNode(targetDir)
+      reviewState = {
+        ...reviewState,
+        stage: 'primary',
+        repair_attempt: 'inline-foreground',
+        updated_at: new Date().toISOString(),
+      }
+      await writeJsonAtomic(statePath, reviewState)
+    } else {
+      const implementationGuideIds = await selectedImplementationGuides(assignmentPath)
+      const implementationGuides = await resolveGuides(specdevPath, implementationGuideIds, {
+        phase: 'implementation',
+      })
+      const repaired = await runRepairWorker({
+        ...context,
+        flags,
+        verdictPath,
+        guides: implementationGuides,
+      })
+      if (!repaired) return null
+      stepGuidedNode(targetDir, 'repair', {
+        attempt: repaired.attempt.id,
+        result: relativeToRepo(targetDir, repaired.resultPath),
+      })
+      graph = await currentAssignmentNode(targetDir)
+      reviewState = {
+        ...reviewState,
+        stage: 'primary',
+        repair_attempt: repaired.attempt.id,
+        updated_at: new Date().toISOString(),
+      }
+      await writeJsonAtomic(statePath, reviewState)
     }
-    await writeJsonAtomic(statePath, reviewState)
   }
 
   let delivery
@@ -902,12 +939,24 @@ export async function reviewImplementation(flags = {}) {
   await writeJsonAtomic(statePath, reviewState)
 
   if (reviewState.stage === 'resolver') {
-    const resolved = await runImplementationResolver({
-      ...context,
-      flags,
-      verdictPath,
-      guides: delivery.implementationGuides,
-    })
+    const resolved =
+      !mission && implementationExecution?.effective_mode === 'inline'
+        ? await readInlineResolver({
+            flags,
+            targetDir,
+            specdevPath,
+            assignmentPath,
+            name,
+            contract,
+            implementationExecution,
+            verdictPath,
+          })
+        : await runImplementationResolver({
+            ...context,
+            flags,
+            verdictPath,
+            guides: delivery.implementationGuides,
+          })
     if (!resolved) return null
     if (resolved.result.frontmatter.status === 'completed') {
       delivery = await validateDeliveryArtifacts(
@@ -1162,6 +1211,7 @@ async function completeImplementationReview({
   assignmentPath,
   name,
   mission,
+  implementationExecution,
   flags,
   contract,
   verdictPath,
@@ -1228,6 +1278,14 @@ async function completeImplementationReview({
     round,
     verdict: relativeToRepo(targetDir, verdictPath),
     disposition,
+    ...(implementationExecution
+      ? {
+          implementation_execution: assignmentExecutionProjection(
+            { implementation_execution: implementationExecution, status: 'completed' },
+            'done'
+          ),
+        }
+      : {}),
     next_action: 'Assignment complete.',
   }
   if (!mission) {
@@ -1329,7 +1387,104 @@ async function assignmentContext(flags) {
     assignmentPath,
     name: assignmentName(assignmentPath),
     mission: status?.mission || undefined,
+    implementationExecution: status?.implementation_execution || null,
   }
+}
+
+async function readInlineResolver({
+  flags,
+  targetDir,
+  specdevPath,
+  assignmentPath,
+  name,
+  contract,
+  implementationExecution,
+  verdictPath,
+}) {
+  const resultPath = join(assignmentPath, 'implementation', 'resolver-result.md')
+  const result = await readInlineContinuationResult(resultPath)
+  if (result.status !== 'completed') {
+    emitInlineRepair(flags, {
+      targetDir,
+      assignmentPath,
+      name,
+      contract,
+      implementationExecution,
+      graphNode: 'repair',
+      verdictPath,
+      issue: result.issue || 'Review convergence requires one final foreground repair.',
+      resultFile: 'resolver-result.md',
+    })
+    return null
+  }
+  await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+  await retireTransientArtifact(targetDir, specdevPath, resultPath)
+  return {
+    attempt: { id: 'inline-foreground' },
+    resultPath,
+    result: { frontmatter: { status: 'completed' } },
+  }
+}
+
+async function readInlineContinuationResult(path) {
+  if (!(await fse.pathExists(path))) return { status: 'absent' }
+  try {
+    const result = parseResultEnvelope(await fse.readFile(path, 'utf8'), 'worker')
+    if (result.frontmatter.status !== 'completed') {
+      return { status: 'blocked', issue: 'Foreground continuation result reports blocked.' }
+    }
+    return { status: 'completed', result }
+  } catch (error) {
+    return {
+      status: 'invalid',
+      issue: `Foreground continuation result is invalid: ${error.message}`,
+    }
+  }
+}
+
+function emitInlineRepair(
+  flags,
+  {
+    targetDir,
+    assignmentPath,
+    name,
+    contract,
+    implementationExecution,
+    graphNode,
+    verdictPath,
+    issue,
+    resultFile,
+  }
+) {
+  const payload = {
+    command: 'reviewloop',
+    version: 3,
+    status: 'action_required',
+    phase: 'implementation',
+    assignment: name,
+    verdict: relativeToRepo(targetDir, verdictPath),
+    implementation_execution: assignmentExecutionProjection(
+      { implementation_execution: implementationExecution },
+      graphNode
+    ),
+    foreground: inlineImplementationObligations({
+      targetDir,
+      assignmentPath,
+      contract,
+      issue,
+      resultFile,
+    }),
+    next_action: 'Complete the bounded foreground repair, then rerun specdev implement.',
+  }
+  if (flags.json) console.log(JSON.stringify(payload, null, 2))
+  else {
+    console.log('implementation review: action_required')
+    console.log(`Verdict: ${payload.verdict}`)
+    console.log(`Repair: ${payload.foreground.issue}`)
+    console.log(`Result: ${payload.foreground.obligations.result}`)
+    console.log(`Next: ${payload.next_action}`)
+  }
+  return payload
 }
 
 async function reviewProfile(specdevPath, flags, saved) {

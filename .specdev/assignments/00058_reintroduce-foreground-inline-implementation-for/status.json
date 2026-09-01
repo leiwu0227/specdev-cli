@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "00058",
+  "kind": "change",
+  "description": "Reintroduce foreground inline implementation for standalone Assignments as a fresh execution-mode feature, while preserving explicit spawned execution, Mission-controlled workers, frozen Git-boundary ownership, recovery, independent review, and focused evidence",
+  "run_id": "assignment-lifecycle-20260901T05490687",
+  "created_at": "2026-09-01T05:49:06.883Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-09-01T06:13:15.188Z",
+  "review_policy_frozen_at": "2026-09-01T05:53:40.693Z",
+  "approved_at": "2026-09-01T05:53:40.693Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "7249635a9603371b01e4809373dd6140208da876",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-09-01T05:54:16.325Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-09-01T06:13:15.129Z",
+  "activity": {
+    "attempt_count": 2,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 2,
+    "provider_attempts": {
+      "total": 2,
+      "completed": 1,
+      "failed": 0,
+      "blocked": 1,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1174436,
+    "agent_duration_ms": 1019032,
+    "provider_reported_tokens": 247376
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-09-01T06:13:15.188Z"
+}

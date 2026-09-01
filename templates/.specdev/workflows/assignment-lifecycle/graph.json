@@ -122,8 +122,8 @@
       ]
     },
     "design": {
-      "purpose": "Use the worker profile to write design/plan.md with Tasks, guide selections, and acceptance coverage.",
-      "instructions": "Run `specdev implement`; the same worker Attempt normally continues through Implementation.",
+      "purpose": "Use the frozen implementation executor to write design/plan.md with Tasks, guide selections, and acceptance coverage.",
+      "instructions": "Run `specdev implement`; standalone auto normally returns foreground inline obligations, while fixed spawned and Mission execution use a worker Attempt.",
       "outputSchema": {
         "type": "object",
         "required": ["plan", "attempt"],
@@ -137,7 +137,7 @@
     },
     "implementation": {
       "purpose": "Execute Tasks inline, collect authorized evidence, and write the concise outcome.",
-      "instructions": "The active `specdev implement` worker owns this transition and starts review when complete.",
+      "instructions": "The frozen inline foreground agent or spawned worker owns this transition and starts independent review when complete.",
       "outputSchema": {
         "type": "object",
         "required": ["progress", "outcome", "attempt"],
@@ -191,7 +191,7 @@
     },
     "repair": {
       "purpose": "Continue from current repository state and repair the first blocking review findings.",
-      "instructions": "The implementation review loop starts one continuation worker and submits its result.",
+      "instructions": "Inline execution returns bounded repair obligations to the foreground agent; spawned execution starts one continuation worker.",
       "outputSchema": {
         "type": "object",
         "required": ["attempt", "result"],

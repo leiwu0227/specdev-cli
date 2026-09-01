@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+      "scope": "Whitespace and patch-integrity qualification for the current candidate",
+      "status": "passed",
+      "duration_ms": 100,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-implement-recovery.js",
+      "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+      "scope": "AC-1, AC-2, and AC-3 execution resolution, inline recovery, spawned compatibility, repair, resolver, receipt, and delivery regression coverage",
+      "status": "passed",
+      "duration_ms": 18028,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-status-visibility.js",
+      "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+      "scope": "AC-1 and AC-3 configuration precedence, invalid configuration, Mission/legacy/frozen resolution, status projection, and installed defaults",
+      "status": "passed",
+      "duration_ms": 1,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "The first status-visibility run exposed a stale expected key list that omitted the pre-existing dirty_owners field. The expectation was corrected without changing product behavior, and the approved focused rerun passed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

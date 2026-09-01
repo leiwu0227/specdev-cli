@@ -1,3 +1,6 @@
+implementation:
+  mode: auto # auto | inline | spawned
+
 worker:
   provider: codex
   model: gpt-5

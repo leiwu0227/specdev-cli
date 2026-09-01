@@ -205,7 +205,12 @@ Preserved work requires user resolution.
 `
 }
 
-function createFixture(label) {
+function reviewerCount(root) {
+  const path = `${root}.fake-reviewer-count`
+  return existsSync(path) ? Number(readFileSync(path, 'utf8')) : 0
+}
+
+function createFixture(label, implementationMode = 'spawned', implementationReview = 'waived') {
   const root = mkdtempSync(join(tmpdir(), `specdev-implement-recovery-${label}-`))
   roots.push(root)
   const fakeBin = join(root, 'fake-bin')
@@ -214,7 +219,18 @@ function createFixture(label) {
   writeFileSync(
     fakeClaude,
     `#!/bin/sh
-cat >/dev/null
+prompt=$(cat)
+case "$prompt" in
+  *"Choose exactly one verdict"*)
+    reviewer_file="${root}.fake-reviewer-count"
+    reviewer_count=0
+    if [ -f "$reviewer_file" ]; then reviewer_count=$(cat "$reviewer_file"); fi
+    reviewer_count=$((reviewer_count + 1))
+    printf '%s' "$reviewer_count" >"$reviewer_file"
+    printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'No blocking findings in the focused fixture.'
+    exit 0
+    ;;
+esac
 count_file="${root}/.fake-worker-count"
 count=0
 if [ -f "$count_file" ]; then count=$(cat "$count_file"); fi
@@ -237,7 +253,7 @@ printf '%s\\n' '---' 'status: completed' 'revision: null' 'follow_up: none' '---
   )
   writeFileSync(
     join(root, '.specdev', 'agents.yaml'),
-    'worker:\n  provider: claude\n  model: fixture\n  effort: low\n  timeout: 10s\nreviewer:\n  provider: claude\n  model: fixture\n  effort: low\n  timeout: 10s\n',
+    `implementation:\n  mode: ${implementationMode}\nworker:\n  provider: claude\n  model: fixture\n  effort: low\n  timeout: 10s\nreviewer:\n  provider: claude\n  model: fixture\n  effort: low\n  timeout: 10s\n`,
     'utf8'
   )
   runGit(root, ['add', '--all'])
@@ -252,7 +268,12 @@ printf '%s\\n' '---' 'status: completed' 'revision: null' 'follow_up: none' '---
   const assignmentPath = join(root, assignment.path)
   writeContract(assignmentPath)
   runJson(root, ['checkpoint', 'brainstorm', '--json'])
-  runJson(root, ['approve', 'brainstorm', '--implementation-review=waived', '--json'])
+  runJson(root, [
+    'approve',
+    'brainstorm',
+    `--implementation-review=${implementationReview}`,
+    '--json',
+  ])
   assert.equal(runJson(root, ['next', '--json']).phase, 'design')
   return { root, assignmentPath, assignment: assignment.path.split('/').pop() }
 }
@@ -273,6 +294,67 @@ function assertPreservedBlock({ root, assignmentPath, expectedRecovery, diagnost
 }
 
 try {
+  const conflicting = createFixture('conflicting', 'inline')
+  const conflict = runJson(conflicting.root, ['implement', '--spawned', '--json'], 1)
+  assert.equal(conflict.status, 'error')
+  assert.match(conflict.error, /implementation\.mode=inline conflicts with explicit --spawned/)
+  const conflictingStatus = JSON.parse(
+    readFileSync(join(conflicting.assignmentPath, 'status.json'), 'utf8')
+  )
+  assert.equal(conflictingStatus.git_boundary, undefined)
+  assert.equal(conflictingStatus.implementation_execution, undefined)
+
+  const inline = createFixture('inline', 'auto')
+  const inlineAction = runJson(inline.root, ['implement', '--json'])
+  assert.equal(inlineAction.status, 'action_required')
+  assert.equal(inlineAction.implementation_execution.configured_mode, 'auto')
+  assert.equal(inlineAction.implementation_execution.effective_mode, 'inline')
+  assert.equal(inlineAction.implementation_execution.source, 'auto-default')
+  assert.equal(inlineAction.implementation_execution.current_owner, 'foreground-agent')
+  assert.match(inlineAction.implementation_execution.recovery_action, /foreground agent/)
+  assert.equal(inlineAction.foreground.owner, 'foreground-agent')
+  assert.match(inlineAction.foreground.obligations.result, /worker-result\.md$/)
+  assert.equal(attemptCount(inline.root), 0)
+  assert.equal(existsSync(join(inline.root, '.fake-worker-count')), false)
+
+  const inlineStatus = runJson(inline.root, ['status', '--json'])
+  assert.equal(inlineStatus.assignment_execution.effective_mode, 'inline')
+  assert.equal(inlineStatus.assignment_execution.current_owner, 'foreground-agent')
+  const inlineNext = runJson(inline.root, ['next', '--json'])
+  assert.equal(inlineNext.assignment_execution.effective_mode, 'inline')
+  assert.match(inlineNext.assignment_execution.recovery_action, /foreground agent/)
+  const frozenSwitch = runJson(inline.root, ['implement', '--spawned', '--json'], 1)
+  assert.match(frozenSwitch.error, /frozen as inline/)
+
+  writeDelivery(inline.assignmentPath)
+  writeWorkerResult(inline.assignmentPath, completedResult())
+  mkdirSync(join(inline.root, 'src'))
+  writeFileSync(join(inline.root, 'src', 'inline.js'), 'export const inline = true\n', 'utf8')
+  const inlineCompleted = runJson(inline.root, ['implement', '--json'])
+  assert.equal(inlineCompleted.status, 'completed')
+  assert.equal(inlineCompleted.activity.provider_attempts.total, 0)
+  assert.equal(inlineCompleted.implementation_execution.effective_mode, 'inline')
+  assert.equal(inlineCompleted.receipt.implementation_execution.effective_mode, 'inline')
+  assert.equal(existsSync(join(inline.root, '.fake-worker-count')), false)
+
+  const explicitSpawned = createFixture('explicit-spawned', 'auto')
+  writeDelivery(explicitSpawned.assignmentPath)
+  const explicitSpawnedRun = runJson(explicitSpawned.root, [
+    'implement',
+    '--spawned',
+    '--execution-reason=Unattended fixture automation',
+    '--json',
+  ])
+  assert.equal(explicitSpawnedRun.status, 'completed')
+  assert.equal(explicitSpawnedRun.activity.provider_attempts.total, 1)
+  assert.equal(explicitSpawnedRun.implementation_execution.effective_mode, 'spawned')
+  assert.equal(explicitSpawnedRun.implementation_execution.source, 'command')
+  assert.equal(
+    explicitSpawnedRun.implementation_execution.reason,
+    'Unattended fixture automation'
+  )
+  assert.equal(readFileSync(join(explicitSpawned.root, '.fake-worker-count'), 'utf8'), '1')
+
   const blocked = createFixture('blocked')
   writeWorkerResult(blocked.assignmentPath, blockedResult())
   assertPreservedBlock({
@@ -451,7 +533,103 @@ try {
   assert.equal(initial.activity.provider_attempts.total, 1)
   assert.equal(readFileSync(join(absent.root, '.fake-worker-count'), 'utf8'), '1')
 
+  const repairRouting = createFixture('inline-repair', 'auto', 'required')
+  assert.equal(runJson(repairRouting.root, ['implement', '--json']).status, 'action_required')
+  writeDelivery(repairRouting.assignmentPath)
+  writeWorkerResult(repairRouting.assignmentPath, completedResult())
+  mkdirSync(join(repairRouting.root, 'src'))
+  writeFileSync(join(repairRouting.root, 'src', 'repair.js'), 'export const repair = true\n', 'utf8')
+  const repairOutcomePath = join(repairRouting.assignmentPath, 'outcome.md')
+  writeFileSync(
+    repairOutcomePath,
+    readFileSync(repairOutcomePath, 'utf8').replace(
+      '| AC-3 | Focused fixture | Passed |',
+      '| AC-3 | Focused fixture | Blocked |'
+    ),
+    'utf8'
+  )
+  const inlineRepair = runJson(repairRouting.root, ['implement', '--json'])
+  assert.equal(inlineRepair.command, 'reviewloop')
+  assert.equal(inlineRepair.status, 'action_required')
+  assert.equal(inlineRepair.implementation_execution.effective_mode, 'inline')
+  assert.equal(inlineRepair.implementation_execution.current_owner, 'foreground-agent')
+  assert.equal(inlineRepair.foreground.action, 'repair-preserved-inline-delivery')
+  assert.match(inlineRepair.foreground.obligations.result, /repair-result\.md$/)
+  assert.equal(attemptCount(repairRouting.root), 0)
+  assert.equal(reviewerCount(repairRouting.root), 0)
+
+  writeFileSync(
+    repairOutcomePath,
+    readFileSync(repairOutcomePath, 'utf8').replace(
+      '| AC-3 | Focused fixture | Blocked |',
+      '| AC-3 | Focused fixture | Passed |'
+    ),
+    'utf8'
+  )
+  writeFileSync(
+    join(repairRouting.assignmentPath, 'implementation', 'repair-result.md'),
+    completedResult(),
+    'utf8'
+  )
+  const repairedInline = runJson(repairRouting.root, ['implement', '--json'])
+  assert.equal(repairedInline.status, 'approved')
+  assert.equal(repairedInline.receipt.completeness, 'complete')
+  assert.equal(existsSync(join(repairRouting.root, '.fake-worker-count')), false)
+  assert.equal(reviewerCount(repairRouting.root), 1)
+
+  const resolverRouting = createFixture('inline-resolver', 'auto', 'required')
+  assert.equal(runJson(resolverRouting.root, ['implement', '--json']).status, 'action_required')
+  writeDelivery(resolverRouting.assignmentPath)
+  writeWorkerResult(resolverRouting.assignmentPath, completedResult())
+  mkdirSync(join(resolverRouting.root, 'src'))
+  writeFileSync(
+    join(resolverRouting.root, 'src', 'resolver.js'),
+    'export const resolver = true\n',
+    'utf8'
+  )
+  mkdirSync(join(resolverRouting.assignmentPath, 'review'), { recursive: true })
+  writeFileSync(
+    join(resolverRouting.assignmentPath, 'review', 'implementation-state.json'),
+    `${JSON.stringify(
+      {
+        version: 2,
+        mode: 'automatic',
+        stage: 'resolver',
+        round: 2,
+        primary_round: 2,
+        history: [],
+      },
+      null,
+      2
+    )}\n`,
+    'utf8'
+  )
+  const inlineResolver = runJson(resolverRouting.root, ['implement', '--json'])
+  assert.equal(inlineResolver.status, 'action_required')
+  assert.equal(inlineResolver.implementation_execution.effective_mode, 'inline')
+  assert.equal(inlineResolver.implementation_execution.current_owner, 'foreground-agent')
+  assert.match(inlineResolver.foreground.obligations.result, /resolver-result\.md$/)
+  assert.equal(attemptCount(resolverRouting.root), 0)
+  assert.equal(reviewerCount(resolverRouting.root), 0)
+
+  writeFileSync(
+    join(resolverRouting.assignmentPath, 'implementation', 'resolver-result.md'),
+    completedResult(),
+    'utf8'
+  )
+  const resolvedInline = runJson(resolverRouting.root, ['implement', '--json'])
+  assert.equal(resolvedInline.status, 'approved')
+  assert.equal(
+    existsSync(join(resolverRouting.assignmentPath, 'implementation', 'resolver-result.md')),
+    false
+  )
+  assert.equal(existsSync(join(resolverRouting.root, '.fake-worker-count')), false)
+  assert.equal(reviewerCount(resolverRouting.root), 1)
+
   console.log('implement recovery tests passed')
 } finally {
-  for (const root of roots) rmSync(root, { recursive: true, force: true })
+  for (const root of roots) {
+    rmSync(root, { recursive: true, force: true })
+    rmSync(`${root}.fake-reviewer-count`, { force: true })
+  }
 }

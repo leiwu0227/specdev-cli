@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "bafa200bedec983a06b704c1dc73add2d4569a2efa1b6879b8733d67ef017a21",
+  "assignment": {
+    "id": "00058",
+    "folder": "00058_reintroduce-foreground-inline-implementation-for"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00058_reintroduce-foreground-inline-implementation-for/brainstorm/contract.md",
+    "hash": "4bd7d98dc62bac9def18083013e804d140196a1c8b9287f11e102fb0ed59ef0b"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`node tests/test-implement-recovery.js` and `node tests/test-status-visibility.js` passed mode resolution, mutation ordering, configuration precedence, Mission, legacy, and frozen-switch cases.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`node tests/test-implement-recovery.js` passed inline no-spawn obligations, resumable artifacts, foreground repair/resolver routing, independent review, and delivery.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Both focused commands passed spawned compatibility, retry/recovery, status/next and receipt projection, installed defaults, and guidance alignment.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 3,
+    "items": [
+      {
+        "command": "git diff --check",
+        "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+        "scope": "Whitespace and patch-integrity qualification for the current candidate",
+        "status": "passed",
+        "duration_ms": 100,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node tests/test-implement-recovery.js",
+        "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+        "scope": "AC-1, AC-2, and AC-3 execution resolution, inline recovery, spawned compatibility, repair, resolver, receipt, and delivery regression coverage",
+        "status": "passed",
+        "duration_ms": 18028,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node tests/test-status-visibility.js",
+        "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+        "scope": "AC-1 and AC-3 configuration precedence, invalid configuration, Mission/legacy/frozen resolution, status projection, and installed defaults",
+        "status": "passed",
+        "duration_ms": 1,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-implement-recovery.js",
+        "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-status-visibility.js",
+        "revision": "working-tree@7249635a9603371b01e4809373dd6140208da876",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 24,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "QUICKSTART.md",
+          "README.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 11,
+        "paths": [
+          "src/commands/continue.js",
+          "src/commands/engine.js",
+          "src/commands/help.js",
+          "src/commands/implement.js",
+          "src/commands/init.js",
+          "src/commands/reviewloop.js",
+          "src/utils/agent-profiles.js",
+          "src/utils/assignment-delivery.js"
+        ],
+        "omitted": 3
+      },
+      {
+        "name": "templates",
+        "count": 9,
+        "paths": [
+          "templates/.specdev/_guides/assignment_guide.md"
+        ],
+        "omitted": 8
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-implement-recovery.js"
+        ],
+        "omitted": 1
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "none",
+    "items": [],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00058_reintroduce-foreground-inline-implementation-for/brainstorm/contract.md",
+      "exists": true,
+      "digest": "4bd7d98dc62bac9def18083013e804d140196a1c8b9287f11e102fb0ed59ef0b"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00058_reintroduce-foreground-inline-implementation-for/design/plan.md",
+      "exists": true,
+      "digest": "6d1bb6fdb8d14aecf35ec93f709361bb92490196139e39a1f1a99858844e57d8"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00058_reintroduce-foreground-inline-implementation-for/implementation/progress.json",
+      "exists": true,
+      "digest": "483b1d58ff7ee7aa08cb3e3b697e0548ff66754715b9b156b99cf00356aa2757"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00058_reintroduce-foreground-inline-implementation-for/outcome.md",
+      "exists": true,
+      "digest": "d02c1be74877c05a34e9332bd5b74be3b2fe7f92bc552fc27fdc5798fa8bb27b"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

@@ -33,8 +33,8 @@ export const COMMANDS = [
   },
   {
     name: 'implement',
-    usage: 'implement',
-    description: 'Run Assignment plan, implementation, evidence, and review',
+    usage: 'implement [--inline|--spawned]',
+    description: 'Run or resume Assignment implementation and independent review',
   },
   {
     name: 'reviewloop',

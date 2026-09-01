@@ -184,8 +184,10 @@ a scheduler, but only one may be active in a worktree.
   exact user-reapproval identity. Repeated `mission run` and `mission status`
   calls are provider-free until the user runs the displayed
   `mission approve-divergence` or `mission reject-divergence` command.
-- A blocked Assignment worker preserves its result and returns a blocked
-  outcome. Finish its artifacts and rerun to resume without another provider
-  call, or use `specdev implement --retry-worker` to request one explicitly.
+- Assignment implementation mode freezes at its Git boundary. Inline work and
+  repairs return resumable foreground obligations; spawned work preserves its
+  worker result and returns a blocked outcome. Finish the owned artifacts and
+  rerun to resume. Use `specdev implement --retry-worker` only for a frozen
+  spawned implementation that needs a replacement Attempt.
 
 See `_index.md` for paths and `_guides/workflow.md` for the concise lifecycle.

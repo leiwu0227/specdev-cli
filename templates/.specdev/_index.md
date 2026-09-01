@@ -4,7 +4,7 @@
 
 ```text
 .specdev/
-  agents.yaml                         committed worker/reviewer preferences
+  agents.yaml                         committed execution mode and agent preferences
   executors.yaml                      reusable capability facts; secret names only
   guides/review.md                    common reviewer contract
   guides/library/catalog.yaml         managed curated guides

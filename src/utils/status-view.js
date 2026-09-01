@@ -4,6 +4,7 @@ import { concurrentCallablePathDetails, gitStatusPaths, summarizeGitPaths } from
 import { readCurrentFocus } from './current.js'
 import { resolveMissionSelector, readMission } from './mission.js'
 import { attemptLiveness, listAttemptRecords } from './process-record.js'
+import { assignmentExecutionProjection } from './assignment-execution.js'
 
 export async function buildStatusViews({ targetDir, specdevPath, history, assignment = null }) {
   const focus = await readCurrentFocus(specdevPath)
@@ -73,6 +74,14 @@ export function projectStatusViews({
         }
       : null,
     lifecycle: effectiveLifecycle,
+    ...(assignment?.status?.implementation_execution
+      ? {
+          assignment_execution: assignmentExecutionProjection(
+            assignment.status,
+            history.position?.node || history.phase || null
+          ),
+        }
+      : {}),
     ...(history.phase ? { phase: history.phase } : {}),
     ...(runningAttempt
       ? {
@@ -111,6 +120,14 @@ export function formatStatusView(active, history = null) {
     lines.push('Focus: none')
   }
   if (active.phase) lines.push(`Phase: ${active.phase}`)
+  if (active.assignment_execution) {
+    const execution = active.assignment_execution
+    lines.push(
+      `Implementation execution: ${execution.effective_mode} (${execution.source}; owner ${execution.current_owner})`
+    )
+    if (execution.reason) lines.push(`Execution reason: ${execution.reason}`)
+    lines.push(`Execution recovery: ${execution.recovery_action}`)
+  }
   if (active.last_workflow) {
     lines.push(
       `Last workflow: Assignment ${active.last_workflow.id} — closed ${active.last_workflow.status}`

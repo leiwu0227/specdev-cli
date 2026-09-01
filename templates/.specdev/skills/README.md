@@ -24,5 +24,6 @@ commit but no RippleGraph run.
 - `receiving-code-review`: handling findings without letting reviewers repair
   code directly.
 
-Provider/model selection is not a skill persona. Configure `.specdev/agents.yaml`.
+Execution mode and provider/model selection are not skill personas. Configure
+`.specdev/agents.yaml`.
 Task-specific durable guidance belongs in `.specdev/guides/`.

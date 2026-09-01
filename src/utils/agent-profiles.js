@@ -3,6 +3,8 @@ import fse from 'fs-extra'
 import { parse } from 'yaml'
 
 const ROLE_NAMES = new Set(['worker', 'reviewer'])
+const TOP_LEVEL_NAMES = new Set([...ROLE_NAMES, 'implementation'])
+const IMPLEMENTATION_MODES = new Set(['auto', 'inline', 'spawned'])
 const PROVIDERS = new Set(['codex', 'claude', 'cursor'])
 const DEFAULT_PROFILES = {
   worker: { provider: 'codex', model: 'gpt-5', effort: 'high', timeout: '60m' },
@@ -11,8 +13,8 @@ const DEFAULT_PROFILES = {
 
 export async function resolveAgentProfile(specdevPath, role, explicit = {}) {
   if (!ROLE_NAMES.has(role)) throw new Error(`unknown agent profile: ${role}`)
-  const repository = await readProfiles(join(specdevPath, 'agents.yaml'))
-  const local = await readProfiles(join(specdevPath, 'cache', 'agents.local.yaml'))
+  const repository = await readAgentConfiguration(join(specdevPath, 'agents.yaml'))
+  const local = await readAgentConfiguration(join(specdevPath, 'cache', 'agents.local.yaml'))
   const profile = {
     ...DEFAULT_PROFILES[role],
     ...(repository[role] || {}),
@@ -20,6 +22,12 @@ export async function resolveAgentProfile(specdevPath, role, explicit = {}) {
     ...removeUndefined(explicit),
   }
   return validateProfile(role, profile)
+}
+
+export async function resolveImplementationMode(specdevPath) {
+  const repository = await readAgentConfiguration(join(specdevPath, 'agents.yaml'))
+  const local = await readAgentConfiguration(join(specdevPath, 'cache', 'agents.local.yaml'))
+  return local.implementation?.mode ?? repository.implementation?.mode ?? 'auto'
 }
 
 export function validateProfile(role, profile) {
@@ -72,7 +80,7 @@ export function parseDuration(value, field = 'duration') {
   return Number(match[1]) * multiplier
 }
 
-async function readProfiles(path) {
+export async function readAgentConfiguration(path) {
   if (!(await fse.pathExists(path))) return {}
   let decoded
   try {
@@ -84,9 +92,24 @@ async function readProfiles(path) {
     throw new Error(`invalid agent profiles ${path}: expected a YAML mapping`)
   }
   for (const [role, profile] of Object.entries(decoded)) {
-    if (!ROLE_NAMES.has(role)) throw new Error(`invalid agent profile role in ${path}: ${role}`)
+    if (!TOP_LEVEL_NAMES.has(role)) {
+      throw new Error(`invalid agent profile role in ${path}: ${role}`)
+    }
     if (!profile || typeof profile !== 'object' || Array.isArray(profile)) {
       throw new Error(`invalid ${role} profile in ${path}: expected a mapping`)
+    }
+    if (role === 'implementation') {
+      const fields = Object.keys(profile)
+      if (fields.some((field) => field !== 'mode')) {
+        throw new Error(`invalid implementation configuration in ${path}: only mode is supported`)
+      }
+      const mode = String(profile.mode ?? 'auto').trim()
+      if (!IMPLEMENTATION_MODES.has(mode)) {
+        throw new Error(
+          `invalid implementation configuration in ${path}: mode must be auto, inline, or spawned`
+        )
+      }
+      profile.mode = mode
     }
   }
   return decoded

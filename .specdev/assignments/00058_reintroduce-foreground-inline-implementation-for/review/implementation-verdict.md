@@ -1,0 +1,20 @@
+---
+verdict: approved
+material_divergence: false
+scope_divergence: none
+procedure_divergence: disclosed
+evidence_integrity: complete
+user_reapproval_required: false
+---
+
+## Findings
+
+Evidence integrity is complete and independently reconfirmed. I recomputed the candidate receipt from the current working tree using the installed CLI (`/opt/homebrew/lib/node_modules/@specdev/cli`, byte-identical to HEAD for `src/utils/assignment-delivery.js`) and obtained identity `bafa200bedec983a06b704c1dc73add2d4569a2efa1b6879b8733d67ef017a21`, exactly matching the frozen receipt and `review/implementation-state.json`. All four artifact digests (contract `4bd7d98…`, plan `6d1bb6f…`, progress `483b1d5…`, outcome `d02c1be…`) match, the contract hash matches the approved/reviewed hash, `completeness` recomputes to `complete` with zero issues, and `changed_project_paths.count` recomputes to 24 — the same 24 paths in `git status`, including the untracked `src/utils/assignment-execution.js`, so the delivery manifest will not drop the new module. The receipt legitimately omits the new `implementation_execution` key because it was produced by the installed HEAD-version CLI; that key is added by this candidate and is not part of the frozen identity input at HEAD.
+
+Acceptance accounting is final and complete: 3/3 criteria with `passed` results, 0 omitted, 0 missing; 3 verification receipts (1 qualification, 2 authoritative acceptance), 0 failed/skipped, all at `working-tree@7249635a9603371b01e4809373dd6140208da876`, which matches the recorded Git boundary in `status.json`. `follow_up: none`, `unresolved_risks: none`. No full suite was run and none was needed; I ran no tests during this review.
+
+Scope matches the approved contract with no material divergence. `resolveAssignmentExecution` (`src/utils/assignment-execution.js:6`) resolves standalone `auto` to inline, pins Mission to spawned, keeps legacy preserved worker results on the spawned recovery path, and rejects `--inline`/`--spawned` conflicts, fixed-policy conflicts, over-length `--execution-reason`, and post-boundary switches — all before `ensureAssignmentGitBoundary`, so no ambiguous product ownership is created (the test asserts `git_boundary` and `implementation_execution` remain unset after a rejected conflicting selection). `readAgentConfiguration` (`src/utils/agent-profiles.js:83`) still rejects unknown top-level keys and invalid role profiles, treats `implementation` as execution config with only `mode` permitted, and `resolveAgentProfile` never merges it into a role profile; worker/reviewer precedence is unchanged and the worker profile is resolved only on the spawned branch. Inline runs return structured resumable obligations with zero provider Attempts (`provider_attempts.total === 0`, no fake-worker invocation), route repair and resolver continuations back to the foreground owner, and still reach the independent spawned reviewer (`reviewerCount === 1`) and the unchanged candidate-receipt/delivery gates. Execution facts (configured/effective mode, source, reason, current owner, recovery action) are exposed through `status`, `next`, `continue`, receipts, `agents.yaml`, the lifecycle graph, help, README, and QUICKSTART.
+
+The one recorded deviation is accurate and benign: `tests/test-status-visibility.js` at HEAD asserted an `Object.keys` list that omitted the pre-existing, unconditionally emitted `dirty_owners` field (`src/utils/status-view.js:105`), so the expectation was corrected. I verified `dirty_owners` is not introduced by this candidate — the correction changes no product behavior and was required for the assignment's own new assertions to run. It is disclosed in both `progress.json` and `outcome.md`, so procedure divergence is disclosed rather than concealed, and evidence remains complete.
+
+No external dependency was added or upgraded; `package.json` is unmodified and its `releaseDate` is already 2026-09-01. The only `.specdev` changes are runtime state (`.id-counters.json`, `.ripplegraph/current.json`, run/process records), not hand-edited workflow files. No blocking contract defect remains.

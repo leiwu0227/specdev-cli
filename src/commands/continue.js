@@ -5,6 +5,7 @@ import { hasWorkspaceEngine, workflowRootFor } from '../utils/engine.js'
 import { readCurrentFocus } from '../utils/current.js'
 import { readFocusedAssignmentLifecycle } from '../utils/assignment-lifecycle.js'
 import { engineCommand } from './engine.js'
+import { assignmentExecutionProjection } from '../utils/assignment-execution.js'
 
 export async function continueCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -48,6 +49,9 @@ export async function continueCommand(flags = {}) {
               id: assignment.id,
               lifecycle: assignment.lifecycle,
               immutable: assignment.immutable,
+              ...(assignmentExecutionProjection(assignment.status)
+                ? { assignment_execution: assignmentExecutionProjection(assignment.status) }
+                : {}),
               message: ['shelved', 'unsupported'].includes(assignment.lifecycle)
                 ? `This Assignment is ${assignment.lifecycle} and immutable; continuing creates a fresh successor ID and contract.`
                 : `This Assignment is ${assignment.lifecycle} and cannot resume its old execution run.`,
@@ -64,6 +68,12 @@ export async function continueCommand(flags = {}) {
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
   else {
     console.log(`SpecDev: ${payload.status}`)
+    if (payload.assignment_execution) {
+      console.log(
+        `Implementation execution: ${payload.assignment_execution.effective_mode} (${payload.assignment_execution.source}; owner ${payload.assignment_execution.current_owner})`
+      )
+      console.log(`Execution recovery: ${payload.assignment_execution.recovery_action}`)
+    }
     console.log(`Next: ${payload.next_action}`)
   }
   return payload

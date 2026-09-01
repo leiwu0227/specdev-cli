@@ -8,6 +8,7 @@ import {
   currentAssignmentNode,
   normalizeReviewPolicy,
   relativeToRepo,
+  validateAssignmentContract,
   writeAssignmentStatus,
 } from '../utils/assignment-vnext.js'
 import { stepGuidedNode } from '../utils/engine-sync.js'
@@ -22,6 +23,11 @@ import { parseResultEnvelope } from '../utils/result-envelope.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import { reviewImplementation } from './reviewloop.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
+import {
+  assignmentExecutionProjection,
+  inlineImplementationObligations,
+  resolveAssignmentExecution,
+} from '../utils/assignment-execution.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
   completeStandaloneAssignmentDelivery,
@@ -51,9 +57,19 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           assignmentPath,
         })
       } catch (error) {
-        return emitArtifactRepair(flags, name, error.message, {
-          ...(error.receipt ? { receipt: error.receipt } : {}),
-        })
+        const contract = await validateAssignmentContract(assignmentPath)
+        return emitArtifactRepair(
+          flags,
+          name,
+          error.message,
+          {
+            ...(error.receipt ? { receipt: error.receipt } : {}),
+          },
+          assignmentStatus,
+          contract,
+          targetDir,
+          assignmentPath
+        )
       }
       return emit(flags, {
         command: 'implement',
@@ -61,6 +77,9 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         status: 'completed',
         assignment: name,
         recovered: true,
+        ...(assignmentExecutionProjection(assignmentStatus, 'done')
+          ? { implementation_execution: assignmentExecutionProjection(assignmentStatus, 'done') }
+          : {}),
         ...completion,
       })
     }
@@ -69,11 +88,26 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
     let graph = await currentAssignmentNode(targetDir)
     if (!graph) throw new Error('The focused workflow is not an Assignment')
 
+    const resultPath = join(assignmentPath, 'implementation', 'worker-result.md')
+    const implementationExecution = await resolveAssignmentExecution(specdevPath, {
+      flags,
+      mission: Boolean(assignmentStatus?.mission),
+      frozen: assignmentStatus?.implementation_execution || null,
+      legacySpawned:
+        !assignmentStatus?.implementation_execution && (await fse.pathExists(resultPath)),
+    })
+    if (flags['retry-worker'] && implementationExecution.effective_mode !== 'spawned') {
+      throw new Error(
+        '--retry-worker is available only for a frozen spawned implementation; use the foreground repair obligations for inline mode'
+      )
+    }
+
     const boundary = await ensureAssignmentGitBoundary({
       targetDir,
       specdevPath,
       assignmentPath,
       assignmentStatus,
+      implementationExecution,
       adoptDirty: Boolean(flags['adopt-dirty']),
     })
     if (!boundary.ok) {
@@ -81,7 +115,6 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
     }
 
     if (graph.position.node === 'design') {
-      const resultPath = join(assignmentPath, 'implementation', 'worker-result.md')
       const recovery = await recoverWorkerArtifacts({
         specdevPath,
         assignmentPath,
@@ -89,6 +122,24 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         acceptanceIds: contract.acceptanceIds,
       })
       if (['blocked', 'malformed', 'invalid'].includes(recovery.status) && !flags['retry-worker']) {
+        if (implementationExecution.effective_mode === 'inline') {
+          return emitInlineAction(flags, {
+            command: 'implement',
+            version: 3,
+            status: 'action_required',
+            assignment: name,
+            implementation_execution: assignmentExecutionProjection(
+              { implementation_execution: implementationExecution },
+              graph.position.node
+            ),
+            foreground: inlineImplementationObligations({
+              targetDir,
+              assignmentPath,
+              contract,
+              issue: recovery.diagnostic,
+            }),
+          })
+        }
         const blockedAttempt =
           recovery.status === 'blocked'
             ? (await listAttemptRecords(specdevPath, { assignment: name }))
@@ -110,6 +161,23 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       let artifacts = recovery.status === 'completed' ? recovery.artifacts : null
       let attemptId = 'recovered-artifacts'
       if (!artifacts) {
+        if (implementationExecution.effective_mode === 'inline') {
+          return emitInlineAction(flags, {
+            command: 'implement',
+            version: 3,
+            status: 'action_required',
+            assignment: name,
+            implementation_execution: assignmentExecutionProjection(
+              { implementation_execution: implementationExecution },
+              graph.position.node
+            ),
+            foreground: inlineImplementationObligations({
+              targetDir,
+              assignmentPath,
+              contract,
+            }),
+          })
+        }
         const profile = await resolveAgentProfile(specdevPath, 'worker', profileOverrides(flags))
         const catalog = (await loadGuideCatalog(specdevPath)).filter((guide) =>
           guide.phases.includes('implementation')
@@ -154,6 +222,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           guides: artifacts.implementationGuides.map(({ id, version }) => ({ id, version })),
         })
       }
+      if (implementationExecution.effective_mode === 'inline') attemptId = 'inline-foreground'
       stepGuidedNode(targetDir, 'design', {
         plan: relativeToRepo(targetDir, artifacts.planPath),
         attempt: attemptId,
@@ -173,7 +242,10 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
       stepGuidedNode(targetDir, 'implementation', {
         progress: relativeToRepo(targetDir, artifacts.progressPath),
         outcome: relativeToRepo(targetDir, artifacts.outcomePath),
-        attempt: 'recovered-artifacts',
+        attempt:
+          implementationExecution.effective_mode === 'inline'
+            ? 'inline-foreground'
+            : 'recovered-artifacts',
       })
       graph = await currentAssignmentNode(targetDir)
     }
@@ -190,7 +262,16 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           contract.acceptanceIds
         )
       } catch (error) {
-        return emitArtifactRepair(flags, name, `delivery_artifact_invalid: ${error.message}`)
+        return emitArtifactRepair(
+          flags,
+          name,
+          `delivery_artifact_invalid: ${error.message}`,
+          {},
+          { ...assignmentStatus, implementation_execution: implementationExecution },
+          contract,
+          targetDir,
+          assignmentPath
+        )
       }
       assertReviewWaiverEvidence(delivery, contract.acceptanceIds)
       const reviewDir = join(assignmentPath, 'review')
@@ -206,7 +287,12 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         return emitArtifactRepair(
           flags,
           name,
-          `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`
+          `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`,
+          {},
+          { ...assignmentStatus, implementation_execution: implementationExecution },
+          contract,
+          targetDir,
+          assignmentPath
         )
       }
       await fse.ensureDir(reviewDir)
@@ -240,7 +326,16 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         assignmentStatus: currentStatus,
       })
       if (revalidatedCandidate.identity !== candidateReceipt.identity) {
-        return emitArtifactRepair(flags, name, 'candidate_receipt_changed_after_waiver')
+        return emitArtifactRepair(
+          flags,
+          name,
+          'candidate_receipt_changed_after_waiver',
+          {},
+          { ...assignmentStatus, implementation_execution: implementationExecution },
+          contract,
+          targetDir,
+          assignmentPath
+        )
       }
       stepGuidedNode(targetDir, 'implementation-review', {
         approved: true,
@@ -277,6 +372,10 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         version: 2,
         status: 'completed',
         assignment: name,
+        implementation_execution: assignmentExecutionProjection(
+          { implementation_execution: implementationExecution },
+          'done'
+        ),
         review: 'waived',
         ...(completion || {}),
       })
@@ -297,6 +396,10 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         version: 2,
         status: 'completed',
         assignment: name,
+        implementation_execution: assignmentExecutionProjection(
+          { implementation_execution: implementationExecution },
+          'done'
+        ),
         ...(completion || {}),
       })
     }
@@ -404,6 +507,21 @@ function emit(flags, payload) {
   return payload
 }
 
+function emitInlineAction(flags, payload) {
+  if (flags.json) console.log(JSON.stringify(payload, null, 2))
+  else {
+    console.log(`Assignment implementation owner: foreground agent (${payload.assignment})`)
+    console.log(`Contract: ${payload.foreground.obligations.contract}`)
+    console.log(`Plan: ${payload.foreground.obligations.plan}`)
+    console.log(`Progress: ${payload.foreground.obligations.progress}`)
+    console.log(`Outcome: ${payload.foreground.obligations.outcome}`)
+    console.log(`Result: ${payload.foreground.obligations.result}`)
+    if (payload.foreground.issue) console.log(`Repair: ${payload.foreground.issue}`)
+    console.log(`Next: ${payload.foreground.next_command}`)
+  }
+  return payload
+}
+
 function emitBlockedWorker(flags, payload) {
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
   else {
@@ -418,7 +536,38 @@ function emitBlockedWorker(flags, payload) {
   return payload
 }
 
-function emitArtifactRepair(flags, assignment, issue, details = {}) {
+function emitArtifactRepair(
+  flags,
+  assignment,
+  issue,
+  details = {},
+  assignmentStatus = null,
+  contract = null,
+  targetDir = null,
+  assignmentPath = null
+) {
+  if (
+    assignmentStatus?.implementation_execution?.effective_mode === 'inline' &&
+    contract?.path &&
+    targetDir &&
+    assignmentPath
+  ) {
+    return emitInlineAction(flags, {
+      command: 'implement',
+      version: 3,
+      status: 'action_required',
+      assignment,
+      recovery: 'artifact_repair',
+      implementation_execution: assignmentExecutionProjection(assignmentStatus, 'implementation'),
+      foreground: inlineImplementationObligations({
+        targetDir,
+        assignmentPath,
+        contract,
+        issue,
+      }),
+      ...details,
+    })
+  }
   return emitBlockedWorker(flags, {
     command: 'implement',
     version: 2,

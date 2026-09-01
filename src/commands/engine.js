@@ -16,6 +16,7 @@ import { graphTitle, toProductState, wrapDecision } from '../utils/engine-adapte
 import { readFocusedAssignmentLifecycle } from '../utils/assignment-lifecycle.js'
 import { writeAssignmentStatus } from '../utils/assignment-vnext.js'
 import { buildStatusViews, formatStatusView } from '../utils/status-view.js'
+import { assignmentExecutionProjection } from '../utils/assignment-execution.js'
 
 export async function engineCommand(command, positionalArgs = [], flags = {}) {
   const projectRoot = resolveTargetDir(flags)
@@ -29,6 +30,14 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
         ? await readFocusedAssignmentLifecycle(join(projectRoot, '.specdev'))
         : null
     let result = runEngineCommand(workflowRoot, command, positionalArgs, flags)
+    if (command === 'next') {
+      const assignment = await readFocusedAssignmentLifecycle(join(projectRoot, '.specdev'))
+      const execution = assignmentExecutionProjection(
+        assignment?.status,
+        result.position?.node || result.phase || null
+      )
+      if (execution) result.assignment_execution = execution
+    }
     if (command === 'cancel' && result.state === 'cancelled' && assignmentBefore?.status) {
       await writeAssignmentStatus(assignmentBefore.path, {
         status: 'abandoned',

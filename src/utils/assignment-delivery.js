@@ -60,6 +60,7 @@ export async function buildStandaloneAssignmentCandidateReceipt({
   if (!productDigest) issues.push('candidate_product_identity_missing')
   const identityInputs = {
     assignment_id: String(assignmentStatus?.id || '').trim() || null,
+    implementation_execution: assignmentStatus?.implementation_execution || null,
     contract_hash: contract.hash || null,
     product_digest: productDigest,
     artifact_digests: Object.fromEntries(
@@ -80,6 +81,7 @@ export async function buildStandaloneAssignmentCandidateReceipt({
       id: identityInputs.assignment_id,
       folder: assignmentPath.split(/[/\\]/).pop(),
     },
+    implementation_execution: assignmentStatus?.implementation_execution || null,
     contract: { path: artifacts.contract.path, hash: contract.hash || null },
     acceptance,
     verification,
@@ -157,9 +159,17 @@ export async function ensureAssignmentGitBoundary({
   specdevPath,
   assignmentPath,
   assignmentStatus,
+  implementationExecution = null,
   adoptDirty = false,
 }) {
-  if (assignmentStatus?.mission) return { ok: true, skipped: 'mission_child' }
+  if (assignmentStatus?.mission) {
+    if (implementationExecution && !assignmentStatus?.implementation_execution) {
+      await writeAssignmentStatus(assignmentPath, {
+        implementation_execution: implementationExecution,
+      })
+    }
+    return { ok: true, skipped: 'mission_child' }
+  }
 
   const adhocPath = join(specdevPath, 'cache', 'adhoc.json')
   if (await fse.pathExists(adhocPath)) {
@@ -181,6 +191,11 @@ export async function ensureAssignmentGitBoundary({
         next_action:
           'Inspect the intervening commits and restore or deliberately restart the Assignment boundary; SpecDev will not silently absorb them.',
       }
+    }
+    if (implementationExecution && !assignmentStatus?.implementation_execution) {
+      await writeAssignmentStatus(assignmentPath, {
+        implementation_execution: implementationExecution,
+      })
     }
     return { ok: true, boundary: assignmentStatus.git_boundary, recovered: true }
   }
@@ -216,7 +231,10 @@ export async function ensureAssignmentGitBoundary({
     adopted_path_count: projectPaths.length,
     established_at: new Date().toISOString(),
   }
-  await writeAssignmentStatus(assignmentPath, { git_boundary: boundary })
+  await writeAssignmentStatus(assignmentPath, {
+    git_boundary: boundary,
+    ...(implementationExecution ? { implementation_execution: implementationExecution } : {}),
+  })
   return { ok: true, boundary, recovered: false }
 }
 
@@ -428,6 +446,7 @@ export async function buildStandaloneAssignmentReceipt({
       folder: assignmentPath.split(/[/\\]/).pop(),
       status: assignmentStatus?.status || 'unknown',
     },
+    implementation_execution: assignmentStatus?.implementation_execution || null,
     contract: {
       path: artifacts.contract.path,
       hash: contract.hash || null,

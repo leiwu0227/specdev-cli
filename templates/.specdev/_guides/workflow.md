@@ -149,10 +149,13 @@ workflow before any test is changed.
 
 ## Profiles and guides
 
-`.specdev/agents.yaml` chooses worker/reviewer provider, model, effort, and
-timeout. Ignored `cache/agents.local.yaml` overrides it on one machine. Prompts
-and up to three selected guides define temporary work; there are no permanent
-reviewer personas.
+`.specdev/agents.yaml` chooses `implementation.mode: auto | inline | spawned`
+and the worker/reviewer provider, model, effort, and timeout. Omission defaults
+to `auto`, which freezes to inline for an ordinary standalone Assignment;
+Mission-controlled execution remains spawned. Ignored
+`cache/agents.local.yaml` overrides repository configuration on one machine.
+Prompts and up to three selected guides define temporary work; there are no
+permanent reviewer personas.
 Only `specdev reviewloop` produces a transition-authorizing result envelope.
 Native Codex, Claude, or Cursor review sessions remain advisory and their plain
 Markdown must not be treated as a SpecDev verdict.

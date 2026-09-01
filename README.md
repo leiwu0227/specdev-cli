@@ -88,10 +88,15 @@ specdev implement
 
 An Assignment begins with an interactive brainstorm: you and the coding agent
 shape a readable contract, an optional reviewer can challenge it, and you
-approve the exact final version. From there, `specdev implement` switches to
-automatic execution. A worker plans and implements the change, acceptance
-evidence is collected, a reviewer checks the delivery, and SpecDev records the
-outcome and final commit.
+approve the exact final version. From there, `specdev implement` freezes the
+execution owner at the Git boundary. The default `auto` mode keeps standalone
+Design and Implementation in the foreground coding session; rerunning the
+command validates its delivery artifacts and starts an independent review.
+Set `implementation.mode: spawned` in `.specdev/agents.yaml` (or use
+`--spawned --execution-reason="..."` before the boundary) for unattended worker
+execution. Mission-controlled children always remain spawned. Both paths keep
+the same acceptance evidence, review, recovery, delivery receipt, and final
+commit guarantees.
 
 ### Ask for a larger mission
 

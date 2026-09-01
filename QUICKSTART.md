@@ -126,9 +126,11 @@ The durable result is intentionally compact:
   status.json
 ```
 
-If a worker blocks, rerunning `specdev implement` reuses preserved artifacts
-instead of silently launching another worker. Use `--retry-worker` only when a
-fresh worker Attempt is intentional.
+Standalone `auto` implementation stays in the foreground and rerunning
+`specdev implement` validates the preserved delivery artifacts. If a spawned
+worker blocks, the same command reuses its artifacts instead of silently
+launching another worker. Use `--retry-worker` only when a frozen spawned
+implementation needs a fresh worker Attempt.
 
 ## 5. Use a Mission for a larger objective
 
