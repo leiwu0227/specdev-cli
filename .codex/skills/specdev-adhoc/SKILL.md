@@ -8,8 +8,9 @@ does not want that detour to become another Assignment. This does not reject or
 terminate an unrelated active Assignment. Start with `specdev adhoc start
 "<scope>"`.
 
-Read `.specdev/project_notes/big_picture.md` unconditionally. When repository
-behavior, conventions, or a recurring failure is unfamiliar, run a bounded
+Read `.specdev/project_notes/big_picture.md` only when project-wide intent is
+materially relevant to the bounded change. When repository behavior,
+conventions, or a recurring failure is unfamiliar, run a bounded
 `specdev knowledge search "<objective or symptom terms>"` before planning.
 Precise all-term and quoted-phrase matching is the default; narrow partial or
 noisy results with distinguishing terms or a quoted phrase, and use explicit

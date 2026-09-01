@@ -59,8 +59,9 @@ does not want that detour to become another Assignment. This does not reject or
 terminate an unrelated active Assignment. Start with \`specdev adhoc start
 "<scope>"\`.
 
-Read \`.specdev/project_notes/big_picture.md\` unconditionally. When repository
-behavior, conventions, or a recurring failure is unfamiliar, run a bounded
+Read \`.specdev/project_notes/big_picture.md\` only when project-wide intent is
+materially relevant to the bounded change. When repository behavior,
+conventions, or a recurring failure is unfamiliar, run a bounded
 \`specdev knowledge search "<objective or symptom terms>"\` before planning.
 Precise all-term and quoted-phrase matching is the default; narrow partial or
 noisy results with distinguishing terms or a quoted phrase, and use explicit
@@ -179,7 +180,8 @@ description: Create an Assignment and collaborate on its single contract
 Run \`specdev assignment "<objective>"\`. Collaborate directly with the user in
 \`brainstorm/contract.md\`; do not spawn a Brainstorm author.
 
-After reading \`.specdev/project_notes/big_picture.md\`, run one bounded
+When starting a new Assignment, read
+\`.specdev/project_notes/big_picture.md\` unconditionally, then run one bounded
 \`specdev knowledge search "<objective terms>"\` while shaping the contract.
 Read only relevant fresh result paths, keep repository instructions and the
 approved contract authoritative, and never bulk-load the knowledge directory.
@@ -229,6 +231,10 @@ Run \`specdev next --json\` for a focused workflow. For a Mission, run \`specdev
 mission status <id>\` then \`specdev mission run <id>\`. For a Discussion, run
 \`specdev discussion <id>\`. Ordinary interrupted source may be inspected,
 continued, repaired, or rewritten; do not assume database-style recovery.
+
+Resume from the durable contract and workflow artifacts first. Read
+\`.specdev/project_notes/big_picture.md\` only when project-wide intent is
+materially relevant and that context is missing, stale, or changed.
 
 Before resuming an Assignment, inspect its lifecycle in \`specdev status --json\`.
 A shelved or unsupported Assignment is terminal and immutable: translate “resume” into
@@ -311,8 +317,9 @@ the contract. Before requesting agreement, show the exact contract path and hash
 plus the command's concise contract-preview bullets. Only after explicit
 agreement run \`specdev mission run M00001 --approve\`.
 
-Read \`.specdev/project_notes/big_picture.md\` unconditionally and search fresh
-living knowledge once with Mission objective terms during planning. Record only
+When starting a new Mission, read
+\`.specdev/project_notes/big_picture.md\` unconditionally and search fresh living
+knowledge once with Mission objective terms during planning. Record only
 relevant result paths for the queue and child context. Children search again
 only for child-specific unknowns or unexpected symptoms. Never bulk-load
 knowledge or silently use stale/superseded entries. Default precise search uses

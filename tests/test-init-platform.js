@@ -120,6 +120,15 @@ assert(
   mainMd.includes('.specdev/project_notes/big_picture.md'),
   '_main.md uses a repository-root-relative project context path'
 )
+assert(
+  normalizedProse(mainMd).includes(
+    'When starting a new Assignment or Mission, also read `.specdev/project_notes/big_picture.md` unconditionally'
+  ) &&
+    normalizedProse(mainMd).includes(
+      'For every other lane, read it only when project-wide intent is materially relevant'
+    ),
+  '_main.md limits unconditional project context loading to new Assignment and Mission starts'
+)
 assert(mainMd.includes('command -v specdev'), '_main.md installs the copyable PATH fallback')
 assert(
   mainMd.includes('[ -x .specdev/cache/bin/specdev ]'),
@@ -213,6 +222,12 @@ assert(startSkill.includes('big_picture.md'), 'start skill references big_pictur
 assert(startSkill.includes('purpose, users'), 'start skill includes Q&A instructions')
 
 const adhocSkill = readFileSync(join(skillsDir, 'specdev-adhoc', 'SKILL.md'), 'utf-8')
+assert(
+  normalizedProse(adhocSkill).includes(
+    'big_picture.md` only when project-wide intent is materially relevant'
+  ) && !normalizedProse(adhocSkill).includes('big_picture.md` unconditionally'),
+  'Adhoc skill loads project context only when materially relevant'
+)
 assert(/adhoc\s+verify --label=/.test(adhocSkill), 'Adhoc skill documents structured verification')
 assert(adhocSkill.includes('--title='), 'Adhoc skill documents the independent short title')
 assert(
@@ -279,11 +294,23 @@ assert(
   assignmentSkill.includes('contract-preview bullets'),
   'assignment skill requires a contract preview before approval'
 )
+assert(
+  normalizedProse(assignmentSkill).includes(
+    'When starting a new Assignment, read `.specdev/project_notes/big_picture.md` unconditionally'
+  ),
+  'assignment skill loads project context unconditionally on new starts'
+)
 
 const missionSkill = readFileSync(join(skillsDir, 'specdev-mission', 'SKILL.md'), 'utf-8')
 assert(
   missionSkill.includes('contract-preview bullets'),
   'mission skill requires a contract preview before approval'
+)
+assert(
+  normalizedProse(missionSkill).includes(
+    'When starting a new Mission, read `.specdev/project_notes/big_picture.md` unconditionally'
+  ),
+  'mission skill loads project context unconditionally on new starts'
 )
 
 const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
@@ -312,6 +339,15 @@ assert(
 
 const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
 assert(continueSkill.includes('specdev next'), 'continue skill references durable workflow resume')
+assert(
+  normalizedProse(continueSkill).includes(
+    'Resume from the durable contract and workflow artifacts first'
+  ) &&
+    normalizedProse(continueSkill).includes(
+      'big_picture.md` only when project-wide intent is materially relevant'
+    ),
+  'continue skill prefers durable artifacts and selectively reloads project context'
+)
 
 const reviewloopSkill = readFileSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md'), 'utf-8')
 assert(reviewloopSkill.includes('agents.yaml'), 'reviewloop skill references repository profiles')

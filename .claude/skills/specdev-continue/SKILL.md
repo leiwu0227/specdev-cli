@@ -8,6 +8,10 @@ mission status <id>` then `specdev mission run <id>`. For a Discussion, run
 `specdev discussion <id>`. Ordinary interrupted source may be inspected,
 continued, repaired, or rewritten; do not assume database-style recovery.
 
+Resume from the durable contract and workflow artifacts first. Read
+`.specdev/project_notes/big_picture.md` only when project-wide intent is
+materially relevant and that context is missing, stale, or changed.
+
 Before resuming an Assignment, inspect its lifecycle in `specdev status --json`.
 A shelved or unsupported Assignment is terminal and immutable: translate “resume” into
 `specdev assignment --from-assignment=<terminal-id>`, which creates a fresh ID

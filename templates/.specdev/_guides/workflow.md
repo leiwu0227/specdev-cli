@@ -163,9 +163,13 @@ Markdown must not be treated as a SpecDev verdict.
 ## Knowledge
 
 Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.
-Always read `project_notes/big_picture.md`. Use default precise all-term or
-quoted-phrase search at the planning or uncertainty boundary instead of reading
-every note; reserve `--mode=broad` for explicit any-term discovery. Narrow noisy
+Read `project_notes/big_picture.md` unconditionally when starting a new
+Assignment or Mission. In every other lane, read it only when project-wide
+intent is materially relevant; resumed work relies first on its durable
+contract and artifacts unless that context is missing, stale, or changed. Use
+default precise all-term or quoted-phrase search at the planning or uncertainty
+boundary instead of reading every note; reserve `--mode=broad` for explicit
+any-term discovery. Narrow noisy
 partial matches with distinguishing terms or phrases. Assignment records useful
 paths in its plan; Mission searches once and passes relevant paths to children;
 Adhoc searches only for unfamiliar behavior or conventions. Search unexpected

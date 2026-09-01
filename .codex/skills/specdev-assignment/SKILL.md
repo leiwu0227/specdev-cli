@@ -6,7 +6,8 @@ description: Create an Assignment and collaborate on its single contract
 Run `specdev assignment "<objective>"`. Collaborate directly with the user in
 `brainstorm/contract.md`; do not spawn a Brainstorm author.
 
-After reading `.specdev/project_notes/big_picture.md`, run one bounded
+When starting a new Assignment, read
+`.specdev/project_notes/big_picture.md` unconditionally, then run one bounded
 `specdev knowledge search "<objective terms>"` while shaping the contract.
 Read only relevant fresh result paths, keep repository instructions and the
 approved contract authoritative, and never bulk-load the knowledge directory.

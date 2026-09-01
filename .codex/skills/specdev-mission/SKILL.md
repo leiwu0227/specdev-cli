@@ -10,8 +10,9 @@ the contract. Before requesting agreement, show the exact contract path and hash
 plus the command's concise contract-preview bullets. Only after explicit
 agreement run `specdev mission run M00001 --approve`.
 
-Read `.specdev/project_notes/big_picture.md` unconditionally and search fresh
-living knowledge once with Mission objective terms during planning. Record only
+When starting a new Mission, read
+`.specdev/project_notes/big_picture.md` unconditionally and search fresh living
+knowledge once with Mission objective terms during planning. Record only
 relevant result paths for the queue and child context. Children search again
 only for child-specific unknowns or unexpected symptoms. Never bulk-load
 knowledge or silently use stale/superseded entries. Default precise search uses
