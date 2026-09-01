@@ -7,7 +7,7 @@ export const ROADMAP_STANDARD_FILES = [
   'project_notes/roadmap/forecast.md',
 ]
 
-export const ROADMAP_DESIGN_PATTERN = 'project_notes/roadmap/designs/*.md'
+export const ROADMAP_DESIGN_PATTERN = 'project_notes/roadmap/designs/**/*.md'
 
 export async function roadmapCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -22,8 +22,18 @@ export async function roadmapCommand(flags = {}) {
     writable_paths: [ROADMAP_DESIGN_PATTERN, 'project_notes/roadmap/forecast.md'],
     design_rules: {
       word_limit: 'fewer than 800 words per Markdown file (maximum 799)',
+      hierarchy:
+        'Design notes may be nested in folders that mirror their conceptual parent-child hierarchy; cross-cutting standard files remain at the designs root.',
       additional_notes:
         'Each note other than core_concepts.md and source_code_folder_structure.md covers one independent feature or module with minimal overlap.',
+      abstraction:
+        'Describe high-level stable abstractions and deliberate design choices without reproducing implementation details.',
+      explanation:
+        'Describe general concepts and reusable conceptual templates, using examples where they make the intended design obvious.',
+      separation:
+        'Keep runtime mechanics, verification history, and incidental source-code references out of conceptual design notes; retain only stable abstractions and deliberate tradeoffs.',
+      presentation:
+        'After writing an approved draft, report its Markdown path; do not echo the full document unless the user asks.',
     },
     forecast_rules: {
       purpose:
@@ -60,7 +70,12 @@ export async function roadmapCommand(flags = {}) {
   console.log('Writable paths:')
   for (const path of payload.writable_paths) console.log(`  .specdev/${path}`)
   console.log(`Design word limit: ${payload.design_rules.word_limit}`)
+  console.log(`Design hierarchy: ${payload.design_rules.hierarchy}`)
   console.log(`Additional design notes: ${payload.design_rules.additional_notes}`)
+  console.log(`Design abstraction: ${payload.design_rules.abstraction}`)
+  console.log(`Design explanation: ${payload.design_rules.explanation}`)
+  console.log(`Design separation: ${payload.design_rules.separation}`)
+  console.log(`Design presentation: ${payload.design_rules.presentation}`)
   console.log(`Forecast purpose: ${payload.forecast_rules.purpose}`)
   console.log(`Forecast derivation: ${payload.forecast_rules.derivation}`)
   console.log(`Forecast comparison: ${payload.forecast_rules.comparison_direction}`)

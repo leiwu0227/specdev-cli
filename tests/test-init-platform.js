@@ -86,11 +86,16 @@ assert(
       ].join('|') &&
     roadmapPayload.writable_paths.join('|') ===
       [
-        'project_notes/roadmap/designs/*.md',
+        'project_notes/roadmap/designs/**/*.md',
         'project_notes/roadmap/forecast.md',
       ].join('|') &&
     roadmapPayload.design_rules.word_limit.includes('maximum 799') &&
+    roadmapPayload.design_rules.hierarchy.includes('conceptual parent-child hierarchy') &&
     roadmapPayload.design_rules.additional_notes.includes('one independent feature or module') &&
+    roadmapPayload.design_rules.abstraction.includes('high-level stable abstractions') &&
+    roadmapPayload.design_rules.explanation.includes('using examples') &&
+    roadmapPayload.design_rules.separation.includes('runtime mechanics') &&
+    roadmapPayload.design_rules.presentation.includes('report its Markdown path') &&
     roadmapPayload.forecast_rules.derivation.includes('inspect current code read-only') &&
     roadmapPayload.forecast_rules.comparison_direction.includes('code gaps versus the designs') &&
     roadmapPayload.forecast_rules.code_superset.includes('Current code may be a superset') &&
@@ -325,7 +330,12 @@ assert(
       'creates no ID, RippleGraph state, receipt, snapshot, or automatic commit'
     ) &&
     roadmapSkillProse.includes('fewer than 800 words (maximum 799)') &&
+    roadmapSkillProse.includes('conceptual parent-child hierarchy') &&
     roadmapSkillProse.includes('one independent feature or module') &&
+    roadmapSkillProse.includes('high-level stable abstractions') &&
+    roadmapSkillProse.includes('reusable conceptual templates') &&
+    roadmapSkillProse.includes('runtime mechanics, verification history') &&
+    roadmapSkillProse.includes('report its Markdown path') &&
     roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
     roadmapSkillProse.includes('never design gaps versus current code') &&
     roadmapSkillProse.includes('extra code-only features do not create forecast items') &&

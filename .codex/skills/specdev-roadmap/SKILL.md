@@ -8,14 +8,24 @@ Use Roadmap only when the user explicitly selects it. Run `specdev roadmap
 Read the current roadmap as needed, but treat product code and every path
 outside these locations as read-only:
 
-- Direct Markdown files under `.specdev/project_notes/roadmap/designs/`
+- Markdown files recursively under `.specdev/project_notes/roadmap/designs/`
 - `.specdev/project_notes/roadmap/forecast.md`
 
 Every Markdown file under `roadmap/designs/` must contain fewer than 800
 words (maximum 799). `core_concepts.md` and
 `source_code_folder_structure.md` are the standard cross-cutting notes. Every
 other design note must cover one independent feature or module and minimize
-overlap with the standard notes and its peers.
+overlap with the standard notes and its peers. Keep the standard notes at the
+designs root; other notes may use folders that mirror their conceptual
+parent-child hierarchy.
+
+Design notes describe high-level stable abstractions, general concepts,
+reusable conceptual templates, deliberate design choices, and their tradeoffs.
+Use examples where they make the intended design obvious, but do not reproduce
+implementation details. Keep runtime mechanics, verification history, and
+incidental source-code references out of conceptual design notes. The design
+set retains stable abstractions and deliberate tradeoffs rather than duplicating
+the code.
 
 `forecast.md` is a future-work roadmap. When creating or revising it, quickly
 inspect current code read-only against the Roadmap designs, identify design-note
@@ -31,7 +41,8 @@ collaboration to incorporate such features into the design notes.
 
 Collaborate with the user on one exact candidate edit at a time. Show the exact
 destination and complete proposed content or diff, then wait for explicit user
-approval before writing. Invocation alone never authorizes a write. Roadmap
+approval before writing. After writing an approved draft, report its Markdown
+path; do not echo the full document unless the user asks. Invocation alone never authorizes a write. Roadmap
 creates no ID, RippleGraph state, receipt, snapshot, or automatic commit, and it
 does not grant authority to implement forecast items.
 
