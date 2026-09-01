@@ -19,9 +19,9 @@ Read \`.specdev/_main.md\` for the full SpecDev workflow and rules.
 Classify each request before creating workflow state. Questions, read-only
 inspection, and small requested documentation artifacts that do not change
 product, runtime, public-contract, or workflow behavior are Direct. Direct
-writes create no graph, receipt, or automatic commit. Use Adhoc, Discussion,
-Assignment, or Mission only when the user explicitly selects that lane; never
-silently make every request an Assignment.
+writes create no graph, receipt, or automatic commit. Use Roadmap, Adhoc,
+Discussion, Assignment, or Mission only when the user explicitly selects that
+lane; never silently make every request an Assignment.
 
 For a Direct documentation write, announce once, read destination instructions
 and only the facts needed for the artifact, write it, and verify it narrowly.
@@ -251,6 +251,29 @@ only the returned Discussion's \`brainstorm/proposal.md\` and
 Optional review: \`specdev reviewloop discussion --discussion=D00001\`.
 Complete only when the user is satisfied: \`specdev discussion D00001
 --complete\`. Promotion creates fresh identity and a fresh contract.
+
+Announce meaningful phases, plan changes, failed verification, and blockers
+with "Specdev: <action>"; repeated read-only probes need no separate announcement.
+`,
+  'specdev-roadmap': `---
+name: specdev-roadmap
+description: Collaborate on user-approved roadmap notes without workflow state
+---
+
+Use Roadmap only when the user explicitly selects it. Run \`specdev roadmap
+--json\` to display the exact writable files and stateless boundary. Read the
+current roadmap as needed, but treat product code and every path outside these
+three files as read-only:
+
+- \`.specdev/project_notes/roadmap/designs/core_concepts.md\`
+- \`.specdev/project_notes/roadmap/designs/source_code_folder_structure.md\`
+- \`.specdev/project_notes/roadmap/forecast.md\`
+
+Collaborate with the user on one exact candidate edit at a time. Show the exact
+destination and complete proposed content or diff, then wait for explicit user
+approval before writing. Invocation alone never authorizes a write. Roadmap
+creates no ID, RippleGraph state, receipt, snapshot, or automatic commit, and it
+does not grant authority to implement forecast items.
 
 Announce meaningful phases, plan changes, failed verification, and blockers
 with "Specdev: <action>"; repeated read-only probes need no separate announcement.
@@ -570,7 +593,7 @@ export async function initCommand(flags = {}) {
     printSection('📖 Next steps:')
     printLines([
       '   1. Use specdev-start (or run specdev start) to fill in your project context',
-      '   2. Classify work as Direct, Adhoc, Discussion, Assignment, or Mission',
+      '   2. Classify work as Direct, Roadmap, Adhoc, Discussion, Assignment, or Mission',
       '   3. Run specdev next --json only to resume a focused workflow',
     ])
     blankLine()
@@ -590,6 +613,7 @@ export async function initCommand(flags = {}) {
       '   specdev-assignment    Reserve ID and start brainstorm',
       '   specdev-continue      Resume from current phase',
       '   specdev-discussion    Concurrent code-read-only exploration',
+      '   specdev-roadmap       Stateless user-approved roadmap collaboration',
       '   specdev-mission       Foreground orchestration with automatic bounded waves',
       '   specdev-knowledge-curation  Verified living-knowledge publication',
       '   specdev-reviewloop    Configured reviewer loop',

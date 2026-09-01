@@ -31,6 +31,7 @@ export function helpCommand(flags = {}) {
   blankLine()
   printSection('Parallel thought work and larger objectives:')
   printLines([
+    '  specdev roadmap',
     '  specdev discussion "<topic>"',
     '  specdev discussion D00001 --complete',
     '  specdev test-audit "<test scope>"',

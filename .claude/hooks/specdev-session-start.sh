@@ -57,7 +57,7 @@ if [ -n "$NEXT_JSON" ]; then
       const instructions = state.instructions || state.prompt || "";
       if (state.state === "idle" || workflow === "none") {
         process.stdout.write(
-          "SpecDev installed. Classify the user request before creating state: Direct for questions, read-only inspection, and small non-behavioral documentation writes; or explicitly user-selected Adhoc, Discussion, Assignment, or Mission. Direct writes create no workflow state, receipt, or automatic commit. Never silently create an Assignment for every request." +
+          "SpecDev installed. Classify the user request before creating state: Direct for questions, read-only inspection, and small non-behavioral documentation writes; or explicitly user-selected Roadmap, Adhoc, Discussion, Assignment, or Mission. Roadmap is stateless and may write only its three fixed project-note files after exact user approval. Direct writes create no workflow state, receipt, or automatic commit. Never silently create an Assignment for every request." +
           "\n\nAnnounce meaningful phases, plan changes, failed verification, and blockers with \"Specdev: <action>\"; repeated read-only probes need no separate announcement."
         );
         process.exit(0);
@@ -177,7 +177,7 @@ case "$PHASE" in
     CONTEXT="${CONTEXT}Rules:\n- TDD: write failing test -> make it pass -> refactor\n- No completion claims without running tests\n- One task at a time via subagents\n- Per-task review: spec compliance then code quality\n\nNext: Complete remaining tasks, get user approval\n\nPhase commands: specdev checkpoint implementation, specdev reviewloop implementation, specdev approve implementation"
     ;;
   *)
-    CONTEXT="${CONTEXT}Classify the request first: Direct needs no state; use Adhoc, Discussion, Assignment, or Mission only when the user selects it."
+    CONTEXT="${CONTEXT}Classify the request first: Direct needs no state; use Roadmap, Adhoc, Discussion, Assignment, or Mission only when the user selects it. Roadmap is stateless and path-bounded."
     ;;
 esac
 

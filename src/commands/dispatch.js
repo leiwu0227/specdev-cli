@@ -15,6 +15,7 @@ import { reviewloopCommand } from './reviewloop.js'
 import { implementCommand } from './implement.js'
 import { focusCommand } from './focus.js'
 import { discussCommand } from './discussion.js'
+import { roadmapCommand } from './roadmap.js'
 import { statusCommand } from './status.js'
 import { nextCommand } from './next.js'
 import { knowledgeCommand } from './knowledge.js'
@@ -59,6 +60,7 @@ const commandHandlers = {
   implement: ({ positionalArgs, flags }) => implementCommand(positionalArgs, flags),
   focus: ({ positionalArgs, flags }) => focusCommand(positionalArgs, flags),
   discussion: ({ positionalArgs, flags }) => discussCommand(positionalArgs, flags),
+  roadmap: ({ flags }) => roadmapCommand(flags),
   mission: ({ positionalArgs, flags }) => missionCommand(positionalArgs, flags),
   'test-audit': ({ positionalArgs, flags }) => testAuditCommand(positionalArgs, flags),
   adhoc: ({ positionalArgs, flags }) => adhocCommand(positionalArgs, flags),

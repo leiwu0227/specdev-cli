@@ -3,9 +3,9 @@
   "packages": {
     "assignment-lifecycle": {
       "id": "assignment-lifecycle",
-      "version": "2.2.0",
+      "version": "2.3.0",
       "kind": "workflow",
-      "path": "assignment-lifecycle@2.2.0"
+      "path": "assignment-lifecycle@2.3.0"
     },
     "discussion-lifecycle": {
       "id": "discussion-lifecycle",
@@ -21,9 +21,9 @@
     },
     "mission-lifecycle": {
       "id": "mission-lifecycle",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "kind": "workflow",
-      "path": "mission-lifecycle@1.4.0"
+      "path": "mission-lifecycle@1.5.0"
     },
     "project-orientation": {
       "id": "project-orientation",
@@ -36,6 +36,12 @@
       "version": "1.0.0",
       "kind": "callable",
       "path": "test-audit-lifecycle@1.0.0"
+    },
+    "update-completion": {
+      "id": "update-completion",
+      "version": "1.0.0",
+      "kind": "callable",
+      "path": "update-completion@1.0.0"
     },
     "workspace-dispatcher": {
       "id": "workspace-dispatcher",

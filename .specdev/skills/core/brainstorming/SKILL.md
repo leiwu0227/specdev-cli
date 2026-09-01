@@ -10,7 +10,8 @@ phase: brainstorm
 The current coding CLI is the author. Do not spawn a separate Brainstorm agent.
 
 1. Read project context and repository instructions. Use the context script and
-   OR-default knowledge search only when useful.
+   precise-default knowledge search only when useful; use explicit broad mode
+   only for deliberate any-term discovery.
 2. Ask focused questions about objective, scope/non-goals, expected behavior,
    constraints, authority, risks, and verification.
 3. Present a few meaningfully different approaches when a real choice exists,

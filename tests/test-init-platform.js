@@ -33,6 +33,22 @@ function normalizedProse(content) {
   return content.replace(/\s+/g, ' ')
 }
 
+function snapshotTree(root, relative = '') {
+  const records = []
+  const current = join(root, relative)
+  for (const entry of readdirSync(current, { withFileTypes: true })) {
+    const child = relative ? join(relative, entry.name) : entry.name
+    if (child === join('.specdev', 'cache')) continue
+    if (entry.isDirectory()) {
+      records.push(`dir:${child}`)
+      records.push(...snapshotTree(root, child))
+    } else if (entry.isFile()) {
+      records.push(`file:${child}:${readFileSync(join(root, child)).toString('base64')}`)
+    }
+  }
+  return records.sort()
+}
+
 // ---- Test default init creates all three adapters ----
 console.log('\ndefault init creates all adapters:')
 cleanup()
@@ -42,6 +58,49 @@ assert(existsSync(join(TEST_DIR, '.specdev', '_main.md')), '.specdev created')
 assert(existsSync(join(TEST_DIR, 'CLAUDE.md')), 'creates CLAUDE.md')
 assert(existsSync(join(TEST_DIR, 'AGENTS.md')), 'creates AGENTS.md')
 assert(existsSync(join(TEST_DIR, '.cursor', 'rules')), 'creates .cursor/rules')
+
+const roadmapRoot = join(TEST_DIR, '.specdev', 'project_notes', 'roadmap')
+const roadmapCore = join(roadmapRoot, 'designs', 'core_concepts.md')
+const roadmapStructure = join(roadmapRoot, 'designs', 'source_code_folder_structure.md')
+const roadmapForecast = join(roadmapRoot, 'forecast.md')
+assert(
+  existsSync(roadmapCore) &&
+    existsSync(roadmapStructure) &&
+    existsSync(roadmapForecast) &&
+    !existsSync(join(roadmapRoot, 'designs', 'core-concept.md')) &&
+    existsSync(join(TEST_DIR, '.claude', 'skills', 'specdev-roadmap', 'SKILL.md')),
+  'init installs the exact roadmap scaffold and command skill'
+)
+
+const beforeRoadmap = snapshotTree(TEST_DIR)
+result = runCmd(['roadmap', `--target=${TEST_DIR}`, '--json'])
+const roadmapPayload = JSON.parse(result.stdout)
+assert(
+  result.status === 0 &&
+    roadmapPayload.state === 'stateless' &&
+    roadmapPayload.files.join('|') ===
+      [
+        'project_notes/roadmap/designs/core_concepts.md',
+        'project_notes/roadmap/designs/source_code_folder_structure.md',
+        'project_notes/roadmap/forecast.md',
+      ].join('|') &&
+    JSON.stringify(snapshotTree(TEST_DIR)) === JSON.stringify(beforeRoadmap),
+  'roadmap reports the stateless exact-path boundary without creating state'
+)
+
+const agreedCore = '# Agreed core concepts\n'
+const agreedForecast = '# Agreed forecast\n\n1. First item\n'
+writeFileSync(roadmapCore, agreedCore)
+writeFileSync(roadmapForecast, agreedForecast)
+rmSync(roadmapStructure)
+result = runCmd(['update', `--target=${TEST_DIR}`, '--json'])
+assert(
+  result.status === 0 &&
+    readFileSync(roadmapCore, 'utf-8') === agreedCore &&
+    readFileSync(roadmapForecast, 'utf-8') === agreedForecast &&
+    existsSync(roadmapStructure),
+  'update preserves roadmap bytes and backfills a missing scaffold file'
+)
 
 const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
 assert(
@@ -216,6 +275,17 @@ assert(
 
 const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
 assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
+
+const roadmapSkill = readFileSync(join(skillsDir, 'specdev-roadmap', 'SKILL.md'), 'utf-8')
+const roadmapSkillProse = normalizedProse(roadmapSkill)
+assert(
+  roadmapSkillProse.includes('only when the user explicitly selects it') &&
+    roadmapSkillProse.includes('wait for explicit user approval before writing') &&
+    roadmapSkillProse.includes(
+      'creates no ID, RippleGraph state, receipt, snapshot, or automatic commit'
+    ),
+  'roadmap skill requires explicit selection and approval without workflow history'
+)
 
 const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
 assert(continueSkill.includes('specdev next'), 'continue skill references durable workflow resume')

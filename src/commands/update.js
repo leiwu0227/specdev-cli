@@ -67,7 +67,7 @@ export async function updateCommand(flags = {}) {
     'Platform adapters (if missing)',
   ]
   const preserved = [
-    'project_notes/',
+    'project_notes/ (existing content preserved; missing Roadmap scaffold added)',
     'assignments/',
     'missions/',
     'discussions/',
@@ -175,7 +175,7 @@ export async function updateCommand(flags = {}) {
       adapters_created: createdAdapters,
       guided_workflows: engine.registered.length - 1,
       preserved: [
-        'project_notes/',
+        'project_notes/ (existing content preserved; missing Roadmap scaffold added)',
         'assignments/',
         'missions/',
         'discussions/',
@@ -250,7 +250,7 @@ export async function updateCommand(flags = {}) {
     printSection('📌 Preserved:')
     printBullets(
       [
-        'project_notes/ (your project documentation)',
+        'project_notes/ (existing documentation preserved; missing Roadmap scaffold added)',
         'assignments/ (your active work)',
         'skills/tools/ (your custom tool skills)',
         'missions/ and discussions/ (your durable work)',

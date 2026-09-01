@@ -47,6 +47,11 @@ export const COMMANDS = [
     description: 'Create or resume a concurrent code-read-only Discussion',
   },
   {
+    name: 'roadmap',
+    usage: 'roadmap',
+    description: 'Collaborate on user-approved roadmap notes without workflow state',
+  },
+  {
     name: 'test-audit',
     usage: 'test-audit <scope|id>',
     description: 'Audit redundant tests read-only and prepare an Assignment',

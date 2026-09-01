@@ -27,8 +27,13 @@ criteria. A required section may say that no change-specific item exists.
 inline by default; they do not imply subagents, worktrees, commits, reviews, or
 full suites. `implementation/progress.json` owns compact Task state, selected
 guide IDs and versions, verification receipts, structured `deviations`, and
-`follow_up`. `outcome.md` maps every acceptance ID to evidence and a final
-result. A waived implementation review completes only when every acceptance
+`follow_up`. `outcome.md` uses the generated canonical structure: `# Outcome`,
+followed by `## Delivered behavior`, `## Deviations`, `## Unresolved risks`,
+and exactly one three-column `Acceptance | Evidence | Result` table. Each
+acceptance ID maps to evidence and a final `Passed`, `Failed`, or `Blocked`
+result. Verification receipts classify each command as `qualification` or
+`authoritative_acceptance`; classification records evidence and never grants
+authority to run a command. A waived implementation review completes only when every acceptance
 criterion is Passed, all receipts passed, deviations are empty, and follow-up
 is `none`.
 

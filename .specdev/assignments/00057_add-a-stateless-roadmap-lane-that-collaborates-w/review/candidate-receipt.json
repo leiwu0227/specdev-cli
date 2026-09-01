@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "71e333d836eb7aa3bd6fdf3253e7cc1cbd9295241ecf5f3737b7c7f5665dc0a7",
+  "assignment": {
+    "id": "00057",
+    "folder": "00057_add-a-stateless-roadmap-lane-that-collaborates-w"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00057_add-a-stateless-roadmap-lane-that-collaborates-w/brainstorm/contract.md",
+    "hash": "524c3758b83c017bcd0a08cd26ea15e808f6d9e375f004f180a1c775ac956f33"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`node tests/test-init-platform.js` passed command discovery, exact-path output, generated Roadmap skill, and platform guidance checks.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "The focused test passed fresh scaffold creation plus update byte-preservation and missing-file backfill.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "The focused test passed a whole managed-tree before/after comparison around `specdev roadmap`; source inspection confirms no Roadmap graph, ID, receipt, snapshot, or commit path.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 2,
+    "items": [
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@cd8a4c1bc5ca3c5975f130b27eab5da41d3a686f",
+        "scope": "Roadmap command, fixed scaffold, update preservation, generated agent protocol, and platform adapters",
+        "status": "failed",
+        "duration_ms": 2157,
+        "role": "qualification",
+        "role_source": "explicit"
+      },
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@cd8a4c1bc5ca3c5975f130b27eab5da41d3a686f",
+        "scope": "Roadmap command, fixed scaffold, update preservation, generated agent protocol, and platform adapters",
+        "status": "passed",
+        "duration_ms": 2292,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 1,
+      "failed": 1,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@cd8a4c1bc5ca3c5975f130b27eab5da41d3a686f",
+        "status": "passed"
+      }
+    ]
+  },
+  "changed_project_paths": {
+    "count": 20,
+    "groups": [
+      {
+        "name": ".claude",
+        "count": 2,
+        "paths": [
+          ".claude/hooks/specdev-session-start.sh",
+          ".claude/skills/specdev-roadmap/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": ".codex",
+        "count": 1,
+        "paths": [
+          ".codex/skills/specdev-roadmap/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "hooks",
+        "count": 1,
+        "paths": [
+          "hooks/session-start.sh"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 7,
+        "paths": [
+          "src/commands/dispatch.js",
+          "src/commands/help.js",
+          "src/commands/init.js",
+          "src/commands/roadmap.js",
+          "src/commands/update.js"
+        ],
+        "omitted": 2
+      },
+      {
+        "name": "templates",
+        "count": 7,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 6
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-init-platform.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "User approval remains an agent-protocol rule rather than a CLI-verifiable token,",
+      "which is inherent in the approved stateless design."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00057_add-a-stateless-roadmap-lane-that-collaborates-w/brainstorm/contract.md",
+      "exists": true,
+      "digest": "524c3758b83c017bcd0a08cd26ea15e808f6d9e375f004f180a1c775ac956f33"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00057_add-a-stateless-roadmap-lane-that-collaborates-w/design/plan.md",
+      "exists": true,
+      "digest": "c998bc9726b0c2fe865cb4b898379fb50f3437f4dedfb972a6adfe7278fb2398"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00057_add-a-stateless-roadmap-lane-that-collaborates-w/implementation/progress.json",
+      "exists": true,
+      "digest": "e8b35dec349e8892effa64639e82ca28fb67c4557eadc78a2a7719b725fe07b7"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00057_add-a-stateless-roadmap-lane-that-collaborates-w/outcome.md",
+      "exists": true,
+      "digest": "6cae1d904abfbfcab17d51e74a92d0faf86ca634db5ffc1a78b4bfc561d45038"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

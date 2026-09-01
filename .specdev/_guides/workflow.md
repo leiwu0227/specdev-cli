@@ -2,12 +2,49 @@
 
 ## Direct and Adhoc
 
-Direct work answers or inspects without creating state. Use Adhoc only when the
-user chooses a concrete bounded edit but the Assignment contract/review cycle
-would be ceremony. Adhoc has no RippleGraph run. `adhoc start` requires an
-existing Git HEAD and a clean worktree unless `--adopt-dirty` explicitly adopts
-all existing changes. `adhoc finish` requires an unchanged HEAD, writes one
-small receipt, and creates one delivery commit. `adhoc cancel` removes only the
+Direct work answers, inspects, or writes a small user-requested documentation
+artifact without creating workflow state, a receipt, or an automatic commit.
+The write qualifies only when it does not change product, runtime,
+public-contract, or governed workflow behavior. For low-risk Direct
+documentation, announce once, read destination instructions and only the facts
+needed, write first, and verify narrowly; broad project orientation is not a
+prerequisite.
+
+Use Adhoc only when the user explicitly chooses it for a concrete bounded edit
+but the Assignment contract/review cycle would be ceremony. Adhoc has no
+RippleGraph run. `adhoc start` requires an existing Git HEAD and a clean
+worktree unless `--adopt-dirty` explicitly adopts the exact expanded eligible
+path manifest for all existing changes.
+
+“Does not want an Assignment” means the bounded detour should not become a new
+Assignment; it does not terminate an unrelated active one. A focused standalone
+Assignment may be preserved through Adhoc only while it is quiescent at the
+approved pre-implementation boundary. Its identity, focus, run, artifacts, and
+Attempt records remain outside Adhoc ownership. An implementation Git boundary,
+live or ambiguous worker/reviewer Attempt, dirty product work, or uncertain
+ownership blocks before state creation, and `--adopt-dirty` cannot absorb the
+conflict. Finish and cancel retain the same resumable Assignment. Shelving is an
+explicit terminal user choice, never an automatic pause or prerequisite.
+
+Selecting a bounded file write does not itself select Adhoc. An explicitly
+requested coordination or handoff note in another repository is an auxiliary
+artifact: write only the note, follow destination instructions, and create no
+SpecDev state in the active repository. Re-anchor and classify in the
+destination repository when the request changes its product, runtime, or
+workflow state, or explicitly requests SpecDev governance there.
+
+Examples make the routing boundary concrete:
+
+- “Write an HTTP usage manual under `project_notes/manual/`” is Direct when it
+  documents existing behavior.
+- “Write this workflow handoff note into the SpecDev CLI thoughts directory” is
+  a Direct auxiliary write governed by that destination's instructions.
+- “Use SpecDev Adhoc to update the public API manual and commit it” is Adhoc and
+  retains the receipt and final delivery commit.
+
+Callable-owned paths refuse the whole adoption rather than being filtered.
+`adhoc finish` requires an unchanged HEAD, verifies the manifest, writes one
+small commit-derived receipt, and creates one delivery commit. `adhoc cancel` removes only the
 ignored active marker and leaves source changes untouched. Receipts are not
 knowledge-index sources; `knowledge/workflow/adhoc-history.md` explains the
 explicit receipt and Git search path.
@@ -20,6 +57,16 @@ The Git boundary is established immediately before implementation. Existing
 product changes require an explicit inspect/checkpoint/adopt decision. A
 standalone Assignment ends in one host-owned delivery commit; Mission children
 remain owned by the Mission controller.
+
+An approved standalone Assignment may instead reach a successful negative
+conclusion with `specdev assignment close <id> --outcome=unsupported`. The user
+must provide a reason and written evidence, inspect the exact HEAD/ownership
+plan, and confirm it with `--snapshot=owned`. SpecDev then records
+`unsupported.md` and terminal status, compacts only owned runtime, clears focus,
+and publishes those effects as one exact commit. Concurrent or unattributed
+dirt remains unstaged and is reported by owner. Unsupported history is
+immutable; `specdev assignment --from-assignment=<id>` creates a fresh contract,
+approval, evidence, and delivery boundary.
 
 ## Mission
 
@@ -44,6 +91,20 @@ distinct. Children that do not depend on one another may share a wave. The
 foreground controller automatically runs up to three children in validated
 ignored worktrees and integrates reviewed deliveries in declared order. Users
 do not tune concurrency, and parallel speed is not a reason to split work.
+
+A planned child may use `execution: evidence-only` only with an exact
+`observation_command` equal to the Mission final-verification command. A
+negative observation remains failed evidence but returns as
+completed-with-follow-up so the Mission can open a repair gap. Ordinary
+implementation children cannot use that disposition.
+
+`specdev mission adopt-successor M00001 --assignment=00042` is exceptional
+recovery for an active Mission blocked inside its owned child. The first call is
+read-only and prints a content-addressed plan; `--confirm=<snapshot>` applies
+only that unchanged plan. Candidate ancestry, contract/review/evidence hashes,
+the exact command and environment policy, cleanup identity, predecessor
+authority, and excluded dirt all fail closed. Adoption links superseding
+evidence and returns the nested graph without rerunning a provider or command.
 
 ## Discussion
 
@@ -75,11 +136,29 @@ Markdown must not be treated as a SpecDev verdict.
 ## Knowledge
 
 Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.
-Use default OR search for unfamiliar repository behavior. FAQ entries past
-`review_after` require explicit `--include-stale` and revalidation; entries with
-`status: superseded` are outside default scope. `specdev knowledge distill`
-prepares a bounded, read-only source brief for the current coding CLI and never
-spawns another agent.
+Always read `project_notes/big_picture.md`. Use default precise all-term or
+quoted-phrase search at the planning or uncertainty boundary instead of reading
+every note; reserve `--mode=broad` for explicit any-term discovery. Narrow noisy
+partial matches with distinguishing terms or phrases. Assignment records useful
+paths in its plan; Mission searches once and passes relevant paths to children;
+Adhoc searches only for unfamiliar behavior or conventions. Search unexpected
+symptoms again. Treat matches as historical leads and verify relevant current
+code, including hard-coded counts, enumerated families, or other closed-world
+assumptions. Reusable constraints missing from living knowledge go through an
+evidence-bound, user-approved curation proposal; source is not bulk-indexed or
+promoted by search. FAQ entries past `review_after` require explicit
+`--include-stale` and revalidation; `status: superseded` stays outside default
+scope.
+
+`specdev knowledge curate` scans without authoritative mutation, validates an
+exact content-addressed proposal, separates big-picture approval, publishes only
+approved Markdown, writes one idempotent receipt, and automatically rebuilds the
+disposable index. Resume with `--status`. A failed rebuild leaves published truth
+in place and reports `specdev knowledge rebuild`. The legacy `knowledge distill`
+brief remains read-only compatibility and is not a publication workflow.
+Bounded `--repo-evidence=path#Lstart-Lend` attaches clean tracked current-code
+bytes and their Git boundary to a proposal, but never replaces durable-source,
+verification, owner, destination-approval, receipt, or rebuild requirements.
 
 ## Verification
 

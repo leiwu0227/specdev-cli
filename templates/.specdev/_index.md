@@ -14,6 +14,10 @@
   missions/M<id>_<slug>/              static-wave foreground orchestration
   discussions/D<id>_<slug>/           concurrent thought work
   test-audits/TA<id>_<slug>/           concurrent read-only test pruning proposals
+  project_notes/roadmap/designs/
+    core_concepts.md                   user-approved core architecture concepts
+    source_code_folder_structure.md    user-approved source-code folder design
+  project_notes/roadmap/forecast.md    user-approved implementation sequence
   knowledge/faq/                       current, freshness-aware troubleshooting
   knowledge-curations/KC-<hash>.json   verified publication receipts
   processes/ATT-<id>.yaml              durable invocation summaries
@@ -34,6 +38,8 @@ specdev checkpoint brainstorm
 specdev reviewloop brainstorm          # optional
 specdev approve brainstorm
 specdev implement
+
+specdev roadmap
 
 specdev discussion "<topic>"
 specdev discussion D00001 [--complete]

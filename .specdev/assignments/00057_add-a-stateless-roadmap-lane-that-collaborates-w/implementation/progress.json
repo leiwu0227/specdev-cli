@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@cd8a4c1bc5ca3c5975f130b27eab5da41d3a686f",
+      "scope": "Roadmap command, fixed scaffold, update preservation, generated agent protocol, and platform adapters",
+      "status": "failed",
+      "duration_ms": 2157,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@cd8a4c1bc5ca3c5975f130b27eab5da41d3a686f",
+      "scope": "Roadmap command, fixed scaffold, update preservation, generated agent protocol, and platform adapters",
+      "status": "passed",
+      "duration_ms": 2292,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "At the user's request, the foreground coding agent interrupted Attempt-00155 during Design and completed the approved implementation inline; the interrupted worker's valid plan was preserved."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

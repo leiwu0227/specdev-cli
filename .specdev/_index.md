@@ -5,6 +5,7 @@
 ```text
 .specdev/
   agents.yaml                         committed worker/reviewer preferences
+  executors.yaml                      reusable capability facts; secret names only
   guides/review.md                    common reviewer contract
   guides/library/catalog.yaml         managed curated guides
   guides/project/catalog.yaml         repository-owned guides
@@ -14,6 +15,7 @@
   discussions/D<id>_<slug>/           concurrent thought work
   test-audits/TA<id>_<slug>/           concurrent read-only test pruning proposals
   knowledge/faq/                       current, freshness-aware troubleshooting
+  knowledge-curations/KC-<hash>.json   verified publication receipts
   processes/ATT-<id>.yaml              durable invocation summaries
   cache/                               ignored machine-local state
   worktrees/slot-N/                    ignored, bounded Mission child leases
@@ -44,9 +46,12 @@ specdev assignment --from-test-audit=TA00001
 specdev mission create "<objective>"
 specdev reviewloop mission --mission=M00001   # optional
 specdev mission run|status|pause|checkpoint M00001
+specdev mission approve-divergence|reject-divergence M00001 --child=00042 --identity=<sha256>
+specdev mission handoff M00001 --successor-assignment
 
 specdev knowledge rebuild
-specdev knowledge search "<terms>" [--include-stale] [--scope=history|workflow|all]
+specdev knowledge search "<terms>" [--mode=precise|broad] [--include-stale] [--scope=history|workflow|all]
+specdev knowledge curate [--repo-evidence=path#Lstart-Lend] [--status]
 specdev knowledge distill
 ```
 
@@ -58,7 +63,10 @@ specdev knowledge distill
 - `specdev next --json`: focused Assignment/Mission position.
 - `specdev discussion --list`: isolated callable positions.
 - `specdev test-audit --list`: isolated test-audit callable positions.
-- `specdev mission status M00001`: branch, queue counts, and blocker.
+- `specdev mission status M00001`: branch, queue counts, blocker, and the
+  contract-bound review/execution policy.
+- `specdev mission approve-divergence|reject-divergence`: decide only the exact
+  reviewed child identity displayed by status; changed identities fail closed.
 - `specdev mission run M00001 --takeover`: explicit recovery only after a
   durable running controller has no live local process.
 
