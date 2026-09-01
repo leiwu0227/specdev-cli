@@ -17,6 +17,7 @@
   project_notes/roadmap/designs/
     core_concepts.md                   user-approved core architecture concepts
     source_code_folder_structure.md    user-approved source-code folder design
+    <feature-or-module>.md              one bounded, minimally overlapping design
   project_notes/roadmap/forecast.md    user-approved implementation sequence
   knowledge/faq/                       current, freshness-aware troubleshooting
   knowledge-curations/KC-<hash>.json   verified publication receipts

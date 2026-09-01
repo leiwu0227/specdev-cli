@@ -78,12 +78,19 @@ const roadmapPayload = JSON.parse(result.stdout)
 assert(
   result.status === 0 &&
     roadmapPayload.state === 'stateless' &&
-    roadmapPayload.files.join('|') ===
+    roadmapPayload.standard_files.join('|') ===
       [
         'project_notes/roadmap/designs/core_concepts.md',
         'project_notes/roadmap/designs/source_code_folder_structure.md',
         'project_notes/roadmap/forecast.md',
       ].join('|') &&
+    roadmapPayload.writable_paths.join('|') ===
+      [
+        'project_notes/roadmap/designs/*.md',
+        'project_notes/roadmap/forecast.md',
+      ].join('|') &&
+    roadmapPayload.design_rules.word_limit.includes('maximum 799') &&
+    roadmapPayload.design_rules.additional_notes.includes('one independent feature or module') &&
     JSON.stringify(snapshotTree(TEST_DIR)) === JSON.stringify(beforeRoadmap),
   'roadmap reports the stateless exact-path boundary without creating state'
 )
@@ -283,7 +290,9 @@ assert(
     roadmapSkillProse.includes('wait for explicit user approval before writing') &&
     roadmapSkillProse.includes(
       'creates no ID, RippleGraph state, receipt, snapshot, or automatic commit'
-    ),
+    ) &&
+    roadmapSkillProse.includes('fewer than 800 words (maximum 799)') &&
+    roadmapSkillProse.includes('one independent feature or module'),
   'roadmap skill requires explicit selection and approval without workflow history'
 )
 

@@ -1,11 +1,13 @@
 import { join } from 'node:path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 
-export const ROADMAP_FILES = [
+export const ROADMAP_STANDARD_FILES = [
   'project_notes/roadmap/designs/core_concepts.md',
   'project_notes/roadmap/designs/source_code_folder_structure.md',
   'project_notes/roadmap/forecast.md',
 ]
+
+export const ROADMAP_DESIGN_PATTERN = 'project_notes/roadmap/designs/*.md'
 
 export async function roadmapCommand(flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -16,10 +18,16 @@ export async function roadmapCommand(flags = {}) {
     version: 1,
     status: 'ready',
     state: 'stateless',
-    files: ROADMAP_FILES,
+    standard_files: ROADMAP_STANDARD_FILES,
+    writable_paths: [ROADMAP_DESIGN_PATTERN, 'project_notes/roadmap/forecast.md'],
+    design_rules: {
+      word_limit: 'fewer than 800 words per Markdown file (maximum 799)',
+      additional_notes:
+        'Each note other than core_concepts.md and source_code_folder_structure.md covers one independent feature or module with minimal overlap.',
+    },
     authority: {
       product_code: 'read_only',
-      writes: 'Only the listed roadmap Markdown files after explicit user approval.',
+      writes: 'Only the reported roadmap paths after explicit user approval.',
     },
     history: 'No Roadmap IDs, workflow state, receipts, snapshots, or automatic commits.',
     next_action:
@@ -33,8 +41,12 @@ export async function roadmapCommand(flags = {}) {
 
   console.log('SpecDev Roadmap')
   console.log('State: stateless')
-  console.log('Allowed files:')
-  for (const path of payload.files) console.log(`  .specdev/${path}`)
+  console.log('Standard files:')
+  for (const path of payload.standard_files) console.log(`  .specdev/${path}`)
+  console.log('Writable paths:')
+  for (const path of payload.writable_paths) console.log(`  .specdev/${path}`)
+  console.log(`Design word limit: ${payload.design_rules.word_limit}`)
+  console.log(`Additional design notes: ${payload.design_rules.additional_notes}`)
   console.log(`Authority: ${payload.authority.writes}`)
   console.log(`History: ${payload.history}`)
   console.log(`Next: ${payload.next_action}`)

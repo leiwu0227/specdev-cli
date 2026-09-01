@@ -109,12 +109,16 @@ evidence and returns the nested graph without rerunning a provider or command.
 ## Roadmap
 
 `specdev roadmap` is an explicitly user-selected, stateless collaboration lane.
-It reports the three fixed roadmap Markdown files without creating or changing
-state. The coding agent may draft an exact change only for those files, must
-show the destination and complete proposed content or diff, and writes only
-after explicit user approval. Product code and all other paths remain read-only.
-Roadmap creates no identity, graph, receipt, snapshot, or automatic commit and
-does not authorize implementation of a forecast item.
+It reports the standard files and the writable `roadmap/designs/*.md` plus
+`roadmap/forecast.md` boundary without creating or changing state. Every design
+Markdown file must contain fewer than 800 words (maximum 799). Besides
+`core_concepts.md` and `source_code_folder_structure.md`, each design note must
+cover one independent feature or module and minimize overlap with the standard
+notes and its peers. The coding agent must show the destination and complete
+proposed content or diff, and writes only after explicit user approval. Product
+code and all other paths remain read-only. Roadmap creates no identity, graph,
+receipt, snapshot, or automatic commit and does not authorize implementation of
+a forecast item.
 
 ## Discussion
 
