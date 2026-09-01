@@ -25,6 +25,13 @@ export async function roadmapCommand(flags = {}) {
       additional_notes:
         'Each note other than core_concepts.md and source_code_folder_structure.md covers one independent feature or module with minimal overlap.',
     },
+    forecast_rules: {
+      purpose: 'A future-work roadmap of gaps between the approved designs and current code.',
+      derivation:
+        'When creating or revising forecast.md, quickly inspect current code read-only against the Roadmap designs and identify design-note sections not yet reflected in code.',
+      ordering: 'List gaps in dependency order, with each gap as its own Markdown section.',
+      section_word_limit: 'fewer than 200 words per section (maximum 199)',
+    },
     authority: {
       product_code: 'read_only',
       writes: 'Only the reported roadmap paths after explicit user approval.',
@@ -47,6 +54,10 @@ export async function roadmapCommand(flags = {}) {
   for (const path of payload.writable_paths) console.log(`  .specdev/${path}`)
   console.log(`Design word limit: ${payload.design_rules.word_limit}`)
   console.log(`Additional design notes: ${payload.design_rules.additional_notes}`)
+  console.log(`Forecast purpose: ${payload.forecast_rules.purpose}`)
+  console.log(`Forecast derivation: ${payload.forecast_rules.derivation}`)
+  console.log(`Forecast ordering: ${payload.forecast_rules.ordering}`)
+  console.log(`Forecast section word limit: ${payload.forecast_rules.section_word_limit}`)
   console.log(`Authority: ${payload.authority.writes}`)
   console.log(`History: ${payload.history}`)
   console.log(`Next: ${payload.next_action}`)

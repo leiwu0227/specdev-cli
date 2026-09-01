@@ -91,6 +91,9 @@ assert(
       ].join('|') &&
     roadmapPayload.design_rules.word_limit.includes('maximum 799') &&
     roadmapPayload.design_rules.additional_notes.includes('one independent feature or module') &&
+    roadmapPayload.forecast_rules.derivation.includes('inspect current code read-only') &&
+    roadmapPayload.forecast_rules.ordering.includes('dependency order') &&
+    roadmapPayload.forecast_rules.section_word_limit.includes('maximum 199') &&
     JSON.stringify(snapshotTree(TEST_DIR)) === JSON.stringify(beforeRoadmap),
   'roadmap reports the stateless exact-path boundary without creating state'
 )
@@ -292,7 +295,10 @@ assert(
       'creates no ID, RippleGraph state, receipt, snapshot, or automatic commit'
     ) &&
     roadmapSkillProse.includes('fewer than 800 words (maximum 799)') &&
-    roadmapSkillProse.includes('one independent feature or module'),
+    roadmapSkillProse.includes('one independent feature or module') &&
+    roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
+    roadmapSkillProse.includes('list those gaps in dependency order') &&
+    roadmapSkillProse.includes('fewer than 200 words (maximum 199)'),
   'roadmap skill requires explicit selection and approval without workflow history'
 )
 
