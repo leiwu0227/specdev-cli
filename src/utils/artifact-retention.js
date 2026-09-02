@@ -69,6 +69,15 @@ export async function compactUnsupportedWorkflowRuntime(specdevPath, options) {
   )
 }
 
+export async function compactAbandonedMissionWorkflowRuntime(specdevPath, options) {
+  return compactTerminalWorkflowRuntime(
+    specdevPath,
+    options,
+    new Set(['abandoned']),
+    new Set(['abandoned'])
+  )
+}
+
 export async function recoverTerminalAssignmentRuntimeResidue(specdevPath) {
   const assignmentsPath = join(specdevPath, 'assignments')
   if (!(await fse.pathExists(assignmentsPath))) return []

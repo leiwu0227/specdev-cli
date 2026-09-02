@@ -160,6 +160,9 @@ a scheduler, but only one may be active in a worktree.
   Multi-child Mission contracts receive review; a deterministic full-scope
   single child reuses the approved parent authority without another Brainstorm
   author or reviewer.
+- Mission abandonment is a reasoned two-step terminal command. Its first pass is
+  read-only; exact confirmation preserves branch and worktree identities, records
+  no delivery, compacts only owned runtime, and never lands or deletes partial work.
 - Approval binds the exact final contract hash. Editing it invalidates approval.
 - Before requesting Assignment or Mission contract approval, show the exact
   contract path and hash plus a concise 2-4 bullet preview covering objective,

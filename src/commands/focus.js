@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { resolveAssignmentSelector } from '../utils/assignment.js'
-import { resolveMissionSelector } from '../utils/mission.js'
+import { readMission, resolveMissionSelector } from '../utils/mission.js'
 import { resolveDiscussionSelector } from '../utils/discussion.js'
 import { writeCurrentFocus, clearCurrent } from '../utils/current.js'
 import {
@@ -37,6 +37,12 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
   }
   if (!resolved || resolved.ambiguous || resolved.error)
     return fail(flags, `Work item not found or ambiguous: ${selector}`)
+  if (kind === 'mission') {
+    const mission = await readMission(resolved.path).catch(() => null)
+    if (mission?.status === 'abandoned') {
+      return fail(flags, `Mission ${mission.id} is abandoned and immutable; it cannot be focused`)
+    }
+  }
   await writeCurrentFocus(specdevPath, { kind, id: resolved.id })
   const assignmentStatus =
     kind === 'assignment'

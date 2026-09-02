@@ -41,6 +41,7 @@ export function helpCommand(flags = {}) {
     '  specdev reviewloop mission --mission=M00001  # optional',
     '  specdev mission run M00001',
     '  specdev mission status M00001      # includes consolidated execution policy',
+    '  specdev mission abandon M00001 --reason="objective withdrawn"',
     '  specdev mission approve-divergence M00001 --child=00042 --identity=<sha256>',
     '  specdev mission reject-divergence M00001 --child=00042 --identity=<sha256> --reason="..."',
     '  specdev mission handoff M00001 --successor-assignment',

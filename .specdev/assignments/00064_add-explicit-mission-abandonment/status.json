@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "00064",
+  "kind": "change",
+  "description": "Add explicit Mission abandonment",
+  "run_id": "assignment-lifecycle-20260902T04333924",
+  "created_at": "2026-09-02T04:33:39.249Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-09-02T05:31:46.085Z",
+  "review_policy_frozen_at": "2026-09-02T05:09:01.291Z",
+  "approved_at": "2026-09-02T05:09:01.291Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "82de84bcf6cc463b4d366bb17eb6735b2ba1a9bb",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-09-02T05:09:09.517Z"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "command",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T05:09:09.475Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-09-02T05:31:46.024Z",
+  "activity": {
+    "attempt_count": 2,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 2,
+    "provider_attempts": {
+      "total": 2,
+      "completed": 2,
+      "failed": 0,
+      "blocked": 0,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1364733,
+    "agent_duration_ms": 330767,
+    "provider_reported_tokens": null
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-09-02T05:31:46.085Z"
+}

@@ -147,6 +147,11 @@ import {
   missionReapprovalPreview,
   readMissionReapproval,
 } from '../utils/mission-reapproval.js'
+import {
+  abandonMissionCommand,
+  abandonedMissionError,
+  inspectAbandonedMission,
+} from './mission-abandon.js'
 
 const execFile = promisify(execFileCallback)
 const LOCAL_SPECDEV_BIN = fileURLToPath(new URL('../../bin/specdev.js', import.meta.url))
@@ -159,6 +164,7 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
   }
   if (subcommand === 'create') return createMission(rest, flags)
   if (subcommand === 'run') return runMission(rest[0], flags)
+  if (subcommand === 'abandon') return abandonMission(rest[0], flags)
   if (subcommand === 'migrate') return migrateMission(rest[0], flags)
   if (subcommand === 'status') return missionStatus(rest[0], flags)
   if (subcommand === 'land') return missionLand(rest[0], flags)
@@ -173,7 +179,7 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
     return decideMissionDivergence(rest[0], flags, 'reject')
   }
   console.error(
-    'Usage: specdev mission <create | run | migrate | status | approve-divergence | reject-divergence | land | pause | checkpoint | handoff | adopt-successor>'
+    'Usage: specdev mission <create | run | abandon | migrate | status | approve-divergence | reject-divergence | land | pause | checkpoint | handoff | adopt-successor>'
   )
   process.exitCode = 1
 }
@@ -181,6 +187,7 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
 async function adoptMissionSuccessor(selector, flags) {
   const context = await missionContext(selector, flags)
   if (!context) return null
+  if (rejectAbandonedMission(context, flags, 'successor adoption')) return null
   try {
     const options = {
       legacyAuthority:
@@ -225,6 +232,7 @@ async function adoptMissionSuccessor(selector, flags) {
 async function migrateMission(selector, flags) {
   const context = await missionContext(selector, flags)
   if (!context) return null
+  if (rejectAbandonedMission(context, flags, 'migration')) return null
   const running = await listAttemptRecords(context.specdevPath, {
     kind: 'mission-controller',
     mission: context.mission.id,
@@ -358,6 +366,21 @@ async function runMission(selector, flags) {
       mission: mission.id,
       disposition: mission.disposition || 'semantic-failure',
       outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
+    })
+  }
+  if (mission.status === 'abandoned') {
+    const abandonment = await inspectAbandonedMission(targetDir, mission)
+    return emit(flags, {
+      command: 'mission run',
+      version: 1,
+      status: 'abandoned',
+      mission: mission.id,
+      disposition: 'abandoned',
+      abandonment,
+      delivery: null,
+      landing: null,
+      outcome: abandonment?.artifact || null,
+      next_action: null,
     })
   }
   const compatibility = await evaluateMissionCompatibility({ specdevPath, missionPath, mission })
@@ -3107,9 +3130,16 @@ async function claimMissionController(context, flags) {
   return attempt
 }
 
+async function abandonMission(selector, flags) {
+  const context = await missionContext(selector, flags)
+  if (!context) return null
+  return abandonMissionCommand(context, flags)
+}
+
 async function pauseMission(selector, flags) {
   const context = await missionContext(selector, flags)
   if (!context) return null
+  if (rejectAbandonedMission(context, flags, 'pause')) return null
   const running = await listAttemptRecords(context.specdevPath, {
     kind: 'mission-controller',
     mission: context.mission.id,
@@ -3145,6 +3175,7 @@ async function pauseMission(selector, flags) {
 async function missionLand(selector, flags) {
   const context = await missionContext(selector, flags, { recoverCompleted: true })
   if (!context) return null
+  if (rejectAbandonedMission(context, flags, 'landing')) return null
   if (context.mission.status !== 'completed') {
     return fail(flags, `Mission ${context.mission.id} must be completed before it can land`)
   }
@@ -3173,6 +3204,7 @@ async function handoffMission(selector, flags) {
   }
   const context = await missionContext(selector, flags)
   if (!context) return null
+  if (rejectAbandonedMission(context, flags, 'successor handoff')) return null
   const { targetDir, specdevPath, missionPath, mission } = context
   if (mission.status !== 'failed') {
     return fail(flags, `Mission ${mission.id} must be terminal failed before successor handoff`)
@@ -3368,7 +3400,7 @@ async function missionStatus(selector, flags) {
   const queue = await readMissionQueue(context.missionPath).catch(() => null)
   const assignments = queue?.assignments || []
   const phase = readMissionPhase(context.specdevPath, context.mission.run_id)
-  const compatibility = ['completed', 'failed'].includes(context.mission.status)
+  const compatibility = ['completed', 'failed', 'abandoned'].includes(context.mission.status)
     ? null
     : await evaluateMissionCompatibility({
         specdevPath: context.specdevPath,
@@ -3415,12 +3447,13 @@ async function missionStatus(selector, flags) {
       }
     : null
   const activity = await missionActivitySummary(context.specdevPath, context.mission)
+  const abandonment = await inspectAbandonedMission(context.targetDir, context.mission)
   const landing =
     context.mission.status === 'completed'
       ? await missionLanding(context, { attempt: false })
       : null
   let executionPolicy = context.mission.execution_policy || null
-  if (!['completed', 'failed'].includes(context.mission.status)) {
+  if (!['completed', 'failed', 'abandoned'].includes(context.mission.status)) {
     try {
       executionPolicy = await deriveApprovedExecutionPolicy(context)
     } catch (error) {
@@ -3431,11 +3464,13 @@ async function missionStatus(selector, flags) {
     (compatibility && !compatibility.compatible ? compatibility.next_action : null) ||
     landingNextAction(context.mission, landing) ||
     missionNextAction(context.mission, phase, Boolean(liveController), interruptedController)
-  const userReapproval = context.mission.pending_parallel_user_reapproval
-    ? await parallelMissionReapprovalStatus(context)
-    : phase === 'await-user-reapproval' && context.mission.pending_user_reapproval
-      ? await missionReapprovalStatus(context)
-      : null
+  const userReapproval = abandonment
+    ? null
+    : context.mission.pending_parallel_user_reapproval
+      ? await parallelMissionReapprovalStatus(context)
+      : phase === 'await-user-reapproval' && context.mission.pending_user_reapproval
+        ? await missionReapprovalStatus(context)
+        : null
   return emit(flags, {
     command: 'mission status',
     version: 1,
@@ -3470,6 +3505,8 @@ async function missionStatus(selector, flags) {
     successor_adoptions: context.mission.successor_adoptions || [],
     activity,
     landing,
+    abandonment,
+    delivery: abandonment ? null : undefined,
     blocker,
     compatibility,
     user_reapproval: userReapproval,
@@ -3534,6 +3571,7 @@ async function assertMissionCandidateCheckpoint(context) {
 async function checkpointMission(selector, flags, metadata = {}) {
   const context = await missionContext(selector, flags)
   if (!context) return null
+  if (rejectAbandonedMission(context, flags, 'checkpointing')) return null
   const git = await gitSnapshot(context.targetDir)
   if (git.branch !== context.mission.branch)
     return fail(flags, `Mission checkpoint requires branch ${context.mission.branch}`)
@@ -3941,7 +3979,7 @@ function formatMissionFailure(disposition) {
 }
 
 function missionNextAction(mission, phase, liveController, interruptedController = null) {
-  if (mission.status === 'completed') return null
+  if (['completed', 'abandoned'].includes(mission.status)) return null
   if (liveController) return `Mission ${mission.id} is running in the foreground.`
   if (interruptedController)
     return `Inspect ${interruptedController.id}, then run specdev mission run ${mission.id} --takeover.`
@@ -3965,6 +4003,7 @@ function missionNextAction(mission, phase, liveController, interruptedController
 async function decideMissionDivergence(selector, flags, decision) {
   const context = await missionContext(selector, flags, { recoverCompleted: true })
   if (!context) return null
+  if (rejectAbandonedMission(context, flags, `${decision}-divergence`)) return null
   const child = typeof flags.child === 'string' ? flags.child.trim() : ''
   const identity = typeof flags.identity === 'string' ? flags.identity.trim() : ''
   if (!/^\d{5}$/.test(child) || !/^[a-f0-9]{64}$/.test(identity)) {
@@ -4290,7 +4329,9 @@ function landingNextAction(mission, landing) {
 }
 
 async function missionActivitySummary(specdevPath, mission) {
-  if (mission.status === 'completed' && mission.activity) return mission.activity
+  if (['completed', 'abandoned'].includes(mission.status) && mission.activity) {
+    return mission.activity
+  }
   return attemptActivitySummary(
     specdevPath,
     { mission: mission.id },
@@ -4379,6 +4420,13 @@ function emit(flags, payload) {
       }
     }
     if (payload.blocker) console.log(`Blocker: ${payload.blocker}`)
+    if (payload.abandonment) {
+      console.log(`Abandonment reason: ${payload.abandonment.reason}`)
+      if (payload.abandonment.terminal_commit) {
+        console.log(`Terminal commit: ${payload.abandonment.terminal_commit}`)
+      }
+      console.log('Delivery: none')
+    }
     if (payload.last_checkpoint)
       console.log(
         `Last checkpoint: ${payload.last_checkpoint.revision || payload.last_checkpoint.created_at || payload.last_checkpoint.base_revision}`
@@ -4403,6 +4451,13 @@ function fail(flags, message) {
   else console.error(message)
   process.exitCode = 1
   return null
+}
+
+function rejectAbandonedMission(context, flags, operation) {
+  const message = abandonedMissionError(context.mission, operation)
+  if (!message) return false
+  fail(flags, message)
+  return true
 }
 
 async function completeEvidenceOnlyObservation(context, child, assignmentPath, result) {

@@ -1,0 +1,10 @@
+{
+  "id": "00064",
+  "name": "00064_add-explicit-mission-abandonment",
+  "path": ".specdev/assignments/00064_add-explicit-mission-abandonment",
+  "description": "Add explicit Mission abandonment",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

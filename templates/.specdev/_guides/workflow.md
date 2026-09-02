@@ -176,6 +176,14 @@ Only `specdev reviewloop` produces a transition-authorizing result envelope.
 Native Codex, Claude, or Cursor review sessions remain advisory and their plain
 Markdown must not be treated as a SpecDev verdict.
 
+An unwanted nonterminal Mission ends with `specdev mission abandon M00001
+--reason="..."`. The first pass is read-only and displays a content-addressed
+plan. Only the matching `--confirm=<plan-digest>` may publish the distinct
+`abandoned` terminal state. Abandonment preserves Mission/base/child branches,
+registered child worktrees, queue, evidence, and partial artifacts; it records
+no delivery, performs no landing or deletion, and makes every mutating Mission
+command refuse the terminal record.
+
 The first standalone Assignment primary implementation review is fresh. The
 Claude adapter may retain one ignored, 24-hour, single-use lease to resume that
 exact provider session for the immediately following repair-verification round.

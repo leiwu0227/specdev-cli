@@ -343,6 +343,12 @@ the contract. Before requesting agreement, show the exact contract path and hash
 plus the command's concise contract-preview bullets. Only after explicit
 agreement run \`specdev mission run M00001 --approve\`.
 
+When the user explicitly abandons an unwanted nonterminal Mission, run
+\`specdev mission abandon M00001 --reason="..."\` to display the read-only plan.
+Show that plan and wait for exact user confirmation before running its displayed
+\`--confirm=<plan-digest>\` command. Abandonment preserves retained work and never
+implies landing, deletion, or permission to revive the terminal Mission.
+
 When starting a new Mission, read
 \`.specdev/project_notes/big_picture.md\` unconditionally and search fresh living
 knowledge once with Mission objective terms during planning. Record only

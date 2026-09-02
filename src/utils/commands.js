@@ -60,7 +60,7 @@ export const COMMANDS = [
     name: 'mission',
     usage: 'mission <subcommand>',
     description:
-      'Create, run, inspect, decide reapproval, checkpoint, adopt, hand off, or land a Mission',
+      'Create, run, inspect, abandon, decide reapproval, checkpoint, adopt, hand off, or land a Mission',
   },
   {
     name: 'focus',

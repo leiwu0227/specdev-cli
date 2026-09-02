@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:mission-abandonment",
+      "revision": "working-tree@82de84bcf6cc463b4d366bb17eb6735b2ba1a9bb",
+      "scope": "read-only planning, exact confirmation, stale-plan and dirt/liveness refusal, retained child branches and worktrees, terminal publication and guards, idempotency, and interruption recovery",
+      "status": "passed",
+      "duration_ms": 13271,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:mission-landing",
+      "revision": "working-tree@82de84bcf6cc463b4d366bb17eb6735b2ba1a9bb",
+      "scope": "existing completed-Mission fast-forward-only landing classification and recovery remain unchanged",
+      "status": "passed",
+      "duration_ms": 3849,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

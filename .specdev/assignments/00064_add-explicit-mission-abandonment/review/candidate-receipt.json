@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "7a63c7e29abdae6daab7b6ebb811be1f4ce78fd8b3267f894df56c6caf72de20",
+  "assignment": {
+    "id": "00064",
+    "folder": "00064_add-explicit-mission-abandonment"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "command",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T05:09:09.475Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00064_add-explicit-mission-abandonment/brainstorm/contract.md",
+    "hash": "902edc72d62294b766057645b5c56847914ca0834b9652eb5c62760ca53be3e8"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`npm run test:mission-abandonment` proves stable read-only planning, exact confirmation, reasoned terminal artifacts/status, retained Git identities, one labelled commit, and post-record runtime compaction.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "The same focused fixture proves pre-mutation refusal for stale plans, wrong branches, dirty main/child worktrees, and live controllers while preserving repository bytes; its plan binds record, queue, checkpoint, focus, branch, and Attemp...",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Interruption fixtures recover from terminal-write and prepared boundaries, exact retry is idempotent, status exposes reason and retained work, all mutating paths refuse abandonment, and `npm run test:mission-landing` preserves completion...",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 2,
+    "items": [
+      {
+        "command": "npm run test:mission-abandonment",
+        "revision": "working-tree@82de84bcf6cc463b4d366bb17eb6735b2ba1a9bb",
+        "scope": "read-only planning, exact confirmation, stale-plan and dirt/liveness refusal, retained child branches and worktrees, terminal publication and guards, idempotency, and interruption recovery",
+        "status": "passed",
+        "duration_ms": 13271,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:mission-landing",
+        "revision": "working-tree@82de84bcf6cc463b4d366bb17eb6735b2ba1a9bb",
+        "scope": "existing completed-Mission fast-forward-only landing classification and recovery remain unchanged",
+        "status": "passed",
+        "duration_ms": 3849,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 2,
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 2,
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:mission-abandonment",
+        "revision": "working-tree@82de84bcf6cc463b4d366bb17eb6735b2ba1a9bb",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:mission-landing",
+        "revision": "working-tree@82de84bcf6cc463b4d366bb17eb6735b2ba1a9bb",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 13,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 8,
+        "paths": [
+          "src/commands/focus.js",
+          "src/commands/help.js",
+          "src/commands/init.js",
+          "src/commands/mission-abandon.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/artifact-retention.js",
+          "src/utils/commands.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 3,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md",
+          "templates/.specdev/_index.md"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-mission-abandonment.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "External Git processes can always race a preflight. The command minimizes that",
+      "window by rebuilding the complete plan immediately before its first durable write,",
+      "then pins HEAD and the exact terminal path manifest through publication; any",
+      "observed mismatch fails closed and retains the recovery journal."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00064_add-explicit-mission-abandonment/brainstorm/contract.md",
+      "exists": true,
+      "digest": "902edc72d62294b766057645b5c56847914ca0834b9652eb5c62760ca53be3e8"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00064_add-explicit-mission-abandonment/design/plan.md",
+      "exists": true,
+      "digest": "456b930eab40daa21d8f02e84a0d4d9c80589172be68b5a2727e0a4b5a8cffca"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00064_add-explicit-mission-abandonment/implementation/progress.json",
+      "exists": true,
+      "digest": "9680bc24837b9a166d687012977178f5b78740f8b78b38f2ab2bb0d448e1f96e"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00064_add-explicit-mission-abandonment/outcome.md",
+      "exists": true,
+      "digest": "a54aeee17e9e19da08c04ce1d6a7e597d057d6e78d784ed87adff8ea7cca5482"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}
