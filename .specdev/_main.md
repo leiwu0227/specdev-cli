@@ -173,13 +173,18 @@ a scheduler, but only one may be active in a worktree.
   ownership; dirty product paths still require inspection, a separate
   checkpoint, or explicit adoption. Assignment enforces the same product-tree
   decision immediately before implementation.
-- Adhoc may temporarily coexist with a focused standalone Assignment only at a
-  quiescent approved pre-implementation boundary. The Assignment identity,
-  run, focus, artifacts, and Attempts stay outside Adhoc ownership; established
-  implementation boundaries, live or ambiguous Attempts, dirty product paths,
-  and uncertain ownership block before mutation. Finish or cancel leaves the
-  same Assignment resumable. Shelving is always an explicit terminal user
-  choice, never an implicit Adhoc prerequisite.
+- Adhoc may temporarily coexist with a focused standalone Assignment or Mission
+  while its contract is forming or awaiting approval, and with an Assignment at
+  a later quiescent pre-implementation boundary. The focused identity, run,
+  contracts, approvals, children, artifacts, and Attempts stay outside Adhoc
+  ownership; established execution or Git boundaries, unsupported positions,
+  live or ambiguous Attempts, dirty product paths, pending revalidation, and
+  uncertain ownership block before mutation. Focused advancement remains
+  blocked throughout the detour. Finish or cancel creates a durable obligation
+  to recheck affected assumptions and run `specdev adhoc revalidate
+--contract=unchanged --outcome="<summary>"` before the next approval,
+  execution, or Git boundary. Shelving and abandonment remain explicit terminal
+  user choices, never implicit Adhoc prerequisites.
 - SpecDev-owned delivery commits carry `SpecDev-*` trailers. Adhoc and
   standalone Assignment create one final delivery commit; Mission checkpoints,
   child deliveries, integrations, and completion identify their commit type.

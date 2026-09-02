@@ -17,14 +17,21 @@ worktree unless `--adopt-dirty` explicitly adopts the exact expanded eligible
 path manifest for all existing changes.
 
 “Does not want an Assignment” means the bounded detour should not become a new
-Assignment; it does not terminate an unrelated active one. A focused standalone
-Assignment may be preserved through Adhoc only while it is quiescent at the
-approved pre-implementation boundary. Its identity, focus, run, artifacts, and
-Attempt records remain outside Adhoc ownership. An implementation Git boundary,
-live or ambiguous worker/reviewer Attempt, dirty product work, or uncertain
-ownership blocks before state creation, and `--adopt-dirty` cannot absorb the
-conflict. Finish and cancel retain the same resumable Assignment. Shelving is an
-explicit terminal user choice, never an automatic pause or prerequisite.
+Assignment; it does not terminate unrelated focused work. A standalone
+Assignment or Mission may be preserved while its contract is forming or awaiting
+approval, and an Assignment may also coexist at a quiescent approved
+pre-implementation boundary. Its identity, focus, run, contracts, approvals,
+children, artifacts, and Attempts remain outside Adhoc ownership. Established
+execution/Git boundaries, unsupported positions, live or ambiguous Attempts,
+dirty product work, pending revalidation, or uncertain ownership block before
+state creation, and `--adopt-dirty` cannot absorb the conflict.
+
+Focused advancement remains blocked during the detour. Finish and cancel retain
+the same focused owner and record a post-detour obligation. Recheck affected
+contract assumptions, then run `specdev adhoc revalidate --contract=unchanged
+--outcome="<summary>"` before the next approval, execution, or Git boundary.
+Reporting `--contract=changed` keeps that gate closed. Shelving and abandonment
+remain explicit terminal user choices.
 
 Selecting a bounded file write does not itself select Adhoc. An explicitly
 requested coordination or handoff note in another repository is an auxiliary
@@ -44,8 +51,10 @@ Examples make the routing boundary concrete:
 
 Callable-owned paths refuse the whole adoption rather than being filtered.
 `adhoc finish` requires an unchanged HEAD, verifies the manifest, writes one
-small commit-derived receipt, and creates one delivery commit. `adhoc cancel` removes only the
-ignored active marker and leaves source changes untouched. Receipts are not
+small commit-derived receipt, and creates one delivery commit. `adhoc cancel`
+removes only the ignored active marker and leaves source changes untouched;
+when focused work coexists, both terminal paths leave its revalidation record.
+Receipts are not
 knowledge-index sources; `knowledge/workflow/adhoc-history.md` explains the
 explicit receipt and Git search path.
 
