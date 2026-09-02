@@ -60,7 +60,7 @@ Only one standalone Assignment or Mission owns the focused scheduler. Discussion
 
 Direct and Roadmap have no lifecycle that replaces the Assignment identity. Any changes they leave in the worktree remain under their own authority and must be resolved before the Assignment advances across a Git boundary.
 
-A mutating Adhoc detour follows the narrower boundary defined by the Adhoc lane: it may coexist only at the quiescent approved pre-implementation boundary, and the Assignment cannot advance while Adhoc owns repository mutation.
+A mutating Adhoc detour follows the boundary defined by the Adhoc lane. It may coexist while the Assignment is forming or reviewing its contract and at other quiescent pre-execution boundaries without shelving or replacing the Assignment. The Assignment retains its focused identity but cannot cross an approval, execution, or Git boundary while Adhoc owns repository mutation. Before resuming, it revalidates contract assumptions affected by the changed product state.
 
 ## Child Designs
 
