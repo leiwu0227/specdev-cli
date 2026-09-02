@@ -11,6 +11,7 @@ import {
   findCommitByTrailer,
   firstParent,
   gitChangedPathsAtCommit,
+  gitChangedPathsBetween,
   gitCommitSubject,
   gitStatusEntries,
   gitStatusPaths,
@@ -20,9 +21,13 @@ import {
 } from '../utils/git-delivery.js'
 import { relativeToRepo } from '../utils/assignment-vnext.js'
 import {
-  assignmentOwnedPathDetails,
-  resolveAdhocAssignmentCoexistence,
-} from '../utils/adhoc-assignment.js'
+  completeFocusedRevalidation,
+  focusedOwnedPathDetails,
+  readFocusedRevalidation,
+  reportFocusedContractChange,
+  requireFocusedRevalidation,
+  resolveAdhocFocusedCoexistence,
+} from '../utils/adhoc-focused.js'
 
 export async function adhocCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -36,10 +41,11 @@ export async function adhocCommand(positionalArgs = [], flags = {}) {
     if (subcommand === 'finish') return finishAdhoc(targetDir, specdevPath, flags)
     if (subcommand === 'status') return statusAdhoc(targetDir, specdevPath, flags)
     if (subcommand === 'show') return showAdhoc(targetDir, specdevPath, rest[0], flags)
-    if (subcommand === 'cancel') return cancelAdhoc(specdevPath, flags)
+    if (subcommand === 'cancel') return cancelAdhoc(targetDir, specdevPath, flags)
+    if (subcommand === 'revalidate') return revalidateAdhoc(targetDir, specdevPath, flags)
     return fail(
       flags,
-      'Usage: specdev adhoc start "<scope>" [--title="..."] [--adopt-dirty] | verify --label="..." [--annotation="..."] -- <command> | finish --outcome="..." [--verification="..."] | status | show <ID> | cancel'
+      'Usage: specdev adhoc start "<scope>" [--title="..."] [--adopt-dirty] | verify --label="..." [--annotation="..."] -- <command> | finish --outcome="..." [--verification="..."] | status | show <ID> | cancel | revalidate --contract=unchanged --outcome="..."'
     )
   } catch (error) {
     return fail(flags, error.message)
@@ -60,41 +66,45 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
     })
   }
 
-  const coexistence = await resolveAdhocAssignmentCoexistence(specdevPath)
+  const coexistence = await resolveAdhocFocusedCoexistence(specdevPath)
   if (coexistence.status === 'blocked') return blocked(flags, coexistence)
 
   const startingGitCommitHash = await requireGitHead(targetDir)
   const branch = await currentGitBranch(targetDir)
   const allEntries = await gitStatusEntries(targetDir)
   const allPaths = allEntries.map((entry) => entry.path)
-  const assignmentCoexistence = coexistence.status === 'safe' ? coexistence.assignment : null
+  const focusedCoexistence = coexistence.status === 'safe' ? coexistence.focused : null
   const rejectedPaths = flags['adopt-dirty']
     ? allPaths.flatMap((path) => {
-        if (assignmentOwnedPathDetails(path, assignmentCoexistence)) return []
+        if (focusedOwnedPathDetails(path, focusedCoexistence)) return []
         const rejection = concurrentCallablePathDetails(path)
         return rejection ? [rejection] : []
       })
     : []
   const decision = classifyWorktree(allPaths, {
     adoptedPaths:
-      flags['adopt-dirty'] && rejectedPaths.length === 0 && !assignmentCoexistence ? allPaths : [],
+      flags['adopt-dirty'] && rejectedPaths.length === 0 && !focusedCoexistence ? allPaths : [],
     phase: 'start',
-    assignmentCoexistence,
+    focusedCoexistence,
   })
-  if (assignmentCoexistence && decision.product_dirty.count > 0) {
+  if (focusedCoexistence && decision.product_dirty.count > 0) {
+    const focusedLabel = focusedOwnerLabel(focusedCoexistence)
     return blocked(flags, {
-      state: 'assignment_dirty_product_conflict',
-      assignment: assignmentCoexistence,
+      state:
+        focusedCoexistence.kind === 'mission'
+          ? 'mission_dirty_product_conflict'
+          : 'assignment_dirty_product_conflict',
+      focused: focusedCoexistence,
+      assignment: focusedCoexistence.kind === 'assignment' ? focusedCoexistence : null,
+      mission: focusedCoexistence.kind === 'mission' ? focusedCoexistence : null,
       worktree: { ...decision, decision: 'blocked' },
       conflicts: decision.product_dirty.paths.map((path) => ({
         path,
-        owner: `Assignment ${assignmentCoexistence.id} or unresolved repository work`,
+        owner: `${focusedLabel} or unresolved repository work`,
         reason: 'dirty_product_ownership_ambiguous',
-        next_action:
-          'Inspect and separately resolve this path before starting Adhoc; --adopt-dirty cannot absorb work beside an active Assignment.',
+        next_action: `Inspect and separately resolve this path before starting Adhoc; --adopt-dirty cannot absorb work beside an active ${focusedCoexistence.kind === 'mission' ? 'Mission' : 'Assignment'}.`,
       })),
-      next_action:
-        'Resolve or separately checkpoint every dirty product path, then retry. The Assignment remains active and was not shelved.',
+      next_action: `Resolve or separately checkpoint every dirty product path, then retry. The ${focusedCoexistence.kind === 'mission' ? 'Mission' : 'Assignment'} remains active and was not terminated.`,
     })
   }
   if (decision.product_dirty.count > 0 && !flags['adopt-dirty']) {
@@ -139,7 +149,7 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
   const id = createAdhocId(startedAt)
   const receiptRelative = `.specdev/adhoc/${startedAt.slice(0, 7)}/${id}_${slugify(scope)}.md`
   const state = {
-    version: 2,
+    version: 3,
     id,
     scope,
     title: stringFlag(flags.title) || null,
@@ -153,11 +163,11 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
       starting_revision: startingGitCommitHash,
       paths: flags['adopt-dirty']
         ? allEntries
-            .filter(({ path }) => !assignmentOwnedPathDetails(path, assignmentCoexistence))
+            .filter(({ path }) => !focusedOwnedPathDetails(path, focusedCoexistence))
             .map(({ path, status, role }) => ({ path, status, role }))
         : [],
     },
-    assignment_coexistence: assignmentCoexistence,
+    ...coexistenceStateFields(focusedCoexistence),
     starting_worktree_decision: { ...decision, decision: 'allowed' },
     receipt: receiptRelative,
   }
@@ -172,7 +182,7 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
     starting_worktree: state.starting_worktree,
     adopted_path_count: state.adopted_path_count,
     adoption_manifest: state.adoption_manifest,
-    assignment_coexistence: state.assignment_coexistence,
+    ...coexistencePayloadFields(focusedCoexistence),
     worktree: state.starting_worktree_decision,
     next_action:
       'Make the bounded change directly. Optionally capture commands with adhoc verify, then finish with an outcome and passing evidence or --verification.',
@@ -247,8 +257,28 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
   if (recoveredCommit) {
     const verification = await verifyDeliveryCommit(targetDir, active, recoveredCommit)
     if (!verification.valid) return blockedDelivery(flags, active, verification, true)
+    const focused = activeFocusedCoexistence(active)
+    const revalidation = focused
+      ? await requireFocusedRevalidation(specdevPath, focused, {
+          adhoc: active.id,
+          disposition: 'completed',
+          starting_revision: active.starting_git_commit_hash,
+          ending_revision: recoveredCommit,
+          changed_paths: verification.path_facts.committed.filter(
+            (path) => path !== active.receipt
+          ),
+        })
+      : null
     await clearActive(specdevPath)
-    return completedPayload(targetDir, active, recoveredCommit, flags, true, verification)
+    return completedPayload(
+      targetDir,
+      active,
+      recoveredCommit,
+      flags,
+      true,
+      verification,
+      revalidation
+    )
   }
 
   const currentHead = await requireGitHead(targetDir)
@@ -385,6 +415,18 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
   const deliveryVerification = await verifyDeliveryCommit(targetDir, active, endingGitCommitHash)
   if (!deliveryVerification.valid)
     return blockedDelivery(flags, active, deliveryVerification, false)
+  const focused = activeFocusedCoexistence(active)
+  const revalidation = focused
+    ? await requireFocusedRevalidation(specdevPath, focused, {
+        adhoc: active.id,
+        disposition: 'completed',
+        starting_revision: active.starting_git_commit_hash,
+        ending_revision: endingGitCommitHash,
+        changed_paths: deliveryVerification.path_facts.committed.filter(
+          (path) => path !== active.receipt
+        ),
+      })
+    : null
   await clearActive(specdevPath)
   return completedPayload(
     targetDir,
@@ -392,7 +434,8 @@ async function finishAdhoc(targetDir, specdevPath, flags) {
     endingGitCommitHash,
     flags,
     false,
-    deliveryVerification
+    deliveryVerification,
+    revalidation
   )
 }
 
@@ -409,7 +452,7 @@ async function statusAdhoc(targetDir, specdevPath, flags) {
     scope: active.scope,
     starting_worktree: active.starting_worktree,
     adoption_manifest: active.adoption_manifest || null,
-    assignment_coexistence: active.assignment_coexistence || null,
+    ...coexistencePayloadFields(activeFocusedCoexistence(active)),
     changed_paths: summarizeGitPaths(await gitStatusPaths(targetDir)),
   })
 }
@@ -436,9 +479,26 @@ async function showAdhoc(targetDir, specdevPath, id, flags) {
   })
 }
 
-async function cancelAdhoc(specdevPath, flags) {
+async function cancelAdhoc(targetDir, specdevPath, flags) {
   const active = await readActive(specdevPath)
   if (!active) return emit(flags, { command: 'adhoc cancel', version: 1, status: 'idle' })
+  const focused = activeFocusedCoexistence(active)
+  const currentRevision = await requireGitHead(targetDir)
+  const changedPaths = [
+    ...(currentRevision === active.starting_git_commit_hash
+      ? []
+      : await gitChangedPathsBetween(targetDir, active.starting_git_commit_hash, currentRevision)),
+    ...(await gitStatusPaths(targetDir)),
+  ].filter((path) => !isProtectedAdhocPath(path, active))
+  const revalidation = focused
+    ? await requireFocusedRevalidation(specdevPath, focused, {
+        adhoc: active.id,
+        disposition: 'cancelled',
+        starting_revision: active.starting_git_commit_hash,
+        ending_revision: currentRevision,
+        changed_paths: changedPaths,
+      })
+    : null
   await clearActive(specdevPath)
   return emit(flags, {
     command: 'adhoc cancel',
@@ -446,7 +506,78 @@ async function cancelAdhoc(specdevPath, flags) {
     status: 'cancelled',
     id: active.id,
     source_changes: 'left_untouched',
-    assignment_coexistence: active.assignment_coexistence || null,
+    ...coexistencePayloadFields(focused),
+    revalidation,
+    next_action: revalidation ? revalidationNextAction() : null,
+  })
+}
+
+async function revalidateAdhoc(targetDir, specdevPath, flags) {
+  if (await readActive(specdevPath)) {
+    return fail(flags, 'Finish or cancel the active Adhoc before revalidating focused work')
+  }
+  const pending = await readFocusedRevalidation(specdevPath)
+  if (!pending) {
+    return emit(flags, {
+      command: 'adhoc revalidate',
+      version: 1,
+      status: 'idle',
+      next_action: 'No focused post-Adhoc revalidation is required.',
+    })
+  }
+  const assessment = stringFlag(flags.contract)
+  const outcome = stringFlag(flags.outcome)
+  if (assessment === 'changed') {
+    if (!outcome) {
+      return fail(
+        flags,
+        'Reporting a changed contract requires --outcome="<which assumptions or authority changed>"'
+      )
+    }
+    const revision = await requireGitHead(targetDir)
+    const changedPaths = (await gitStatusPaths(targetDir)).filter(
+      (path) =>
+        !focusedOwnedPathDetails(path, pending.owner) && !concurrentCallablePathDetails(path)
+    )
+    const reported = await reportFocusedContractChange(specdevPath, {
+      outcome,
+      revision: changedPaths.length > 0 ? `working-tree@${revision}` : revision,
+      changedPaths,
+    })
+    return blocked(flags, {
+      state: 'focused_contract_changed',
+      focused: reported.owner,
+      revalidation: reported.obligation,
+      contract_change_report: reported.report,
+      next_action:
+        pending.owner.kind === 'mission'
+          ? 'Keep the current Mission blocked; revise it before approval, or create a new Mission when previously approved authority no longer applies.'
+          : 'Keep the current Assignment blocked; revise it before approval, or create a new Assignment when previously approved authority no longer applies.',
+    })
+  }
+  if (assessment !== 'unchanged' || !outcome) {
+    return fail(
+      flags,
+      'Revalidation requires --contract=unchanged and --outcome="<how affected assumptions were checked>"; use --contract=changed to report material change without clearing the gate'
+    )
+  }
+  const revision = await requireGitHead(targetDir)
+  const coexistence = pending.owner
+  const changedPaths = (await gitStatusPaths(targetDir)).filter(
+    (path) => !focusedOwnedPathDetails(path, coexistence) && !concurrentCallablePathDetails(path)
+  )
+  const completed = await completeFocusedRevalidation(specdevPath, {
+    outcome,
+    revision: changedPaths.length > 0 ? `working-tree@${revision}` : revision,
+    changedPaths,
+  })
+  return emit(flags, {
+    command: 'adhoc revalidate',
+    version: 1,
+    status: 'revalidated',
+    focused: completed.owner,
+    revalidation: completed.obligation,
+    next_action: `Resume ${focusedOwnerLabel(completed.owner)} with specdev next --json.`,
   })
 }
 
@@ -456,7 +587,8 @@ async function completedPayload(
   endingGitCommitHash,
   flags,
   recovered,
-  deliveryVerification = null
+  deliveryVerification = null,
+  revalidation = null
 ) {
   const verification =
     deliveryVerification || (await verifyDeliveryCommit(targetDir, active, endingGitCommitHash))
@@ -465,7 +597,7 @@ async function completedPayload(
   const remainingPaths = verification.remaining_paths
   const worktree = classifyWorktree(remainingPaths, {
     phase: 'finish',
-    assignmentCoexistence: active.assignment_coexistence,
+    focusedCoexistence: activeFocusedCoexistence(active),
   })
   const verificationAttempts = active.verification_attempts || []
   return emit(flags, {
@@ -493,7 +625,9 @@ async function completedPayload(
     remaining_worktree: worktree,
     product_worktree_clean: worktree.product_dirty.count === 0,
     recovered,
-    assignment_coexistence: active.assignment_coexistence || null,
+    ...coexistencePayloadFields(activeFocusedCoexistence(active)),
+    revalidation,
+    next_action: revalidation ? revalidationNextAction() : null,
   })
 }
 
@@ -703,7 +837,11 @@ function receiptMarkdown(active, pathFacts) {
     .split('\n')
     .map((line) => `    ${line}`)
     .join('\n')
-  return `# Adhoc ${active.id}\n\n- Scope: ${active.scope}\n- Title: ${active.title || 'Derived from full scope'}\n- Started: ${active.started_at}\n- Completed: ${active.completed_at}\n- Starting working tree: ${starting}\n\n## Outcome\n\n${active.outcome}\n\n## Delivery path facts\n\n### Requested adopted paths\n\n${formatReceiptPaths(pathFacts.requested)}\n\n### Committed paths\n\n${formatReceiptPaths(pathFacts.committed)}\n\n### Rejected paths\n\n${formatReceiptRejections(pathFacts.rejected)}\n\n### Remaining owned paths\n\n${formatReceiptPaths(pathFacts.remaining)}\n\n## Verification summary\n\n${manual}\n\n## Verification attempt history\n\n${historyLines}\n\n## Current acceptance evidence\n\n${evidenceLines}\n\n## Structured verification\n\n${structured}\n`
+  const focused = activeFocusedCoexistence(active)
+  const coexistence = focused
+    ? `${focusedOwnerLabel(focused)} remained the focused owner at run ${focused.run_id}. Its workflow paths were excluded from this delivery. Post-detour contract revalidation is required before it advances.`
+    : 'No focused Assignment or Mission coexistence was recorded.'
+  return `# Adhoc ${active.id}\n\n- Scope: ${active.scope}\n- Title: ${active.title || 'Derived from full scope'}\n- Started: ${active.started_at}\n- Completed: ${active.completed_at}\n- Starting working tree: ${starting}\n\n## Outcome\n\n${active.outcome}\n\n## Focused workflow coexistence\n\n${coexistence}\n\n## Delivery path facts\n\n### Requested adopted paths\n\n${formatReceiptPaths(pathFacts.requested)}\n\n### Committed paths\n\n${formatReceiptPaths(pathFacts.committed)}\n\n### Rejected paths\n\n${formatReceiptRejections(pathFacts.rejected)}\n\n### Remaining owned paths\n\n${formatReceiptPaths(pathFacts.remaining)}\n\n## Verification summary\n\n${manual}\n\n## Verification attempt history\n\n${historyLines}\n\n## Current acceptance evidence\n\n${evidenceLines}\n\n## Structured verification\n\n${structured}\n`
 }
 
 function formatReceiptPaths(paths = []) {
@@ -776,12 +914,12 @@ function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\\''")}'`
 }
 
-function classifyWorktree(paths, { adoptedPaths = [], phase, assignmentCoexistence = null } = {}) {
+function classifyWorktree(paths, { adoptedPaths = [], phase, focusedCoexistence = null } = {}) {
   const workflowPaths = paths.filter((path) =>
-    isProtectedAdhocPath(path, { assignment_coexistence: assignmentCoexistence })
+    isProtectedAdhocPath(path, { focused_coexistence: focusedCoexistence })
   )
   const productPaths = paths.filter(
-    (path) => !isProtectedAdhocPath(path, { assignment_coexistence: assignmentCoexistence })
+    (path) => !isProtectedAdhocPath(path, { focused_coexistence: focusedCoexistence })
   )
   return {
     version: 1,
@@ -789,8 +927,8 @@ function classifyWorktree(paths, { adoptedPaths = [], phase, assignmentCoexisten
     product_dirty: pathClassification(productPaths),
     preserved_workflow_state: pathClassification(workflowPaths),
     adopted: pathClassification(adoptedPaths),
-    applied_policy: assignmentCoexistence
-      ? 'preserve_active_assignment_and_concurrent_callable_state'
+    applied_policy: focusedCoexistence
+      ? 'preserve_active_focused_workflow_and_concurrent_callable_state'
       : 'preserve_concurrent_discussion_and_test_audit_state',
     decision: productPaths.length > 0 && adoptedPaths.length === 0 ? 'blocked' : 'allowed',
   }
@@ -802,9 +940,44 @@ function isProtectedAdhocPath(path, active = null) {
 
 function protectedAdhocPathDetails(path, active = null) {
   return (
-    assignmentOwnedPathDetails(path, active?.assignment_coexistence) ||
+    focusedOwnedPathDetails(path, activeFocusedCoexistence(active)) ||
     concurrentCallablePathDetails(path)
   )
+}
+
+function activeFocusedCoexistence(active) {
+  if (active?.focused_coexistence) return active.focused_coexistence
+  if (active?.assignment_coexistence) {
+    return { kind: 'assignment', ...active.assignment_coexistence }
+  }
+  if (active?.mission_coexistence) return { kind: 'mission', ...active.mission_coexistence }
+  return null
+}
+
+function coexistenceStateFields(focused) {
+  if (!focused) return {}
+  return {
+    focused_coexistence: focused,
+    ...(focused.kind === 'mission'
+      ? { mission_coexistence: focused }
+      : { assignment_coexistence: focused }),
+  }
+}
+
+function coexistencePayloadFields(focused) {
+  return {
+    focused_coexistence: focused || null,
+    assignment_coexistence: focused?.kind === 'assignment' ? focused : null,
+    mission_coexistence: focused?.kind === 'mission' ? focused : null,
+  }
+}
+
+function focusedOwnerLabel(focused) {
+  return `${focused?.kind === 'mission' ? 'Mission' : 'Assignment'} ${focused?.id || '(unknown)'}`
+}
+
+function revalidationNextAction() {
+  return 'Recheck affected contract assumptions, then run specdev adhoc revalidate --contract=unchanged --outcome="<summary>".'
 }
 
 function pathClassification(paths) {
@@ -905,7 +1078,7 @@ function emit(flags, payload) {
     if (payload.title) console.log(`Title: ${payload.title}`)
     if (payload.worktree) printWorktree(payload.worktree)
     if (payload.adoption_manifest) printAdoptionManifest(payload.adoption_manifest)
-    if (payload.assignment_coexistence) printAssignmentCoexistence(payload.assignment_coexistence)
+    if (payload.focused_coexistence) printFocusedCoexistence(payload.focused_coexistence)
     if (payload.start_worktree) printWorktree(payload.start_worktree, 'Starting')
     if (payload.receipt) console.log(`Receipt: ${payload.receipt}`)
     if (payload.delivery_commit) console.log(`Delivery commit: ${payload.delivery_commit}`)
@@ -946,7 +1119,7 @@ function blocked(flags, details) {
         console.error(`  - +${details.working_tree.omitted} more path(s)`)
     }
     if (details.worktree) printWorktree(details.worktree, 'Worktree', console.error)
-    if (details.assignment) printAssignmentCoexistence(details.assignment, console.error)
+    if (details.focused) printFocusedCoexistence(details.focused, console.error)
     if (details.conflicts?.length) {
       console.error('Conflicts:')
       for (const conflict of details.conflicts) {
@@ -1000,9 +1173,10 @@ function printAdoptionManifest(manifest, write = console.log) {
   if (manifest.paths.length > 12) write(`  - +${manifest.paths.length - 12} more path(s)`)
 }
 
-function printAssignmentCoexistence(assignment, write = console.log) {
+function printFocusedCoexistence(focused, write = console.log) {
+  const kind = focused.kind === 'mission' ? 'Mission' : 'Assignment'
   write(
-    `Preserved Assignment: ${assignment.id} (${assignment.lifecycle || 'active'}, run ${assignment.run_id})`
+    `Preserved ${kind}: ${focused.id} (${focused.lifecycle || 'active'}, run ${focused.run_id})`
   )
 }
 

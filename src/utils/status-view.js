@@ -5,6 +5,7 @@ import { readCurrentFocus } from './current.js'
 import { resolveMissionSelector, readMission } from './mission.js'
 import { attemptLiveness, listAttemptRecords } from './process-record.js'
 import { assignmentExecutionProjection } from './assignment-execution.js'
+import { readFocusedRevalidation } from './adhoc-focused.js'
 
 export async function buildStatusViews({ targetDir, specdevPath, history, assignment = null }) {
   const focus = await readCurrentFocus(specdevPath)
@@ -14,6 +15,7 @@ export async function buildStatusViews({ targetDir, specdevPath, history, assign
   const runningAttempt = [...attempts].reverse().find((attempt) => attempt.status === 'running')
   const liveness = runningAttempt ? await attemptLiveness(specdevPath, runningAttempt.id) : null
   const lifecycle = await focusedLifecycle(specdevPath, focus, assignment, history)
+  const revalidation = await readFocusedRevalidation(specdevPath)
   const dirtyPaths = await gitStatusPaths(targetDir)
   const assignmentHistory = await terminalAssignmentHistory(specdevPath)
   const enrichedHistory =
@@ -27,6 +29,7 @@ export async function buildStatusViews({ targetDir, specdevPath, history, assign
     runningAttempt,
     liveness,
     dirtyPaths,
+    revalidation,
   })
 }
 
@@ -39,6 +42,7 @@ export function projectStatusViews({
   runningAttempt = null,
   liveness = null,
   dirtyPaths = [],
+  revalidation = null,
 }) {
   const latestAttempt = attempts.at(-1) || null
   const interrupted = runningAttempt && liveness?.state !== 'live_local'
@@ -48,14 +52,19 @@ export function projectStatusViews({
     history.phase === 'implementation'
       ? latestAttempt
       : null
-  const effectiveLifecycle = interrupted
-    ? 'interrupted'
-    : terminalBlock
-      ? terminalBlock.status === 'failed'
-        ? 'blocked'
-        : terminalBlock.status
-      : lifecycle || lifecycleFromHistory(history)
+  const effectiveLifecycle = revalidation
+    ? 'blocked'
+    : interrupted
+      ? 'interrupted'
+      : terminalBlock
+        ? terminalBlock.status === 'failed'
+          ? 'blocked'
+          : terminalBlock.status
+        : lifecycle || lifecycleFromHistory(history)
   const blocker =
+    (revalidation
+      ? `${capitalize(revalidation.owner.kind)} ${revalidation.owner.id} requires post-Adhoc contract revalidation.`
+      : null) ||
     history.problem ||
     assignment?.problem ||
     (interrupted
@@ -100,7 +109,12 @@ export function projectStatusViews({
             },
           }
         : {}),
-    next_action: history.next_action || normalizeNextAction(assignment?.next_action),
+    next_action: revalidation
+      ? {
+          command_line: 'specdev adhoc revalidate --contract=unchanged --outcome="<summary>"',
+        }
+      : history.next_action || normalizeNextAction(assignment?.next_action),
+    ...(revalidation ? { revalidation: revalidation.obligation } : {}),
     dirty_paths: summarizeGitPaths(dirtyPaths),
     dirty_owners: dirtyPathOwners(dirtyPaths),
     ...(!focus && history.assignment_history?.[0]

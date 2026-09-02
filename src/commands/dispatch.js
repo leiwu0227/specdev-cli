@@ -25,6 +25,7 @@ import { missionCommand } from './mission.js'
 import { testAuditCommand } from './test-audit.js'
 import { adhocCommand } from './adhoc.js'
 import { resolveTargetDir } from '../utils/command-context.js'
+import { readFocusedRevalidation } from '../utils/adhoc-focused.js'
 
 const ASSIGNMENT_ADVANCING_COMMANDS = new Set([
   'start',
@@ -76,7 +77,8 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     helpCommand(flags)
     return
   }
-  if (await blockAssignmentAdvanceDuringAdhoc(command, flags)) return
+  if (await blockFocusedAdvanceDuringAdhoc(command, flags)) return
+  if (await blockFocusedAdvanceForRevalidation(command, positionalArgs, flags)) return
   if (['do', 'decide', 'step', 'action', 'cancel'].includes(command)) {
     await engineCommand(command, positionalArgs, flags)
     return
@@ -123,29 +125,69 @@ export async function dispatchCommand(command, positionalArgs, flags) {
   await handler({ positionalArgs, flags })
 }
 
-async function blockAssignmentAdvanceDuringAdhoc(command, flags) {
+async function blockFocusedAdvanceDuringAdhoc(command, flags) {
   if (!ASSIGNMENT_ADVANCING_COMMANDS.has(command)) return false
   const activePath = join(resolveTargetDir(flags), '.specdev', 'cache', 'adhoc.json')
   if (!(await fse.pathExists(activePath))) return false
   const active = await fse.readJson(activePath).catch(() => null)
-  const assignment = active?.assignment_coexistence || null
+  const focused =
+    active?.focused_coexistence ||
+    (active?.assignment_coexistence
+      ? { kind: 'assignment', ...active.assignment_coexistence }
+      : null)
   const payload = {
     command,
     version: 1,
     status: 'blocked',
     state: 'adhoc_detour_active',
     adhoc: active ? { id: active.id, scope: active.scope } : null,
-    assignment,
+    focused,
+    assignment: focused?.kind === 'assignment' ? focused : null,
+    mission: focused?.kind === 'mission' ? focused : null,
     next_action:
-      'Finish or cancel the active Adhoc before advancing, reviewing, replacing, shelving, or changing Assignment focus.',
+      'Finish or cancel the active Adhoc before approving, reviewing, executing, replacing, terminating, or changing focused workflow state.',
   }
   if (flags.json) console.log(JSON.stringify(payload, null, 2))
   else {
     const label = active?.id || '(unreadable active state)'
-    const assignmentLabel = assignment ? ` preserves Assignment ${assignment.id}` : ''
-    console.error(`Command blocked while Adhoc ${label}${assignmentLabel}.`)
+    const focusedLabel = focused
+      ? ` preserves ${focused.kind === 'mission' ? 'Mission' : 'Assignment'} ${focused.id}`
+      : ''
+    console.error(`Command blocked while Adhoc ${label}${focusedLabel}.`)
     console.error(`Next: ${payload.next_action}`)
   }
   process.exitCode = 1
   return true
+}
+
+async function blockFocusedAdvanceForRevalidation(command, positionalArgs, flags) {
+  if (!ASSIGNMENT_ADVANCING_COMMANDS.has(command)) return false
+  if (isExplicitTerminalResolution(command, positionalArgs)) return false
+  const targetDir = resolveTargetDir(flags)
+  const pending = await readFocusedRevalidation(join(targetDir, '.specdev'))
+  if (!pending) return false
+  const payload = {
+    command,
+    version: 1,
+    status: 'blocked',
+    state: 'focused_revalidation_required',
+    focused: pending.owner,
+    revalidation: pending.obligation,
+    next_action:
+      'Recheck affected contract assumptions, then run specdev adhoc revalidate --contract=unchanged --outcome="<summary>".',
+  }
+  if (flags.json) console.log(JSON.stringify(payload, null, 2))
+  else {
+    const kind = pending.owner.kind === 'mission' ? 'Mission' : 'Assignment'
+    console.error(`${kind} ${pending.owner.id} is blocked on post-Adhoc revalidation.`)
+    console.error(`Next: ${payload.next_action}`)
+  }
+  process.exitCode = 1
+  return true
+}
+
+function isExplicitTerminalResolution(command, positionalArgs) {
+  if (command === 'cancel') return true
+  if (command === 'assignment' && ['shelf', 'close'].includes(positionalArgs[0])) return true
+  return command === 'mission' && positionalArgs[0] === 'abandon'
 }

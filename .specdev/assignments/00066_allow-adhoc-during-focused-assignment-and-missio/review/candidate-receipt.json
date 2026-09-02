@@ -1,0 +1,307 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "fa9c72052b93ad09eed7eb3f75e0916b231de2f7727ca410a84b4934d43f479d",
+  "assignment": {
+    "id": "00066",
+    "folder": "00066_allow-adhoc-during-focused-assignment-and-missio"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T07:00:45.418Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/brainstorm/contract.md",
+    "hash": "29c7d4c7dc3d13a37787ccae5839d5f1386424ef17ae2e474fb50b9b03d8b187"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`npm run test:engine-integration` passed Assignment brainstorm/approval/design and Mission brainstorm/approval coexistence, preserved-owner/path, and safe-position fixtures.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "The same engine integration run passed active-command guards, exact finish/cancel behavior, durable changed-path/revision obligations, blocked status projection, unchanged-contract revalidation, and changed-contract reporting.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Engine integration passed live-Attempt, established-boundary, unsupported-position, and ambiguous-state failures; `node ./tests/test-init-platform.js`, `node ./tests/test-status-visibility.js`, and `npm run test:engine-packaging` all pas...",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 7,
+    "items": [
+      {
+        "command": "node ./tests/test-status-visibility.js",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "scope": "AC-2 and AC-3 focused status projection regression coverage",
+        "status": "passed",
+        "duration_ms": 16,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:engine-packaging",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "scope": "AC-3 packaged engine and command-surface regression coverage",
+        "status": "passed",
+        "duration_ms": 7206,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node ./tests/test-init-platform.js",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "scope": "AC-3 generated and tracked Adhoc guidance consistency after correcting the case-sensitive assertion",
+        "status": "passed",
+        "duration_ms": 2353,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 2,
+        "superseded": 1,
+        "history_counts": {
+          "passed": 1,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:engine-integration",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "scope": "AC-1, AC-2, and AC-3 focused Assignment/Mission coexistence, transactional delivery, revalidation, and unsafe-boundary coverage after fixture repairs",
+        "status": "passed",
+        "duration_ms": 24469,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 1,
+          "failed": 2,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 3,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 4,
+        "failed": 3,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 7,
+      "counts": {
+        "passed": 4,
+        "failed": 3,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 3,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 4,
+      "counts": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 3,
+    "authoritative_evidence": [
+      {
+        "command": "node ./tests/test-status-visibility.js",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:engine-packaging",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "status": "passed"
+      },
+      {
+        "command": "node ./tests/test-init-platform.js",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:engine-integration",
+        "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 15,
+    "groups": [
+      {
+        "name": ".claude",
+        "count": 1,
+        "paths": [
+          ".claude/skills/specdev-adhoc/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": ".codex",
+        "count": 1,
+        "paths": [
+          ".codex/skills/specdev-adhoc/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "QUICKSTART.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 8,
+        "paths": [
+          "src/commands/adhoc.js",
+          "src/commands/dispatch.js",
+          "src/commands/init.js",
+          "src/utils/adhoc-assignment.js",
+          "src/utils/adhoc-focused.js",
+          "src/utils/commands.js",
+          "src/utils/git-delivery.js"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "templates",
+        "count": 2,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-engine-integration.js"
+        ],
+        "omitted": 1
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "None identified within the approved contract. Mission positions after approval",
+      "remain deliberately blocked because Mission approval establishes its execution",
+      "boundary; nested Mission child focus also fails closed to its controller."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/brainstorm/contract.md",
+      "exists": true,
+      "digest": "29c7d4c7dc3d13a37787ccae5839d5f1386424ef17ae2e474fb50b9b03d8b187"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/design/plan.md",
+      "exists": true,
+      "digest": "022f6c238d63db67bf39ec013ad0baff7475511211bc692b3bfbe25139619270"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/implementation/progress.json",
+      "exists": true,
+      "digest": "55d9e458de135588f313b8d7f3fc1bc09961d946508a1b6b96b536be45a480d8"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/outcome.md",
+      "exists": true,
+      "digest": "20756f94d5f8404c8205e61df4c83e6d83b6f4403af4d92fb534912c100f7e3c"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

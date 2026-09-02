@@ -1,0 +1,86 @@
+{
+  "runId": "assignment-lifecycle-20260902T06552020",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-09-02T06:55:20.207Z",
+  "updatedAt": "2026-09-02T07:40:31.214Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00066",
+      "name": "00066_allow-adhoc-during-focused-assignment-and-missio",
+      "path": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio",
+      "description": "Allow Adhoc during focused Assignment and Mission contract formation",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/brainstorm/contract.md",
+      "contract_hash": "29c7d4c7dc3d13a37787ccae5839d5f1386424ef17ae2e474fb50b9b03d8b187"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "29c7d4c7dc3d13a37787ccae5839d5f1386424ef17ae2e474fb50b9b03d8b187",
+      "actor": "user",
+      "approved_at": "2026-09-02T07:00:35.925Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "5311a6f77ed32b7cded383727abcd557431867b1"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/design/plan.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/implementation/progress.json",
+      "outcome": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/outcome.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/review/implementation-verdict.md",
+      "attempt": "Attempt-00175",
+      "disposition": "approved"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "29c7d4c7dc3d13a37787ccae5839d5f1386424ef17ae2e474fb50b9b03d8b187",
+      "actor": "user",
+      "approved_at": "2026-09-02T07:00:35.925Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "5311a6f77ed32b7cded383727abcd557431867b1"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.4.0",
+    "packagePath": "workflows/assignment-lifecycle@2.4.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00066_allow-adhoc-during-focused-assignment-and-missio/review/implementation-verdict.md",
+    "attempt": "Attempt-00175",
+    "disposition": "approved"
+  }
+}

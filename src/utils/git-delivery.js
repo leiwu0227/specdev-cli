@@ -216,6 +216,18 @@ export async function gitChangedPathsAtCommit(targetDir, revision) {
   return [...new Set(output.split('\0').map(normalizePath).filter(Boolean))].sort()
 }
 
+export async function gitChangedPathsBetween(targetDir, fromRevision, toRevision) {
+  const output = await gitOutput(targetDir, [
+    'diff',
+    '--name-only',
+    '--no-renames',
+    '-z',
+    fromRevision,
+    toRevision,
+  ])
+  return [...new Set(output.split('\0').map(normalizePath).filter(Boolean))].sort()
+}
+
 export async function gitCommitSubject(targetDir, revision) {
   return gitText(targetDir, ['show', '-s', '--format=%s', revision])
 }

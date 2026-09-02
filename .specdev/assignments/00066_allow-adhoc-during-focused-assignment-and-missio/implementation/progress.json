@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+      "scope": "AC-1, AC-2, and AC-3 focused Assignment/Mission coexistence, transactional delivery, revalidation, and unsafe-boundary coverage; exposed a stale blocked-status exit expectation",
+      "status": "failed",
+      "duration_ms": 7997,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node ./tests/test-init-platform.js",
+      "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+      "scope": "AC-3 generated and tracked Adhoc guidance consistency; exposed a case-sensitive prose assertion mismatch",
+      "status": "failed",
+      "duration_ms": 2398,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node ./tests/test-status-visibility.js",
+      "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+      "scope": "AC-2 and AC-3 focused status projection regression coverage",
+      "status": "passed",
+      "duration_ms": 16,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-packaging",
+      "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+      "scope": "AC-3 packaged engine and command-surface regression coverage",
+      "status": "passed",
+      "duration_ms": 7206,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+      "scope": "AC-1, AC-2, and AC-3 after correcting the blocked-status fixture; exposed duplicate Mission YAML in the new boundary fixture",
+      "status": "failed",
+      "duration_ms": 11073,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node ./tests/test-init-platform.js",
+      "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+      "scope": "AC-3 generated and tracked Adhoc guidance consistency after correcting the case-sensitive assertion",
+      "status": "passed",
+      "duration_ms": 2353,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@5311a6f77ed32b7cded383727abcd557431867b1",
+      "scope": "AC-1, AC-2, and AC-3 focused Assignment/Mission coexistence, transactional delivery, revalidation, and unsafe-boundary coverage after fixture repairs",
+      "status": "passed",
+      "duration_ms": 24469,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "Authorized verification exposed three fixture-only mismatches before passing: blocked status correctly exits nonzero, generated prose uses capitalized Focused-workflow, and the Mission boundary fixture needed to replace its existing null YAML field instead of appending a duplicate key. Runtime behavior was not broadened by these repairs."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

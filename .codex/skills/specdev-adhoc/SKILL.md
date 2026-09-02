@@ -43,15 +43,24 @@ reports every rejected owner and recovery action. An accepted adoption persists
 the exact path/status manifest at the starting revision. Use `--title="..."`
 when the commit needs a short subject independent of the full receipt scope.
 
-An active standalone Assignment may coexist only at its quiescent approved
-pre-implementation boundary: its focus, lifecycle run, artifacts, and Attempt
-records remain preserved outside Adhoc ownership. An implementation Git
-boundary, a live or ambiguous worker/reviewer Attempt, dirty product paths, or
-uncertain ownership blocks Adhoc before state is created. `--adopt-dirty`
-cannot absorb those conflicts. Finish and cancel retain the same Assignment
-identity for continuation; shelving is explicit terminal user authority, never
-an automatic pause or prerequisite. Assignment-advancing commands remain
-blocked until the detour finishes or is cancelled.
+An active standalone Assignment or Mission may coexist while its contract is
+being formed or considered for approval, and an Assignment may also coexist at
+its quiescent approved pre-implementation boundary. Focus, lifecycle run,
+contracts, approvals, Mission children, artifacts, and Attempt records remain
+preserved outside Adhoc ownership. An execution or Git boundary, unsupported
+position, live or ambiguous worker/reviewer/controller Attempt, dirty product
+path, pending revalidation, or uncertain ownership blocks Adhoc before state is
+created. `--adopt-dirty` cannot absorb those conflicts. Focused-workflow
+commands remain blocked until the detour finishes or is cancelled; shelving and
+abandonment remain explicit terminal user authority.
+
+Finish and cancel retain the same focused identity and leave a durable
+post-detour obligation. Recheck affected contract assumptions against the
+current repository, then run `specdev adhoc revalidate --contract=unchanged
+--outcome="<summary>"` before the focused workflow crosses its next approval,
+execution, or Git boundary. Use `--contract=changed` to report material change
+without clearing the gate; revise unapproved authority or explicitly terminate
+and replace approved authority rather than claiming it is still valid.
 
 Make the change directly without a scheduler, worktree, subagent, or approval
 gate. Verification execution always requires repository/user authorization.

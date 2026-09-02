@@ -537,7 +537,41 @@ try {
   ])
   const preservedAssignmentPath = join(assignmentAdhocRoot, preservedAssignment.path)
   writeContract(preservedAssignmentPath, 'Preserve this active Assignment through Adhoc')
+  const brainstormingDetour = runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'start',
+    'Inspect one independent contract-time concern',
+    '--json',
+  ])
+  assert.equal(brainstormingDetour.focused_coexistence.run_position.node, 'brainstorm')
+  runJson(assignmentAdhocRoot, ['adhoc', 'cancel', '--json'])
+  assert.equal(
+    runJson(assignmentAdhocRoot, ['next', '--json'], 1).state,
+    'focused_revalidation_required'
+  )
+  runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'revalidate',
+    '--contract=unchanged',
+    '--outcome=No product paths changed during the brainstorming detour',
+    '--json',
+  ])
   runJson(assignmentAdhocRoot, ['checkpoint', 'brainstorm', '--json'])
+  const approvalDetour = runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'start',
+    'Inspect one independent pre-approval concern',
+    '--json',
+  ])
+  assert.equal(approvalDetour.focused_coexistence.run_position.node, 'approve-contract')
+  runJson(assignmentAdhocRoot, ['adhoc', 'cancel', '--json'])
+  runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'revalidate',
+    '--contract=unchanged',
+    '--outcome=The approved candidate contract remains current after the empty detour',
+    '--json',
+  ])
   runJson(assignmentAdhocRoot, ['approve', 'brainstorm', '--json'])
   const preservedStatusPath = join(preservedAssignmentPath, 'status.json')
   const preservedStatus = JSON.parse(readFileSync(preservedStatusPath, 'utf8'))
@@ -611,9 +645,43 @@ try {
     readFileSync(join(assignmentAdhocRoot, '.specdev', '.ripplegraph', 'current.json'), 'utf8'),
     preservedBefore.current
   )
-  assert.equal(readFileSync(preservedStatusPath, 'utf8'), preservedBefore.status)
+  const requiredAfterFinish = JSON.parse(readFileSync(preservedStatusPath, 'utf8'))
+  assert.equal(requiredAfterFinish.id, preservedStatus.id)
+  assert.equal(requiredAfterFinish.run_id, preservedStatus.run_id)
+  assert.equal(requiredAfterFinish.adhoc_revalidation.status, 'required')
+  assert.deepEqual(requiredAfterFinish.adhoc_revalidation.changed_paths, ['detour.txt'])
   assert.equal(readFileSync(preservedRunPath, 'utf8'), preservedBefore.run)
   assert.equal(existsSync(join(preservedAssignmentPath, 'shelved.md')), false)
+  const blockedBeforeRevalidation = runJson(assignmentAdhocRoot, ['next', '--json'], 1)
+  assert.equal(blockedBeforeRevalidation.state, 'focused_revalidation_required')
+  const revalidationStatus = runJson(assignmentAdhocRoot, ['status', '--json'], 1)
+  assert.equal(revalidationStatus.lifecycle, 'blocked')
+  assert.equal(revalidationStatus.revalidation.status, 'required')
+  assert.match(revalidationStatus.next_action.command_line, /adhoc revalidate/)
+  const changedContractReport = runJson(
+    assignmentAdhocRoot,
+    [
+      'adhoc',
+      'revalidate',
+      '--contract=changed',
+      '--outcome=One assumption needs explicit contract reconsideration',
+      '--json',
+    ],
+    1
+  )
+  assert.equal(changedContractReport.state, 'focused_contract_changed')
+  assert.equal(changedContractReport.revalidation.status, 'required')
+  assert.equal(changedContractReport.revalidation.contract_change_reports.length, 1)
+  const revalidated = runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'revalidate',
+    '--contract=unchanged',
+    '--outcome=The detached help change does not alter the approved contract assumptions',
+    '--json',
+  ])
+  assert.equal(revalidated.status, 'revalidated')
+  assert.equal(revalidated.focused.id, preservedAssignment.id)
+  assert.equal(revalidated.revalidation.status, 'satisfied')
   assert.equal(runJson(assignmentAdhocRoot, ['next', '--json']).phase, 'design')
 
   const cancelledDetour = runJson(assignmentAdhocRoot, [
@@ -627,8 +695,20 @@ try {
   assert.equal(cancelled.id, cancelledDetour.id)
   assert.equal(cancelled.assignment_coexistence.id, preservedAssignment.id)
   assert.equal(existsSync(join(assignmentAdhocRoot, 'cancelled-detour.txt')), true)
-  assert.equal(readFileSync(preservedStatusPath, 'utf8'), preservedBefore.status)
+  const requiredAfterCancel = JSON.parse(readFileSync(preservedStatusPath, 'utf8'))
+  assert.equal(requiredAfterCancel.id, preservedStatus.id)
+  assert.equal(requiredAfterCancel.run_id, preservedStatus.run_id)
+  assert.equal(requiredAfterCancel.adhoc_revalidation.status, 'required')
+  assert.deepEqual(requiredAfterCancel.adhoc_revalidation.changed_paths, ['cancelled-detour.txt'])
   rmSync(join(assignmentAdhocRoot, 'cancelled-detour.txt'))
+  const cancelledRevalidated = runJson(assignmentAdhocRoot, [
+    'adhoc',
+    'revalidate',
+    '--contract=unchanged',
+    '--outcome=The cancelled source delta was removed and assumptions remain current',
+    '--json',
+  ])
+  assert.equal(cancelledRevalidated.status, 'revalidated')
 
   writeFileSync(
     join(assignmentAdhocRoot, 'ambiguous-product.txt'),
@@ -719,6 +799,181 @@ try {
     gitText(assignmentAdhocRoot, ['rev-parse', `${coexistenceFinished.delivery_commit}^`]),
     coexistenceBase
   )
+
+  const missionAdhocRoot = tempProject('mission-adhoc')
+  runGit(missionAdhocRoot, ['init', '--quiet'])
+  configureGit(missionAdhocRoot)
+  runJson(missionAdhocRoot, ['init', '--platform=none', '--json'])
+  writeBigPicture(missionAdhocRoot)
+  writeFileSync(join(missionAdhocRoot, 'README.md'), '# Mission Adhoc fixture\n', 'utf8')
+  runGit(missionAdhocRoot, ['add', '--all'])
+  runGit(missionAdhocRoot, ['commit', '--quiet', '-m', 'initialize Mission coexistence fixture'])
+  const preservedMission = runJson(missionAdhocRoot, [
+    'mission',
+    'create',
+    'Preserve Mission contract formation through Adhoc',
+    '--json',
+  ])
+  const preservedMissionPath = join(missionAdhocRoot, preservedMission.path)
+  writeMissionContract(preservedMissionPath)
+  const missionDetour = runJson(missionAdhocRoot, [
+    'adhoc',
+    'start',
+    'Correct one independent Mission-time note',
+    '--json',
+  ])
+  assert.equal(missionDetour.focused_coexistence.kind, 'mission')
+  assert.equal(missionDetour.focused_coexistence.id, preservedMission.id)
+  assert.equal(missionDetour.focused_coexistence.run_position.node, 'brainstorm')
+  assert(
+    missionDetour.worktree.preserved_workflow_state.paths.some((path) =>
+      path.startsWith(preservedMission.path)
+    )
+  )
+  const guardedMission = runJson(
+    missionAdhocRoot,
+    ['mission', 'run', preservedMission.id, '--json'],
+    1
+  )
+  assert.equal(guardedMission.state, 'adhoc_detour_active')
+  assert.equal(guardedMission.mission.id, preservedMission.id)
+  writeFileSync(join(missionAdhocRoot, 'mission-detour.txt'), 'bounded Mission detour\n', 'utf8')
+  const missionFinished = runJson(missionAdhocRoot, [
+    'adhoc',
+    'finish',
+    '--outcome=Corrected the independent Mission-time note',
+    '--verification=Inspected the Mission coexistence fixture',
+    '--json',
+  ])
+  assert.equal(missionFinished.status, 'completed')
+  assert.equal(missionFinished.mission_coexistence.id, preservedMission.id)
+  const missionCommittedPaths = gitText(missionAdhocRoot, [
+    'diff-tree',
+    '--no-commit-id',
+    '--name-only',
+    '-r',
+    missionFinished.delivery_commit,
+  ]).split('\n')
+  assert(missionCommittedPaths.includes('mission-detour.txt'))
+  assert.equal(
+    missionCommittedPaths.some((path) => path.startsWith('.specdev/missions/')),
+    false
+  )
+  const blockedMissionRevalidation = runJson(
+    missionAdhocRoot,
+    ['mission', 'run', preservedMission.id, '--json'],
+    1
+  )
+  assert.equal(blockedMissionRevalidation.state, 'focused_revalidation_required')
+  runJson(missionAdhocRoot, [
+    'adhoc',
+    'revalidate',
+    '--contract=unchanged',
+    '--outcome=The note change does not affect Mission contract assumptions',
+    '--json',
+  ])
+  const missionAwaitingApproval = runJson(missionAdhocRoot, [
+    'mission',
+    'run',
+    preservedMission.id,
+    '--json',
+  ])
+  assert.equal(missionAwaitingApproval.status, 'awaiting_approval')
+  const approvalMissionDetour = runJson(missionAdhocRoot, [
+    'adhoc',
+    'start',
+    'Inspect one independent Mission approval concern',
+    '--json',
+  ])
+  assert.equal(approvalMissionDetour.focused_coexistence.run_position.node, 'approve-mission')
+  runJson(missionAdhocRoot, ['adhoc', 'cancel', '--json'])
+  runJson(missionAdhocRoot, [
+    'adhoc',
+    'revalidate',
+    '--contract=unchanged',
+    '--outcome=No product paths changed during the Mission approval detour',
+    '--json',
+  ])
+
+  const missionAttemptId = 'Attempt-99998'
+  const missionAttemptPath = join(
+    missionAdhocRoot,
+    '.specdev',
+    'processes',
+    `${missionAttemptId}.yaml`
+  )
+  const missionMarkerPath = join(
+    missionAdhocRoot,
+    '.specdev',
+    'cache',
+    'processes',
+    `${missionAttemptId}.json`
+  )
+  mkdirSync(join(missionAdhocRoot, '.specdev', 'processes'), { recursive: true })
+  mkdirSync(join(missionAdhocRoot, '.specdev', 'cache', 'processes'), { recursive: true })
+  writeFileSync(
+    missionAttemptPath,
+    `id: ${missionAttemptId}\nkind: controller\nstatus: running\nworkspace: .\nstarted_at: 2026-09-02T00:00:00.000Z\nmission: ${preservedMission.id}\n`,
+    'utf8'
+  )
+  writeFileSync(
+    missionMarkerPath,
+    JSON.stringify({ attempt: missionAttemptId, pid: process.pid }),
+    'utf8'
+  )
+  const missionAttemptBlock = runJson(
+    missionAdhocRoot,
+    ['adhoc', 'start', 'Do not overlap a live Mission controller', '--json'],
+    1
+  )
+  assert.equal(missionAttemptBlock.state, 'mission_attempt_conflict')
+  assert.equal(missionAttemptBlock.conflicts[0].reason, 'live_attempt')
+  rmSync(missionMarkerPath)
+  rmSync(missionAttemptPath)
+
+  const missionRecordPath = join(preservedMissionPath, 'mission.yaml')
+  const missionBeforeBoundary = readFileSync(missionRecordPath, 'utf8')
+  writeFileSync(
+    missionRecordPath,
+    missionBeforeBoundary.replace(
+      /^base_revision:.*$/m,
+      `base_revision: ${missionFinished.delivery_commit}`
+    ),
+    'utf8'
+  )
+  const missionBoundaryBlock = runJson(
+    missionAdhocRoot,
+    ['adhoc', 'start', 'Do not rebase the Mission boundary', '--json'],
+    1
+  )
+  assert.equal(missionBoundaryBlock.state, 'mission_boundary_conflict')
+  assert.equal(missionBoundaryBlock.conflicts[0].boundary, missionFinished.delivery_commit)
+  writeFileSync(missionRecordPath, missionBeforeBoundary, 'utf8')
+
+  const missionRunPath = join(
+    missionAdhocRoot,
+    '.specdev',
+    '.ripplegraph',
+    'runs',
+    approvalMissionDetour.focused_coexistence.run_id,
+    'checkpoint.json'
+  )
+  const missionCheckpointBefore = readFileSync(missionRunPath, 'utf8')
+  const unsupportedMissionCheckpoint = JSON.parse(missionCheckpointBefore)
+  unsupportedMissionCheckpoint.position.node = 'design'
+  writeFileSync(
+    missionRunPath,
+    `${JSON.stringify(unsupportedMissionCheckpoint, null, 2)}\n`,
+    'utf8'
+  )
+  const unsupportedMissionBlock = runJson(
+    missionAdhocRoot,
+    ['adhoc', 'start', 'Do not guess at an unsupported Mission position', '--json'],
+    1
+  )
+  assert.equal(unsupportedMissionBlock.state, 'mission_state_ambiguous')
+  assert.match(unsupportedMissionBlock.conflicts[0].problem, /unsupported lifecycle position/)
+  writeFileSync(missionRunPath, missionCheckpointBefore, 'utf8')
 
   const root = tempProject('main')
   runGit(root, ['init', '--quiet'])

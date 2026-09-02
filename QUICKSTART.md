@@ -78,6 +78,12 @@ one final delivery commit. Use `specdev adhoc status`, `show <ID>`, or `cancel`
 for recovery. Receipts stay outside `knowledge.sqlite`; an indexed workflow note
 explains how to search them through `rg`, Git, and `adhoc show`.
 
+Adhoc may preserve a focused Assignment or Mission while its contract is being
+formed or awaiting approval, and an Assignment at a later safe
+pre-implementation boundary. After finish or cancel, recheck affected contract
+assumptions and clear the durable gate with `specdev adhoc revalidate
+--contract=unchanged --outcome="<summary>"` before focused work advances.
+
 ## 4. Deliver one Assignment
 
 An Assignment is the normal unit for code-changing work that needs a durable
@@ -236,6 +242,7 @@ compatibility brief.
 | `specdev next --json`                  | Show the canonical focused-workflow action       |
 | `specdev adhoc start "<scope>"`        | Start one bounded change without a graph         |
 | `specdev adhoc finish ...`             | Write its receipt and final delivery commit      |
+| `specdev adhoc revalidate ...`         | Revalidate focused work after an Adhoc detour    |
 | `specdev assignment "<objective>"`     | Create one bounded code change                   |
 | `specdev checkpoint brainstorm`        | Validate the editable contract                   |
 | `specdev approve brainstorm`           | Approve the exact contract hash                  |

@@ -85,10 +85,7 @@ assert(
         'project_notes/roadmap/forecast.md',
       ].join('|') &&
     roadmapPayload.writable_paths.join('|') ===
-      [
-        'project_notes/roadmap/designs/**/*.md',
-        'project_notes/roadmap/forecast.md',
-      ].join('|') &&
+      ['project_notes/roadmap/designs/**/*.md', 'project_notes/roadmap/forecast.md'].join('|') &&
     roadmapPayload.design_rules.word_limit.includes('maximum 799') &&
     roadmapPayload.design_rules.hierarchy.includes('conceptual parent-child hierarchy') &&
     roadmapPayload.design_rules.additional_notes.includes('one independent feature or module') &&
@@ -257,9 +254,10 @@ assert(
 )
 assert(
   normalizedProse(adhocSkill).includes('quiescent approved pre-implementation boundary') &&
-    normalizedProse(adhocSkill).includes('shelving is explicit terminal user authority') &&
-    normalizedProse(adhocSkill).includes('Finish and cancel retain the same Assignment identity'),
-  'Adhoc skill documents non-terminal active Assignment coexistence and blocking boundaries'
+    normalizedProse(adhocSkill).includes('standalone Assignment or Mission may coexist') &&
+    normalizedProse(adhocSkill).includes('specdev adhoc revalidate') &&
+    normalizedProse(adhocSkill).includes('pending revalidation'),
+  'Adhoc skill documents focused contract-time coexistence and revalidation boundaries'
 )
 for (const skillRoot of ['.claude', '.codex']) {
   const installedAdhocSkill = readFileSync(
@@ -291,9 +289,10 @@ for (const skillRoot of ['.claude', '.codex']) {
   )
   assert(
     installedAdhocProse.includes('quiescent approved pre-implementation boundary') &&
-      installedAdhocProse.includes('Assignment-advancing commands remain blocked') &&
-      installedAdhocProse.includes('never an automatic pause or prerequisite'),
-    `${skillRoot} Adhoc skill preserves active Assignment ownership without implicit shelving`
+      installedAdhocProse.includes('standalone Assignment or Mission may coexist') &&
+      installedAdhocProse.includes('Focused-workflow commands remain blocked') &&
+      installedAdhocProse.includes('specdev adhoc revalidate'),
+    `${skillRoot} Adhoc skill preserves focused ownership through explicit revalidation`
   )
 }
 
