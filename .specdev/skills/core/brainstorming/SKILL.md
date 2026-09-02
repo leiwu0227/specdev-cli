@@ -25,9 +25,13 @@ such as `AC-1`. State what automation may decide and what remains reserved for
 the user. The verification section is authority, not a promise to run expensive
 commands.
 
-For a Discussion, write only `brainstorm/proposal.md` and
-`brainstorm/design.md` in the returned Discussion folder. Product code is
-read-only. A Discussion has no approval contract or implementation plan.
+For a Discussion, write required `brainstorm/proposal.md` and
+`brainstorm/design.md` in the returned Discussion folder. Supporting regular
+files and nested directories may also be created inside `brainstorm/` when they
+help the exploration; reference them from the concise `design.md` conclusion.
+Do not add symlinks, credentials, provider transcripts, caches, dependency
+trees, build output, or unrelated operational files. Product code is read-only.
+A Discussion has no approval contract or implementation plan.
 
 After Assignment Brainstorm run `specdev checkpoint brainstorm`. Review is
 optional via `specdev reviewloop brainstorm`; approval always waits for explicit

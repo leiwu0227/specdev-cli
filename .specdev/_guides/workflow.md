@@ -150,9 +150,13 @@ no exit command or state transition is required.
 
 A Discussion is a RippleGraph callable and never becomes the focused scheduler.
 It may inspect changing repository state but treats product code as read-only.
-Completion records start/end revisions and an artifact hash. Promotion creates a
-fresh Assignment or Mission and revalidates assumptions. Artifacts edited after
-completion must be restored or copied into a new Discussion before promotion.
+Its `brainstorm/proposal.md` and `brainstorm/design.md` remain required, while
+useful supporting regular files and nested directories may also live beneath
+`brainstorm/`. Completion records start/end revisions and a deterministic
+recursive artifact manifest. Promotion creates a fresh Assignment or Mission,
+revalidates that exact manifest, and preserves it as provenance. Artifacts
+edited after completion must be restored or copied into a new Discussion before
+promotion.
 
 ## Test Audit
 

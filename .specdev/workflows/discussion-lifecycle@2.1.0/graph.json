@@ -1,0 +1,110 @@
+{
+  "id": "discussion-lifecycle",
+  "version": "2.1.0",
+  "kind": "callable",
+  "title": "Discussion lifecycle",
+  "description": "Isolated code-read-only exploration that may coexist with a focused workflow.",
+  "activationHints": ["discussion", "brainstorm discussion", "explore idea"],
+  "inputSchema": {
+    "type": "object",
+    "required": ["id", "path", "description", "start_revision"],
+    "properties": {
+      "id": { "type": "string" },
+      "path": { "type": "string" },
+      "description": { "type": "string" },
+      "start_revision": { "type": "string" }
+    },
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "required": ["completed_revision", "artifact_hash", "artifact_manifest"],
+    "properties": {
+      "completed_revision": { "type": "string" },
+      "artifact_hash": { "type": "string" },
+      "artifact_manifest": {
+        "type": "object",
+        "required": ["version", "files", "artifact_hash"],
+        "properties": {
+          "version": { "type": "number", "const": 1 },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "size", "sha256"],
+              "properties": {
+                "path": { "type": "string" },
+                "size": { "type": "number" },
+                "sha256": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "artifact_hash": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "additionalProperties": false
+  },
+  "entry": "brainstorm",
+  "nodes": {
+    "brainstorm": {
+      "purpose": "Explore the topic with the user while treating product code as read-only.",
+      "instructions": "Write required brainstorm/proposal.md and brainstorm/design.md plus any useful supporting regular files or nested directories inside brainstorm/, then resume the Discussion command.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["proposal", "design", "artifacts"],
+        "properties": {
+          "proposal": { "type": "string" },
+          "design": { "type": "string" },
+          "artifacts": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      },
+      "operatorContext": { "phase": "discussion" },
+      "edges": [{ "to": "finalize" }]
+    },
+    "finalize": {
+      "purpose": "Optionally review the Discussion, then complete it when the user is satisfied.",
+      "instructions": "Run optional `specdev reviewloop discussion --discussion=<id>`, or complete with `specdev discussion <id> --complete`.",
+      "outputSchema": {
+        "type": "object",
+        "required": ["completed_revision", "artifact_hash", "artifact_manifest"],
+        "properties": {
+          "completed_revision": { "type": "string" },
+          "artifact_hash": { "type": "string" },
+          "artifact_manifest": {
+            "type": "object",
+            "required": ["version", "files", "artifact_hash"],
+            "properties": {
+              "version": { "type": "number", "const": 1 },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["path", "size", "sha256"],
+                  "properties": {
+                    "path": { "type": "string" },
+                    "size": { "type": "number" },
+                    "sha256": { "type": "string" }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "artifact_hash": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "operatorContext": { "phase": "discussion" },
+      "edges": [{ "to": "done" }]
+    },
+    "done": {
+      "purpose": "Discussion is complete.",
+      "terminal": true
+    }
+  }
+}

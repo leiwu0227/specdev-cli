@@ -21,7 +21,7 @@
     },
     "discussion-lifecycle": {
       "id": "discussion-lifecycle",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "kind": "callable",
       "title": "Discussion lifecycle",
       "description": "Isolated code-read-only exploration that may coexist with a focused workflow.",
@@ -32,8 +32,8 @@
       ],
       "requires": [],
       "effects": [],
-      "path": "workflows/discussion-lifecycle@2.0.0",
-      "registeredAt": "2026-07-23T13:11:17.767Z"
+      "path": "workflows/discussion-lifecycle@2.1.0",
+      "registeredAt": "2026-09-02T06:52:07.025Z"
     },
     "layout-migration": {
       "id": "layout-migration",

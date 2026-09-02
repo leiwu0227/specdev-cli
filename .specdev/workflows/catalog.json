@@ -9,9 +9,9 @@
     },
     "discussion-lifecycle": {
       "id": "discussion-lifecycle",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "kind": "callable",
-      "path": "discussion-lifecycle@2.0.0"
+      "path": "discussion-lifecycle@2.1.0"
     },
     "layout-migration": {
       "id": "layout-migration",

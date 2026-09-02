@@ -8,8 +8,12 @@ phase: any
 # Discussion
 
 Run `specdev discussion "<topic>"`. Inspect code when useful but do not modify
-product files. Write only the returned folder's `brainstorm/proposal.md` and
-`brainstorm/design.md`, then run `specdev discussion D00001`.
+product files. In the returned Discussion's `brainstorm/`, write the required
+`proposal.md` and `design.md` plus any useful supporting regular files or nested
+directories. Keep `design.md` as the concise conclusion and reference supporting
+artifacts where relevant. Do not add symlinks, credentials, provider transcripts,
+caches, dependency trees, build output, or unrelated operational files. Then run
+`specdev discussion D00001`.
 
 Review is optional: `specdev reviewloop discussion --discussion=D00001`.
 Complete when the user is satisfied: `specdev discussion D00001 --complete`.
