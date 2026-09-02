@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict'
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { parse, stringify } from 'yaml'
 import { installGraphPackages, installWorkspaceEngine } from '../src/utils/engine.js'
 
 const repoRoot = resolve(import.meta.dirname, '..')
@@ -45,6 +54,32 @@ function writeBigPicture(root) {
     '# Project Big Picture\n\nThis fixture models a Node.js CLI workspace with durable workflow state, supported platform adapters, and isolated command-level verification for update completion.\n',
     'utf8'
   )
+}
+
+function writeAttempt(root, id, patch = {}) {
+  const directory = join(root, '.specdev', 'processes')
+  mkdirSync(directory, { recursive: true })
+  const record = {
+    id,
+    kind: 'worker',
+    status: 'running',
+    workspace: '.',
+    base_revision: null,
+    started_at: new Date().toISOString(),
+    assignment: 'fixture-assignment',
+    ...patch,
+  }
+  const path = join(directory, `${id}.yaml`)
+  writeFileSync(path, stringify(record), 'utf8')
+  return path
+}
+
+function writeProcessMarker(root, id, pid) {
+  const directory = join(root, '.specdev', 'cache', 'processes')
+  mkdirSync(directory, { recursive: true })
+  const path = join(directory, `${id}.json`)
+  writeFileSync(path, `${JSON.stringify({ attempt: id, pid, cwd: root })}\n`, 'utf8')
+  return path
 }
 
 function installSyntheticNextPackage(root) {
@@ -119,6 +154,18 @@ try {
     ),
     false
   )
+  const resumeAttempt = 'Attempt-09990'
+  const resumeAttemptPath = writeAttempt(mixed, resumeAttempt)
+  const resumeMarkerPath = writeProcessMarker(mixed, resumeAttempt, process.pid)
+  const statusBeforeBlockedResume = json(mixed, ['update', '--status', '--json'])
+  const blockedResume = json(mixed, ['update', `--operation=${started.operation}`, '--json'], 1)
+  assert.equal(blockedResume.status, 'blocked')
+  assert.equal(blockedResume.maintenance_quiescence.blockers[0].attempt, resumeAttempt)
+  assert.deepEqual(json(mixed, ['update', '--status', '--json']), statusBeforeBlockedResume)
+  const resumedRecord = parse(readFileSync(resumeAttemptPath, 'utf8'))
+  resumedRecord.status = 'completed'
+  writeFileSync(resumeAttemptPath, stringify(resumedRecord), 'utf8')
+  rmSync(resumeMarkerPath)
   const completed = json(mixed, ['update', `--operation=${started.operation}`, '--json'])
   assert.equal(completed.status, 'ok')
   assert.equal(completed.adapter_status, 'current')
@@ -172,6 +219,62 @@ try {
   assert.equal(json(dry, ['update', '--status', '--json']).operations.length, beforeDry)
   assert.match(readFileSync(join(dry, 'AGENTS.md'), 'utf8'), /_router\.md/)
   assert.match(run(dry, ['update', '--status']).stdout, /No update completion operations/)
+
+  const guarded = fixture('guarded')
+  initialize(guarded)
+  const managedPath = join(guarded, '.specdev', '_main.md')
+  writeFileSync(managedPath, 'managed sentinel\n', 'utf8')
+  const guardedAttempt = 'Attempt-09991'
+  const guardedAttemptPath = writeAttempt(guarded, guardedAttempt)
+  const guardedMarkerPath = writeProcessMarker(guarded, guardedAttempt, process.pid)
+
+  const liveDryRun = json(guarded, ['update', '--dry-run', '--json'])
+  assert.equal(liveDryRun.status, 'ok')
+  assert.equal(liveDryRun.maintenance_quiescence.status, 'blocked')
+  assert.equal(parse(readFileSync(guardedAttemptPath, 'utf8')).status, 'running')
+  assert.equal(readFileSync(managedPath, 'utf8'), 'managed sentinel\n')
+
+  const liveStatus = json(guarded, ['update', '--status', '--json'])
+  assert.equal(liveStatus.status, 'ok')
+  assert.equal(liveStatus.maintenance_quiescence.blockers[0].liveness, 'live_local')
+  const liveBlocked = json(guarded, ['update', '--json'], 1)
+  assert.equal(liveBlocked.status, 'blocked')
+  assert.equal(liveBlocked.mutated, false)
+  assert.equal(liveBlocked.maintenance_quiescence.blockers[0].reason, 'live_attempt')
+  assert.equal(readFileSync(managedPath, 'utf8'), 'managed sentinel\n')
+
+  rmSync(guardedMarkerPath)
+  const unknownBlocked = json(guarded, ['update', '--json'], 1)
+  assert.equal(unknownBlocked.maintenance_quiescence.blockers[0].reason, 'ambiguous_liveness')
+  assert.equal(readFileSync(managedPath, 'utf8'), 'managed sentinel\n')
+
+  writeFileSync(guardedAttemptPath, '[unterminated\n', 'utf8')
+  const malformedBlocked = json(guarded, ['update', '--json'], 1)
+  assert.equal(
+    malformedBlocked.maintenance_quiescence.blockers[0].reason,
+    'unreadable_attempt_record'
+  )
+  assert.equal(readFileSync(managedPath, 'utf8'), 'managed sentinel\n')
+
+  const stale = fixture('stale')
+  initialize(stale)
+  const staleAttempt = 'Attempt-09992'
+  const staleAttemptPath = writeAttempt(stale, staleAttempt)
+  const staleMarkerPath = writeProcessMarker(stale, staleAttempt, 99_999_999)
+  const completedAttemptPath = writeAttempt(stale, 'Attempt-09993', { status: 'completed' })
+  const completedAttemptBefore = readFileSync(completedAttemptPath, 'utf8')
+  const invalidResume = json(stale, ['update', '--operation=UPD99999', '--json'], 1)
+  assert.equal(invalidResume.status, 'error')
+  assert.equal(parse(readFileSync(staleAttemptPath, 'utf8')).status, 'running')
+  assert.equal(existsSync(staleMarkerPath), true)
+  const staleUpdated = json(stale, ['update', '--json'])
+  assert.equal(staleUpdated.status, 'ok')
+  assert.deepEqual(staleUpdated.maintenance_quiescence.reconciled_attempts, [staleAttempt])
+  const staleRecord = parse(readFileSync(staleAttemptPath, 'utf8'))
+  assert.equal(staleRecord.status, 'interrupted')
+  assert.match(staleRecord.error, /stale local process reconciled/)
+  assert.equal(existsSync(staleMarkerPath), false)
+  assert.equal(readFileSync(completedAttemptPath, 'utf8'), completedAttemptBefore)
 } finally {
   for (const root of roots) rmSync(root, { recursive: true, force: true })
 }

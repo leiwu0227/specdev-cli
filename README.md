@@ -31,7 +31,9 @@ specdev update
 
 If stale SpecDev clauses remain in a platform adapter, the command returns a
 durable operation and an exact `specdev update --operation=UPD00001` resume
-command. `specdev update --status` lists interrupted operations; dry-run never
+command. Mutating update and resume calls first block on live or ambiguous
+running Attempts and reconcile only provably stale local Attempts. The read-only
+`specdev update --status` command lists interrupted operations; dry-run never
 creates one.
 
 ## Examples

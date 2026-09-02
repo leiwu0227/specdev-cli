@@ -6,6 +6,14 @@ import { reserveEntityId } from './id-reservation.js'
 const DURABLE_STATUSES = new Set(['running', 'completed', 'interrupted', 'failed', 'blocked'])
 const ATTEMPT_ID_PATTERN = /^(?:Attempt|ATT)-(?:\d+|\d{5}-\d+)$/
 
+export function isAttemptId(value) {
+  return ATTEMPT_ID_PATTERN.test(String(value))
+}
+
+export function isDurableAttemptStatus(value) {
+  return DURABLE_STATUSES.has(value)
+}
+
 export async function createAttemptRecord(specdevPath, input) {
   const id = await reserveEntityId(specdevPath, 'attempt')
   const record = {
@@ -167,12 +175,12 @@ export async function clearLocalProcessMarker(specdevPath, attemptId) {
 export async function attemptLiveness(specdevPath, attemptId) {
   const marker = await readLocalProcessMarker(specdevPath, attemptId)
   if (!marker) return { state: 'unknown' }
-  if (!Number.isInteger(marker.pid) || marker.pid <= 0) return { state: 'stale', marker }
+  if (!Number.isInteger(marker.pid) || marker.pid <= 0) return { state: 'unknown', marker }
   try {
     process.kill(marker.pid, 0)
     return { state: 'live_local', marker }
-  } catch {
-    return { state: 'stale', marker }
+  } catch (error) {
+    return error?.code === 'ESRCH' ? { state: 'stale', marker } : { state: 'unknown', marker }
   }
 }
 
@@ -185,12 +193,12 @@ async function writeAttemptRecord(specdevPath, record) {
 }
 
 function attemptPath(specdevPath, id) {
-  if (!ATTEMPT_ID_PATTERN.test(String(id))) throw new Error(`invalid Attempt ID: ${id}`)
+  if (!isAttemptId(id)) throw new Error(`invalid Attempt ID: ${id}`)
   return join(specdevPath, 'processes', `${id}.yaml`)
 }
 
 function localMarkerPath(specdevPath, id) {
-  if (!ATTEMPT_ID_PATTERN.test(String(id))) throw new Error(`invalid Attempt ID: ${id}`)
+  if (!isAttemptId(id)) throw new Error(`invalid Attempt ID: ${id}`)
   return join(specdevPath, 'cache', 'processes', `${id}.json`)
 }
 

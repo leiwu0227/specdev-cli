@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node --check on the changed update source and focused test files; git diff --check (initial candidate)",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "Syntax and whitespace qualification only; no test program executed",
+      "status": "passed",
+      "duration_ms": 600,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-update-workflow.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-1 and AC-3 initial and resumed update gates; exposed a missing targetDir handoff",
+      "status": "failed",
+      "duration_ms": 1795,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-update-skill-roots.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-1 first-mutation ordering and quiescent skill-root compatibility",
+      "status": "passed",
+      "duration_ms": 330,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-update-skills.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-3 existing managed skill, hook, custom tool, and adapter update behavior",
+      "status": "passed",
+      "duration_ms": 1739,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-assignment-shelf.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-2 shared liveness compatibility; exposed a stale terminal-ID fixture expectation",
+      "status": "failed",
+      "duration_ms": 351,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node --check on the repaired resume helper and shelf fixture; git diff --check",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "Post-repair syntax and whitespace qualification only; no test program executed",
+      "status": "passed",
+      "duration_ms": 500,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-update-workflow.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-1 through AC-3; exposed a null-unsafe malformed-record diagnostic",
+      "status": "failed",
+      "duration_ms": 3994,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-update-skill-roots.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-1 first-mutation ordering and quiescent skill-root compatibility",
+      "status": "passed",
+      "duration_ms": 282,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-update-skills.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-3 existing managed skill, hook, custom tool, and adapter update behavior",
+      "status": "passed",
+      "duration_ms": 1732,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-assignment-shelf.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-2 shared Attempt liveness and shelf safety compatibility",
+      "status": "passed",
+      "duration_ms": 11579,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node --check on the null-safe malformed-record diagnostic; git diff --check",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "Post-repair syntax and whitespace qualification only; no test program executed",
+      "status": "passed",
+      "duration_ms": 400,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-update-workflow.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-1 through AC-3 live, ambiguous, malformed, stale, read-only, retry, resume, and adapter behavior",
+      "status": "passed",
+      "duration_ms": 4493,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-update-skill-roots.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-1 first-mutation ordering and quiescent skill-root compatibility",
+      "status": "passed",
+      "duration_ms": 318,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-update-skills.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-3 existing managed skill, hook, custom tool, and adapter update behavior",
+      "status": "passed",
+      "duration_ms": 1769,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-assignment-shelf.js",
+      "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+      "scope": "AC-2 shared Attempt liveness and shelf safety compatibility",
+      "status": "passed",
+      "duration_ms": 11203,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "Focused compatibility verification required synchronizing the shelf fixture from the obsolete <shelved-id> placeholder to the already-canonical <terminal-id> guidance; no product behavior or contract scope changed."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

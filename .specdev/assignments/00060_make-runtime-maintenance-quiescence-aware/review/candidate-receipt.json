@@ -1,0 +1,337 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "65c81378a522fc5a5d5196af31185c81a24fd51a8547d14eb54635bdf5415913",
+  "assignment": {
+    "id": "00060",
+    "folder": "00060_make-runtime-maintenance-quiescence-aware"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T01:54:26.241Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00060_make-runtime-maintenance-quiescence-aware/brainstorm/contract.md",
+    "hash": "de7843dafa340a845117e317d4fb1a951c5a47edb33b3550e61bf8eac6448450"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`node tests/test-update-workflow.js` and `node tests/test-update-skill-roots.js` cover initial/resumed gates, structured failures, and the pre-mutation boundary.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`node tests/test-update-workflow.js` covers stale reconciliation and retry; `node tests/test-assignment-shelf.js` covers shared liveness compatibility.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`node tests/test-update-workflow.js` covers read-only inspection and adapter completion; `node tests/test-update-skills.js` covers existing quiescent update behavior.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 15,
+    "items": [
+      {
+        "command": "node tests/test-update-workflow.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "scope": "AC-1 through AC-3 live, ambiguous, malformed, stale, read-only, retry, resume, and adapter behavior",
+        "status": "passed",
+        "duration_ms": 4493,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 1,
+          "failed": 2,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-update-skill-roots.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "scope": "AC-1 first-mutation ordering and quiescent skill-root compatibility",
+        "status": "passed",
+        "duration_ms": 318,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-update-skills.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "scope": "AC-3 existing managed skill, hook, custom tool, and adapter update behavior",
+        "status": "passed",
+        "duration_ms": 1769,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-assignment-shelf.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "scope": "AC-2 shared Attempt liveness and shelf safety compatibility",
+        "status": "passed",
+        "duration_ms": 11203,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node --check on the changed update source and focused test files; git diff --check (initial candidate)",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "scope": "Syntax and whitespace qualification only; no test program executed",
+        "status": "passed",
+        "duration_ms": 600,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node --check on the repaired resume helper and shelf fixture; git diff --check",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "scope": "Post-repair syntax and whitespace qualification only; no test program executed",
+        "status": "passed",
+        "duration_ms": 500,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node --check on the null-safe malformed-record diagnostic; git diff --check",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "scope": "Post-repair syntax and whitespace qualification only; no test program executed",
+        "status": "passed",
+        "duration_ms": 400,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 12,
+      "failed": 3,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 9,
+        "failed": 3,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 15,
+      "counts": {
+        "passed": 12,
+        "failed": 3,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 9,
+          "failed": 3,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 7,
+      "counts": {
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 8,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-update-workflow.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-update-skill-roots.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-update-skills.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-assignment-shelf.js",
+        "revision": "working-tree@911328f680de615a0e27f94b513bbf6e077176a6",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 7,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "README.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 3,
+        "paths": [
+          "src/commands/update.js",
+          "src/utils/maintenance-quiescence.js",
+          "src/utils/process-record.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 1,
+        "paths": [
+          "templates/.specdev/_guides/update_guide.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-assignment-shelf.js",
+          "tests/test-update-workflow.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "None identified after focused acceptance. Missing, unreadable, inaccessible, or invalid process evidence remains conservatively blocking; PID reuse can therefore cause a safe false-positive block rather than unsafe maintenance."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00060_make-runtime-maintenance-quiescence-aware/brainstorm/contract.md",
+      "exists": true,
+      "digest": "de7843dafa340a845117e317d4fb1a951c5a47edb33b3550e61bf8eac6448450"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00060_make-runtime-maintenance-quiescence-aware/design/plan.md",
+      "exists": true,
+      "digest": "599cac27265a0d096e0fb9f1eea5dac00e199be36c0c288abeae5d3c3dcfa2c1"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00060_make-runtime-maintenance-quiescence-aware/implementation/progress.json",
+      "exists": true,
+      "digest": "e103607069957d3cd656c4ae448ab35ad259b53bc5e924b14bf3a8db55ed89e0"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00060_make-runtime-maintenance-quiescence-aware/outcome.md",
+      "exists": true,
+      "digest": "12e1d20ef8e1592dfb3f310c925951821435fd169553e7a9bdc4aa120154bba4"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

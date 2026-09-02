@@ -26,6 +26,10 @@ import {
   publicAdapterStatus,
   validateUpdateAdapters,
 } from '../utils/update-completion.js'
+import {
+  inspectMaintenanceQuiescence,
+  reconcileMaintenanceQuiescence,
+} from '../utils/maintenance-quiescence.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -49,8 +53,25 @@ export async function updateCommand(flags = {}) {
   if (flags.operation && dryRun) {
     return fail(flags, '--dry-run cannot be combined with --operation; no changes were made')
   }
-  if (flags.operation) return resumeUpdateCompletion(targetDir, String(flags.operation), flags)
-  if (flags.status) return updateCompletionStatus(targetDir, flags)
+  if (flags.operation) {
+    const operation = String(flags.operation)
+    let call
+    try {
+      call = readGuidedCall(targetDir, operation).state
+    } catch (error) {
+      return fail(flags, error.message)
+    }
+    if (call.call?.graphId !== UPDATE_COMPLETION_GRAPH) {
+      return fail(flags, `${operation} is not a SpecDev update operation`)
+    }
+    const maintenance = await reconcileMaintenanceQuiescence(specdevPath)
+    if (maintenance.status !== 'quiescent') return blockMaintenance(flags, maintenance)
+    return resumeUpdateCompletion(targetDir, operation, flags, maintenance, call)
+  }
+  if (flags.status) {
+    const maintenance = await inspectMaintenanceQuiescence(specdevPath)
+    return updateCompletionStatus(targetDir, flags, maintenance)
+  }
 
   const wouldUpdate = [
     '_main.md',
@@ -81,6 +102,7 @@ export async function updateCommand(flags = {}) {
   ]
 
   if (dryRun) {
+    const maintenance = await inspectMaintenanceQuiescence(specdevPath)
     const adapterInspection = inspectUpdateAdapters(targetDir, ALL_ADAPTERS)
     if (flags.json) {
       const pkg = await import('../../package.json', { with: { type: 'json' } })
@@ -97,6 +119,7 @@ export async function updateCommand(flags = {}) {
             adapter_status: adapterSummary(adapterInspection, true),
             adapters: publicAdapterStatus(adapterInspection),
             operation: null,
+            maintenance_quiescence: maintenance,
             next_action: 'Run specdev update to apply the runtime update.',
             would_update: wouldUpdate,
             preserved,
@@ -114,12 +137,15 @@ export async function updateCommand(flags = {}) {
     printBullets(preserved, '   - ')
     blankLine()
     printSection(`Adapter completion: ${adapterSummary(adapterInspection, true)}`)
+    printMaintenanceInspection(maintenance)
     console.log('Next action: Run specdev update to apply the runtime update.')
     return
   }
 
   // Update system files
   try {
+    const maintenance = await reconcileMaintenanceQuiescence(specdevPath)
+    if (maintenance.status !== 'quiescent') return blockMaintenance(flags, maintenance)
     if (!flags.json) {
       console.log('🔄 Updating SpecDev system files...')
       blankLine()
@@ -174,6 +200,7 @@ export async function updateCommand(flags = {}) {
       hook_updated: hookUpdated > 0,
       adapters_created: createdAdapters,
       guided_workflows: engine.registered.length - 1,
+      maintenance_quiescence: maintenance,
       preserved: [
         'project_notes/ (existing content preserved; missing Roadmap scaffold added)',
         'assignments/',
@@ -292,16 +319,8 @@ export async function updateCommand(flags = {}) {
   }
 }
 
-async function resumeUpdateCompletion(targetDir, operation, flags) {
-  let call
-  try {
-    call = readGuidedCall(targetDir, operation).state
-  } catch (error) {
-    return fail(flags, error.message)
-  }
-  if (call.call?.graphId !== UPDATE_COMPLETION_GRAPH) {
-    return fail(flags, `${operation} is not a SpecDev update operation`)
-  }
+async function resumeUpdateCompletion(targetDir, operation, flags, maintenance, initialCall) {
+  let call = initialCall
   if (call.status === 'completed') {
     return emitUpdateResult(flags, {
       command: 'update',
@@ -310,6 +329,7 @@ async function resumeUpdateCompletion(targetDir, operation, flags) {
       runtime_status: 'updated',
       adapter_status: 'current',
       operation,
+      maintenance_quiescence: maintenance,
       graph: `${call.call.graphId}@${call.call.graphVersion}`,
       receipt: updateReceiptPath(operation, call.outputArtifact),
       adapters: call.output.adapters,
@@ -330,6 +350,7 @@ async function resumeUpdateCompletion(targetDir, operation, flags) {
       runtime_status: 'updated',
       adapter_status: adapterStatus,
       operation,
+      maintenance_quiescence: maintenance,
       graph: `${call.call.graphId}@${call.call.graphVersion}`,
       node: call.position.node,
       adapters: publicAdapterStatus(baseline),
@@ -376,6 +397,7 @@ async function resumeUpdateCompletion(targetDir, operation, flags) {
     runtime_status: 'updated',
     adapter_status: 'current',
     operation,
+    maintenance_quiescence: maintenance,
     graph: `${completed.call.graphId}@${completed.call.graphVersion}`,
     receipt: updateReceiptPath(operation, completed.outputArtifact),
     adapters: validation.evidence,
@@ -388,7 +410,7 @@ function updateReceiptPath(operation, outputArtifact) {
   return `.specdev/.ripplegraph/calls/${operation}/${outputArtifact.replaceAll('\\', '/')}`
 }
 
-async function updateCompletionStatus(targetDir, flags) {
+async function updateCompletionStatus(targetDir, flags, maintenance) {
   let calls
   try {
     calls = listGuidedCalls(targetDir, UPDATE_COMPLETION_GRAPH).calls
@@ -418,6 +440,7 @@ async function updateCompletionStatus(targetDir, flags) {
     command: 'update status',
     version: 1,
     status: 'ok',
+    maintenance_quiescence: maintenance,
     operations,
     next_action: operations.some((operation) => operation.status === 'active')
       ? operations.find((operation) => operation.status === 'active').next_action
@@ -482,6 +505,7 @@ function printUpdateAction(payload) {
 
 function emitUpdateResult(flags, payload) {
   if (flags.json) return emitJson(payload)
+  printMaintenanceInspection(payload.maintenance_quiescence)
   if (payload.operations) {
     if (payload.operations.length === 0) console.log('No update completion operations found.')
     else {
@@ -509,6 +533,50 @@ function fail(flags, message) {
   if (flags.json) emitJson({ command: 'update', version: 2, status: 'error', error: message })
   else console.error(`❌ Failed to update SpecDev: ${message}`)
   process.exitCode = 1
+}
+
+function blockMaintenance(flags, maintenance) {
+  const payload = {
+    command: 'update',
+    version: 2,
+    status: 'blocked',
+    state: 'maintenance_not_quiescent',
+    mutated: maintenance.reconciled_attempts?.length > 0,
+    maintenance_quiescence: maintenance,
+    next_action: maintenanceNextAction(maintenance),
+  }
+  if (flags.json) emitJson(payload)
+  else {
+    console.error('❌ SpecDev update blocked: maintenance is not quiescent.')
+    printMaintenanceInspection(maintenance, console.error)
+    console.error(`Next: ${payload.next_action}`)
+  }
+  process.exitCode = 1
+}
+
+function printMaintenanceInspection(maintenance, output = console.log) {
+  if (!maintenance || maintenance.status === 'quiescent') return
+  output(`Maintenance quiescence: ${maintenance.status}`)
+  for (const blocker of maintenance.blockers || []) {
+    const label = blocker.attempt || 'Attempt registry'
+    const owners = formatAttemptOwners(blocker.owners)
+    output(`  ${label}${owners}: ${blocker.reason} (${blocker.liveness})`)
+  }
+  for (const stale of maintenance.stale_attempts || []) {
+    const owners = formatAttemptOwners(stale.owners)
+    output(`  ${stale.attempt}${owners}: stale local process; mutating update will interrupt it`)
+  }
+}
+
+function formatAttemptOwners(owners = []) {
+  if (owners.length === 0) return ''
+  return ` [${owners.map((owner) => `${owner.kind} ${owner.id}`).join(', ')}]`
+}
+
+function maintenanceNextAction(maintenance) {
+  const first = maintenance.blockers?.[0]
+  if (first?.next_action) return first.next_action
+  return 'Retry specdev update so stale Attempt reconciliation can converge from current state.'
 }
 
 function formatValidationErrors(errors = []) {

@@ -82,7 +82,7 @@ try {
   const cleanRoot = tempProject('clean')
   assert.match(
     readFileSync(join(cleanRoot, '.codex', 'skills', 'specdev-continue', 'SKILL.md'), 'utf8'),
-    /specdev assignment --from-assignment=<shelved-id>/
+    /specdev assignment --from-assignment=<terminal-id>/
   )
   const clean = createAssignment(cleanRoot, 'Preserve useful unfinished work')
   const cleanPath = join(cleanRoot, clean.path)
