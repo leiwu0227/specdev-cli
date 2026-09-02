@@ -176,6 +176,18 @@ Only `specdev reviewloop` produces a transition-authorizing result envelope.
 Native Codex, Claude, or Cursor review sessions remain advisory and their plain
 Markdown must not be treated as a SpecDev verdict.
 
+The first standalone Assignment primary implementation review is fresh. The
+Claude adapter may retain one ignored, 24-hour, single-use lease to resume that
+exact provider session for the immediately following repair-verification round.
+Every binding must match, the repaired candidate must be complete and remain
+within the reviewed product-path scope, and the resumed review creates a new
+linked Attempt and verdict. Missing, expired, malformed, unsupported, or
+mismatched state degrades to a fresh read-only Attempt; a failed resume permits
+only one fresh fallback. Resolver, arbiter, Mission, format correction, other
+roles, and other providers remain fresh-only. Provider-local transcript
+persistence is an operational prerequisite for Claude resume, not a durable
+SpecDev artifact or source of evidence.
+
 ## Knowledge
 
 Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.
