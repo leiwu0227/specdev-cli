@@ -14,7 +14,7 @@ The user grants Adhoc authority by selecting a concrete change scope. Within tha
 
 Adhoc does not acquire authority over adjacent work merely because it is present in the worktree. State and artifacts owned by another lane remain outside its boundary. Scope expansion requires a new user decision rather than silent adoption.
 
-Adhoc has no authority to change another workflow’s contract, lifecycle, focus, or evidence.
+Adhoc has no authority to change another workflow's contract, lifecycle, focus, or evidence.
 
 ## Workflow Shape
 
@@ -30,9 +30,11 @@ Adhoc begins from an explicit Git boundary. Existing product changes must be res
 
 Ambiguous product ownership fails closed. Discussion and Test Audit artifacts remain protected under their own identities and cannot be absorbed into Adhoc delivery.
 
-An active standalone Assignment may coexist only at a quiescent approved pre-implementation boundary. Its identity, artifacts, workflow state, and Attempts remain preserved. Adhoc cannot absorb Assignment work, and the Assignment cannot advance while the detour owns the repository mutation boundary.
+An active Assignment or Mission may coexist with Adhoc while its contract is being formed or considered for approval, and during any later quiescent pre-execution boundary. No shelving, termination, or focus replacement is required. The focused workflow keeps its identity, contract artifacts, state, and Attempts; Adhoc owns only its separately approved mutation scope.
 
-Established Assignment implementation, live or uncertain Attempts, Mission-owned work, or ambiguous dirty product state blocks coexistence. The Assignment is never automatically shelved or terminated to make room for Adhoc.
+During the detour, the focused workflow must not cross an approval, execution, or Git boundary. After Adhoc completes or is cancelled, the focused workflow revalidates any contract assumptions affected by the changed repository before it advances. Its eventual approval or execution boundary is established against the post-detour product state.
+
+Coexistence ends once Assignment implementation, Mission child execution, or other focused product mutation has begun. Live or uncertain Attempts and ambiguous dirty product state also block Adhoc. Adhoc never absorbs work anticipated by a focused contract merely because that contract is still being discussed.
 
 ## Completion and Cancellation
 
@@ -44,13 +46,14 @@ Cancellation ends Adhoc ownership without discarding source changes. The user de
 
 ## Concurrency
 
-Adhoc is not a scheduler. It may preserve independent read-only callable state and, under the narrow boundary above, temporarily coexist with a standalone Assignment. It must not use that coexistence to advance, mutate, or deliver another lane’s work.
+Adhoc is not a scheduler. It may coexist with independent read-only callables and with a focused Assignment or Mission only within the pre-execution boundary above. The focused workflow remains durable but cannot advance while Adhoc owns repository mutation. Neither lane may mutate, adopt, or deliver the other's owned work.
 
 ## Design Choices
 
 - Explicit scope replaces a full contract only for bounded work.
 - Git ownership is established before mutation and verified at delivery.
 - Dirty-work adoption is all-or-nothing for eligible existing changes.
+- Contract brainstorming does not require shelving focused work for an independent Adhoc change.
 - Other lane identities and artifacts remain outside Adhoc ownership.
 - One delivery commit and receipt provide a durable boundary without a graph.
 - Cancellation preserves user work rather than interpreting cancellation as deletion authority.
