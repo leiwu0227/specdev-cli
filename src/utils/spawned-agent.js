@@ -5,7 +5,7 @@ import { execFile as execFileCallback } from 'node:child_process'
 import { dirname, join, relative } from 'node:path'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
-import { buildProviderInvocation } from './provider-adapters.js'
+import { buildProviderInvocation, decodeProviderOutput } from './provider-adapters.js'
 import {
   parseResultEnvelope,
   resultEnvelopeBlockedFallback,
@@ -55,6 +55,8 @@ export async function runSpawnedAgent(options) {
     guides = [],
     assignmentContext = null,
     allowFormatCorrection = true,
+    providerSession = null,
+    continuity = null,
     progressFormat = requestedProgressFormat(),
   } = options
   if (!targetDir || !specdevPath || !resultPath) {
@@ -98,6 +100,8 @@ export async function runSpawnedAgent(options) {
     guides,
     contextCatalog,
     attemptKind: role,
+    providerSession,
+    continuity,
     progressFormat,
   })
   if (primary.status !== 'completed') return primary
@@ -297,6 +301,8 @@ async function executeInvocation({
   guides,
   contextCatalog,
   attemptKind,
+  providerSession,
+  continuity,
   progressFormat,
 }) {
   await fse.ensureDir(dirname(resultPath))
@@ -315,6 +321,7 @@ async function executeInvocation({
       role,
       cwd: targetDir,
       resultPath: join(specdevPath, 'cache', 'attempts', 'preflight-result.md'),
+      providerSession,
     })
   } catch (error) {
     return { status: 'failed', attempt: null, error: `agent preflight failed: ${error.message}` }
@@ -336,6 +343,7 @@ async function executeInvocation({
     discussion,
     guides,
     context_catalog: contextCatalog,
+    continuity,
   })
   const cacheDir = join(specdevPath, 'cache', 'attempts')
   const providerResultPath = join(cacheDir, `${attempt.id}-result.md`)
@@ -353,6 +361,7 @@ async function executeInvocation({
       role,
       cwd: targetDir,
       resultPath: providerResultPath,
+      providerSession,
     })
     process.stderr.write(
       `SpecDev ${attempt.id}: ${role} agent started (${profile.provider}/${profile.model}).\n`
@@ -409,12 +418,23 @@ async function executeInvocation({
     }
   }
 
-  const resultText =
-    invocation.resultMode === 'file' && (await fse.pathExists(providerResultPath))
-      ? await fse.readFile(providerResultPath, 'utf-8')
-      : processResult.stdout
+  let decoded
+  try {
+    decoded =
+      invocation.resultMode === 'file' && (await fse.pathExists(providerResultPath))
+        ? { resultText: await fse.readFile(providerResultPath, 'utf-8'), providerSessionId: null }
+        : decodeProviderOutput(invocation, processResult.stdout)
+  } catch (error) {
+    await updateAttemptRecord(specdevPath, attempt.id, {
+      status: 'failed',
+      error: error.message,
+      duration_ms: Date.now() - startedAt,
+      ...usagePatch(processResult),
+    })
+    return { status: 'failed', attempt, error: error.message }
+  }
   const temporaryResult = `${resultPath}.tmp-${process.pid}`
-  await fse.writeFile(temporaryResult, resultText, 'utf-8')
+  await fse.writeFile(temporaryResult, decoded.resultText, 'utf-8')
   await fse.move(temporaryResult, resultPath, { overwrite: true })
   const resultRevision = await gitRevision(targetDir)
   await updateAttemptRecord(specdevPath, attempt.id, {
@@ -426,7 +446,12 @@ async function executeInvocation({
         ? `working-tree@${resultRevision || 'unborn'}`
         : resultRevision,
   })
-  return { status: 'completed', attempt, resultPath }
+  return {
+    status: 'completed',
+    attempt,
+    resultPath,
+    providerSessionId: decoded.providerSessionId,
+  }
 }
 
 function spawnInvocation({

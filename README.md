@@ -108,6 +108,17 @@ read-only access fail before launch. `network: false` means SpecDev grants no
 network capability through the adapter, not that it makes claims about a
 provider's internal connectivity.
 
+The first standalone Assignment implementation review is always fresh. When a
+Claude primary review requests ordinary repair, SpecDev may keep one ignored,
+24-hour, single-use lease and resume that exact provider session for the
+immediately following repair verification. The lease is discarded on any
+Assignment, role, profile, permission, contract, working-directory, candidate,
+findings, round, expiry, or provider mismatch; review then falls back once to a
+fresh read-only Attempt. Claude must retain its provider-local session transcript
+for this narrow resume operation, but SpecDev retains neither that transcript nor
+its raw session ID as durable evidence. Codex, Cursor, Mission, resolver,
+arbiter, and all other review paths remain fresh-only.
+
 ### Ask for a larger mission
 
 > Use a Mission to repair search end to end. Keep it running through the

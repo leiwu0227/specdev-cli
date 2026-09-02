@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import fse from 'fs-extra'
@@ -10,7 +18,11 @@ import {
   writeCurrent as writeRippleCurrent,
 } from 'ripplegraph'
 import { resolveAgentProfile, validateProfile } from '../src/utils/agent-profiles.js'
-import { buildProviderInvocation } from '../src/utils/provider-adapters.js'
+import {
+  buildProviderInvocation,
+  decodeProviderOutput,
+  reviewerSessionCapability,
+} from '../src/utils/provider-adapters.js'
 import {
   parseResultEnvelope,
   resultEnvelopeBlockedFallback,
@@ -82,6 +94,11 @@ import {
   AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
   recordArtifactRepair,
 } from '../src/utils/review-convergence.js'
+import {
+  createReviewerContinuationLease,
+  preparePrimaryReviewerContinuation,
+  reviewerContinuationLeasePath,
+} from '../src/utils/reviewer-continuation.js'
 
 const root = mkdtempSync(join(tmpdir(), 'specdev-vnext-foundations-'))
 const specdevPath = join(root, '.specdev')
@@ -216,6 +233,60 @@ try {
   })
   assert.deepEqual(claudeReview.args.slice(-2), ['--effort', 'high'])
   assert.equal(claudeReview.args.includes('plan'), true)
+  assert.equal(claudeReview.args.includes('--no-session-persistence'), true)
+  assert.equal(
+    reviewerSessionCapability({
+      profile: { provider: 'claude' },
+      role: 'reviewer',
+    }).supported,
+    true
+  )
+  const claudeCapture = buildProviderInvocation({
+    profile: { provider: 'claude', model: 'opus', effort: 'xhigh' },
+    role: 'reviewer',
+    cwd: root,
+    providerSession: { mode: 'capture' },
+  })
+  assert.equal(claudeCapture.resultMode, 'claude-json')
+  assert.equal(claudeCapture.args.includes('--no-session-persistence'), false)
+  assert.equal(claudeCapture.args[claudeCapture.args.indexOf('--output-format') + 1], 'json')
+  const sessionId = 'session_fixture_0001'
+  assert.deepEqual(
+    decodeProviderOutput(
+      claudeCapture,
+      JSON.stringify({ session_id: sessionId, result: 'strict result' })
+    ),
+    { resultText: 'strict result', providerSessionId: sessionId }
+  )
+  const claudeResume = buildProviderInvocation({
+    profile: { provider: 'claude', model: 'opus', effort: 'xhigh' },
+    role: 'reviewer',
+    cwd: root,
+    providerSession: { mode: 'resume', id: sessionId },
+  })
+  const claudeResumeIndex = claudeResume.args.indexOf('--resume')
+  assert.deepEqual(claudeResume.args.slice(claudeResumeIndex, claudeResumeIndex + 2), [
+    '--resume',
+    sessionId,
+  ])
+  assert.throws(
+    () =>
+      decodeProviderOutput(
+        claudeResume,
+        JSON.stringify({ session_id: 'different_session', result: 'strict result' })
+      ),
+    /did not confirm/
+  )
+  assert.throws(
+    () =>
+      buildProviderInvocation({
+        profile: { provider: 'codex', model: 'gpt-test', effort: 'high' },
+        role: 'reviewer',
+        cwd: root,
+        providerSession: { mode: 'capture' },
+      }),
+    /does not support reviewer session continuation/
+  )
   assert.throws(
     () =>
       buildProviderInvocation({
@@ -608,6 +679,12 @@ the existing API stable.
     provider: 'claude',
     model: 'opus',
     guides: [{ id: 'api-security', version: '1' }],
+    continuity: {
+      mode: 'fallback',
+      source_attempt: 'Attempt-00007',
+      failed_attempt: 'Attempt-00006',
+      reason: 'resume_failed',
+    },
   })
   assert.equal(attempt.id, 'Attempt-00008')
   const persistedAttempt = await readAttemptRecord(specdevPath, attempt.id)
@@ -615,6 +692,12 @@ the existing API stable.
   assert.equal(persistedAttempt.filesystem, 'read-only')
   assert.equal(persistedAttempt.network, false)
   assert.deepEqual(persistedAttempt.guides, [{ id: 'api-security', version: '1' }])
+  assert.deepEqual(persistedAttempt.continuity, {
+    mode: 'fallback',
+    source_attempt: 'Attempt-00007',
+    failed_attempt: 'Attempt-00006',
+    reason: 'resume_failed',
+  })
   const completedAttempt = await updateAttemptRecord(specdevPath, attempt.id, {
     status: 'completed',
   })
@@ -1120,6 +1203,7 @@ the existing API stable.
   const canonicalOutcome =
     '# Outcome\n\n## Delivered behavior\n\nDelivered.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Focused evidence. | Passed |\n'
   writeFileSync(join(candidatePath, 'outcome.md'), canonicalOutcome)
+  writeFileSync(join(candidateRoot, 'product.js'), 'export const value = 2\n')
   const firstCandidate = await buildStandaloneAssignmentCandidateReceipt({
     targetDir: candidateRoot,
     assignmentPath: candidatePath,
@@ -1149,6 +1233,354 @@ the existing API stable.
     assignmentStatus: { id: '00002' },
   })
   assert.notEqual(changedCandidate.identity, firstCandidate.identity)
+
+  const reviewerProfile = {
+    provider: 'claude',
+    model: 'fixture',
+    effort: 'high',
+    timeout_ms: 60_000,
+    filesystem: 'read-only',
+    network: false,
+  }
+  const reviewerFindingsIdentity = 'a'.repeat(64)
+  const fakeProviderBin = join(root, 'candidate-fake-bin')
+  const fakeProviderArgs = join(candidateRoot, '.git', 'claude-args.jsonl')
+  mkdirSync(fakeProviderBin, { recursive: true })
+  writeFileSync(
+    join(fakeProviderBin, 'claude'),
+    `#!/usr/bin/env node
+const { appendFileSync, readFileSync } = require('node:fs')
+readFileSync(0, 'utf8')
+const args = process.argv.slice(2)
+appendFileSync(${JSON.stringify(fakeProviderArgs)}, JSON.stringify(args) + '\\n')
+const resumeIndex = args.indexOf('--resume')
+const resumed = resumeIndex >= 0
+const requestedSessionId = resumed ? args[resumeIndex + 1] : null
+const sessionId = requestedSessionId === 'session_force_failure' ? 'different_session' : (requestedSessionId || ${JSON.stringify(sessionId)})
+const verdict = resumed ? 'approved' : 'needs_changes'
+const findings = resumed ? 'The repaired candidate closes the finding.' : 'Repair the bounded candidate.'
+const result = ['---', 'verdict: ' + verdict, 'material_divergence: false', 'scope_divergence: none', 'procedure_divergence: none', 'evidence_integrity: complete', 'user_reapproval_required: false', '---', '', '## Findings', '', findings, ''].join('\\n')
+process.stdout.write(JSON.stringify({ session_id: sessionId, result }))
+`
+  )
+  chmodSync(join(fakeProviderBin, 'claude'), 0o755)
+  const previousPath = process.env.PATH
+  process.env.PATH = `${fakeProviderBin}:${previousPath}`
+  let freshSessionReview
+  let continuedSessionReview
+  let repairedCandidate
+  try {
+    freshSessionReview = await runSpawnedAgent({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      role: 'reviewer',
+      profile: reviewerProfile,
+      prompt: 'Review the first candidate in a fresh provider session.',
+      resultPath: join(candidatePath, 'review', 'session-verdict.md'),
+      resultKind: 'reviewer',
+      assignment: '00002_candidate',
+      providerSession: { mode: 'capture' },
+      continuity: { mode: 'fresh' },
+    })
+    assert.equal(freshSessionReview.status, 'completed')
+    assert.equal(freshSessionReview.providerSessionId, sessionId)
+    assert.equal(freshSessionReview.result.frontmatter.verdict, 'needs_changes')
+
+    await createReviewerContinuationLease({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      assignmentPath: candidatePath,
+      assignmentId: '00002',
+      profile: reviewerProfile,
+      contractHash: changedCandidate.contract.hash,
+      candidateReceipt: changedCandidate,
+      findingsIdentity: reviewerFindingsIdentity,
+      sourceAttempt: freshSessionReview.attempt.id,
+      round: 1,
+      providerSessionId: sessionId,
+    })
+    assert.equal(existsSync(reviewerContinuationLeasePath(candidateSpecdev, candidatePath)), true)
+    writeFileSync(join(candidateRoot, 'product.js'), 'export const value = 3\n')
+    writeFileSync(
+      join(candidatePath, 'outcome.md'),
+      canonicalOutcome.replace('Focused', 'Repaired')
+    )
+    repairedCandidate = await buildStandaloneAssignmentCandidateReceipt({
+      targetDir: candidateRoot,
+      assignmentPath: candidatePath,
+      assignmentStatus: { id: '00002' },
+    })
+    const continuation = await preparePrimaryReviewerContinuation({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      assignmentPath: candidatePath,
+      assignmentId: '00002',
+      profile: reviewerProfile,
+      contractHash: changedCandidate.contract.hash,
+      candidateReceipt: repairedCandidate,
+      reviewState: {
+        stage: 'primary',
+        status: 'converging',
+        primary_round: 1,
+        attempt: freshSessionReview.attempt.id,
+        candidate_receipt_identity: changedCandidate.identity,
+        findings_digest: reviewerFindingsIdentity,
+      },
+    })
+    assert.equal(continuation.status, 'eligible')
+    assert.equal(continuation.session.id, sessionId)
+    assert.match(continuation.prompt, /Bounded reviewed-to-repaired delta/)
+    assert.equal(existsSync(reviewerContinuationLeasePath(candidateSpecdev, candidatePath)), false)
+
+    continuedSessionReview = await runSpawnedAgent({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      role: 'reviewer',
+      profile: reviewerProfile,
+      prompt: continuation.prompt,
+      resultPath: join(candidatePath, 'review', 'session-verdict.md'),
+      resultKind: 'reviewer',
+      assignment: '00002_candidate',
+      providerSession: continuation.session,
+      continuity: { mode: 'continued', source_attempt: continuation.sourceAttempt },
+      allowFormatCorrection: false,
+    })
+    assert.equal(continuedSessionReview.status, 'completed')
+    assert.equal(continuedSessionReview.result.frontmatter.verdict, 'approved')
+    assert.notEqual(continuedSessionReview.attempt.id, freshSessionReview.attempt.id)
+    assert.deepEqual(continuedSessionReview.attempt.continuity, {
+      mode: 'continued',
+      source_attempt: freshSessionReview.attempt.id,
+    })
+  } finally {
+    process.env.PATH = previousPath
+  }
+  process.env.PATH = `${fakeProviderBin}:${previousPath}`
+  let failedResume
+  let freshFallback
+  try {
+    failedResume = await runSpawnedAgent({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      role: 'reviewer',
+      profile: reviewerProfile,
+      prompt: 'Attempt one exact resume that the provider cannot confirm.',
+      resultPath: join(candidatePath, 'review', 'fallback-verdict.md'),
+      resultKind: 'reviewer',
+      assignment: '00002_candidate',
+      providerSession: { mode: 'resume', id: 'session_force_failure' },
+      continuity: { mode: 'continued', source_attempt: freshSessionReview.attempt.id },
+      allowFormatCorrection: false,
+    })
+    assert.equal(failedResume.status, 'failed')
+    freshFallback = await runSpawnedAgent({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      role: 'reviewer',
+      profile: reviewerProfile,
+      prompt: 'Perform the single fresh fallback review.',
+      resultPath: join(candidatePath, 'review', 'fallback-verdict.md'),
+      resultKind: 'reviewer',
+      assignment: '00002_candidate',
+      providerSession: { mode: 'capture' },
+      continuity: {
+        mode: 'fallback',
+        source_attempt: freshSessionReview.attempt.id,
+        failed_attempt: failedResume.attempt.id,
+        reason: 'resume_failed',
+      },
+    })
+    assert.equal(freshFallback.status, 'completed')
+    assert.deepEqual(freshFallback.attempt.continuity, {
+      mode: 'fallback',
+      source_attempt: freshSessionReview.attempt.id,
+      failed_attempt: failedResume.attempt.id,
+      reason: 'resume_failed',
+    })
+  } finally {
+    process.env.PATH = previousPath
+  }
+  const providerInvocations = readFileSync(fakeProviderArgs, 'utf8')
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line))
+  assert.equal(providerInvocations[0].includes('--resume'), false)
+  assert.deepEqual(
+    providerInvocations[1].slice(
+      providerInvocations[1].indexOf('--resume'),
+      providerInvocations[1].indexOf('--resume') + 2
+    ),
+    ['--resume', sessionId]
+  )
+  assert.equal(providerInvocations.length, 4)
+  assert.equal(providerInvocations[2].includes('session_force_failure'), true)
+  assert.equal(providerInvocations[3].includes('--resume'), false)
+  assert.equal(
+    (
+      await preparePrimaryReviewerContinuation({
+        targetDir: candidateRoot,
+        specdevPath: candidateSpecdev,
+        assignmentPath: candidatePath,
+        assignmentId: '00002',
+        profile: reviewerProfile,
+        contractHash: changedCandidate.contract.hash,
+        candidateReceipt: repairedCandidate,
+        reviewState: {
+          stage: 'primary',
+          status: 'converging',
+          primary_round: 1,
+          attempt: freshSessionReview.attempt.id,
+          candidate_receipt_identity: changedCandidate.identity,
+          findings_digest: reviewerFindingsIdentity,
+        },
+      })
+    ).reason,
+    'lease_missing'
+  )
+
+  await createReviewerContinuationLease({
+    targetDir: candidateRoot,
+    specdevPath: candidateSpecdev,
+    assignmentPath: candidatePath,
+    assignmentId: '00002',
+    profile: reviewerProfile,
+    contractHash: repairedCandidate.contract.hash,
+    candidateReceipt: repairedCandidate,
+    findingsIdentity: reviewerFindingsIdentity,
+    sourceAttempt: continuedSessionReview.attempt.id,
+    round: 1,
+    providerSessionId: sessionId,
+  })
+  writeFileSync(join(candidateRoot, 'unrelated.js'), 'export const unrelated = true\n')
+  const unrelatedCandidate = await buildStandaloneAssignmentCandidateReceipt({
+    targetDir: candidateRoot,
+    assignmentPath: candidatePath,
+    assignmentStatus: { id: '00002' },
+  })
+  const unrelatedContinuation = await preparePrimaryReviewerContinuation({
+    targetDir: candidateRoot,
+    specdevPath: candidateSpecdev,
+    assignmentPath: candidatePath,
+    assignmentId: '00002',
+    profile: reviewerProfile,
+    contractHash: repairedCandidate.contract.hash,
+    candidateReceipt: unrelatedCandidate,
+    reviewState: {
+      stage: 'primary',
+      status: 'converging',
+      primary_round: 1,
+      attempt: continuedSessionReview.attempt.id,
+      candidate_receipt_identity: repairedCandidate.identity,
+      findings_digest: reviewerFindingsIdentity,
+    },
+  })
+  assert.equal(unrelatedContinuation.reason, 'unrelated_candidate_change')
+  rmSync(join(candidateRoot, 'unrelated.js'))
+
+  const invalidationCases = [
+    ['lease_expired', (lease) => (lease.expires_at = '2000-01-01T00:00:00.000Z'), reviewerProfile],
+    ['assignment_mismatch', (lease) => (lease.assignment.id = '99999'), reviewerProfile],
+    ['role_mismatch', (lease) => (lease.role = 'arbiter'), reviewerProfile],
+    ['profile_mismatch', (lease) => (lease.profile.model = 'other-model'), reviewerProfile],
+    [
+      'permission_mismatch',
+      (lease) => (lease.permissions.filesystem = 'workspace-write'),
+      reviewerProfile,
+    ],
+    ['contract_mismatch', (lease) => (lease.contract_hash = 'b'.repeat(64)), reviewerProfile],
+    ['cwd_mismatch', (lease) => (lease.cwd = '/different/workspace'), reviewerProfile],
+    [
+      'candidate_baseline_mismatch',
+      (lease) => (lease.reviewed_candidate.identity = 'b'.repeat(64)),
+      reviewerProfile,
+    ],
+    ['findings_mismatch', (lease) => (lease.findings_identity = 'b'.repeat(64)), reviewerProfile],
+    [
+      'source_attempt_mismatch',
+      (lease) => (lease.source_attempt = 'Attempt-99999'),
+      reviewerProfile,
+    ],
+    ['round_mismatch', (lease) => (lease.round = 2), reviewerProfile],
+    ['lease_invalid', (lease) => (lease.provider_session_id = 'bad id'), reviewerProfile],
+    [
+      'provider_unsupported',
+      () => {},
+      { ...reviewerProfile, provider: 'cursor', model: 'cursor-model', effort: null },
+    ],
+  ]
+  for (const [expectedReason, mutateLease, activeProfile] of invalidationCases) {
+    await createReviewerContinuationLease({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      assignmentPath: candidatePath,
+      assignmentId: '00002',
+      profile: reviewerProfile,
+      contractHash: repairedCandidate.contract.hash,
+      candidateReceipt: repairedCandidate,
+      findingsIdentity: reviewerFindingsIdentity,
+      sourceAttempt: continuedSessionReview.attempt.id,
+      round: 1,
+      providerSessionId: sessionId,
+    })
+    const leasePath = reviewerContinuationLeasePath(candidateSpecdev, candidatePath)
+    const lease = JSON.parse(readFileSync(leasePath, 'utf8'))
+    mutateLease(lease)
+    writeFileSync(leasePath, `${JSON.stringify(lease, null, 2)}\n`)
+    const invalidated = await preparePrimaryReviewerContinuation({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      assignmentPath: candidatePath,
+      assignmentId: '00002',
+      profile: activeProfile,
+      contractHash: repairedCandidate.contract.hash,
+      candidateReceipt: repairedCandidate,
+      reviewState: {
+        stage: 'primary',
+        status: 'converging',
+        primary_round: 1,
+        attempt: continuedSessionReview.attempt.id,
+        candidate_receipt_identity: repairedCandidate.identity,
+        findings_digest: reviewerFindingsIdentity,
+      },
+    })
+    assert.equal(invalidated.reason, expectedReason)
+  }
+  for (const [expectedReason, candidateReceipt] of [
+    ['candidate_incomplete', { ...repairedCandidate, completeness: 'incomplete' }],
+    ['candidate_unchanged', repairedCandidate],
+  ]) {
+    await createReviewerContinuationLease({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      assignmentPath: candidatePath,
+      assignmentId: '00002',
+      profile: reviewerProfile,
+      contractHash: repairedCandidate.contract.hash,
+      candidateReceipt: repairedCandidate,
+      findingsIdentity: reviewerFindingsIdentity,
+      sourceAttempt: continuedSessionReview.attempt.id,
+      round: 1,
+      providerSessionId: sessionId,
+    })
+    const invalidated = await preparePrimaryReviewerContinuation({
+      targetDir: candidateRoot,
+      specdevPath: candidateSpecdev,
+      assignmentPath: candidatePath,
+      assignmentId: '00002',
+      profile: reviewerProfile,
+      contractHash: repairedCandidate.contract.hash,
+      candidateReceipt,
+      reviewState: {
+        stage: 'primary',
+        status: 'converging',
+        primary_round: 1,
+        attempt: continuedSessionReview.attempt.id,
+        candidate_receipt_identity: repairedCandidate.identity,
+        findings_digest: reviewerFindingsIdentity,
+      },
+    })
+    assert.equal(invalidated.reason, expectedReason)
+  }
 
   const firstArtifactRepair = recordArtifactRepair(
     {},

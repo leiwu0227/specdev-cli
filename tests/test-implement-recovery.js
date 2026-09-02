@@ -12,6 +12,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { parse } from 'yaml'
 
 const repoRoot = resolve(import.meta.dirname, '..')
 const bin = join(repoRoot, 'bin', 'specdev.js')
@@ -210,7 +211,12 @@ function reviewerCount(root) {
   return existsSync(path) ? Number(readFileSync(path, 'utf8')) : 0
 }
 
-function createFixture(label, implementationMode = 'spawned', implementationReview = 'waived') {
+function createFixture(
+  label,
+  implementationMode = 'spawned',
+  implementationReview = 'waived',
+  reviewerSequence = 'approved'
+) {
   const root = mkdtempSync(join(tmpdir(), `specdev-implement-recovery-${label}-`))
   roots.push(root)
   const fakeBin = join(root, 'fake-bin')
@@ -218,25 +224,33 @@ function createFixture(label, implementationMode = 'spawned', implementationRevi
   const fakeClaude = join(fakeBin, 'claude')
   writeFileSync(
     fakeClaude,
-    `#!/bin/sh
-prompt=$(cat)
-case "$prompt" in
-  *"Choose exactly one verdict"*)
-    reviewer_file="${root}.fake-reviewer-count"
-    reviewer_count=0
-    if [ -f "$reviewer_file" ]; then reviewer_count=$(cat "$reviewer_file"); fi
-    reviewer_count=$((reviewer_count + 1))
-    printf '%s' "$reviewer_count" >"$reviewer_file"
-    printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'No blocking findings in the focused fixture.'
-    exit 0
-    ;;
-esac
-count_file="${root}/.fake-worker-count"
-count=0
-if [ -f "$count_file" ]; then count=$(cat "$count_file"); fi
-count=$((count + 1))
-printf '%s' "$count" >"$count_file"
-printf '%s\\n' '---' 'status: completed' 'revision: null' 'follow_up: none' '---' '' '## Changes' '' 'Fake worker completed the recovery fixture.'
+    `#!/usr/bin/env node
+const fs = require('node:fs')
+const prompt = fs.readFileSync(0, 'utf8')
+const args = process.argv.slice(2)
+if (prompt.includes('Choose exactly one verdict')) {
+  const reviewerFile = ${JSON.stringify(`${root}.fake-reviewer-count`)}
+  const reviewerArgsFile = ${JSON.stringify(`${root}.fake-reviewer-args.jsonl`)}
+  const reviewerCount = fs.existsSync(reviewerFile) ? Number(fs.readFileSync(reviewerFile, 'utf8')) + 1 : 1
+  fs.writeFileSync(reviewerFile, String(reviewerCount))
+  fs.appendFileSync(reviewerArgsFile, JSON.stringify(args) + '\\n')
+  const needsRepair = ${JSON.stringify(reviewerSequence)} === 'repair' && reviewerCount === 1
+  const verdict = needsRepair ? 'needs_changes' : 'approved'
+  const findings = needsRepair ? 'Repair the bounded candidate.' : 'No blocking findings in the focused fixture.'
+  const result = ['---', 'verdict: ' + verdict, 'material_divergence: false', 'scope_divergence: none', 'procedure_divergence: none', 'evidence_integrity: complete', 'user_reapproval_required: false', '---', '', '## Findings', '', findings, ''].join('\\n')
+  if (args[args.indexOf('--output-format') + 1] === 'json') {
+    const resumeIndex = args.indexOf('--resume')
+    const sessionId = resumeIndex >= 0 ? args[resumeIndex + 1] : 'session_fixture_0001'
+    process.stdout.write(JSON.stringify({ session_id: sessionId, result }))
+  } else {
+    process.stdout.write(result)
+  }
+  process.exit(0)
+}
+const countFile = ${JSON.stringify(join(root, '.fake-worker-count'))}
+const count = fs.existsSync(countFile) ? Number(fs.readFileSync(countFile, 'utf8')) + 1 : 1
+fs.writeFileSync(countFile, String(count))
+process.stdout.write(['---', 'status: completed', 'revision: null', 'follow_up: none', '---', '', '## Changes', '', 'Fake worker completed the recovery fixture.', ''].join('\\n'))
 `,
     'utf8'
   )
@@ -603,6 +617,66 @@ try {
   assert.equal(existsSync(join(repairRouting.root, '.fake-worker-count')), false)
   assert.equal(reviewerCount(repairRouting.root), 1)
 
+  const sessionContinuation = createFixture('session-continuation', 'auto', 'required', 'repair')
+  assert.equal(runJson(sessionContinuation.root, ['implement', '--json']).status, 'action_required')
+  writeDelivery(sessionContinuation.assignmentPath)
+  writeWorkerResult(sessionContinuation.assignmentPath, completedResult())
+  mkdirSync(join(sessionContinuation.root, 'src'))
+  const sessionProductPath = join(sessionContinuation.root, 'src', 'session.js')
+  writeFileSync(sessionProductPath, 'export const session = 1\n', 'utf8')
+  const firstSessionReview = runJson(sessionContinuation.root, ['implement', '--json'])
+  assert.equal(firstSessionReview.status, 'action_required')
+  assert.equal(reviewerCount(sessionContinuation.root), 1)
+  const firstReviewerAttempt = readdirSync(join(sessionContinuation.root, '.specdev', 'processes'))
+    .filter((name) => name.endsWith('.yaml'))
+    .map((name) =>
+      parse(readFileSync(join(sessionContinuation.root, '.specdev', 'processes', name), 'utf8'))
+    )
+    .find((attempt) => attempt.kind === 'reviewer')
+  assert.deepEqual(firstReviewerAttempt.continuity, { mode: 'fresh' })
+  const leasePath = join(
+    sessionContinuation.root,
+    '.specdev',
+    'cache',
+    'reviewer-continuations',
+    `${sessionContinuation.assignment}.json`
+  )
+  assert.equal(existsSync(leasePath), true)
+  writeFileSync(sessionProductPath, 'export const session = 2\n', 'utf8')
+  writeFileSync(
+    join(sessionContinuation.assignmentPath, 'implementation', 'repair-result.md'),
+    completedResult(),
+    'utf8'
+  )
+  const continuedReview = runJson(sessionContinuation.root, ['implement', '--json'])
+  assert.equal(continuedReview.status, 'approved')
+  assert.equal(continuedReview.activity.provider_attempts.total, 2)
+  assert.equal(reviewerCount(sessionContinuation.root), 2)
+  assert.equal(existsSync(leasePath), false)
+  const sessionReviewArgs = readFileSync(
+    `${sessionContinuation.root}.fake-reviewer-args.jsonl`,
+    'utf8'
+  )
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line))
+  assert.equal(sessionReviewArgs[0].includes('--resume'), false)
+  const resumeIndex = sessionReviewArgs[1].indexOf('--resume')
+  assert.deepEqual(sessionReviewArgs[1].slice(resumeIndex, resumeIndex + 2), [
+    '--resume',
+    'session_fixture_0001',
+  ])
+  const continuedState = JSON.parse(
+    readFileSync(
+      join(sessionContinuation.assignmentPath, 'review', 'implementation-state.json'),
+      'utf8'
+    )
+  )
+  assert.deepEqual(continuedState.reviewer_continuity, {
+    mode: 'continued',
+    source_attempt: firstReviewerAttempt.id,
+  })
+
   const spawnedPreflight = createFixture('spawned-preflight', 'spawned', 'required')
   writeDelivery(spawnedPreflight.assignmentPath)
   const spawnedOutcomePath = join(spawnedPreflight.assignmentPath, 'outcome.md')
@@ -702,5 +776,6 @@ try {
   for (const root of roots) {
     rmSync(root, { recursive: true, force: true })
     rmSync(`${root}.fake-reviewer-count`, { force: true })
+    rmSync(`${root}.fake-reviewer-args.jsonl`, { force: true })
   }
 }

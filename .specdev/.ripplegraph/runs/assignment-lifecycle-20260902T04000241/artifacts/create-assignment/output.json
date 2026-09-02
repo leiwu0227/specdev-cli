@@ -1,0 +1,10 @@
+{
+  "id": "00063",
+  "name": "00063_continue-eligible-primary-reviewer-sessions",
+  "path": ".specdev/assignments/00063_continue-eligible-primary-reviewer-sessions",
+  "description": "Continue eligible primary reviewer sessions",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

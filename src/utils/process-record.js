@@ -45,6 +45,7 @@ export async function createAttemptRecord(specdevPath, input) {
     ...(input.assignment ? { assignment: String(input.assignment) } : {}),
     ...(input.mission ? { mission: String(input.mission) } : {}),
     ...(input.discussion ? { discussion: String(input.discussion) } : {}),
+    ...(input.continuity ? { continuity: normalizeAttemptContinuity(input.continuity) } : {}),
   }
   await writeAttemptRecord(specdevPath, record)
   return record
@@ -251,6 +252,21 @@ function normalizeFilesystem(value) {
     throw new Error('Attempt filesystem must be read-only or workspace-write')
   }
   return value
+}
+
+function normalizeAttemptContinuity(value) {
+  if (!value || !['fresh', 'continued', 'fallback'].includes(value.mode)) {
+    throw new Error('Attempt continuity mode must be fresh, continued, or fallback')
+  }
+  const continuity = { mode: value.mode }
+  if (value.mode !== 'fresh') {
+    continuity.source_attempt = requiredText(value.source_attempt, 'continuity.source_attempt')
+  }
+  if (value.failed_attempt) {
+    continuity.failed_attempt = requiredText(value.failed_attempt, 'continuity.failed_attempt')
+  }
+  if (value.reason) continuity.reason = requiredText(value.reason, 'continuity.reason')
+  return continuity
 }
 
 function requiredText(value, field) {

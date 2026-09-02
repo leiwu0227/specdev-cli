@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "00063",
+  "kind": "change",
+  "description": "Continue eligible primary reviewer sessions",
+  "run_id": "assignment-lifecycle-20260902T04000241",
+  "created_at": "2026-09-02T04:00:02.418Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-09-02T04:33:03.572Z",
+  "review_policy_frozen_at": "2026-09-02T04:04:45.395Z",
+  "approved_at": "2026-09-02T04:04:45.395Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-09-02T04:04:46.180Z"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "command",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T04:04:46.139Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-09-02T04:33:03.509Z",
+  "activity": {
+    "attempt_count": 2,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 2,
+    "provider_attempts": {
+      "total": 2,
+      "completed": 2,
+      "failed": 0,
+      "blocked": 0,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1698114,
+    "agent_duration_ms": 306478,
+    "provider_reported_tokens": null
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-09-02T04:33:03.572Z"
+}

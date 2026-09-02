@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+      "scope": "initial focused provider, lease, invalidation, and Attempt-lineage fixture run; fixture assertion placement failed before behavioral execution",
+      "status": "failed",
+      "duration_ms": 11,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-implement-recovery.js",
+      "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+      "scope": "standalone Assignment host flow proving fresh Claude capture, exact one-use resume, distinct Attempt lineage, and final delivery",
+      "status": "passed",
+      "duration_ms": 23485,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+      "scope": "Claude capture/resume decoding, ignored lease bindings and invalidations, one-use consumption, resume failure, fresh fallback, and durable Attempt continuity",
+      "status": "passed",
+      "duration_ms": 2300,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}

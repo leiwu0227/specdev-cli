@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "3a2545f2ef4235a0e5eecedc6f8e46bed83ef6fcdc44affc7bd4713b03f0909b",
+  "assignment": {
+    "id": "00063",
+    "folder": "00063_continue-eligible-primary-reviewer-sessions"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "command",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T04:04:46.139Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00063_continue-eligible-primary-reviewer-sessions/brainstorm/contract.md",
+    "hash": "858a32f385720298bf0e04b1899e1ffd5e1efb893258fd50ac325fcaa32b53b4"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`test-vnext-foundations` proves a fresh Claude capture uses structured output without resume, keeps read-only Attempt policy, and creates a fully bound versioned ignored lease only with a valid session identity.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`test-implement-recovery` proves the repaired standalone candidate resumes the exact Claude session, creates a distinct linked Attempt, consumes the lease, records continued state, and completes with a new verdict.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`test-vnext-foundations` covers every lease binding, expiry, missing state, unsupported provider, malformed identity, unrelated path expansion, single-use consumption, failed resume, and one linked fresh fallback; host coverage keeps Mis...",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 3,
+    "items": [
+      {
+        "command": "node tests/test-implement-recovery.js",
+        "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+        "scope": "standalone Assignment host flow proving fresh Claude capture, exact one-use resume, distinct Attempt lineage, and final delivery",
+        "status": "passed",
+        "duration_ms": 23485,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+        "scope": "Claude capture/resume decoding, ignored lease bindings and invalidations, one-use consumption, resume failure, fresh fallback, and durable Attempt continuity",
+        "status": "passed",
+        "duration_ms": 2300,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+        "scope": "initial focused provider, lease, invalidation, and Attempt-lineage fixture run; fixture assertion placement failed before behavioral execution",
+        "status": "failed",
+        "duration_ms": 11,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 3,
+      "counts": {
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 3,
+      "counts": {
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-implement-recovery.js",
+        "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@e5e03ecbad4ef34a4040433b33796e9b458d9d81",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 10,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "README.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 5,
+        "paths": [
+          "src/commands/reviewloop.js",
+          "src/utils/process-record.js",
+          "src/utils/provider-adapters.js",
+          "src/utils/reviewer-continuation.js",
+          "src/utils/spawned-agent.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 2,
+        "paths": [
+          "templates/.specdev/_guides/assignment_guide.md",
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-implement-recovery.js",
+          "tests/test-vnext-foundations.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "Provider CLI session formats may change. Adapter-owned structured decoding and",
+      "strict identity confirmation fail closed to a fresh review, so such drift costs",
+      "orientation rather than authority or recoverability."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00063_continue-eligible-primary-reviewer-sessions/brainstorm/contract.md",
+      "exists": true,
+      "digest": "858a32f385720298bf0e04b1899e1ffd5e1efb893258fd50ac325fcaa32b53b4"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00063_continue-eligible-primary-reviewer-sessions/design/plan.md",
+      "exists": true,
+      "digest": "59310032a5c474236916a9d2cd2a05a569078c5c394c6b8a45118104c07d043b"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00063_continue-eligible-primary-reviewer-sessions/implementation/progress.json",
+      "exists": true,
+      "digest": "5c352a1f949f5237bac772c641b869b69cf28efa36c90bf8f1ad30b52dd69dc5"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00063_continue-eligible-primary-reviewer-sessions/outcome.md",
+      "exists": true,
+      "digest": "5408ecb41baa3102df25a3a4995de97d76ac71a3001f89e1af1ad02c29a4e0f4"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

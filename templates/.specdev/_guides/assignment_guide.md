@@ -50,6 +50,20 @@ resolver or arbiter roles receive findings as task evidence rather than inherite
 reasoning. Mission children may only narrow the parent-selected supporting
 envelope and cannot expand parent or child authority.
 
+For a standalone Assignment, the first primary implementation reviewer is
+always fresh. A Claude review that requests ordinary repair may create one
+ignored, 24-hour, single-use continuation lease for the immediately following
+primary repair verification. The lease binds the exact Assignment, role,
+provider session, frozen profile and permissions, contract, canonical working
+directory, candidate, findings, source Attempt, and round. Any mismatch,
+missing or expired state, unrelated candidate path, malformed capture, or resume
+failure produces an observable fresh read-only fallback. The continued round is
+still a distinct Attempt with a new verdict; durable findings and receipts stay
+authoritative. Resolver, arbiter, Mission, format-correction, non-reviewer, and
+other-provider paths remain fresh-only. Claude provider-local transcript
+persistence enables exact resume, but SpecDev does not retain that transcript or
+raw session identity as durable evidence.
+
 Installed configuration uses `implementation.mode: auto | inline | spawned` in
 `.specdev/agents.yaml`; omission is `auto`. For an ordinary standalone
 Assignment, `auto` freezes to `inline` at the Git boundary and returns a

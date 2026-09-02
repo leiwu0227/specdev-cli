@@ -36,6 +36,12 @@ import { readMission, resolveMissionSelector, writeMission } from '../utils/miss
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
 import { listAttemptRecords } from '../utils/process-record.js'
+import { reviewerSessionCapability } from '../utils/provider-adapters.js'
+import {
+  createReviewerContinuationLease,
+  discardReviewerContinuationLease,
+  preparePrimaryReviewerContinuation,
+} from '../utils/reviewer-continuation.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
   completeStandaloneAssignmentDelivery,
@@ -981,6 +987,24 @@ export async function reviewImplementation(flags = {}) {
     specdevPath,
     await resolveGuides(specdevPath, guideIds, { phase: 'implementation' })
   )
+  const previousReviewState = reviewState
+  let continuationPlan = null
+  if (mission || ['resolver', 'arbiter'].includes(reviewState.stage)) {
+    await discardReviewerContinuationLease(specdevPath, assignmentPath)
+  } else if (reviewState.primary_round === 0) {
+    await discardReviewerContinuationLease(specdevPath, assignmentPath)
+  } else {
+    continuationPlan = await preparePrimaryReviewerContinuation({
+      targetDir,
+      specdevPath,
+      assignmentPath,
+      assignmentId: assignmentStatus.id,
+      profile,
+      contractHash: contract.hash,
+      candidateReceipt,
+      reviewState,
+    })
+  }
   reviewState = {
     ...reviewState,
     profile,
@@ -1055,6 +1079,10 @@ export async function reviewImplementation(flags = {}) {
       ? `Complete candidate receipt: ${relativeToRepo(targetDir, candidateReceiptPath)} @ ${candidateReceipt.identity}`
       : null,
     reviewState.round > 0 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
+    !arbitration && continuationPlan?.status === 'eligible' ? continuationPlan.prompt : null,
+    !arbitration && continuationPlan?.status === 'fresh'
+      ? `Reviewer continuation unavailable (${continuationPlan.reason}); perform a complete fresh review.`
+      : null,
     'Inspect the current Git diff or revision. Reuse existing receipts and never run a full suite without explicit authority.',
     'Report scope_divergence, procedure_divergence, evidence_integrity, and user_reapproval_required explicitly. Scope materiality, changed/incomplete evidence, or required user reapproval cannot authorize delivery; disclosed procedure divergence may be approved when evidence remains complete.',
     'If the candidate adds or upgrades an external dependency, require execution-time package-manager/registry version evidence and inspect available lockfile/audit evidence. An unresolved direct high/critical advisory is blocking unless the approved contract explicitly accepts it. A lockfile-only update does not prove installation or entry-point startup; do not credit evidence the receipts do not contain.',
@@ -1064,7 +1092,9 @@ export async function reviewImplementation(flags = {}) {
   ]
     .filter(Boolean)
     .join('\n')
-  const result = await runSpawnedAgent({
+  const sessionCapability = reviewerSessionCapability({ profile, role: 'reviewer' })
+  const hasPriorPrimary = !mission && !arbitration && previousReviewState.primary_round > 0
+  const baseReviewOptions = {
     targetDir,
     specdevPath,
     role: 'reviewer',
@@ -1081,7 +1111,41 @@ export async function reviewImplementation(flags = {}) {
       role: arbitration ? 'arbiter' : 'primary-reviewer',
       includePriorFindings: !arbitration && reviewState.round > 0,
     },
+  }
+  let result = await runSpawnedAgent({
+    ...baseReviewOptions,
+    providerSession:
+      continuationPlan?.status === 'eligible'
+        ? continuationPlan.session
+        : !mission && !arbitration && sessionCapability.supported
+          ? { mode: 'capture' }
+          : null,
+    continuity:
+      continuationPlan?.status === 'eligible'
+        ? { mode: 'continued', source_attempt: continuationPlan.sourceAttempt }
+        : hasPriorPrimary
+          ? {
+              mode: 'fallback',
+              source_attempt: continuationPlan?.sourceAttempt || previousReviewState.attempt,
+              reason: continuationPlan?.reason || 'lease_unavailable',
+            }
+          : { mode: 'fresh' },
+    allowFormatCorrection: continuationPlan?.status !== 'eligible',
   })
+  if (result.status !== 'completed' && continuationPlan?.status === 'eligible') {
+    const failedContinuationAttempt = result.attempt?.id || null
+    result = await runSpawnedAgent({
+      ...baseReviewOptions,
+      prompt: `${prompt}\nThe exact reviewer-session resume failed. Perform one complete fresh fallback review; do not rely on remembered conclusions.`,
+      providerSession: sessionCapability.supported ? { mode: 'capture' } : null,
+      continuity: {
+        mode: 'fallback',
+        source_attempt: continuationPlan.sourceAttempt,
+        ...(failedContinuationAttempt ? { failed_attempt: failedContinuationAttempt } : {}),
+        reason: 'resume_failed',
+      },
+    })
+  }
   if (result.status !== 'completed') return fail(flags, result.error || 'Reviewer failed')
   const reviewerResult = result.result.frontmatter
   const unsafeTransition =
@@ -1258,8 +1322,37 @@ export async function reviewImplementation(flags = {}) {
     ...primary.state,
     profile,
     guide_ids: guideIds,
+    reviewer_continuity: result.attempt.continuity || { mode: 'fresh' },
     ...reviewTaxonomy(reviewerResult),
   }
+  let continuationLease = null
+  if (
+    !mission &&
+    primary.disposition === 'repair' &&
+    primary.state.primary_round === 1 &&
+    result.providerSessionId
+  ) {
+    try {
+      continuationLease = await createReviewerContinuationLease({
+        targetDir,
+        specdevPath,
+        assignmentPath,
+        assignmentId: assignmentStatus.id,
+        profile,
+        contractHash: contract.hash,
+        candidateReceipt,
+        findingsIdentity: primary.state.findings_digest,
+        sourceAttempt: result.attempt.id,
+        round: primary.state.primary_round,
+        providerSessionId: result.providerSessionId,
+      })
+    } catch {
+      await discardReviewerContinuationLease(specdevPath, assignmentPath)
+    }
+  } else {
+    await discardReviewerContinuationLease(specdevPath, assignmentPath)
+  }
+  reviewState.reviewer_continuation_lease = continuationLease ? 'available' : 'unavailable'
   await writeJsonAtomic(statePath, reviewState)
   if (primary.disposition === 'approved') {
     return completeImplementationReview({
