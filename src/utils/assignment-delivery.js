@@ -21,6 +21,7 @@ import {
 import { compactCompletedWorkflowRuntime, retireTransientArtifact } from './artifact-retention.js'
 import { attemptActivitySummary } from './process-record.js'
 import { parseResultEnvelope } from './result-envelope.js'
+import { validateDeliveryArtifacts } from './delivery-artifacts.js'
 
 const RECEIPT_LIMITS = Object.freeze({ items: 12, groups: 8, text: 240 })
 
@@ -95,6 +96,58 @@ export async function buildStandaloneAssignmentCandidateReceipt({
   return receipt
 }
 
+export async function preflightStandaloneAssignmentCandidate({
+  targetDir,
+  specdevPath,
+  assignmentPath,
+  assignmentStatus,
+  acceptanceIds,
+  delivery: validatedDelivery = null,
+  writeReceipt = false,
+  writeIncomplete = false,
+}) {
+  let delivery = validatedDelivery
+  if (!delivery) {
+    try {
+      delivery = await validateDeliveryArtifacts(specdevPath, assignmentPath, acceptanceIds)
+    } catch (error) {
+      const issues = [`delivery_artifact_invalid: ${boundedText(error.message)}`]
+      return {
+        status: 'incomplete',
+        stage: 'delivery_artifacts',
+        completeness: 'incomplete',
+        issues,
+        issues_omitted: 0,
+        delivery: null,
+        receipt: null,
+        receipt_path: null,
+        verification: null,
+      }
+    }
+  }
+  const receipt = await buildStandaloneAssignmentCandidateReceipt({
+    targetDir,
+    assignmentPath,
+    assignmentStatus,
+  })
+  const complete = receipt.completeness === 'complete'
+  const receiptPath =
+    writeReceipt && (complete || writeIncomplete)
+      ? await writeStandaloneAssignmentCandidateReceipt(assignmentPath, receipt)
+      : null
+  return {
+    status: complete ? 'complete' : 'incomplete',
+    stage: 'candidate',
+    completeness: receipt.completeness,
+    issues: [...receipt.issues],
+    issues_omitted: receipt.issues_omitted,
+    delivery,
+    receipt,
+    receipt_path: receiptPath,
+    verification: verificationProjection(receipt.verification),
+  }
+}
+
 export function validateStandaloneAssignmentCandidateReceipt(receipt) {
   if (!receipt || receipt.version !== 1 || receipt.kind !== 'standalone_assignment_candidate') {
     throw new Error('Invalid standalone Assignment candidate receipt')
@@ -132,6 +185,7 @@ export function validateStandaloneAssignmentCandidateReceipt(receipt) {
   ) {
     throw new Error('Standalone Assignment candidate authoritative evidence is invalid')
   }
+  validateVerificationProjection(receipt.verification, 'candidate')
   for (const artifact of Object.values(receipt.artifacts)) {
     if (
       typeof artifact?.path !== 'string' ||
@@ -493,6 +547,15 @@ export function formatStandaloneAssignmentReceipt(receipt) {
     `    Authoritative acceptance: ${roles.authoritative_acceptance.passed} passed, ${roles.authoritative_acceptance.failed} failed, ${roles.authoritative_acceptance.skipped} skipped`,
     `  Changed project paths: ${receipt.changed_project_paths.count}`,
   ]
+  if (receipt.verification.effective) {
+    const effective = receipt.verification.effective
+    lines.splice(
+      9,
+      0,
+      `  Current verification obligations: ${effective.counts.passed} passed, ${effective.counts.failed} failed, ${effective.counts.skipped} skipped, ${effective.counts.missing} missing`,
+      `  Superseded verification attempts: ${receipt.verification.superseded}`
+    )
+  }
   for (const group of receipt.changed_project_paths.groups) {
     const suffix = group.omitted > 0 ? `, +${group.omitted} more` : ''
     lines.push(`    ${group.name} (${group.count}): ${group.paths.join(', ')}${suffix}`)
@@ -568,6 +631,7 @@ export function validateStandaloneAssignmentReceipt(receipt) {
   ) {
     throw new Error('Standalone delivery receipt verification roles are invalid')
   }
+  validateVerificationProjection(receipt.verification, 'delivery')
   if (
     !Array.isArray(receipt.unresolved_risks.items) ||
     receipt.unresolved_risks.items.length > RECEIPT_LIMITS.items
@@ -648,65 +712,192 @@ function summarizeAcceptance(ids, outcome, issues) {
 export function summarizeVerification(receipts, issues) {
   if (!Array.isArray(receipts)) {
     issues.push('verification_evidence_missing')
+    const counts = { passed: 0, failed: 0, skipped: 0, missing: 1 }
+    const byRole = emptyVerificationRoleCounts()
     return {
       total: 0,
       items: [],
       omitted: 0,
-      counts: { passed: 0, failed: 0, skipped: 0, missing: 1 },
-      by_role: emptyVerificationRoleCounts(),
+      counts,
+      by_role: byRole,
+      raw: { total: 0, counts, by_role: byRole },
+      effective: { total: 0, counts, by_role: byRole },
+      superseded: 0,
       authoritative_evidence: [],
+      authoritative_evidence_omitted: 0,
     }
   }
-  const items = receipts.slice(0, RECEIPT_LIMITS.items).map((receipt) => {
-    const explicitRole = ['qualification', 'authoritative_acceptance'].includes(receipt?.role)
-      ? receipt.role
-      : null
-    return {
-      command: boundedText(receipt?.command || 'missing'),
-      revision: boundedText(receipt?.revision || 'missing'),
-      scope: boundedText(receipt?.scope || 'missing'),
-      status: ['passed', 'failed', 'skipped'].includes(receipt?.status)
-        ? receipt.status
-        : 'missing',
-      duration_ms: Number.isSafeInteger(receipt?.duration_ms) ? receipt.duration_ms : null,
-      role: explicitRole || 'authoritative_acceptance',
-      role_source: explicitRole ? 'explicit' : 'legacy_default',
-    }
-  })
-  const counts = countStatuses(items, ['passed', 'failed', 'skipped', 'missing'])
+  const normalized = receipts.map(normalizeVerificationReceipt)
+  const rawItems = normalized.map((entry) => entry.item)
+  const counts = countStatuses(rawItems, ['passed', 'failed', 'skipped', 'missing'])
   const byRole = {
     qualification: countStatuses(
-      items.filter((item) => item.role === 'qualification'),
+      rawItems.filter((item) => item.role === 'qualification'),
       ['passed', 'failed', 'skipped', 'missing']
     ),
     authoritative_acceptance: countStatuses(
-      items.filter((item) => item.role === 'authoritative_acceptance'),
+      rawItems.filter((item) => item.role === 'authoritative_acceptance'),
       ['passed', 'failed', 'skipped', 'missing']
     ),
   }
-  if (receipts.length > RECEIPT_LIMITS.items || counts.missing > 0) {
+  if (normalized.some((entry) => !entry.valid)) {
     issues.push('verification_evidence_incomplete')
   }
-  const authoritative = items.filter((item) => item.role === 'authoritative_acceptance')
+  const obligations = new Map()
+  for (const entry of normalized) {
+    const previous = obligations.get(entry.key)
+    const history = previous?.history_counts || {
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      missing: 0,
+    }
+    history[entry.item.status] += 1
+    obligations.set(entry.key, {
+      ...entry.item,
+      attempts: (previous?.attempts || 0) + 1,
+      superseded: previous?.attempts || 0,
+      history_counts: history,
+      first_index: previous?.first_index ?? entry.index,
+      last_index: entry.index,
+    })
+  }
+  const effectiveItems = [...obligations.values()]
+  const effectiveCounts = countStatuses(effectiveItems, ['passed', 'failed', 'skipped', 'missing'])
+  const effectiveByRole = {
+    qualification: countStatuses(
+      effectiveItems.filter((item) => item.role === 'qualification'),
+      ['passed', 'failed', 'skipped', 'missing']
+    ),
+    authoritative_acceptance: countStatuses(
+      effectiveItems.filter((item) => item.role === 'authoritative_acceptance'),
+      ['passed', 'failed', 'skipped', 'missing']
+    ),
+  }
+  const prioritized = [...effectiveItems].sort(compareVerificationObligations)
+  const authoritative = prioritized.filter((item) => item.role === 'authoritative_acceptance')
   if (authoritative.length === 0) issues.push('authoritative_verification_missing')
   if (
-    byRole.authoritative_acceptance.failed > 0 ||
-    byRole.authoritative_acceptance.skipped > 0 ||
-    byRole.authoritative_acceptance.missing > 0
+    effectiveByRole.authoritative_acceptance.failed > 0 ||
+    effectiveByRole.authoritative_acceptance.skipped > 0 ||
+    effectiveByRole.authoritative_acceptance.missing > 0
   ) {
     issues.push('authoritative_verification_not_passed')
   }
+  const items = prioritized.slice(0, RECEIPT_LIMITS.items).map(publicVerificationObligation)
+  const authoritativeEvidence = authoritative.slice(0, RECEIPT_LIMITS.items)
   return {
     total: receipts.length,
     items,
-    omitted: Math.max(0, receipts.length - items.length),
+    omitted: Math.max(0, effectiveItems.length - items.length),
     counts,
     by_role: byRole,
-    authoritative_evidence: authoritative.map((item) => ({
+    raw: { total: receipts.length, counts, by_role: byRole },
+    effective: {
+      total: effectiveItems.length,
+      counts: effectiveCounts,
+      by_role: effectiveByRole,
+    },
+    superseded: Math.max(0, receipts.length - effectiveItems.length),
+    authoritative_evidence: authoritativeEvidence.map((item) => ({
       command: item.command,
       revision: item.revision,
       status: item.status,
     })),
+    authoritative_evidence_omitted: Math.max(
+      0,
+      authoritative.length - authoritativeEvidence.length
+    ),
+  }
+}
+
+function normalizeVerificationReceipt(receipt, index) {
+  const explicitRole = ['qualification', 'authoritative_acceptance'].includes(receipt?.role)
+    ? receipt.role
+    : null
+  const hasRole = receipt?.role !== undefined && receipt?.role !== null && receipt?.role !== ''
+  const role = explicitRole || 'authoritative_acceptance'
+  const command = String(receipt?.command || '').trim()
+  const revision = String(receipt?.revision || '').trim()
+  const scope = String(receipt?.scope || '').trim()
+  const status = ['passed', 'failed', 'skipped'].includes(receipt?.status)
+    ? receipt.status
+    : 'missing'
+  const duration = Number.isSafeInteger(receipt?.duration_ms) ? receipt.duration_ms : null
+  const valid = Boolean(
+    command &&
+      revision &&
+      scope &&
+      status !== 'missing' &&
+      duration !== null &&
+      (!hasRole || explicitRole)
+  )
+  return {
+    index,
+    valid,
+    key: valid ? JSON.stringify([role, command, revision]) : `invalid:${index}`,
+    item: {
+      command: boundedText(command || 'missing'),
+      revision: boundedText(revision || 'missing'),
+      scope: boundedText(scope || 'missing'),
+      status: valid ? status : 'missing',
+      duration_ms: duration,
+      role,
+      role_source: explicitRole ? 'explicit' : 'legacy_default',
+    },
+  }
+}
+
+function compareVerificationObligations(left, right) {
+  const priority = (item) => {
+    if (item.role === 'authoritative_acceptance' && item.status !== 'passed') return 0
+    if (item.role === 'authoritative_acceptance') return 1
+    return 2
+  }
+  return (
+    priority(left) - priority(right) ||
+    left.last_index - right.last_index ||
+    left.first_index - right.first_index
+  )
+}
+
+function publicVerificationObligation(item) {
+  const { first_index: _firstIndex, last_index: _lastIndex, ...publicItem } = item
+  return publicItem
+}
+
+function verificationProjection(summary) {
+  if (!summary?.raw || !summary?.effective) return null
+  return {
+    raw_total: summary.raw.total,
+    effective_total: summary.effective.total,
+    superseded: summary.superseded,
+    preview_omitted: summary.omitted,
+    authoritative_evidence_omitted: summary.authoritative_evidence_omitted,
+  }
+}
+
+function validateVerificationProjection(summary, label) {
+  const hasProjection = summary.raw !== undefined || summary.effective !== undefined
+  if (!hasProjection) return
+  if (
+    !summary.raw ||
+    !summary.effective ||
+    !Number.isSafeInteger(summary.raw.total) ||
+    summary.raw.total < 0 ||
+    !Number.isSafeInteger(summary.effective.total) ||
+    summary.effective.total < 0 ||
+    !Number.isSafeInteger(summary.superseded) ||
+    summary.superseded < 0 ||
+    summary.raw.total !== summary.effective.total + summary.superseded ||
+    !summary.raw.counts ||
+    !summary.raw.by_role ||
+    !summary.effective.counts ||
+    !summary.effective.by_role ||
+    !Number.isSafeInteger(summary.authoritative_evidence_omitted) ||
+    summary.authoritative_evidence_omitted < 0
+  ) {
+    throw new Error(`Standalone Assignment ${label} verification projection is invalid`)
   }
 }
 

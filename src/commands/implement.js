@@ -34,7 +34,7 @@ import {
   ensureAssignmentGitBoundary,
   findPendingStandaloneAssignmentDelivery,
   formatStandaloneAssignmentReceipt,
-  writeStandaloneAssignmentCandidateReceipt,
+  preflightStandaloneAssignmentCandidate,
 } from '../utils/assignment-delivery.js'
 
 export async function implementCommand(positionalArgs = [], flags = {}) {
@@ -227,67 +227,61 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         plan: relativeToRepo(targetDir, artifacts.planPath),
         attempt: attemptId,
       })
-      stepGuidedNode(targetDir, 'implementation', {
-        progress: relativeToRepo(targetDir, artifacts.progressPath),
-        outcome: relativeToRepo(targetDir, artifacts.outcomePath),
-        attempt: attemptId,
-      })
-      graph = await currentAssignmentNode(targetDir)
-    } else if (graph.position.node === 'implementation') {
-      const artifacts = await validateDeliveryArtifacts(
+      const advancement = await advanceImplementationCandidate({
+        flags,
+        targetDir,
         specdevPath,
         assignmentPath,
-        contract.acceptanceIds
-      )
-      stepGuidedNode(targetDir, 'implementation', {
-        progress: relativeToRepo(targetDir, artifacts.progressPath),
-        outcome: relativeToRepo(targetDir, artifacts.outcomePath),
-        attempt:
+        assignmentStatus,
+        contract,
+        artifacts,
+        attemptId,
+        name,
+        implementationExecution,
+      })
+      if (advancement.blocked) return advancement.payload
+      graph = advancement.graph
+    } else if (graph.position.node === 'implementation') {
+      const advancement = await advanceImplementationCandidate({
+        flags,
+        targetDir,
+        specdevPath,
+        assignmentPath,
+        assignmentStatus,
+        contract,
+        artifacts: null,
+        attemptId:
           implementationExecution.effective_mode === 'inline'
             ? 'inline-foreground'
             : 'recovered-artifacts',
+        name,
+        implementationExecution,
       })
-      graph = await currentAssignmentNode(targetDir)
+      if (advancement.blocked) return advancement.payload
+      graph = advancement.graph
     }
 
     if (
       graph.position.node === 'implementation-review' &&
       reviewPolicy.implementation === 'waived'
     ) {
-      let delivery
-      try {
-        delivery = await validateDeliveryArtifacts(
-          specdevPath,
-          assignmentPath,
-          contract.acceptanceIds
-        )
-      } catch (error) {
-        return emitArtifactRepair(
-          flags,
-          name,
-          `delivery_artifact_invalid: ${error.message}`,
-          {},
-          { ...assignmentStatus, implementation_execution: implementationExecution },
-          contract,
-          targetDir,
-          assignmentPath
-        )
-      }
-      assertReviewWaiverEvidence(delivery, contract.acceptanceIds)
       const reviewDir = join(assignmentPath, 'review')
       const verdictPath = join(reviewDir, 'implementation-waiver.md')
       const candidateDigest = await productStateDigest(targetDir)
       const currentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
-      const candidateReceipt = await buildStandaloneAssignmentCandidateReceipt({
+      const preflight = await preflightStandaloneAssignmentCandidate({
         targetDir,
+        specdevPath,
         assignmentPath,
         assignmentStatus: currentStatus,
+        acceptanceIds: contract.acceptanceIds,
+        writeReceipt: true,
       })
-      if (candidateReceipt.completeness !== 'complete') {
+      if (preflight.completeness !== 'complete') {
         return emitArtifactRepair(
           flags,
           name,
-          `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`,
+          `candidate_receipt_incomplete: ${preflight.issues.join(', ')}`,
           {},
           { ...assignmentStatus, implementation_execution: implementationExecution },
           contract,
@@ -295,8 +289,10 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           assignmentPath
         )
       }
+      const delivery = preflight.delivery
+      const candidateReceipt = preflight.receipt
+      assertReviewWaiverEvidence(delivery, contract.acceptanceIds, candidateReceipt.verification)
       await fse.ensureDir(reviewDir)
-      await writeStandaloneAssignmentCandidateReceipt(assignmentPath, candidateReceipt)
       await fse.writeFile(
         verdictPath,
         `---\nverdict: approved\nmaterial_divergence: false\nscope_divergence: none\nprocedure_divergence: none\nevidence_integrity: complete\nuser_reapproval_required: false\n---\n\n## Findings\n\nImplementation review was waived by the approved Assignment policy. Host validation confirmed all acceptance criteria Passed, authoritative acceptance evidence passed, no deviations, and no required follow-up.\n`,
@@ -411,6 +407,112 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
     process.exitCode = 1
     return payload
   }
+}
+
+async function advanceImplementationCandidate({
+  flags,
+  targetDir,
+  specdevPath,
+  assignmentPath,
+  assignmentStatus,
+  contract,
+  artifacts,
+  attemptId,
+  name,
+  implementationExecution,
+}) {
+  let deliveryArtifacts = artifacts
+  if (!assignmentStatus?.mission) {
+    const currentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
+    const preflight = await preflightStandaloneAssignmentCandidate({
+      targetDir,
+      specdevPath,
+      assignmentPath,
+      assignmentStatus: currentStatus,
+      acceptanceIds: contract.acceptanceIds,
+      delivery: deliveryArtifacts,
+      writeReceipt: true,
+    })
+    if (preflight.completeness !== 'complete') {
+      await fse.remove(join(assignmentPath, 'review', 'candidate-receipt.json'))
+      return {
+        blocked: true,
+        payload: emitCandidatePreflightRepair(flags, {
+          targetDir,
+          assignmentPath,
+          assignment: name,
+          contract,
+          implementationExecution,
+          preflight,
+        }),
+      }
+    }
+    deliveryArtifacts = preflight.delivery
+  } else if (!deliveryArtifacts) {
+    deliveryArtifacts = await validateDeliveryArtifacts(
+      specdevPath,
+      assignmentPath,
+      contract.acceptanceIds
+    )
+  }
+  stepGuidedNode(targetDir, 'implementation', {
+    progress: relativeToRepo(targetDir, deliveryArtifacts.progressPath),
+    outcome: relativeToRepo(targetDir, deliveryArtifacts.outcomePath),
+    attempt: attemptId,
+  })
+  return { blocked: false, graph: await currentAssignmentNode(targetDir) }
+}
+
+function emitCandidatePreflightRepair(
+  flags,
+  { targetDir, assignmentPath, assignment, contract, implementationExecution, preflight }
+) {
+  const issue = `Candidate preflight failed before implementation review: ${preflight.issues.join(', ')}`
+  const candidatePreflight = {
+    status: 'incomplete',
+    stage: preflight.stage,
+    issues: preflight.issues,
+    issues_omitted: preflight.issues_omitted,
+    verification: preflight.verification,
+  }
+  if (implementationExecution.effective_mode === 'inline') {
+    return emitInlineAction(flags, {
+      command: 'implement',
+      version: 3,
+      status: 'action_required',
+      assignment,
+      recovery: 'candidate_preflight_failed',
+      stage: 'implementation',
+      implementation_execution: assignmentExecutionProjection(
+        { implementation_execution: implementationExecution },
+        'implementation'
+      ),
+      candidate_preflight: candidatePreflight,
+      foreground: inlineImplementationObligations({
+        targetDir,
+        assignmentPath,
+        contract,
+        issue,
+      }),
+    })
+  }
+  return emitBlockedWorker(flags, {
+    command: 'implement',
+    version: 3,
+    status: 'blocked',
+    assignment,
+    recovery: 'candidate_preflight_failed',
+    stage: 'implementation',
+    implementation_execution: assignmentExecutionProjection(
+      { implementation_execution: implementationExecution },
+      'implementation'
+    ),
+    candidate_preflight: candidatePreflight,
+    diagnostic: issue,
+    result: relativeToRepo(targetDir, join(assignmentPath, 'implementation', 'worker-result.md')),
+    next_action:
+      'Repair the preserved delivery artifacts, then rerun specdev implement; the frozen spawned-worker result remains reusable and no reviewer has started.',
+  })
 }
 
 async function recoverWorkerArtifacts({ specdevPath, assignmentPath, resultPath, acceptanceIds }) {

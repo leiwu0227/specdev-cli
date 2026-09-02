@@ -327,6 +327,14 @@ try {
   assert.match(frozenSwitch.error, /frozen as inline/)
 
   writeDelivery(inline.assignmentPath)
+  const inlineProgressPath = join(inline.assignmentPath, 'implementation', 'progress.json')
+  const inlineProgress = JSON.parse(readFileSync(inlineProgressPath, 'utf8'))
+  inlineProgress.verification.unshift({
+    ...inlineProgress.verification[0],
+    scope: 'retained failed authoritative attempt',
+    status: 'failed',
+  })
+  writeFileSync(inlineProgressPath, `${JSON.stringify(inlineProgress, null, 2)}\n`, 'utf8')
   writeWorkerResult(inline.assignmentPath, completedResult())
   mkdirSync(join(inline.root, 'src'))
   writeFileSync(join(inline.root, 'src', 'inline.js'), 'export const inline = true\n', 'utf8')
@@ -335,6 +343,9 @@ try {
   assert.equal(inlineCompleted.activity.provider_attempts.total, 0)
   assert.equal(inlineCompleted.implementation_execution.effective_mode, 'inline')
   assert.equal(inlineCompleted.receipt.implementation_execution.effective_mode, 'inline')
+  assert.equal(inlineCompleted.receipt.verification.raw.total, 2)
+  assert.equal(inlineCompleted.receipt.verification.effective.total, 1)
+  assert.equal(inlineCompleted.receipt.verification.superseded, 1)
   assert.equal(existsSync(join(inline.root, '.fake-worker-count')), false)
 
   const explicitSpawned = createFixture('explicit-spawned', 'auto')
@@ -349,10 +360,7 @@ try {
   assert.equal(explicitSpawnedRun.activity.provider_attempts.total, 1)
   assert.equal(explicitSpawnedRun.implementation_execution.effective_mode, 'spawned')
   assert.equal(explicitSpawnedRun.implementation_execution.source, 'command')
-  assert.equal(
-    explicitSpawnedRun.implementation_execution.reason,
-    'Unattended fixture automation'
-  )
+  assert.equal(explicitSpawnedRun.implementation_execution.reason, 'Unattended fixture automation')
   assert.equal(readFileSync(join(explicitSpawned.root, '.fake-worker-count'), 'utf8'), '1')
 
   const blocked = createFixture('blocked')
@@ -448,11 +456,11 @@ try {
   ])
   const ambiguousHead = gitText(completed.root, ['rev-parse', 'HEAD'])
   const ambiguousCommitCount = gitText(completed.root, ['rev-list', '--count', 'HEAD'])
-  const ambiguous = runJson(completed.root, [
-    'implement',
-    `--assignment=${completed.assignment}`,
-    '--json',
-  ], 1)
+  const ambiguous = runJson(
+    completed.root,
+    ['implement', `--assignment=${completed.assignment}`, '--json'],
+    1
+  )
   assert.equal(ambiguous.status, 'blocked')
   assert.equal(ambiguous.recovery, 'artifact_repair')
   assert.equal(ambiguous.receipt.completeness, 'incomplete')
@@ -464,11 +472,11 @@ try {
   assert.equal(existsSync(join(completed.root, '.fake-worker-count')), false)
 
   rmSync(join(completed.assignmentPath, 'implementation', 'progress.json'))
-  const incomplete = runJson(completed.root, [
-    'implement',
-    `--assignment=${completed.assignment}`,
-    '--json',
-  ], 1)
+  const incomplete = runJson(
+    completed.root,
+    ['implement', `--assignment=${completed.assignment}`, '--json'],
+    1
+  )
   assert.equal(incomplete.status, 'blocked')
   assert.equal(incomplete.recovery, 'artifact_repair')
   assert.equal(incomplete.receipt.completeness, 'incomplete')
@@ -501,11 +509,11 @@ try {
       .replace('| AC-2 | Focused fixture | Passed |', '| AC-2 | Focused fixture | Failed |'),
     'utf8'
   )
-  const nonPassing = runJson(completed.root, [
-    'implement',
-    `--assignment=${completed.assignment}`,
-    '--json',
-  ], 1)
+  const nonPassing = runJson(
+    completed.root,
+    ['implement', `--assignment=${completed.assignment}`, '--json'],
+    1
+  )
   assert.equal(nonPassing.status, 'blocked')
   assert.equal(nonPassing.recovery, 'artifact_repair')
   assert.equal(nonPassing.receipt.completeness, 'incomplete')
@@ -538,7 +546,11 @@ try {
   writeDelivery(repairRouting.assignmentPath)
   writeWorkerResult(repairRouting.assignmentPath, completedResult())
   mkdirSync(join(repairRouting.root, 'src'))
-  writeFileSync(join(repairRouting.root, 'src', 'repair.js'), 'export const repair = true\n', 'utf8')
+  writeFileSync(
+    join(repairRouting.root, 'src', 'repair.js'),
+    'export const repair = true\n',
+    'utf8'
+  )
   const repairOutcomePath = join(repairRouting.assignmentPath, 'outcome.md')
   writeFileSync(
     repairOutcomePath,
@@ -549,12 +561,31 @@ try {
     'utf8'
   )
   const inlineRepair = runJson(repairRouting.root, ['implement', '--json'])
-  assert.equal(inlineRepair.command, 'reviewloop')
+  assert.equal(inlineRepair.command, 'implement')
   assert.equal(inlineRepair.status, 'action_required')
+  assert.equal(inlineRepair.recovery, 'candidate_preflight_failed')
+  assert.equal(inlineRepair.stage, 'implementation')
   assert.equal(inlineRepair.implementation_execution.effective_mode, 'inline')
   assert.equal(inlineRepair.implementation_execution.current_owner, 'foreground-agent')
   assert.equal(inlineRepair.foreground.action, 'repair-preserved-inline-delivery')
-  assert.match(inlineRepair.foreground.obligations.result, /repair-result\.md$/)
+  assert.match(
+    inlineRepair.foreground.issue,
+    /Candidate preflight failed before implementation review/
+  )
+  assert(inlineRepair.candidate_preflight.issues.includes('acceptance_not_passed'))
+  assert.equal(runJson(repairRouting.root, ['next', '--json']).phase, 'implementation')
+  assert.equal(
+    existsSync(join(repairRouting.assignmentPath, 'review', 'candidate-receipt.json')),
+    false
+  )
+  assert.equal(
+    existsSync(join(repairRouting.assignmentPath, 'review', 'implementation-verdict.md')),
+    false
+  )
+  assert.equal(
+    existsSync(join(repairRouting.assignmentPath, 'review', 'implementation-state.json')),
+    false
+  )
   assert.equal(attemptCount(repairRouting.root), 0)
   assert.equal(reviewerCount(repairRouting.root), 0)
 
@@ -566,16 +597,51 @@ try {
     ),
     'utf8'
   )
-  writeFileSync(
-    join(repairRouting.assignmentPath, 'implementation', 'repair-result.md'),
-    completedResult(),
-    'utf8'
-  )
   const repairedInline = runJson(repairRouting.root, ['implement', '--json'])
   assert.equal(repairedInline.status, 'approved')
   assert.equal(repairedInline.receipt.completeness, 'complete')
   assert.equal(existsSync(join(repairRouting.root, '.fake-worker-count')), false)
   assert.equal(reviewerCount(repairRouting.root), 1)
+
+  const spawnedPreflight = createFixture('spawned-preflight', 'spawned', 'required')
+  writeDelivery(spawnedPreflight.assignmentPath)
+  const spawnedOutcomePath = join(spawnedPreflight.assignmentPath, 'outcome.md')
+  writeFileSync(
+    spawnedOutcomePath,
+    readFileSync(spawnedOutcomePath, 'utf8').replace(
+      '| AC-3 | Focused fixture | Passed |',
+      '| AC-3 | Focused fixture | Blocked |'
+    ),
+    'utf8'
+  )
+  const spawnedBlocked = runJson(spawnedPreflight.root, ['implement', '--json'], 1)
+  assert.equal(spawnedBlocked.status, 'blocked')
+  assert.equal(spawnedBlocked.recovery, 'candidate_preflight_failed')
+  assert.equal(spawnedBlocked.stage, 'implementation')
+  assert.equal(runJson(spawnedPreflight.root, ['next', '--json']).phase, 'implementation')
+  assert.equal(readFileSync(join(spawnedPreflight.root, '.fake-worker-count'), 'utf8'), '1')
+  assert.equal(reviewerCount(spawnedPreflight.root), 0)
+  assert.equal(
+    existsSync(join(spawnedPreflight.assignmentPath, 'implementation', 'worker-result.md')),
+    true
+  )
+  assert.equal(
+    existsSync(join(spawnedPreflight.assignmentPath, 'review', 'implementation-state.json')),
+    false
+  )
+
+  writeFileSync(
+    spawnedOutcomePath,
+    readFileSync(spawnedOutcomePath, 'utf8').replace(
+      '| AC-3 | Focused fixture | Blocked |',
+      '| AC-3 | Focused fixture | Passed |'
+    ),
+    'utf8'
+  )
+  const spawnedRepaired = runJson(spawnedPreflight.root, ['implement', '--json'])
+  assert.equal(spawnedRepaired.status, 'approved')
+  assert.equal(readFileSync(join(spawnedPreflight.root, '.fake-worker-count'), 'utf8'), '1')
+  assert.equal(reviewerCount(spawnedPreflight.root), 1)
 
   const resolverRouting = createFixture('inline-resolver', 'auto', 'required')
   assert.equal(runJson(resolverRouting.root, ['implement', '--json']).status, 'action_required')

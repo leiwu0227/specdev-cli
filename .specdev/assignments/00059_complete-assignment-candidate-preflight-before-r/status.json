@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "00059",
+  "kind": "change",
+  "description": "Complete Assignment candidate preflight before review so incomplete candidates remain with their frozen implementation owner, full evidence determines completeness, and no review state or Attempt is created prematurely",
+  "run_id": "assignment-lifecycle-20260902T00531170",
+  "created_at": "2026-09-02T00:53:11.711Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-09-02T01:38:12.187Z",
+  "review_policy_frozen_at": "2026-09-02T01:26:19.523Z",
+  "approved_at": "2026-09-02T01:26:19.523Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "a5367381d44123217be2926624baa1b1126b2d3a",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-09-02T01:26:20.289Z"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T01:26:20.248Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-09-02T01:38:12.128Z",
+  "activity": {
+    "attempt_count": 2,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 2,
+    "provider_attempts": {
+      "total": 2,
+      "completed": 2,
+      "failed": 0,
+      "blocked": 0,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 712605,
+    "agent_duration_ms": 219368,
+    "provider_reported_tokens": null
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-09-02T01:38:12.187Z"
+}

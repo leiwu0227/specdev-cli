@@ -40,6 +40,7 @@ import {
   buildStandaloneAssignmentCandidateReceipt,
   completeStandaloneAssignmentDelivery,
   formatStandaloneAssignmentReceipt,
+  preflightStandaloneAssignmentCandidate,
   writeStandaloneAssignmentCandidateReceipt,
 } from '../utils/assignment-delivery.js'
 import { buildMissionReapproval, inspectMissionReapproval } from '../utils/mission-reapproval.js'
@@ -821,42 +822,48 @@ export async function reviewImplementation(flags = {}) {
     }
   }
 
-  let delivery
-  try {
-    delivery = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
-  } catch (error) {
-    if (mission) throw error
-    return requestArtifactRepair({
-      ...context,
-      flags,
-      graph,
-      verdictPath,
-      statePath,
-      reviewState,
-      issue: `delivery_artifact_invalid: ${error.message}`,
-    })
-  }
-
   const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
-  const candidateReceipt = await buildStandaloneAssignmentCandidateReceipt({
-    targetDir,
-    assignmentPath,
-    assignmentStatus,
-  })
-  const candidateReceiptPath = await writeStandaloneAssignmentCandidateReceipt(
-    assignmentPath,
-    candidateReceipt
-  )
-  if (candidateReceipt.completeness !== 'complete' && !mission) {
-    return requestArtifactRepair({
-      ...context,
-      flags,
-      graph,
-      verdictPath,
-      statePath,
-      reviewState,
-      issue: `candidate_receipt_incomplete: ${candidateReceipt.issues.join(', ')}`,
+  let delivery
+  let candidateReceipt
+  let candidateReceiptPath
+  if (mission) {
+    delivery = await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
+    candidateReceipt = await buildStandaloneAssignmentCandidateReceipt({
+      targetDir,
+      assignmentPath,
+      assignmentStatus,
     })
+    candidateReceiptPath = await writeStandaloneAssignmentCandidateReceipt(
+      assignmentPath,
+      candidateReceipt
+    )
+  } else {
+    const preflight = await preflightStandaloneAssignmentCandidate({
+      targetDir,
+      specdevPath,
+      assignmentPath,
+      assignmentStatus,
+      acceptanceIds: contract.acceptanceIds,
+      writeReceipt: true,
+      writeIncomplete: true,
+    })
+    if (preflight.completeness !== 'complete') {
+      return requestArtifactRepair({
+        ...context,
+        flags,
+        graph,
+        verdictPath,
+        statePath,
+        reviewState,
+        issue:
+          preflight.stage === 'delivery_artifacts'
+            ? preflight.issues.join(', ')
+            : `candidate_receipt_incomplete: ${preflight.issues.join(', ')}`,
+      })
+    }
+    delivery = preflight.delivery
+    candidateReceipt = preflight.receipt
+    candidateReceiptPath = preflight.receipt_path
   }
 
   if (mission && reviewState.stage === 'awaiting-user-reapproval') {
@@ -1153,7 +1160,11 @@ export async function reviewImplementation(flags = {}) {
           assignmentPath,
           contract.acceptanceIds
         )
-        assertReviewWaiverEvidence(delivery, contract.acceptanceIds)
+        assertReviewWaiverEvidence(
+          delivery,
+          contract.acceptanceIds,
+          mission ? null : candidateReceipt.verification
+        )
         approved = true
         reviewState = {
           ...reviewState,
@@ -1264,16 +1275,18 @@ async function completeImplementationReview({
       join(assignmentPath, 'review', 'implementation-state.json')
     )
     const assignmentStatus = await fse.readJson(join(assignmentPath, 'status.json'))
-    await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
-    const currentCandidate = await buildStandaloneAssignmentCandidateReceipt({
+    const preflight = await preflightStandaloneAssignmentCandidate({
       targetDir,
+      specdevPath,
       assignmentPath,
       assignmentStatus,
+      acceptanceIds: contract.acceptanceIds,
     })
+    const currentCandidate = preflight.receipt
     if (
-      currentCandidate.completeness !== 'complete' ||
+      preflight.completeness !== 'complete' ||
       !state?.candidate_receipt_identity ||
-      currentCandidate.identity !== state.candidate_receipt_identity
+      currentCandidate?.identity !== state.candidate_receipt_identity
     ) {
       return requestArtifactRepair({
         targetDir,

@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node --check on the four changed source files and two changed focused test files; git diff --check",
+      "revision": "working-tree@a5367381d44123217be2926624baa1b1126b2d3a",
+      "scope": "Syntax and whitespace qualification only; no test program executed",
+      "status": "passed",
+      "duration_ms": 400,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@a5367381d44123217be2926624baa1b1126b2d3a",
+      "scope": "AC-1 full-ledger projection, retry coalescing, bounded previews, and legacy candidate receipt compatibility",
+      "status": "passed",
+      "duration_ms": 871,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-implement-recovery.js",
+      "revision": "working-tree@a5367381d44123217be2926624baa1b1126b2d3a",
+      "scope": "AC-1 and AC-2 inline, spawned, waiver, preserved-worker, pre-review repair, and delivery behavior",
+      "status": "passed",
+      "duration_ms": 20918,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-reviewloop-modes.js",
+      "revision": "working-tree@a5367381d44123217be2926624baa1b1126b2d3a",
+      "scope": "AC-2 and AC-3 independent review, defensive revalidation, and convergence compatibility",
+      "status": "passed",
+      "duration_ms": 9243,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-user-reapproval.js",
+      "revision": "working-tree@a5367381d44123217be2926624baa1b1126b2d3a",
+      "scope": "AC-3 Mission user-reapproval consumer compatibility",
+      "status": "passed",
+      "duration_ms": 174,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-successor-adoption.js",
+      "revision": "working-tree@a5367381d44123217be2926624baa1b1126b2d3a",
+      "scope": "AC-3 Mission successor-adoption consumer compatibility",
+      "status": "passed",
+      "duration_ms": 3462,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

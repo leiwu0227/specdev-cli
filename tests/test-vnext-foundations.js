@@ -75,6 +75,7 @@ import {
   buildStandaloneAssignmentCandidateReceipt,
   summarizeRisks,
   summarizeVerification,
+  validateStandaloneAssignmentCandidateReceipt,
 } from '../src/utils/assignment-delivery.js'
 import {
   AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
@@ -908,6 +909,126 @@ the existing API stable.
   assert.equal(verificationSummary.by_role.authoritative_acceptance.passed, 1)
   assert.deepEqual(verificationIssues, [])
 
+  const retryLedger = [
+    {
+      command: 'node retry-acceptance.js',
+      revision: 'working-tree@fixture',
+      scope: 'first authoritative attempt',
+      status: 'failed',
+      duration_ms: 2,
+      role: 'authoritative_acceptance',
+    },
+    {
+      command: 'node retry-acceptance.js',
+      revision: 'working-tree@fixture',
+      scope: 'passing authoritative retry with different scope prose',
+      status: 'passed',
+      duration_ms: 3,
+      role: 'authoritative_acceptance',
+    },
+    {
+      command: 'node retry-qualification.js',
+      revision: 'working-tree@fixture',
+      scope: 'first qualification attempt',
+      status: 'failed',
+      duration_ms: 1,
+      role: 'qualification',
+    },
+    {
+      command: 'node retry-qualification.js',
+      revision: 'working-tree@fixture',
+      scope: 'passing qualification retry',
+      status: 'passed',
+      duration_ms: 1,
+      role: 'qualification',
+    },
+    ...Array.from({ length: 12 }, (_, index) => ({
+      command: `node acceptance-${index + 1}.js`,
+      revision: 'working-tree@fixture',
+      scope: `authoritative obligation ${index + 1}`,
+      status: 'passed',
+      duration_ms: index + 1,
+      role: 'authoritative_acceptance',
+    })),
+  ]
+  const preservedRetryLedger = structuredClone(retryLedger)
+  const projectedIssues = []
+  const projectedVerification = summarizeVerification(retryLedger, projectedIssues)
+  assert.deepEqual(retryLedger, preservedRetryLedger)
+  assert.deepEqual(projectedIssues, [])
+  assert.equal(projectedVerification.raw.total, 16)
+  assert.equal(projectedVerification.raw.counts.failed, 2)
+  assert.equal(projectedVerification.effective.total, 14)
+  assert.equal(projectedVerification.effective.counts.passed, 14)
+  assert.equal(projectedVerification.superseded, 2)
+  assert.equal(projectedVerification.items.length, 12)
+  assert.equal(projectedVerification.omitted, 2)
+  assert.equal(projectedVerification.authoritative_evidence.length, 12)
+  assert.equal(projectedVerification.authoritative_evidence_omitted, 1)
+  assert.equal(
+    projectedVerification.items.find((item) => item.command === 'node retry-acceptance.js')
+      .attempts,
+    2
+  )
+
+  const distinctRevisionIssues = []
+  summarizeVerification(
+    [
+      ...retryLedger,
+      {
+        ...retryLedger[0],
+        revision: 'working-tree@different',
+        scope: 'unresolved authoritative obligation on another revision',
+      },
+    ],
+    distinctRevisionIssues
+  )
+  assert(distinctRevisionIssues.includes('authoritative_verification_not_passed'))
+
+  const roleSeparationIssues = []
+  summarizeVerification(
+    [
+      retryLedger[0],
+      {
+        ...retryLedger[1],
+        role: 'qualification',
+      },
+    ],
+    roleSeparationIssues
+  )
+  assert(roleSeparationIssues.includes('authoritative_verification_not_passed'))
+
+  const skippedAuthorityIssues = []
+  summarizeVerification(
+    [
+      retryLedger[1],
+      {
+        ...retryLedger[1],
+        status: 'skipped',
+        scope: 'latest authoritative attempt was skipped',
+      },
+    ],
+    skippedAuthorityIssues
+  )
+  assert(skippedAuthorityIssues.includes('authoritative_verification_not_passed'))
+
+  const manyUnresolvedIssues = []
+  const manyUnresolved = summarizeVerification(
+    Array.from({ length: 13 }, (_, index) => ({
+      command: `node unresolved-${index + 1}.js`,
+      revision: 'working-tree@fixture',
+      scope: `unresolved authoritative obligation ${index + 1}`,
+      status: 'failed',
+      duration_ms: index + 1,
+      role: 'authoritative_acceptance',
+    })),
+    manyUnresolvedIssues
+  )
+  assert(manyUnresolvedIssues.includes('authoritative_verification_not_passed'))
+  assert.equal(manyUnresolvedIssues.includes('verification_evidence_incomplete'), false)
+  assert.equal(manyUnresolved.items.length, 12)
+  assert.equal(manyUnresolved.omitted, 1)
+
   const candidateRoot = join(root, 'candidate-repo')
   const candidateSpecdev = join(candidateRoot, '.specdev')
   const candidatePath = join(candidateSpecdev, 'assignments', '00002_candidate')
@@ -928,10 +1049,12 @@ the existing API stable.
     join(candidatePath, 'design', 'plan.md'),
     readFileSync(join(deliveryPath, 'design', 'plan.md'))
   )
-  writeFileSync(
-    join(candidatePath, 'implementation', 'progress.json'),
-    readFileSync(join(deliveryPath, 'implementation', 'progress.json'))
+  const candidateProgressPath = join(candidatePath, 'implementation', 'progress.json')
+  const candidateProgress = JSON.parse(
+    readFileSync(join(deliveryPath, 'implementation', 'progress.json'), 'utf8')
   )
+  candidateProgress.verification = retryLedger
+  writeFileSync(candidateProgressPath, `${JSON.stringify(candidateProgress, null, 2)}\n`)
   const canonicalOutcome =
     '# Outcome\n\n## Delivered behavior\n\nDelivered.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-1 | Focused evidence. | Passed |\n'
   writeFileSync(join(candidatePath, 'outcome.md'), canonicalOutcome)
@@ -941,6 +1064,22 @@ the existing API stable.
     assignmentStatus: { id: '00002' },
   })
   assert.equal(firstCandidate.completeness, 'complete')
+  assert.equal(firstCandidate.verification.raw.total, 16)
+  assert.equal(firstCandidate.verification.effective.total, 14)
+  assert.equal(firstCandidate.verification.superseded, 2)
+  const preservedProgressBytes = readFileSync(candidateProgressPath, 'utf8')
+  await buildStandaloneAssignmentCandidateReceipt({
+    targetDir: candidateRoot,
+    assignmentPath: candidatePath,
+    assignmentStatus: { id: '00002' },
+  })
+  assert.equal(readFileSync(candidateProgressPath, 'utf8'), preservedProgressBytes)
+  const legacyCandidate = structuredClone(firstCandidate)
+  delete legacyCandidate.verification.raw
+  delete legacyCandidate.verification.effective
+  delete legacyCandidate.verification.superseded
+  delete legacyCandidate.verification.authoritative_evidence_omitted
+  assert.doesNotThrow(() => validateStandaloneAssignmentCandidateReceipt(legacyCandidate))
   writeFileSync(join(candidatePath, 'outcome.md'), canonicalOutcome.replace('Focused', 'Changed'))
   const changedCandidate = await buildStandaloneAssignmentCandidateReceipt({
     targetDir: candidateRoot,

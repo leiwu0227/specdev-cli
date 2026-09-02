@@ -127,20 +127,28 @@ function assertCanonicalOutcome(outcome) {
   }
 }
 
-export function assertReviewWaiverEvidence(delivery, acceptanceIds) {
+export function assertReviewWaiverEvidence(delivery, acceptanceIds, verification = null) {
   if (delivery.progress.follow_up !== 'none') {
     throw new Error('Implementation review cannot be waived when follow_up is required')
   }
   if (delivery.progress.deviations.length > 0) {
     throw new Error('Implementation review cannot be waived when delivery reports deviations')
   }
-  if (
-    delivery.progress.verification
-      .filter((receipt) => receipt.role === 'authoritative_acceptance')
-      .some((receipt) => receipt.status !== 'passed')
-  ) {
+  const authoritative = verification?.effective?.by_role?.authoritative_acceptance
+  const effectiveAuthoritativeTotal = authoritative
+    ? Object.values(authoritative).reduce((total, count) => total + count, 0)
+    : null
+  const authoritativeIncomplete = authoritative
+    ? effectiveAuthoritativeTotal === 0 ||
+      authoritative.failed > 0 ||
+      authoritative.skipped > 0 ||
+      authoritative.missing > 0
+    : delivery.progress.verification
+        .filter((receipt) => receipt.role === 'authoritative_acceptance')
+        .some((receipt) => receipt.status !== 'passed')
+  if (authoritativeIncomplete) {
     throw new Error(
-      'Implementation review cannot be waived unless every authoritative acceptance receipt passed'
+      'Implementation review cannot be waived unless every current authoritative acceptance obligation passed'
     )
   }
   const outcome = delivery.outcome || ''
