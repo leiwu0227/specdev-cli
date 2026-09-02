@@ -1,0 +1,347 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "379091d65569b8c6a778166ba339327febb9a36ad9b144f83b46153cb218e1f6",
+  "assignment": {
+    "id": "00061",
+    "folder": "00061_add-the-selective-assignment-context-catalog"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T02:44:39.823Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00061_add-the-selective-assignment-context-catalog/brainstorm/contract.md",
+    "hash": "5c14b368ae6a72de8d7eb30f5e300d1c1842afd7187f22de947585c82312b88f"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`test:assignment-context` covers normalized ordering, bounded selection, repository-relative identities, current-state regeneration, optional degradation, and required-source failure.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`test:assignment-context`, `test:implement-recovery`, and `test:reviewloop-modes` cover foreground/spawned parity, Attempt identities, reviewer lineage, candidate review, repairs, resolvers, and arbiters.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`test:assignment-context`, `test:mission-environment`, and `test:vnext-foundations` cover parent-envelope intersection, delegation validation, replanning preservation, and guide/knowledge/recovery compatibility.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 7,
+    "items": [
+      {
+        "command": "npm run test:assignment-context",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "scope": "selector ordering, fail-closed validation, lineage, inline parity, Attempt records, knowledge and guide selection, Mission bounds, and envelope replanning",
+        "status": "passed",
+        "duration_ms": 1000,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:implement-recovery",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "scope": "foreground implementation and recovery compatibility",
+        "status": "passed",
+        "duration_ms": 15000,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "scope": "primary reviewer, resolver, arbiter, and Mission-child review projections",
+        "status": "passed",
+        "duration_ms": 10000,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:mission-environment",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "scope": "Mission execution-environment and handoff compatibility",
+        "status": "passed",
+        "duration_ms": 5000,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:vnext-foundations",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "scope": "guide, knowledge, Attempt-record, and queue foundation compatibility",
+        "status": "passed",
+        "duration_ms": 3000,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:mission-compatibility",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "scope": "existing Mission graph compatibility fixture",
+        "status": "failed",
+        "duration_ms": 300,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npx prettier --check package.json src/commands/implement.js src/commands/init.js src/commands/mission.js src/commands/reviewloop.js src/utils/assignment-context.js src/utils/assignment-execution.js src/utils/mission.js src/utils/process-...",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "scope": "all files changed by Assignment 00061",
+        "status": "passed",
+        "duration_ms": 700,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 6,
+      "failed": 1,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 7,
+      "counts": {
+        "passed": 6,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 1,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 7,
+      "counts": {
+        "passed": 6,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 1,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:assignment-context",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:implement-recovery",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:mission-environment",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:vnext-foundations",
+        "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 14,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 9,
+        "paths": [
+          "src/commands/implement.js",
+          "src/commands/init.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/assignment-context.js",
+          "src/utils/assignment-execution.js",
+          "src/utils/mission.js",
+          "src/utils/process-record.js",
+          "src/utils/spawned-agent.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 1,
+        "paths": [
+          "templates/.specdev/_guides/assignment_guide.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 3,
+        "paths": [
+          "tests/test-assignment-context.js"
+        ],
+        "omitted": 2
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "The pre-existing `test:mission-compatibility` fixture still hard-codes Assignment lifecycle `2.3.0` while the clean-HEAD template declares `2.4.0`, so it exits during fixture installation before reaching this change. The new focused cata..."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00061_add-the-selective-assignment-context-catalog/brainstorm/contract.md",
+      "exists": true,
+      "digest": "5c14b368ae6a72de8d7eb30f5e300d1c1842afd7187f22de947585c82312b88f"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00061_add-the-selective-assignment-context-catalog/design/plan.md",
+      "exists": true,
+      "digest": "59e96d17a0f3cd07da7cbf75fdaac1c76ca690ed8590393c8efe9af24c829f7a"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00061_add-the-selective-assignment-context-catalog/implementation/progress.json",
+      "exists": true,
+      "digest": "4fe37199abe4b970d968e15c14eeeb32a694054dc303594d193d09898bb7aa63"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00061_add-the-selective-assignment-context-catalog/outcome.md",
+      "exists": true,
+      "digest": "787286cc3ae2757a695e4ce04dd7b1b657c922de25b0129ccddca5a89a889c7b"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

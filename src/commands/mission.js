@@ -37,6 +37,7 @@ import { decideGuidedNode, startGuidedRun, stepGuidedNode } from '../utils/engin
 import { workflowRootFor } from '../utils/engine.js'
 import { reserveEntityId } from '../utils/id-reservation.js'
 import { searchKnowledgeIndex } from '../utils/knowledge.js'
+import { selectMissionSupportingEnvelope } from '../utils/assignment-context.js'
 import {
   assertMissionTransitionRecorded,
   bindReplannedQueueToGap,
@@ -897,11 +898,18 @@ async function designMission(context) {
   const queuePath = join(missionPath, 'design', 'assignments.yaml')
   const contract = await validateMissionContract(missionPath)
   const knowledgePaths = await missionKnowledgePaths(specdevPath, mission.objective)
+  const contextPaths = await selectMissionSupportingEnvelope({
+    targetDir,
+    specdevPath,
+    objective: mission.objective,
+    knowledgePaths,
+  })
   if (contract.executionShape === 'single') {
     const queue = {
       version: 2,
       design_mode: 'single',
       knowledge_paths: knowledgePaths,
+      context_paths: contextPaths,
       assignments: [
         {
           id: await reserveEntityId(specdevPath, 'assignment'),
@@ -950,6 +958,7 @@ async function designMission(context) {
         `Approved execution policy: ${JSON.stringify(mission.execution_policy)}`,
         `Write ${relativeToRepo(targetDir, queuePath)} as YAML with version: 2, an ordered assignments list containing title, kind, wave, status: pending, and optional execution: evidence-only plus observation_command, and a final_verification mapping with the exact contract-authorized command and scope.`,
         `Parent-selected fresh knowledge paths from the one Mission planning search: ${knowledgePaths.length > 0 ? knowledgePaths.join(', ') : 'none'}. Record these exact paths in top-level knowledge_paths; do not bulk-read other notes.`,
+        `Parent-selected supporting context envelope: ${contextPaths.length > 0 ? contextPaths.join(', ') : 'none'}. Record these exact paths in top-level context_paths; child context selection may narrow but never enlarge this envelope.`,
         `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
         'Start by trying to express the entire Mission as one Assignment. Split only for a worker/reviewer context limit, an information dependency, an intermediate user/operational decision, or meaningfully independent verification/rollback.',
         'File count, architectural layers, and the existence of several implementation Tasks are not split reasons. When uncertain, write one Assignment.',
@@ -963,7 +972,12 @@ async function designMission(context) {
   if (result.status !== 'completed' || result.result.frontmatter.status !== 'completed') {
     throw new Error(result.error || 'Mission Design worker blocked')
   }
-  const queue = await validateAndReserveQueue(specdevPath, missionPath, knowledgePaths)
+  const queue = await validateAndReserveQueue(
+    specdevPath,
+    missionPath,
+    knowledgePaths,
+    contextPaths
+  )
   await writeMissionQueue(missionPath, queue)
   stepGuidedNode(targetDir, 'design', {
     queue: relativeToRepo(targetDir, queuePath),
@@ -1980,6 +1994,11 @@ async function authorChildContract(context, child, assignmentPath) {
     profile,
     mission: mission.id,
     assignment: child.id,
+    assignmentContext: {
+      assignmentPath,
+      phase: 'contract-author',
+      role: 'contract-author',
+    },
     resultPath: join(assignmentPath, 'review', 'brainstorm-author-result.md'),
     resultKind: 'worker',
     prompt: [
@@ -2756,7 +2775,12 @@ async function completeMissionFailure(context, reason, disposition = 'semantic-f
   )
 }
 
-async function validateAndReserveQueue(specdevPath, missionPath, knowledgePaths = []) {
+async function validateAndReserveQueue(
+  specdevPath,
+  missionPath,
+  knowledgePaths = [],
+  contextPaths = []
+) {
   const queue = await readMissionQueue(missionPath)
   if (!queue || !Array.isArray(queue.assignments) || queue.assignments.length === 0) {
     throw new Error('Mission Design requires a non-empty assignments list')
@@ -2828,6 +2852,7 @@ async function validateAndReserveQueue(specdevPath, missionPath, knowledgePaths 
     version: 2,
     design_mode: 'planned',
     knowledge_paths: knowledgePaths,
+    context_paths: contextPaths,
     assignments,
     final_verification: {
       command,

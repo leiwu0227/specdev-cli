@@ -44,6 +44,15 @@ function runJson(args, expectedStatus = 0) {
   return JSON.parse(result.stdout)
 }
 
+function writeParentQueue(missionPath, childId, title, execution = 'implementation') {
+  mkdirSync(join(missionPath, 'design'), { recursive: true })
+  writeFileSync(
+    join(missionPath, 'design', 'assignments.yaml'),
+    `version: 2\ndesign_mode: planned\nknowledge_paths: []\ncontext_paths:\n  - .specdev/project_notes/big_picture.md\nassignments:\n  - id: "${childId}"\n    title: ${title}\n    kind: change\n    wave: 1\n    status: running\n    execution: ${execution}\nfinal_verification:\n  command: node focused.js\n  scope: integrated\n`,
+    'utf8'
+  )
+}
+
 function writeContract(path, objective) {
   writeFileSync(
     join(path, 'brainstorm', 'contract.md'),
@@ -352,6 +361,7 @@ fi
     `${JSON.stringify({ ...status, mission: mission.id }, null, 2)}\n`,
     'utf8'
   )
+  writeParentQueue(missionPath, child.id, 'Exercise automatic Mission child review')
   const childReview = runJson(['reviewloop', 'brainstorm', '--json'])
   assert.equal(childReview.status, 'approved')
   assert.equal(childReview.phase, 'brainstorm')
@@ -410,6 +420,12 @@ fi
     `${JSON.stringify({ ...evidenceOnlyStatus, mission: mission.id }, null, 2)}\n`,
     'utf8'
   )
+  writeParentQueue(
+    missionPath,
+    evidenceOnly.id,
+    'Review an evidence-only Mission child with required follow-up',
+    'evidence-only'
+  )
   stepGuidedNode(root, 'design', {
     plan: `${evidenceOnly.path}/design/plan.md`,
     attempt: 'fixture-worker',
@@ -454,6 +470,11 @@ fi
     `${JSON.stringify({ ...missionRepairStatus, mission: mission.id }, null, 2)}\n`,
     'utf8'
   )
+  writeParentQueue(
+    missionPath,
+    missionRepair.id,
+    'Resume a blocked Mission repair from foreground completion'
+  )
   stepGuidedNode(root, 'design', {
     plan: `${missionRepair.path}/design/plan.md`,
     attempt: 'fixture-worker',
@@ -496,6 +517,11 @@ fi
     missionResolverStatusPath,
     `${JSON.stringify({ ...missionResolverStatus, mission: mission.id }, null, 2)}\n`,
     'utf8'
+  )
+  writeParentQueue(
+    missionPath,
+    missionResolver.id,
+    'Resume a blocked Mission resolver from foreground completion'
   )
   stepGuidedNode(root, 'design', {
     plan: `${missionResolver.path}/design/plan.md`,
@@ -545,6 +571,11 @@ fi
       null,
       2
     )}\n`,
+    'utf8'
+  )
+  writeFileSync(
+    join(missionResolverPath, 'review', 'implementation-verdict.md'),
+    `---\nverdict: blocked\nmaterial_divergence: false\nscope_divergence: none\nprocedure_divergence: none\nevidence_integrity: complete\nuser_reapproval_required: false\n---\n\n## Findings\n\nVerify the recovered resolver candidate.\n`,
     'utf8'
   )
   const resumedMissionResolver = runJson(['reviewloop', 'implementation', '--json'])

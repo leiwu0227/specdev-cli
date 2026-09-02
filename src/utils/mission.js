@@ -284,6 +284,7 @@ export async function validateAndReserveReplannedQueue(specdevPath, original, re
     version: 2,
     design_mode: 'replanned',
     knowledge_paths: Array.isArray(original.knowledge_paths) ? original.knowledge_paths : [],
+    ...(Array.isArray(original.context_paths) ? { context_paths: original.context_paths } : {}),
     assignments,
     final_verification: original.final_verification,
   }

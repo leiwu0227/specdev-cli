@@ -407,6 +407,12 @@ export async function reviewBrainstorm(flags = {}) {
     assignment: name,
     mission,
     guides,
+    assignmentContext: {
+      assignmentPath,
+      phase: 'contract-review',
+      role: 'primary-reviewer',
+      includePriorFindings: round > 1,
+    },
   })
   if (result.status !== 'completed') return fail(flags, result.error || 'Reviewer failed')
 
@@ -540,17 +546,27 @@ async function reviewAutomaticBrainstorm(options) {
         `Contract: ${relativeToRepo(targetDir, contract.path)}`,
         `Frozen baseline: ${relativeToRepo(targetDir, baselinePath)}`,
         ...missionAuthority,
-        `Previous findings: ${relativeToRepo(targetDir, verdictPath)}`,
+        arbitration || state.round > 0
+          ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}`
+          : null,
         arbitration
           ? 'Return approved only when no blocking finding remains; use needs_changes only for a nonblocking reviewer disagreement, and blocked for an objective authority, validity, or feasibility failure.'
           : 'Identify blocking or materially useful findings only. Verify that authority and acceptance remain wholly inside the approved Mission contract and queue entry.',
         'Never run a full suite.',
-      ].join('\n'),
+      ]
+        .filter(Boolean)
+        .join('\n'),
       resultPath: verdictPath,
       resultKind: 'reviewer',
       assignment: name,
       mission,
       guides,
+      assignmentContext: {
+        assignmentPath,
+        phase: 'contract-review',
+        role: arbitration ? 'arbiter' : 'primary-reviewer',
+        includePriorFindings: !arbitration && state.round > 0,
+      },
     })
     if (result.status !== 'completed') return fail(flags, result.error || 'Reviewer failed')
     const findings = await fse.readFile(verdictPath, 'utf-8')
@@ -665,6 +681,11 @@ async function runContractResolutionWorker({
     profile,
     assignment: name,
     mission,
+    assignmentContext: {
+      assignmentPath,
+      phase: 'contract-repair',
+      role: resolver ? 'resolver' : 'repair-owner',
+    },
     resultPath,
     resultKind: 'worker',
     prompt: [
@@ -769,7 +790,7 @@ export async function reviewImplementation(flags = {}) {
       const repairResultPath = join(assignmentPath, 'implementation', 'repair-result.md')
       const repairResult = await readInlineContinuationResult(repairResultPath)
       if (repairResult.status !== 'completed') {
-        return emitInlineRepair(flags, {
+        return await emitInlineRepair(flags, {
           targetDir,
           assignmentPath,
           name,
@@ -1054,6 +1075,12 @@ export async function reviewImplementation(flags = {}) {
     assignment: name,
     mission,
     guides,
+    assignmentContext: {
+      assignmentPath,
+      phase: 'implementation-review',
+      role: arbitration ? 'arbiter' : 'primary-reviewer',
+      includePriorFindings: !arbitration && reviewState.round > 0,
+    },
   })
   if (result.status !== 'completed') return fail(flags, result.error || 'Reviewer failed')
   const reviewerResult = result.result.frontmatter
@@ -1383,6 +1410,11 @@ async function runImplementationResolver({
     assignment: name,
     mission,
     guides,
+    assignmentContext: {
+      assignmentPath,
+      phase: 'implementation-repair',
+      role: 'resolver',
+    },
   })
   if (result.status !== 'completed') {
     fail(flags, result.error || 'Implementation resolver failed')
@@ -1420,6 +1452,11 @@ async function runRepairWorker({
     assignment: name,
     mission,
     guides,
+    assignmentContext: {
+      assignmentPath,
+      phase: 'implementation-repair',
+      role: 'repair-owner',
+    },
   })
   if (result.status !== 'completed' || result.result.frontmatter.status !== 'completed') {
     fail(flags, result.error || 'Repair worker failed')
@@ -1457,7 +1494,7 @@ async function readInlineResolver({
   const resultPath = join(assignmentPath, 'implementation', 'resolver-result.md')
   const result = await readInlineContinuationResult(resultPath)
   if (result.status !== 'completed') {
-    emitInlineRepair(flags, {
+    await emitInlineRepair(flags, {
       targetDir,
       assignmentPath,
       name,
@@ -1529,7 +1566,7 @@ async function recoverMissionReviewContinuation({
   }
 }
 
-function emitInlineRepair(
+async function emitInlineRepair(
   flags,
   {
     targetDir,
@@ -1554,7 +1591,7 @@ function emitInlineRepair(
       { implementation_execution: implementationExecution },
       graphNode
     ),
-    foreground: inlineImplementationObligations({
+    foreground: await inlineImplementationObligations({
       targetDir,
       assignmentPath,
       contract,
@@ -1569,6 +1606,10 @@ function emitInlineRepair(
     console.log(`Verdict: ${payload.verdict}`)
     console.log(`Repair: ${payload.foreground.issue}`)
     console.log(`Result: ${payload.foreground.obligations.result}`)
+    console.log('Context catalog:')
+    for (const entry of payload.foreground.context_catalog.entries) {
+      console.log(`  - ${entry.identity} | ${entry.path} | ${entry.purpose}`)
+    }
     console.log(`Next: ${payload.next_action}`)
   }
   return payload

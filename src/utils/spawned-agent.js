@@ -31,6 +31,10 @@ import {
   updateAttemptRecord,
   writeLocalProcessMarker,
 } from './process-record.js'
+import {
+  buildAssignmentContextCatalog,
+  renderAssignmentContextCatalog,
+} from './assignment-context.js'
 
 const execFile = promisify(execFileCallback)
 const TERMINATION_GRACE_MS = 5_000
@@ -49,6 +53,7 @@ export async function runSpawnedAgent(options) {
     mission,
     discussion,
     guides = [],
+    assignmentContext = null,
     allowFormatCorrection = true,
     progressFormat = requestedProgressFormat(),
   } = options
@@ -61,6 +66,18 @@ export async function runSpawnedAgent(options) {
     await assertNoConcurrentReviewer(specdevPath, { assignment, mission, discussion })
   }
 
+  const contextCatalog = assignmentContext
+    ? await buildAssignmentContextCatalog({
+        targetDir,
+        specdevPath,
+        guides,
+        ...assignmentContext,
+      })
+    : null
+  const contextualPrompt = contextCatalog
+    ? `${prompt.trim()}\n\n${renderAssignmentContextCatalog(contextCatalog)}`
+    : prompt
+
   const digestExclusions = [repoRelative(targetDir, resultPath)].filter(Boolean)
   const reviewCandidate = role === 'reviewer' ? reviewerCandidateRoot(targetDir, resultPath) : null
   const beforeReview =
@@ -72,13 +89,14 @@ export async function runSpawnedAgent(options) {
     specdevPath,
     role,
     profile,
-    prompt: appendResultContract(prompt, resultKind, guides),
+    prompt: appendResultContract(contextualPrompt, resultKind, guides),
     resultPath,
     resultKind,
     assignment,
     mission,
     discussion,
     guides,
+    contextCatalog,
     attemptKind: role,
     progressFormat,
   })
@@ -144,6 +162,7 @@ export async function runSpawnedAgent(options) {
       mission,
       discussion,
       guides,
+      contextCatalog,
       attemptKind: 'format-correction',
       progressFormat,
     })
@@ -276,6 +295,7 @@ async function executeInvocation({
   mission,
   discussion,
   guides,
+  contextCatalog,
   attemptKind,
   progressFormat,
 }) {
@@ -314,6 +334,7 @@ async function executeInvocation({
     mission,
     discussion,
     guides,
+    context_catalog: contextCatalog,
   })
   const cacheDir = join(specdevPath, 'cache', 'attempts')
   const providerResultPath = join(cacheDir, `${attempt.id}-result.md`)

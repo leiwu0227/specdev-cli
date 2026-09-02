@@ -37,12 +37,33 @@ export async function createAttemptRecord(specdevPath, input) {
           })),
         }
       : {}),
+    ...(input.context_catalog
+      ? { context_catalog: normalizeContextCatalog(input.context_catalog) }
+      : {}),
     ...(input.assignment ? { assignment: String(input.assignment) } : {}),
     ...(input.mission ? { mission: String(input.mission) } : {}),
     ...(input.discussion ? { discussion: String(input.discussion) } : {}),
   }
   await writeAttemptRecord(specdevPath, record)
   return record
+}
+
+function normalizeContextCatalog(value) {
+  if (!value || value.version !== 1 || !Array.isArray(value.entries)) {
+    throw new Error('Attempt context_catalog must be a version 1 catalog')
+  }
+  return {
+    version: 1,
+    phase: requiredText(value.phase, 'context_catalog.phase'),
+    role: requiredText(value.role, 'context_catalog.role'),
+    entries: value.entries.map((entry) => ({
+      identity: requiredText(entry.identity, 'context_catalog entry identity'),
+      group: requiredText(entry.group, 'context_catalog entry group'),
+      kind: requiredText(entry.kind, 'context_catalog entry kind'),
+      path: normalizeRepoRelative(entry.path),
+      purpose: requiredText(entry.purpose, 'context_catalog entry purpose'),
+    })),
+  }
 }
 
 export async function readAttemptRecord(specdevPath, id) {

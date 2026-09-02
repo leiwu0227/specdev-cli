@@ -1,5 +1,8 @@
 import { join } from 'node:path'
+import fse from 'fs-extra'
 import { resolveImplementationMode } from './agent-profiles.js'
+import { buildAssignmentContextCatalog } from './assignment-context.js'
+import { resolveGuides } from './guides.js'
 
 const EXECUTION_MODES = new Set(['auto', 'inline', 'spawned'])
 
@@ -85,7 +88,7 @@ export function assignmentExecutionProjection(status, node = null) {
   }
 }
 
-export function inlineImplementationObligations({
+export async function inlineImplementationObligations({
   targetDir,
   assignmentPath,
   contract,
@@ -97,6 +100,31 @@ export function inlineImplementationObligations({
       .slice(targetDir.length + 1)
       .split('\\')
       .join('/')
+  const repair = Boolean(issue) || resultFile !== 'worker-result.md'
+  const reviewRepair = resultFile !== 'worker-result.md'
+  const specdevPath = join(targetDir, '.specdev')
+  let guides = []
+  if (repair) {
+    const progress = await fse
+      .readJson(join(assignmentPath, 'implementation', 'progress.json'))
+      .catch(() => null)
+    const guideIds = Array.isArray(progress?.selected_guides?.implementation)
+      ? progress.selected_guides.implementation
+      : []
+    guides = await resolveGuides(specdevPath, guideIds, { phase: 'implementation' })
+  }
+  const contextCatalog = await buildAssignmentContextCatalog({
+    targetDir,
+    specdevPath,
+    assignmentPath,
+    phase: reviewRepair
+      ? 'implementation-repair'
+      : repair
+        ? 'implementation-recovery'
+        : 'implementation',
+    role: repair ? 'repair-owner' : 'implementation-owner',
+    guides,
+  })
   return {
     owner: 'foreground-agent',
     action: issue ? 'repair-preserved-inline-delivery' : 'implement-approved-assignment-inline',
@@ -107,6 +135,7 @@ export function inlineImplementationObligations({
       outcome: relative(join(assignmentPath, 'outcome.md')),
       result: relative(join(assignmentPath, 'implementation', resultFile)),
     },
+    context_catalog: contextCatalog,
     ...(issue ? { issue: String(issue).slice(0, 500) } : {}),
     result_contract: {
       format: 'worker-result-envelope',
@@ -159,7 +188,8 @@ function executionDecision({ configuredMode, effectiveMode, source, reason, owne
 }
 
 function executionNextAction(execution, node) {
-  if (node === 'implementation-review') return 'Run or resume the independent implementation review.'
+  if (node === 'implementation-review')
+    return 'Run or resume the independent implementation review.'
   if (node === 'repair' && execution.effective_mode === 'inline') {
     return 'The foreground agent repairs the preserved candidate, then reruns specdev implement.'
   }

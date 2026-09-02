@@ -58,7 +58,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         })
       } catch (error) {
         const contract = await validateAssignmentContract(assignmentPath)
-        return emitArtifactRepair(
+        return await emitArtifactRepair(
           flags,
           name,
           error.message,
@@ -132,7 +132,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
               { implementation_execution: implementationExecution },
               graph.position.node
             ),
-            foreground: inlineImplementationObligations({
+            foreground: await inlineImplementationObligations({
               targetDir,
               assignmentPath,
               contract,
@@ -171,7 +171,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
               { implementation_execution: implementationExecution },
               graph.position.node
             ),
-            foreground: inlineImplementationObligations({
+            foreground: await inlineImplementationObligations({
               targetDir,
               assignmentPath,
               contract,
@@ -198,6 +198,11 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
           resultKind: 'worker',
           assignment: name,
           mission: assignmentStatus?.mission || undefined,
+          assignmentContext: {
+            assignmentPath,
+            phase: 'implementation',
+            role: 'implementation-owner',
+          },
         })
         if (result.status !== 'completed')
           throw new Error(result.error || 'Assignment worker failed')
@@ -278,7 +283,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         writeReceipt: true,
       })
       if (preflight.completeness !== 'complete') {
-        return emitArtifactRepair(
+        return await emitArtifactRepair(
           flags,
           name,
           `candidate_receipt_incomplete: ${preflight.issues.join(', ')}`,
@@ -322,7 +327,7 @@ export async function implementCommand(positionalArgs = [], flags = {}) {
         assignmentStatus: currentStatus,
       })
       if (revalidatedCandidate.identity !== candidateReceipt.identity) {
-        return emitArtifactRepair(
+        return await emitArtifactRepair(
           flags,
           name,
           'candidate_receipt_changed_after_waiver',
@@ -437,7 +442,7 @@ async function advanceImplementationCandidate({
       await fse.remove(join(assignmentPath, 'review', 'candidate-receipt.json'))
       return {
         blocked: true,
-        payload: emitCandidatePreflightRepair(flags, {
+        payload: await emitCandidatePreflightRepair(flags, {
           targetDir,
           assignmentPath,
           assignment: name,
@@ -463,7 +468,7 @@ async function advanceImplementationCandidate({
   return { blocked: false, graph: await currentAssignmentNode(targetDir) }
 }
 
-function emitCandidatePreflightRepair(
+async function emitCandidatePreflightRepair(
   flags,
   { targetDir, assignmentPath, assignment, contract, implementationExecution, preflight }
 ) {
@@ -488,7 +493,7 @@ function emitCandidatePreflightRepair(
         'implementation'
       ),
       candidate_preflight: candidatePreflight,
-      foreground: inlineImplementationObligations({
+      foreground: await inlineImplementationObligations({
         targetDir,
         assignmentPath,
         contract,
@@ -618,6 +623,10 @@ function emitInlineAction(flags, payload) {
     console.log(`Progress: ${payload.foreground.obligations.progress}`)
     console.log(`Outcome: ${payload.foreground.obligations.outcome}`)
     console.log(`Result: ${payload.foreground.obligations.result}`)
+    console.log('Context catalog:')
+    for (const entry of payload.foreground.context_catalog.entries) {
+      console.log(`  - ${entry.identity} | ${entry.path} | ${entry.purpose}`)
+    }
     if (payload.foreground.issue) console.log(`Repair: ${payload.foreground.issue}`)
     console.log(`Next: ${payload.foreground.next_command}`)
   }
@@ -638,7 +647,7 @@ function emitBlockedWorker(flags, payload) {
   return payload
 }
 
-function emitArtifactRepair(
+async function emitArtifactRepair(
   flags,
   assignment,
   issue,
@@ -661,7 +670,7 @@ function emitArtifactRepair(
       assignment,
       recovery: 'artifact_repair',
       implementation_execution: assignmentExecutionProjection(assignmentStatus, 'implementation'),
-      foreground: inlineImplementationObligations({
+      foreground: await inlineImplementationObligations({
         targetDir,
         assignmentPath,
         contract,

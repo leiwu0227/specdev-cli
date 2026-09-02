@@ -670,6 +670,11 @@ try {
     )}\n`,
     'utf8'
   )
+  writeFileSync(
+    join(resolverRouting.assignmentPath, 'review', 'implementation-verdict.md'),
+    `---\nverdict: blocked\nmaterial_divergence: false\nscope_divergence: none\nprocedure_divergence: none\nevidence_integrity: complete\nuser_reapproval_required: false\n---\n\n## Findings\n\nResolve the preserved candidate.\n`,
+    'utf8'
+  )
   const inlineResolver = runJson(resolverRouting.root, ['implement', '--json'])
   assert.equal(inlineResolver.status, 'action_required')
   assert.equal(inlineResolver.implementation_execution.effective_mode, 'inline')

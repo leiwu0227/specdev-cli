@@ -2,16 +2,24 @@
 
 `specdev update` replaces managed workflow files and installs versioned graph
 packages while preserving project-owned notes, work items, profiles, knowledge,
-project guides, custom tool skills, and existing platform adapters. When an
-existing adapter contains stale SpecDev guidance, update returns a provider-neutral
-operation such as `UPD00001`. Reconcile only the reported SpecDev section, then
-run the exact emitted command, for example `specdev update --operation=UPD00001`.
-That command validates current orientation, removed obsolete references, and
-byte-preservation of project-owned sections before writing a terminal receipt.
+project guides, custom tool skills, and existing platform adapters. Before
+mutating managed state, update checks every running Attempt. Live or ambiguously
+owned execution blocks with a recovery action; a provably stale local Attempt
+is recorded as interrupted before update proceeds. Do not add a self-exclusion
+or force bypass for an agent running under an Attempt.
+
+When an existing adapter contains stale SpecDev guidance, update returns a
+provider-neutral operation such as `UPD00001`. Reconcile only the reported
+SpecDev section, then run the exact emitted command, for example
+`specdev update --operation=UPD00001`. That command repeats the quiescence check, validates
+current orientation, removed obsolete references, and byte-preservation of
+project-owned sections before writing a terminal receipt.
 
 Use `specdev update --status` to discover interrupted update operations. If the
 reported boundary is ambiguous, do not rewrite it without user direction.
-`specdev update --dry-run` reports adapter status but creates no operation.
+`specdev update --dry-run` reports adapter and quiescence status but creates no
+operation or Attempt reconciliation. Status inspection is also read-only and
+remains available while maintenance is blocked.
 
 Legacy files under `knowledge/_workflow_feedback/` move to
 `knowledge/workflow_feedback/`. The update stops rather than overwriting a

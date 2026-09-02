@@ -38,6 +38,18 @@ authority to run a command. A waived implementation review completes only when e
 criterion is Passed, all receipts passed, deviations are empty, and follow-up
 is `none`.
 
+Every Assignment handoff receives a replaceable selective context catalog,
+ordered as binding authority, current task state, bounded supporting paths, and
+permitted same-role history. Entries identify repository-relative durable paths
+and purposes; they never copy source contents or replace the owning artifacts.
+Missing required authority or task evidence blocks. Optional supporting context
+may be absent, but absence never grants permission. Regenerate the projection
+on retry or material change. A first independent reviewer receives no author
+history, later primary rounds may receive durable prior findings, and fresh
+resolver or arbiter roles receive findings as task evidence rather than inherited
+reasoning. Mission children may only narrow the parent-selected supporting
+envelope and cannot expand parent or child authority.
+
 Installed configuration uses `implementation.mode: auto | inline | spawned` in
 `.specdev/agents.yaml`; omission is `auto`. For an ordinary standalone
 Assignment, `auto` freezes to `inline` at the Git boundary and returns a

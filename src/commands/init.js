@@ -202,6 +202,15 @@ fewest independent observable acceptance criteria (normally 1-3 for a small
 change and rarely more than 5). Tasks, file lists, and generic quality checks
 belong in the plan, not the contract.
 
+Use the selective context catalog returned by implementation and repair
+handoffs. It is a replaceable ordered projection of durable authority, current
+task state, bounded supporting paths, and permitted role history; read the
+owning artifacts rather than treating the catalog as authority. Missing required
+authority or task evidence blocks, optional absence never grants permission,
+and material change or uncertainty requires a regenerated bounded selection.
+First independent reviewers receive no author history. Mission children may
+only narrow their parent-selected supporting envelope.
+
 When the contract has no TODOs and the user is comfortable, run \`specdev
 checkpoint brainstorm\`. Brainstorm review is optional by default:
 \`specdev reviewloop brainstorm\`.

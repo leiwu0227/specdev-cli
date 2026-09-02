@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:assignment-context",
+      "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+      "scope": "selector ordering, fail-closed validation, lineage, inline parity, Attempt records, knowledge and guide selection, Mission bounds, and envelope replanning",
+      "status": "passed",
+      "duration_ms": 1000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:implement-recovery",
+      "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+      "scope": "foreground implementation and recovery compatibility",
+      "status": "passed",
+      "duration_ms": 15000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+      "scope": "primary reviewer, resolver, arbiter, and Mission-child review projections",
+      "status": "passed",
+      "duration_ms": 10000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:mission-environment",
+      "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+      "scope": "Mission execution-environment and handoff compatibility",
+      "status": "passed",
+      "duration_ms": 5000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:vnext-foundations",
+      "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+      "scope": "guide, knowledge, Attempt-record, and queue foundation compatibility",
+      "status": "passed",
+      "duration_ms": 3000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:mission-compatibility",
+      "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+      "scope": "existing Mission graph compatibility fixture",
+      "status": "failed",
+      "duration_ms": 300,
+      "role": "qualification"
+    },
+    {
+      "command": "npx prettier --check package.json src/commands/implement.js src/commands/init.js src/commands/mission.js src/commands/reviewloop.js src/utils/assignment-context.js src/utils/assignment-execution.js src/utils/mission.js src/utils/process-record.js src/utils/spawned-agent.js templates/.specdev/_guides/assignment_guide.md tests/test-assignment-context.js tests/test-implement-recovery.js tests/test-reviewloop-modes.js",
+      "revision": "working-tree@dd358abd0e684323fd2f62461d68d627defb4db1",
+      "scope": "all files changed by Assignment 00061",
+      "status": "passed",
+      "duration_ms": 700,
+      "role": "qualification"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}
