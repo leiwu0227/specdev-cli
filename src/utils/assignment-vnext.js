@@ -42,7 +42,7 @@ export function assignmentContractTemplate({
   sourceAssignment = null,
 }) {
   let source = sourceDiscussion
-    ? `\nSource discussion: ${sourceDiscussion.id} (${sourceDiscussion.hash})\n${sourceDiscussion.repoPath ? `Source proposal: \`${sourceDiscussion.repoPath}/brainstorm/proposal.md\`\nSource design: \`${sourceDiscussion.repoPath}/brainstorm/design.md\`\n` : ''}`
+    ? `\nSource discussion: ${sourceDiscussion.id} (${sourceDiscussion.hash})\n${sourceDiscussion.manifest ? `Source artifact manifest: v${sourceDiscussion.manifest.version}, ${sourceDiscussion.manifest.files.length} files\n` : ''}${sourceDiscussion.repoPath ? `Source proposal: \`${sourceDiscussion.repoPath}/brainstorm/proposal.md\`\nSource design: \`${sourceDiscussion.repoPath}/brainstorm/design.md\`\n` : ''}`
     : ''
   const predecessor = sourceAssignment
     ? sourceAssignment.disposition === 'unsupported'
@@ -262,19 +262,7 @@ export async function writeAssignmentStatus(assignmentPath, patch) {
   return next
 }
 
-export async function discussionArtifactHash(discussionPath) {
-  const files = ['brainstorm/proposal.md', 'brainstorm/design.md']
-  const hash = createHash('sha256')
-  for (const file of files) {
-    const path = join(discussionPath, file)
-    if (!(await fse.pathExists(path))) throw new Error(`Discussion artifact is missing: ${file}`)
-    hash.update(file)
-    hash.update('\0')
-    hash.update(await fse.readFile(path))
-    hash.update('\0')
-  }
-  return hash.digest('hex')
-}
+export { discussionArtifactHash } from './discussion-artifacts.js'
 
 export function relativeToRepo(targetDir, path) {
   return relative(targetDir, path).replaceAll('\\', '/')

@@ -1,0 +1,10 @@
+{
+  "id": "00065",
+  "name": "00065_implement-extensible-discussion-artifact-sets-wi",
+  "path": ".specdev/assignments/00065_implement-extensible-discussion-artifact-sets-wi",
+  "description": "Implement extensible Discussion artifact sets with safe recursive manifests and end-to-end review, completion, knowledge, and promotion support",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

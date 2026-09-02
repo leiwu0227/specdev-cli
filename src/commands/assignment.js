@@ -17,12 +17,15 @@ import {
   ASSIGNMENT_KINDS,
   assignmentContractTemplate,
   currentAssignmentNode,
-  discussionArtifactHash,
   relativeToRepo,
   reviewPolicyFromFlags,
   validateContractPath,
   writeAssignmentStatus,
 } from '../utils/assignment-vnext.js'
+import {
+  discussionArtifactCompletionMatches,
+  discussionArtifactManifest,
+} from '../utils/discussion-artifacts.js'
 
 const ASSIGNMENT_KIND_SET = new Set(ASSIGNMENT_KINDS)
 
@@ -87,9 +90,8 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     if (!call.synchronized || call.state.status !== 'completed') {
       return fail(flags, `Discussion ${discussionId} must be completed before promotion`)
     }
-    const completedHash = call.state.output?.artifact_hash
-    const currentHash = await discussionArtifactHash(resolved.path)
-    if (!completedHash || completedHash !== currentHash) {
+    const manifest = await discussionArtifactManifest(resolved.path)
+    if (!discussionArtifactCompletionMatches(call.state.output, manifest)) {
       return fail(
         flags,
         `Discussion ${discussionId} changed after completion; restore its completed artifacts or create a new Discussion`
@@ -100,7 +102,8 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
       name: resolved.name,
       path: resolved.path,
       repoPath: relativeToRepo(targetDir, resolved.path),
-      hash: currentHash,
+      hash: manifest.artifact_hash,
+      manifest,
     }
   }
 
@@ -319,7 +322,13 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
     review_policy: reviewPolicy,
     ...(flags.mission ? { mission: String(flags.mission) } : {}),
     ...(sourceDiscussion
-      ? { source_discussion: { id: sourceDiscussion.id, hash: sourceDiscussion.hash } }
+      ? {
+          source_discussion: {
+            id: sourceDiscussion.id,
+            hash: sourceDiscussion.hash,
+            artifact_manifest: sourceDiscussion.manifest,
+          },
+        }
       : {}),
     ...(sourceTestAudit
       ? { source_test_audit: { id: sourceTestAudit.id, hash: sourceTestAudit.hash } }

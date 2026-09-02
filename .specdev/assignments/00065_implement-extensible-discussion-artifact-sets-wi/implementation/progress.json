@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Initial qualification exposed unsupported RippleGraph output-schema keywords.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Initial qualification exposed unsupported RippleGraph output-schema keywords.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-graphpackages",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Initial qualification exposed unsupported RippleGraph output-schema keywords.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-packaging",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Workflow package and embedded-template consistency.",
+      "status": "passed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Second qualification exposed additional unsupported RippleGraph schema constraints.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Second qualification exposed additional unsupported RippleGraph schema constraints.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-graphpackages",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Second qualification exposed additional unsupported RippleGraph schema constraints.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Reviewer prompt includes the complete recursive Discussion artifact catalog.",
+      "status": "passed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-graphpackages",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Discussion lifecycle 2.1.0 graph package and schema validation.",
+      "status": "passed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Qualification exposed a stale pre-existing Assignment graph-version expectation.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Qualification aligned unsafe-entry assertion with established non-advancing CLI behavior.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Qualification aligned supporting-artifact discovery with its all-authority scope.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Qualification aligned distillation expectation after restoring a valid promotable Discussion.",
+      "status": "failed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:engine-integration",
+      "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+      "scope": "Recursive manifests, unsafe entries, immutable completion, knowledge discovery, legacy identity, and Assignment/Mission promotion.",
+      "status": "passed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

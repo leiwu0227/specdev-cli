@@ -7,6 +7,7 @@ import { resolveAgentProfile } from '../utils/agent-profiles.js'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { resolveDiscussionSelector } from '../utils/discussion.js'
+import { discussionArtifactManifest } from '../utils/discussion-artifacts.js'
 import {
   assertApprovedContract,
   assertCurrentAssignmentPath,
@@ -248,6 +249,12 @@ export async function reviewDiscussion(flags = {}) {
   ) {
     return fail(flags, 'Finish the Discussion artifacts and resume the Discussion before review')
   }
+  let manifest
+  try {
+    manifest = await discussionArtifactManifest(resolved.path)
+  } catch (error) {
+    return fail(flags, error.message)
+  }
 
   const reviewDir = join(resolved.path, 'review')
   const verdictPath = join(reviewDir, 'verdict.md')
@@ -272,11 +279,15 @@ export async function reviewDiscussion(flags = {}) {
     profile,
     discussion: id,
     prompt: [
-      'Review this code-read-only Discussion. Do not modify tracked files.',
+      'Review this code-read-only Discussion. Do not modify repository files.',
       `Proposal: ${relativeToRepo(targetDir, join(resolved.path, 'brainstorm', 'proposal.md'))}`,
       `Design: ${relativeToRepo(targetDir, join(resolved.path, 'brainstorm', 'design.md'))}`,
+      `Artifact manifest: ${manifest.artifact_hash}`,
+      `Complete artifact catalog (${manifest.files.length} files):\n${manifest.files
+        .map((file) => `- ${relativeToRepo(targetDir, join(resolved.path, file.path))}`)
+        .join('\n')}`,
       round > 1 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
-      'Check internal consistency, important missing cases, and assumptions against the current repository. Findings are advisory unless they expose a concrete blocker.',
+      'Inspect relevant supporting artifacts as their formats permit. Check internal consistency, important missing cases, and assumptions against the current repository. Findings are advisory unless they expose a concrete blocker.',
       'Never run a full suite. A narrow dry check is allowed only when repository instructions permit it.',
     ]
       .filter(Boolean)

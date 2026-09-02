@@ -192,6 +192,7 @@ try {
     fakeClaude,
     `#!/bin/sh
 prompt=$(cat)
+printf '%s' "$prompt" >"${root}.last-review-prompt"
 case "$prompt" in
   *"Continue the existing Assignment"*"mission-preserved-repair"*)
     mission_repair_count_file="${root}.mission-repair-count"
@@ -301,7 +302,14 @@ fi
   runJson(['cancel', 'finish interactive Assignment fixture'])
 
   const discussion = runJson(['discussion', 'Exercise interactive Discussion review', '--json'])
-  writeDiscussion(join(root, discussion.path))
+  const reviewedDiscussionPath = join(root, discussion.path)
+  writeDiscussion(reviewedDiscussionPath)
+  mkdirSync(join(reviewedDiscussionPath, 'brainstorm', 'evidence'), { recursive: true })
+  writeFileSync(
+    join(reviewedDiscussionPath, 'brainstorm', 'evidence', 'review-context.md'),
+    '# Review context\n\nInspect this nested supporting artifact.\n',
+    'utf8'
+  )
   runJson(['discussion', discussion.id, '--json'])
   mutateDuringNextReview('.specdev/discussions/D90000_concurrent/brainstorm/proposal.md')
   const firstDiscussion = runJson([
@@ -318,6 +326,10 @@ fi
   ])
   assert.equal(firstDiscussion.round, 1)
   assert.equal(secondDiscussion.round, 2)
+  assert.match(
+    readFileSync(`${root}.last-review-prompt`, 'utf8'),
+    new RegExp(`${discussion.path}/brainstorm/evidence/review-context\\.md`)
+  )
   mutateDuringNextReview(`${discussion.path}/brainstorm/proposal.md`)
   const activeDiscussionMutation = runJson(
     ['reviewloop', 'discussion', `--discussion=${discussion.id}`, '--json'],

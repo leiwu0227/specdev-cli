@@ -1,5 +1,14 @@
 import assert from 'node:assert/strict'
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
@@ -82,6 +91,17 @@ function writeDiscussion(path) {
     '# Design\n\nCompare the bounded options and retain assumptions for later promotion.\n',
     'utf8'
   )
+}
+
+function legacyDiscussionHash(path) {
+  const hash = createHash('sha256')
+  for (const relativePath of ['brainstorm/proposal.md', 'brainstorm/design.md']) {
+    hash.update(relativePath)
+    hash.update('\0')
+    hash.update(readFileSync(join(path, relativePath)))
+    hash.update('\0')
+  }
+  return hash.digest('hex')
 }
 
 function writeTestAudit(path) {
@@ -717,7 +737,7 @@ try {
   const registryPath = join(root, '.specdev', '.ripplegraph', 'registry.json')
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
   assert.equal(Object.keys(registry.graphs).length, 8)
-  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.3\.0$/)
+  assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.4\.0$/)
   assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.5\.0$/)
   assert.equal(registry.graphs['discussion-lifecycle'].kind, 'callable')
 
@@ -823,10 +843,37 @@ try {
   const discussion = runJson(root, ['discussion', 'Explore a follow-up design', '--json'])
   const discussionPath = join(root, discussion.path)
   writeDiscussion(discussionPath)
+  const supportingPath = join(discussionPath, 'brainstorm', 'evidence', 'repository-notes.md')
+  mkdirSync(join(discussionPath, 'brainstorm', 'evidence', 'raw'), { recursive: true })
+  writeFileSync(
+    supportingPath,
+    '# Repository evidence\n\nNested artifact evidence remains searchable after completion.\n',
+    'utf8'
+  )
+  writeFileSync(
+    join(discussionPath, 'brainstorm', 'evidence', 'raw', 'sample.bin'),
+    Buffer.from([0, 1, 2, 255])
+  )
+  const unsafeLink = join(discussionPath, 'brainstorm', 'proposal-link.md')
+  symlinkSync('proposal.md', unsafeLink)
+  const unsafeDiscussion = runJson(root, ['discussion', discussion.id, '--json'])
+  assert.equal(unsafeDiscussion.status, 'brainstorming')
+  assert.match(unsafeDiscussion.issues.join('; '), /symlinks are not allowed/)
+  rmSync(unsafeLink)
   const awaitingReview = runJson(root, ['discussion', discussion.id, '--json'])
   assert.equal(awaitingReview.status, 'awaiting_review')
   const discussionDone = runJson(root, ['discussion', discussion.id, '--complete', '--json'])
   assert.equal(discussionDone.status, 'completed')
+  assert.deepEqual(
+    discussionDone.artifact_manifest.files.map((file) => file.path),
+    [
+      'brainstorm/proposal.md',
+      'brainstorm/design.md',
+      'brainstorm/evidence/raw/sample.bin',
+      'brainstorm/evidence/repository-notes.md',
+    ]
+  )
+  assert.equal(discussionDone.artifact_manifest.artifact_hash, discussionDone.artifact_hash)
   const completedDiscussionBrief = runJson(root, [
     'knowledge',
     'distill',
@@ -840,9 +887,24 @@ try {
     ),
     true
   )
+  const supportingKnowledge = runJson(root, [
+    'knowledge',
+    'search',
+    'nested artifact evidence',
+    '--scope=all',
+    '--json',
+  ])
+  assert.equal(
+    supportingKnowledge.results.some(
+      (result) =>
+        result.path ===
+        `${discussion.path.replace(/^\.specdev\//, '')}/brainstorm/evidence/repository-notes.md`
+    ),
+    true
+  )
   writeFileSync(
-    join(discussionPath, 'brainstorm', 'design.md'),
-    '# Design\n\nChanged after completion and therefore no longer promotable under the saved hash.\n',
+    supportingPath,
+    '# Repository evidence\n\nChanged after completion and therefore no longer promotable.\n',
     'utf8'
   )
   const changedPromotion = runJson(
@@ -852,12 +914,66 @@ try {
   )
   assert.match(changedPromotion.error, /changed after completion/)
 
+  const canonicalDiscussion = runJson(root, [
+    'discussion',
+    'Preserve the legacy canonical artifact identity',
+    '--json',
+  ])
+  const canonicalDiscussionPath = join(root, canonicalDiscussion.path)
+  writeDiscussion(canonicalDiscussionPath)
+  const expectedLegacyHash = legacyDiscussionHash(canonicalDiscussionPath)
+  runJson(root, ['discussion', canonicalDiscussion.id, '--json'])
+  const canonicalDone = runJson(root, [
+    'discussion',
+    canonicalDiscussion.id,
+    '--complete',
+    '--json',
+  ])
+  assert.equal(canonicalDone.artifact_hash, expectedLegacyHash)
+
   const audit = runJson(root, ['test-audit', 'graph lifecycle checks', '--json'])
   writeTestAudit(join(root, audit.path))
   assert.equal(runJson(root, ['test-audit', audit.id, '--json']).status, 'awaiting_completion')
   assert.equal(runJson(root, ['test-audit', audit.id, '--complete', '--json']).status, 'completed')
   assert.equal(runJson(root, ['next', '--json']).workflow, 'Assignment lifecycle')
   runJson(root, ['cancel', 'finish concurrency fixture'])
+
+  writeFileSync(
+    supportingPath,
+    '# Repository evidence\n\nNested artifact evidence remains searchable after completion.\n',
+    'utf8'
+  )
+  const promotedDiscussion = runJson(root, [
+    'assignment',
+    `--from-discussion=${discussion.id}`,
+    '--json',
+  ])
+  const promotedDiscussionStatus = JSON.parse(
+    readFileSync(join(root, promotedDiscussion.path, 'status.json'), 'utf8')
+  )
+  assert.deepEqual(
+    promotedDiscussionStatus.source_discussion.artifact_manifest,
+    discussionDone.artifact_manifest
+  )
+  assert.match(
+    readFileSync(join(root, promotedDiscussion.path, 'brainstorm', 'contract.md'), 'utf8'),
+    /Source artifact manifest: v1, 4 files/
+  )
+  runJson(root, ['cancel', 'finish Discussion Assignment promotion fixture'])
+
+  const promotedMission = runJson(root, [
+    'mission',
+    'create',
+    `--from-discussion=${discussion.id}`,
+    '--json',
+  ])
+  const promotedMissionState = readFileSync(
+    join(root, promotedMission.path, 'mission.yaml'),
+    'utf8'
+  )
+  assert.match(promotedMissionState, /artifact_manifest:/)
+  assert.match(promotedMissionState, /brainstorm\/evidence\/repository-notes\.md/)
+  runJson(root, ['cancel', 'finish Discussion Mission promotion fixture'])
 
   const blockedAssignment = runJson(root, ['assignment', 'Preserve a blocked worker', '--json'])
   const blockedAssignmentPath = join(root, blockedAssignment.path)
@@ -978,7 +1094,7 @@ try {
   )
   assert.equal(
     distillationBrief.unreferenced_sources.some((source) => source.discussion === discussion.id),
-    false
+    true
   )
   mkdirSync(join(root, '.specdev', 'knowledge', 'faq'), { recursive: true })
   writeFileSync(

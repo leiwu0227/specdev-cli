@@ -140,8 +140,9 @@ verification, ownership, destination approval, or rebuild requirements.
   normal worktree for sequential children and automatically leases up to three
   ignored worktrees for an already-justified independent child wave. Mission is
   user-selected and does not imply multiple children.
-- **Discussion:** a concurrent code-read-only RippleGraph callable that writes
-  proposal/design artifacts and may later be promoted to fresh work.
+- **Discussion:** a concurrent code-read-only RippleGraph callable with required
+  proposal/design entry points plus safe supporting artifacts and nested folders;
+  it may later be promoted to fresh work.
 - **Test Audit:** a concurrent code-read-only callable that proposes exact test
   pruning and a ready Assignment contract; it never removes tests itself.
 

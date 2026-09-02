@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "6d684559ab8b37a552429942f91e22cd8509389cb3a6ffec8fd463370fb386e0",
+  "assignment": {
+    "id": "00065",
+    "folder": "00065_implement-extensible-discussion-artifact-sets-wi"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T06:08:51.274Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00065_implement-extensible-discussion-artifact-sets-wi/brainstorm/contract.md",
+    "hash": "9621d699abeff8c6b1544f3a9ae4641485270b272c3cb5cee501de02837e6dfe"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`npm run test:engine-integration` passed recursive nested-file manifests, stable identities, and fail-closed unsafe-entry coverage; `npm run test:engine-graphpackages` passed the 2.1.0 lifecycle package.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`npm run test:engine-integration` passed post-completion mutation detection, supporting-text discovery, and Assignment/Mission promotion with retained manifest provenance.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`npm run test:engine-packaging`, `npm run test:reviewloop-modes`, `npm run test:engine-graphpackages`, and `npm run test:engine-integration` all passed, covering packaging mirrors, complete review catalogs, lifecycle schemas, and canonic...",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 14,
+    "items": [
+      {
+        "command": "npm run test:engine-packaging",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "scope": "Workflow package and embedded-template consistency.",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "scope": "Reviewer prompt includes the complete recursive Discussion artifact catalog.",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 1,
+          "failed": 2,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:engine-graphpackages",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "scope": "Discussion lifecycle 2.1.0 graph package and schema validation.",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 1,
+          "failed": 2,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:engine-integration",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "scope": "Recursive manifests, unsafe entries, immutable completion, knowledge discovery, legacy identity, and Assignment/Mission promotion.",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 7,
+        "superseded": 6,
+        "history_counts": {
+          "passed": 1,
+          "failed": 6,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 10,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 4,
+        "failed": 10,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 14,
+      "counts": {
+        "passed": 4,
+        "failed": 10,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 10,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 4,
+      "counts": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 10,
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:engine-packaging",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:engine-graphpackages",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:engine-integration",
+        "revision": "working-tree@9f1079f2274ac45b61e12abecbb20c192229690c",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 16,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "QUICKSTART.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 8,
+        "paths": [
+          "src/commands/assignment.js",
+          "src/commands/discussion.js",
+          "src/commands/init.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/assignment-vnext.js",
+          "src/utils/discussion-artifacts.js",
+          "src/utils/knowledge.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 5,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md",
+          "templates/.specdev/_main.md"
+        ],
+        "omitted": 3
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-engine-integration.js"
+        ],
+        "omitted": 1
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "None known. Supporting artifacts retain exploratory knowledge authority and therefore require `--scope=all` for broad discovery; `design.md` remains the primary conclusion."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00065_implement-extensible-discussion-artifact-sets-wi/brainstorm/contract.md",
+      "exists": true,
+      "digest": "9621d699abeff8c6b1544f3a9ae4641485270b272c3cb5cee501de02837e6dfe"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00065_implement-extensible-discussion-artifact-sets-wi/design/plan.md",
+      "exists": true,
+      "digest": "221f1d1913d6f9cd4c9294bd088ffcdd267d5b49b9b9d8c95ebf5dcc7f6f1554"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00065_implement-extensible-discussion-artifact-sets-wi/implementation/progress.json",
+      "exists": true,
+      "digest": "0e6c45470a550fa165c67690c1e287b6078a4cef7fb386832b9cb2a157f7515b"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00065_implement-extensible-discussion-artifact-sets-wi/outcome.md",
+      "exists": true,
+      "digest": "d22d671037580298cbd87f44269ad53eaf602564bc9ab967c4b2163a67b58597"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

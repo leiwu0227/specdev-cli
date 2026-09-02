@@ -1,25 +1,13 @@
 # Forecast
 
-## 1. Add the Selective Assignment Context Catalog
+## 1. Support Extensible Discussion Artifact Sets
 
-Assignment workers receive guide catalogs and knowledge-search instructions, but there is no bounded catalog covering project context and Roadmap designs or consistent role-and-phase selection. Add provider-neutral authority, task, supporting, and permitted role-history context groups. Load binding authority first, expose relevant durable paths without preloading their contents, expand on objective relevance or unresolved ambiguity, preserve reviewer independence, and constrain Mission children to their delegated parent context.
+Discussion currently creates, validates, reviews, fingerprints, indexes, and promotes only `brainstorm/proposal.md` and `brainstorm/design.md`, while its workflow guidance forbids other files. Keep those canonical artifacts required, but allow supporting regular files and nested directories beneath the Discussion's `brainstorm/`. Add safe recursive enumeration that rejects symlinks, path escapes, and operational noise, then produce a deterministic manifest with stable relative-path ordering and content fingerprints. Use the complete manifest for review context, completion immutability, knowledge discovery, and Assignment or Mission promotion provenance while retaining `design.md` as the concise reader entry point.
 
-Based on: `workflow/lanes/assignment/assignment_selective_context_catalog.md`, `foundations/coding_agent_role.md`
+Based on: `workflow/lanes/discussion_lane.md`, `foundations/specdev_state_model.md`
 
-## 2. Support Optional Networked Read-Only Reviewers
+## 2. Allow Adhoc During Focused Contract Formation
 
-Agent profiles currently reject reviewer networking, and provider adapters enable networking only for Codex workers. Add a default-off reviewer network policy behind provider adapters while preserving repository-read-only access. Validate provider capabilities before launch, fail closed when the requested isolation cannot be enforced, and freeze the effective filesystem and network policy in Attempt and Mission execution records.
+Adhoc coexistence currently recognizes only a standalone Assignment at its approved design boundary and rejects Mission ownership, so contract brainstorming cannot use an independent Adhoc detour without first resolving focus. Extend coexistence to active Assignment and Mission contract formation and other quiescent pre-execution boundaries. Preserve the focused identity and all lane-owned artifacts, reject live or uncertain Attempts and ambiguous product changes, and prevent approval, execution, or Git-boundary advancement while Adhoc owns mutation. After completion or cancellation, revalidate affected contract assumptions against the resulting product state before the focused workflow resumes.
 
-Based on: `foundations/coding_agent_role.md`
-
-## 3. Continue Eligible Primary Reviewer Sessions
-
-Reviewer invocations currently force ephemeral execution and cannot resume the reviewer that issued repair findings. Add exact provider-session capture and Assignment-local continuation leases bound to the Assignment, reviewer role, profile, permissions, contract, working directory, and reviewed candidate. Eligible repair-verification rounds should receive prior findings, candidate changes, and changed evidence while remaining distinct Attempts. Material changes, missing capabilities, or failed continuation must fall back to a fresh review; resolvers and arbiters always remain fresh.
-
-Based on: `workflow/lanes/assignment/assignment_reviewer_session_continuation.md`, `foundations/coding_agent_role.md`, `foundations/specdev_state_model.md`
-
-## 4. Add Explicit Mission Abandonment
-
-The Mission CLI has no semantic abandonment operation even though the design requires an inspectable terminal alternative to completion. Add an explicit, reasoned, idempotent abandonment command that fails closed around live controllers, ambiguous product changes, and unsafe child worktrees. Preserve branches and incomplete work, record the terminal outcome and retained Git identities, compact only safely owned runtime state, and prevent abandoned Missions from running, landing, or being reinterpreted as successful.
-
-Based on: `workflow/lanes/mission_lane.md`, `workflow/workflow_model.md`, `foundations/specdev_state_model.md`
+Based on: `workflow/lanes/adhoc_lane.md`, `workflow/lanes/assignment/assignment_lane.md`, `workflow/lanes/mission_lane.md`

@@ -184,6 +184,11 @@ specdev assignment --from-discussion=D00001
 # or: specdev mission create --from-discussion=D00001
 ```
 
+Keep `brainstorm/proposal.md` and `brainstorm/design.md` as the canonical entry
+points. A Discussion may also contain useful supporting regular files and nested
+directories beneath `brainstorm/`; completion fingerprints the complete safe
+artifact set for later review and promotion.
+
 A Test Audit is also code-read-only. It proposes removals but never deletes
 tests itself:
 

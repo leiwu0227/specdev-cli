@@ -3,7 +3,11 @@ import fse from 'fs-extra'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { getNextDiscussionId, resolveDiscussionSelector } from '../utils/discussion.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
-import { discussionArtifactHash, gitSnapshot, relativeToRepo } from '../utils/assignment-vnext.js'
+import { gitSnapshot, relativeToRepo } from '../utils/assignment-vnext.js'
+import {
+  discussionArtifactCatalog,
+  discussionArtifactManifest,
+} from '../utils/discussion-artifacts.js'
 import {
   listGuidedCalls,
   readGuidedCall,
@@ -75,8 +79,8 @@ export async function discussCommand(positionalArgs = [], flags = {}) {
     description,
     start_revision: revision,
     authority:
-      "Product code is read-only; write only this Discussion's proposal, design, and optional review artifact.",
-    next_action: `Write ${input.path}/brainstorm/proposal.md and design.md, then run specdev discussion ${id}.`,
+      "Product code is read-only; write only inside this Discussion's brainstorm directory.",
+    next_action: `Write ${input.path}/brainstorm/proposal.md and design.md, plus any useful supporting files or subfolders, then run specdev discussion ${id}.`,
   })
 }
 
@@ -112,10 +116,14 @@ async function resumeDiscussion(targetDir, specdevPath, selector, flags) {
         next_action: `Finish ${relativeToRepo(targetDir, join(resolved.path, 'brainstorm', 'proposal.md'))} and design.md.`,
       })
     }
-    stepGuidedCall(targetDir, selector, {
+    const output = {
       proposal: relativeToRepo(targetDir, artifacts.proposalPath),
       design: relativeToRepo(targetDir, artifacts.designPath),
-    })
+    }
+    if (discussionGraphSupportsManifest(call.state)) {
+      output.artifacts = discussionArtifactCatalog(artifacts.manifest)
+    }
+    stepGuidedCall(targetDir, selector, output)
   }
 
   if (flags.complete) {
@@ -132,16 +140,19 @@ async function resumeDiscussion(targetDir, specdevPath, selector, flags) {
     const artifacts = await validateDiscussionArtifacts(resolved.path)
     if (!artifacts.valid) return fail(flags, artifacts.errors.join('; '))
     const revision = (await gitSnapshot(targetDir)).revision || 'unborn'
-    const artifactHash = await discussionArtifactHash(resolved.path)
-    const completed = stepGuidedCall(targetDir, selector, {
+    const manifest = artifacts.manifest
+    const output = {
       completed_revision: revision,
-      artifact_hash: artifactHash,
-    })
+      artifact_hash: manifest.artifact_hash,
+    }
+    if (discussionGraphSupportsManifest(call.state)) output.artifact_manifest = manifest
+    const completed = stepGuidedCall(targetDir, selector, output)
     await releaseDiscussion(specdevPath, selector)
     return emit(flags, {
       ...discussionPayload(targetDir, resolved, completed.state, 'completed'),
       completed_revision: revision,
-      artifact_hash: artifactHash,
+      artifact_hash: manifest.artifact_hash,
+      ...(output.artifact_manifest ? { artifact_manifest: manifest } : {}),
       next_action: `Promote later with specdev assignment --from-discussion=${selector} or specdev mission create --from-discussion=${selector}.`,
     })
   }
@@ -207,15 +218,36 @@ async function validateDiscussionArtifacts(discussionPath) {
   const proposalPath = join(discussionPath, 'brainstorm', 'proposal.md')
   const designPath = join(discussionPath, 'brainstorm', 'design.md')
   const errors = []
-  for (const [label, path] of [
-    ['proposal', proposalPath],
-    ['design', designPath],
-  ]) {
-    if (!(await fse.pathExists(path))) errors.push(`${label}.md is missing`)
-    else if ((await fse.readFile(path, 'utf-8')).trim().length < 40)
-      errors.push(`${label}.md is too short`)
+  let manifest = null
+  try {
+    manifest = await discussionArtifactManifest(discussionPath)
+  } catch (error) {
+    errors.push(error.message)
   }
-  return { valid: errors.length === 0, errors, proposalPath, designPath }
+  if (manifest) {
+    for (const [label, path] of [
+      ['proposal', proposalPath],
+      ['design', designPath],
+    ]) {
+      if ((await fse.readFile(path, 'utf-8')).trim().length < 40)
+        errors.push(`${label}.md is too short`)
+    }
+  }
+  return {
+    valid: errors.length === 0,
+    errors: [...new Set(errors)],
+    proposalPath,
+    designPath,
+    manifest,
+  }
+}
+
+function discussionGraphSupportsManifest(state) {
+  const match = String(state?.call?.graphVersion || '').match(/^(\d+)\.(\d+)/)
+  if (!match) return false
+  const major = Number(match[1])
+  const minor = Number(match[2])
+  return major > 2 || (major === 2 && minor >= 1)
 }
 
 function discussionPayload(targetDir, resolved, state, status) {

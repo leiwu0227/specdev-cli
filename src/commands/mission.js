@@ -23,12 +23,15 @@ import {
   ASSIGNMENT_KINDS,
   assignmentContractTemplate,
   contractPreview,
-  discussionArtifactHash,
   gitSnapshot,
   relativeToRepo,
   validateContractPath,
   writeAssignmentStatus,
 } from '../utils/assignment-vnext.js'
+import {
+  discussionArtifactCompletionMatches,
+  discussionArtifactManifest,
+} from '../utils/discussion-artifacts.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { writeCurrentFocus } from '../utils/current.js'
@@ -314,7 +317,15 @@ async function createMission(args, flags) {
     branch,
     created_at: new Date().toISOString(),
     next_action: `Finish brainstorm/contract.md, including the exact final verification command, then run specdev mission run ${id}.`,
-    ...(source ? { source_discussion: { id: source.id, hash: source.hash } } : {}),
+    ...(source
+      ? {
+          source_discussion: {
+            id: source.id,
+            hash: source.hash,
+            artifact_manifest: source.manifest,
+          },
+        }
+      : {}),
   })
   await writeCurrentFocus(specdevPath, { kind: 'mission', id })
   const stepped = stepGuidedNode(targetDir, 'create-mission', {
@@ -3788,9 +3799,8 @@ async function resolveSourceDiscussion(targetDir, specdevPath, selector, flags) 
     fail(flags, `Discussion ${id} must be completed before promotion`)
     return null
   }
-  const completedHash = call.state.output?.artifact_hash
-  const currentHash = await discussionArtifactHash(resolved.path)
-  if (!completedHash || completedHash !== currentHash) {
+  const manifest = await discussionArtifactManifest(resolved.path)
+  if (!discussionArtifactCompletionMatches(call.state.output, manifest)) {
     fail(
       flags,
       `Discussion ${id} changed after completion; restore its completed artifacts or create a new Discussion`
@@ -3801,7 +3811,8 @@ async function resolveSourceDiscussion(targetDir, specdevPath, selector, flags) 
     id,
     path: resolved.path,
     repoPath: relativeToRepo(targetDir, resolved.path),
-    hash: currentHash,
+    hash: manifest.artifact_hash,
+    manifest,
   }
 }
 

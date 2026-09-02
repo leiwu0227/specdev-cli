@@ -3,7 +3,10 @@ import { rename } from 'node:fs/promises'
 import { basename, dirname, join, relative, sep } from 'node:path'
 import fse from 'fs-extra'
 import { parse as parseYaml } from 'yaml'
-import { discussionArtifactHash } from './assignment-vnext.js'
+import {
+  discussionArtifactCompletionMatches,
+  discussionArtifactManifest,
+} from './discussion-artifacts.js'
 import { listGuidedCalls, readGuidedCall } from './callable-sync.js'
 
 export const KNOWLEDGE_DB_SUBPATH = 'cache/knowledge.sqlite'
@@ -864,10 +867,8 @@ async function readCompletedDiscussionIds(specdevPath, documents) {
       const folder = folders.get(call.id)
       if (!folder) continue
       const state = readGuidedCall(projectRoot, call.id).state
-      const expectedHash = state.output?.artifact_hash
-      if (!expectedHash) continue
-      const actualHash = await discussionArtifactHash(join(specdevPath, 'discussions', folder))
-      if (actualHash === expectedHash) completed.add(call.id)
+      const manifest = await discussionArtifactManifest(join(specdevPath, 'discussions', folder))
+      if (discussionArtifactCompletionMatches(state.output, manifest)) completed.add(call.id)
     }
     return completed
   } catch {
