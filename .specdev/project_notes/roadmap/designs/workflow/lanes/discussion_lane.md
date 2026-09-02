@@ -12,13 +12,13 @@ It gives exploratory work a durable identity and recoverable artifacts so reason
 
 Discussion may inspect the repository and evolving product state. Product code remains read-only throughout the lane.
 
-Its write authority is limited to its own exploration artifacts. Those artifacts may describe alternatives, recommendations, risks, and a proposed design, but they do not become implementation authority or approved Roadmap design merely because they exist.
+Its write authority is limited to its own `brainstorm/` directory. Artifacts there may describe alternatives, recommendations, risks, experiments, and a proposed design, but they do not become implementation authority or approved Roadmap design merely because they exist.
 
 The user explicitly selects Discussion. An agent must not silently create one while answering an ordinary question or inspecting code.
 
 ## Workflow Shape
 
-Discussion is an isolated RippleGraph callable. It has its own identity, recoverable state, and terminal boundary, but it never becomes the repository’s focused scheduler.
+Discussion is an isolated RippleGraph callable. It has its own identity, recoverable state, and terminal boundary, but it never becomes the repository's focused scheduler.
 
 The callable structure distinguishes active exploration from a completed conclusion. Interrupted work resumes under the same Discussion identity and durable artifacts rather than relying on private conversation memory.
 
@@ -26,11 +26,15 @@ Discussion remains intentionally smaller than an Assignment. It has no product m
 
 ## Collaboration and Artifacts
 
-Discussion produces a proposal that frames the question and a design artifact that records the developed conclusion. The artifacts should preserve material alternatives and unresolved risks without becoming a transcript of every conversational turn.
+Every Discussion retains two canonical artifacts: `brainstorm/proposal.md` frames the question and `brainstorm/design.md` records the developed conclusion. `design.md` remains the concise entry point for readers and references supporting artifacts where they materially inform the conclusion.
 
-The foreground agent collaborates with the user on the reasoning. Optional independent review may challenge the proposal or design, but review does not approve implementation or replace user judgment.
+The Discussion may also create supporting regular files of any useful format and nested directories anywhere beneath its own `brainstorm/`. Examples include research notes, alternative designs, diagrams and their sources, structured data, and small analysis outputs. Supporting artifacts need not be known when the Discussion starts.
 
-Completion occurs when the user is satisfied that the exploration has reached a durable conclusion. Completed artifacts represent that concluded Discussion and should not be silently rewritten afterward.
+This flexibility does not turn `brainstorm/` into general workspace storage. Artifacts must contribute to the exploration. Provider transcripts, credentials, caches, dependency trees, build output, and unrelated operational files do not belong there. Symlinks and paths that escape the Discussion directory are forbidden.
+
+The foreground agent collaborates with the user on the reasoning. Optional independent review may inspect and challenge the complete artifact set, but review does not approve implementation or replace user judgment.
+
+Completion occurs when the user is satisfied that the exploration has reached a durable conclusion. Completion records a deterministic recursive manifest of the canonical and supporting artifacts, including their relative paths and content fingerprints. The manifest covers regular files only, uses stable path ordering, and makes additions, removals, renames, and content changes observable. Completed artifacts represent that concluded Discussion and are immutable.
 
 ## Concurrency and Freshness
 
@@ -44,13 +48,16 @@ Its artifacts remain outside Adhoc and focused-workflow ownership. Another lane 
 
 A completed Discussion may inform Roadmap collaboration, an Assignment, or a Mission. That movement creates fresh authority and a fresh identity in the destination lane.
 
-Promotion may preserve the Discussion artifacts as provenance, but it must revalidate their assumptions and establish a new contract or approval boundary. Exploration approval never silently becomes implementation approval.
+Promotion preserves the Discussion identity and recursive artifact manifest as provenance. The destination revalidates the manifest and relevant product assumptions before relying on any artifact, then establishes its own contract or approval boundary. Exploration approval never silently becomes implementation approval.
 
 ## Design Choices
 
 - Exploration is durable without becoming product mutation.
+- `proposal.md` and `design.md` provide stable entry points without limiting supporting work.
+- Nested, format-independent artifacts let the evidence fit the question.
+- A safe recursive manifest makes the expanded artifact set deterministic and reviewable.
 - Discussion identity is isolated from the focused scheduler.
 - Product read-only authority enables safe concurrency.
 - User satisfaction, not implementation completion, defines the terminal outcome.
 - Later design adoption or implementation begins under fresh authority.
-- Durable conclusions are concise artifacts, not provider transcripts.
+- Durable conclusions are curated artifacts, not provider transcripts.
