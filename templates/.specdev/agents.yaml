@@ -12,4 +12,5 @@ reviewer:
   provider: claude
   model: opus
   effort: high
+  network: false # Codex reviewers may opt in; unsupported provider policies fail before launch.
   timeout: 20m

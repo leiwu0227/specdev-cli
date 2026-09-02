@@ -51,6 +51,7 @@ import {
 } from '../src/utils/mission-worktrees.js'
 import {
   createAttemptRecord,
+  listAttemptRecords,
   readAttemptRecord,
   summarizeAttemptActivity,
   updateAttemptRecord,
@@ -70,7 +71,7 @@ import {
   workspaceChangeSummaryLines,
 } from '../src/utils/workspace-changes.js'
 import { compactCompletedWorkflowRuntime } from '../src/utils/artifact-retention.js'
-import { durableAttemptStatusForResult } from '../src/utils/spawned-agent.js'
+import { durableAttemptStatusForResult, runSpawnedAgent } from '../src/utils/spawned-agent.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
   summarizeRisks,
@@ -97,8 +98,10 @@ try {
   const reviewer = await resolveAgentProfile(specdevPath, 'reviewer')
   assert.equal(reviewer.model, 'local-reviewer')
   assert.equal(reviewer.timeout_ms, 600_000)
+  assert.equal(reviewer.filesystem, 'read-only')
   assert.equal(reviewer.network, false)
   const worker = await resolveAgentProfile(specdevPath, 'worker')
+  assert.equal(worker.filesystem, 'workspace-write')
   assert.equal(worker.network, true)
 
   assert.throws(
@@ -121,19 +124,50 @@ try {
         network: true,
         timeout: '1m',
       }),
-    /supported only for the codex worker/
+    /cannot enforce network-enabled workspace-write access for the worker profile/
   )
+  const networkedReviewer = validateProfile('reviewer', {
+    provider: 'codex',
+    model: 'gpt-test',
+    effort: 'medium',
+    network: true,
+    timeout: '1m',
+  })
+  assert.equal(networkedReviewer.filesystem, 'read-only')
+  assert.equal(networkedReviewer.network, true)
   assert.throws(
     () =>
       validateProfile('reviewer', {
-        provider: 'codex',
-        model: 'gpt-test',
-        effort: 'medium',
+        provider: 'claude',
+        model: 'opus',
+        effort: 'high',
         network: true,
         timeout: '1m',
       }),
-    /supported only for the codex worker/
+    /cannot enforce network-enabled read-only access for the reviewer profile/
   )
+  const attemptsBeforeUnsupportedReview = (await listAttemptRecords(specdevPath)).length
+  const unsupportedReview = await runSpawnedAgent({
+    targetDir: root,
+    specdevPath,
+    role: 'reviewer',
+    profile: {
+      provider: 'claude',
+      model: 'opus',
+      effort: 'high',
+      filesystem: 'read-only',
+      network: true,
+      timeout_ms: 60_000,
+    },
+    prompt: 'This unsupported invocation must fail before launch.',
+    resultPath: join(specdevPath, 'discussions', 'D99999_fixture', 'review', 'verdict.md'),
+    resultKind: 'reviewer',
+    discussion: 'D99999',
+  })
+  assert.equal(unsupportedReview.status, 'failed')
+  assert.equal(unsupportedReview.attempt, null)
+  assert.match(unsupportedReview.error, /agent preflight failed/)
+  assert.equal((await listAttemptRecords(specdevPath)).length, attemptsBeforeUnsupportedReview)
 
   const codexReview = buildProviderInvocation({
     profile: { provider: 'codex', model: 'gpt-test', effort: 'high' },
@@ -143,11 +177,31 @@ try {
   })
   assert.equal(codexReview.command, 'codex')
   assert.equal(codexReview.args.includes('read-only'), true)
+  assert.deepEqual(codexReview.accessPolicy, { filesystem: 'read-only', network: false })
   assert.equal(
     codexReview.args.some((arg) => arg.includes('dangerously')),
     false
   )
   assert.equal(codexReview.args.includes('sandbox_workspace_write.network_access=true'), false)
+  assert.equal(codexReview.args.includes('web_search="live"'), false)
+  const codexNetworkedReview = buildProviderInvocation({
+    profile: { provider: 'codex', model: 'gpt-test', effort: 'high', network: true },
+    role: 'reviewer',
+    cwd: root,
+  })
+  assert.equal(codexNetworkedReview.args[0], 'exec')
+  assert.equal(codexNetworkedReview.args.includes('read-only'), true)
+  const webSearchConfig = codexNetworkedReview.args.indexOf('web_search="live"')
+  assert.equal(webSearchConfig > codexNetworkedReview.args.indexOf('exec'), true)
+  assert.equal(codexNetworkedReview.args[webSearchConfig - 1], '--config')
+  assert.equal(
+    codexNetworkedReview.args.includes('sandbox_workspace_write.network_access=true'),
+    false
+  )
+  assert.deepEqual(codexNetworkedReview.accessPolicy, {
+    filesystem: 'read-only',
+    network: true,
+  })
   const codexWorker = buildProviderInvocation({
     profile: { provider: 'codex', model: 'gpt-test', effort: 'medium', network: true },
     role: 'worker',
@@ -558,6 +612,7 @@ the existing API stable.
   assert.equal(attempt.id, 'Attempt-00008')
   const persistedAttempt = await readAttemptRecord(specdevPath, attempt.id)
   assert.equal(persistedAttempt.discussion, 'D00001')
+  assert.equal(persistedAttempt.filesystem, 'read-only')
   assert.equal(persistedAttempt.network, false)
   assert.deepEqual(persistedAttempt.guides, [{ id: 'api-security', version: '1' }])
   const completedAttempt = await updateAttemptRecord(specdevPath, attempt.id, {
@@ -567,6 +622,13 @@ the existing API stable.
     status: 'completed',
   })
   assert.equal(repeatedCompletion.ended_at, completedAttempt.ended_at)
+  writeFileSync(
+    join(specdevPath, 'processes', 'ATT-99999.yaml'),
+    'id: ATT-99999\nkind: reviewer\nstatus: completed\nworkspace: .\n'
+  )
+  const legacyAttempt = await readAttemptRecord(specdevPath, 'ATT-99999')
+  assert.equal(legacyAttempt.filesystem, 'read-only')
+  assert.equal(legacyAttempt.network, false)
 
   assert.deepEqual(normalizeFtsTerms('parser, parser OR foo_bar src/api.ts ???'), [
     'parser',

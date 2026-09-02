@@ -23,6 +23,7 @@ import {
   deriveMissionExecutionPolicy,
   missionExecutionPolicyTemplate,
   parsePolicyDeclaration,
+  resolveMissionReviewerProfile,
   scopeMissionFinding,
   selectVerificationExecutor,
 } from '../src/utils/mission-execution.js'
@@ -297,6 +298,22 @@ executors:
   })
   assert.equal(policy.contract_hash, 'contract-hash')
   assert.equal(policy.preflight.status, 'ready')
+  assert.deepEqual(policy.review_profiles.worker, {
+    provider: 'codex',
+    model: 'worker-test',
+    effort: 'medium',
+    filesystem: 'workspace-write',
+    network: false,
+    timeout_ms: 60_000,
+  })
+  assert.deepEqual(policy.review_profiles.reviewer, {
+    provider: 'claude',
+    model: 'reviewer-test',
+    effort: 'high',
+    filesystem: 'read-only',
+    network: false,
+    timeout_ms: 60_000,
+  })
   assert.deepEqual(policy.preflight.capable_executors, ['authorized-host'])
   assert.equal(JSON.stringify(policy).includes('must-not-be-persisted'), false)
   assert.deepEqual(policy.requirements.secret_names, ['TEST_DATABASE_URL'])
@@ -307,6 +324,30 @@ executors:
   const routed = selectVerificationExecutor(policy, { currentClass: 'authorized-host' })
   assert.equal(routed.status, 'recovery')
   assert.equal(routed.executor.id, 'authorized-host')
+
+  const frozenNetworkedReviewer = await resolveMissionReviewerProfile({
+    specdevPath,
+    executionPolicy: {
+      review_profiles: {
+        reviewer: {
+          provider: 'codex',
+          model: 'gpt-test',
+          effort: 'xhigh',
+          filesystem: 'read-only',
+          network: true,
+          timeout_ms: 90_000,
+        },
+      },
+    },
+  })
+  assert.deepEqual(frozenNetworkedReviewer, {
+    provider: 'codex',
+    model: 'gpt-test',
+    effort: 'xhigh',
+    filesystem: 'read-only',
+    network: true,
+    timeout_ms: 90_000,
+  })
 
   const missingSecret = await deriveMissionExecutionPolicy({
     specdevPath,

@@ -100,6 +100,14 @@ execution. Mission-controlled children always remain spawned. Both paths keep
 the same acceptance evidence, review, recovery, delivery receipt, and final
 commit guarantees.
 
+Agent profiles in `.specdev/agents.yaml` keep network authority separate from
+filesystem authority. Networking defaults to false for reviewers. A Codex
+reviewer may set `network: true`, which enables live search while retaining the
+read-only sandbox; provider combinations that cannot enforce network-enabled
+read-only access fail before launch. `network: false` means SpecDev grants no
+network capability through the adapter, not that it makes claims about a
+provider's internal connectivity.
+
 ### Ask for a larger mission
 
 > Use a Mission to repair search end to end. Keep it running through the

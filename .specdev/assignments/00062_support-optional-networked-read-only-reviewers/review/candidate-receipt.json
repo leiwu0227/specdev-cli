@@ -1,0 +1,336 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "cbb002cb30da572192e00fe9eb7795d25edd76e135042f5026052f00ea8d42bd",
+  "assignment": {
+    "id": "00062",
+    "folder": "00062_support-optional-networked-read-only-reviewers"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "command",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-02T03:27:30.977Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00062_support-optional-networked-read-only-reviewers/brainstorm/contract.md",
+    "hash": "249d8cb92e3269a0ac662a62b109de137f3f34efac46809e86d30a31b01639b4"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Focused profile/preflight tests prove default-off behavior, Codex reviewer acceptance, unsupported-provider rejection before Attempt creation, and unchanged Codex worker networking.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Provider invocation tests prove the exec-scoped `web_search=\"live\"` override follows `codex exec`, retains `--sandbox read-only`, emits no workspace-write network override, and rejects unsupported policies.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Focused Attempt and Mission tests prove normalized persistence, conservative legacy reads, complete approval-frozen profiles, and networked frozen reviewer resolution.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 7,
+    "items": [
+      {
+        "command": "node tests/test-vnext-foundations.js && node tests/test-mission-environment.js",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "scope": "profile validation, provider invocation, pre-launch rejection, Attempt compatibility, and frozen Mission review policy",
+        "status": "passed",
+        "duration_ms": 2390,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "prettier --write repaired files; node tests/test-vnext-foundations.js && node tests/test-mission-environment.js; codex exec --config web_search=live --help; git diff --check",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "scope": "post-review exec-scoped live-search repair, provider invocation ordering, Attempt policy, Mission policy, formatting, and whitespace integrity",
+        "status": "passed",
+        "duration_ms": 2448,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js && node tests/test-mission-environment.js",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "scope": "profile, provider, Attempt, and Mission policy coverage before fixture isolation correction",
+        "status": "failed",
+        "duration_ms": 233,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm test",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "scope": "full repository suite; stopped at pre-existing assignment-lifecycle 2.3.0 fixture mismatch",
+        "status": "failed",
+        "duration_ms": 1860,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "remaining npm test entries after test-mission-compatibility through test:cleanup",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "scope": "remaining repository coverage; all preceding entries passed before pre-existing engine-integration 2.3.0 assertion mismatch",
+        "status": "failed",
+        "duration_ms": 45630,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-assignment-shelf.js && node tests/test-assignment-unsupported.js && node tests/test-engine-packaging.js && npm run test:cleanup",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "scope": "final suite entries and cleanup after the pre-existing engine-integration mismatch",
+        "status": "passed",
+        "duration_ms": 22002,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "codex --search exec --help; prettier --check changed files; git diff --check",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "scope": "local Codex option shape, formatting, and whitespace integrity",
+        "status": "passed",
+        "duration_ms": 3148,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 3,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 2,
+        "failed": 3,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 7,
+      "counts": {
+        "passed": 4,
+        "failed": 3,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 2,
+          "failed": 3,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 7,
+      "counts": {
+        "passed": 4,
+        "failed": 3,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 2,
+          "failed": 3,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-vnext-foundations.js && node tests/test-mission-environment.js",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "status": "passed"
+      },
+      {
+        "command": "prettier --write repaired files; node tests/test-vnext-foundations.js && node tests/test-mission-environment.js; codex exec --config web_search=live --help; git diff --check",
+        "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 10,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "README.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 6,
+        "paths": [
+          "src/commands/mission.js",
+          "src/utils/agent-profiles.js",
+          "src/utils/mission-execution.js",
+          "src/utils/process-record.js",
+          "src/utils/provider-adapters.js",
+          "src/utils/spawned-agent.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 1,
+        "paths": [
+          "templates/.specdev/agents.yaml"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-mission-environment.js",
+          "tests/test-vnext-foundations.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "The full `npm test` command still stops at two pre-existing hard-coded lifecycle",
+      "expectations: `test-mission-compatibility` constructs an Assignment package and",
+      "catalog at 2.3.0 while copying the current 2.4.0 graph, and",
+      "`test-engine-integration` expects an installed 2.3.0 path although the packaged",
+      "graph is 2.4.0. Every other suite entry was run and passed. Provider CLI options",
+      "may evolve; the adapter boundary and invocation regressions remain the local",
+      "fail-closed evidence."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00062_support-optional-networked-read-only-reviewers/brainstorm/contract.md",
+      "exists": true,
+      "digest": "249d8cb92e3269a0ac662a62b109de137f3f34efac46809e86d30a31b01639b4"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00062_support-optional-networked-read-only-reviewers/design/plan.md",
+      "exists": true,
+      "digest": "f5df97134aabfbe608c3de9191072407bd64e1b9e8e8f89361b20f8c7e0d02e1"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00062_support-optional-networked-read-only-reviewers/implementation/progress.json",
+      "exists": true,
+      "digest": "9a37c2905bdabaa1d5c61c75c4e6f3b23d61aca02e4a570f543778d5386e4f59"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00062_support-optional-networked-read-only-reviewers/outcome.md",
+      "exists": true,
+      "digest": "50fe630808979769c3831553d65edbe30c1aef0b5d52a9d96657b53c442e428d"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

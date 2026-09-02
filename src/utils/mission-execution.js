@@ -67,7 +67,9 @@ export async function deriveMissionExecutionPolicy({
             provider: profile.provider,
             model: profile.model,
             effort: profile.effort,
+            filesystem: profile.filesystem,
             network: profile.network,
+            timeout_ms: profile.timeout_ms,
           },
         ]
       })
@@ -145,6 +147,28 @@ export async function deriveMissionExecutionPolicy({
       })),
     },
   }
+}
+
+export async function resolveMissionReviewerProfile({
+  specdevPath,
+  executionPolicy,
+  stateProfile = null,
+}) {
+  const frozen = stateProfile || executionPolicy?.review_profiles?.reviewer
+  if (!frozen) return resolveAgentProfile(specdevPath, 'reviewer')
+  const profile = await resolveAgentProfile(specdevPath, 'reviewer', {
+    provider: frozen.provider,
+    model: frozen.model,
+    effort: frozen.effort,
+    network: frozen.network,
+    timeout: frozen.timeout_ms,
+  })
+  if (frozen.filesystem && frozen.filesystem !== profile.filesystem) {
+    throw new Error(
+      `Frozen Mission reviewer filesystem policy ${frozen.filesystem} cannot be enforced by ${profile.provider}`
+    )
+  }
+  return profile
 }
 
 export function parsePolicyDeclaration(content) {

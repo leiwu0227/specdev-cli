@@ -16,6 +16,7 @@ export function isDurableAttemptStatus(value) {
 
 export async function createAttemptRecord(specdevPath, input) {
   const id = await reserveEntityId(specdevPath, 'attempt')
+  const filesystem = normalizeFilesystem(input.filesystem || inferredFilesystem(input.kind))
   const record = {
     id,
     kind: requiredText(input.kind, 'kind'),
@@ -27,6 +28,7 @@ export async function createAttemptRecord(specdevPath, input) {
     provider: nullableText(input.provider),
     model: nullableText(input.model),
     effort: nullableText(input.effort),
+    ...(filesystem ? { filesystem } : {}),
     network: Boolean(input.network),
     result_path: nullableText(input.result_path),
     ...(Array.isArray(input.guides) && input.guides.length > 0
@@ -70,7 +72,13 @@ export async function readAttemptRecord(specdevPath, id) {
   const path = attemptPath(specdevPath, id)
   if (!(await fse.pathExists(path))) return null
   const parsed = parse(await fse.readFile(path, 'utf-8'))
-  return parsed && typeof parsed === 'object' ? parsed : null
+  if (!parsed || typeof parsed !== 'object') return null
+  const filesystem = normalizeFilesystem(parsed.filesystem || inferredFilesystem(parsed.kind))
+  return {
+    ...parsed,
+    ...(filesystem ? { filesystem } : {}),
+    network: Boolean(parsed.network),
+  }
 }
 
 export async function updateAttemptRecord(specdevPath, id, patch) {
@@ -229,6 +237,20 @@ function normalizeRepoRelative(value) {
     throw new Error('Attempt workspace must be repository-relative')
   }
   return text
+}
+
+function inferredFilesystem(kind) {
+  if (['reviewer', 'format-correction'].includes(String(kind))) return 'read-only'
+  if (kind === 'worker') return 'workspace-write'
+  return null
+}
+
+function normalizeFilesystem(value) {
+  if (value == null) return null
+  if (!['read-only', 'workspace-write'].includes(value)) {
+    throw new Error('Attempt filesystem must be read-only or workspace-write')
+  }
+  return value
 }
 
 function requiredText(value, field) {

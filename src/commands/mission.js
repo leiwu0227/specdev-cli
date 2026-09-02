@@ -133,6 +133,7 @@ import {
   classifyVerificationDisposition,
   deriveMissionExecutionPolicy,
   missionExecutionPolicyTemplate,
+  resolveMissionReviewerProfile,
   selectVerificationExecutor,
 } from '../utils/mission-execution.js'
 import {
@@ -2112,12 +2113,11 @@ async function reviewMission(context) {
     }
   }
   let state = initialAutomaticReviewState(await fse.readJson(statePath).catch(() => ({})))
-  const profile = state.profile
-    ? await resolveAgentProfile(specdevPath, 'reviewer', {
-        ...state.profile,
-        timeout: state.profile.timeout_ms,
-      })
-    : await resolveAgentProfile(specdevPath, 'reviewer')
+  const profile = await resolveMissionReviewerProfile({
+    specdevPath,
+    executionPolicy: mission.execution_policy,
+    stateProfile: state.profile,
+  })
   const arbitration = state.stage === 'arbiter'
   const result = await runSpawnedAgent({
     targetDir,
@@ -2962,6 +2962,7 @@ async function deriveApprovedExecutionPolicy(context, contract = null) {
     stored.contract_hash === validated.hash &&
     stored.verification?.command === command
   ) {
+    current.review_profiles = stored.review_profiles
     current.approval_preflight = stored.preflight
   }
   return current

@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import fse from 'fs-extra'
 import { parse } from 'yaml'
+import { resolveProviderAccessPolicy } from './provider-adapters.js'
 
 const ROLE_NAMES = new Set(['worker', 'reviewer'])
 const TOP_LEVEL_NAMES = new Set([...ROLE_NAMES, 'implementation'])
@@ -42,9 +43,7 @@ export function validateProfile(role, profile) {
   if (typeof network !== 'boolean') {
     throw new Error(`${role} profile network must be true or false`)
   }
-  if (network && (role !== 'worker' || provider !== 'codex')) {
-    throw new Error('network=true is currently supported only for the codex worker profile')
-  }
+  const accessPolicy = resolveProviderAccessPolicy({ profile: { provider, network }, role })
 
   const supportedEffort = {
     codex: new Set(['low', 'medium', 'high', 'xhigh']),
@@ -63,7 +62,8 @@ export function validateProfile(role, profile) {
     provider,
     model,
     effort,
-    network,
+    filesystem: accessPolicy.filesystem,
+    network: accessPolicy.network,
     timeout_ms: parseDuration(profile.timeout, `${role} timeout`),
   }
 }

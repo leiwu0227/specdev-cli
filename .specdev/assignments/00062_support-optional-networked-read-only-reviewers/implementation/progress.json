@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-vnext-foundations.js && node tests/test-mission-environment.js",
+      "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+      "scope": "profile, provider, Attempt, and Mission policy coverage before fixture isolation correction",
+      "status": "failed",
+      "duration_ms": 233,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js && node tests/test-mission-environment.js",
+      "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+      "scope": "profile validation, provider invocation, pre-launch rejection, Attempt compatibility, and frozen Mission review policy",
+      "status": "passed",
+      "duration_ms": 2390,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm test",
+      "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+      "scope": "full repository suite; stopped at pre-existing assignment-lifecycle 2.3.0 fixture mismatch",
+      "status": "failed",
+      "duration_ms": 1860,
+      "role": "qualification"
+    },
+    {
+      "command": "remaining npm test entries after test-mission-compatibility through test:cleanup",
+      "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+      "scope": "remaining repository coverage; all preceding entries passed before pre-existing engine-integration 2.3.0 assertion mismatch",
+      "status": "failed",
+      "duration_ms": 45630,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-assignment-shelf.js && node tests/test-assignment-unsupported.js && node tests/test-engine-packaging.js && npm run test:cleanup",
+      "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+      "scope": "final suite entries and cleanup after the pre-existing engine-integration mismatch",
+      "status": "passed",
+      "duration_ms": 22002,
+      "role": "qualification"
+    },
+    {
+      "command": "codex --search exec --help; prettier --check changed files; git diff --check",
+      "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+      "scope": "local Codex option shape, formatting, and whitespace integrity",
+      "status": "passed",
+      "duration_ms": 3148,
+      "role": "qualification"
+    },
+    {
+      "command": "prettier --write repaired files; node tests/test-vnext-foundations.js && node tests/test-mission-environment.js; codex exec --config web_search=live --help; git diff --check",
+      "revision": "working-tree@43e0a5f8f099240da24ed9ac9a8fb7cd67284dce",
+      "scope": "post-review exec-scoped live-search repair, provider invocation ordering, Attempt policy, Mission policy, formatting, and whitespace integrity",
+      "status": "passed",
+      "duration_ms": 2448,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": []
+  }
+}
