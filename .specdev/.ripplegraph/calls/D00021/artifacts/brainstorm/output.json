@@ -1,0 +1,8 @@
+{
+  "proposal": ".specdev/discussions/D00021_define-roadmap-design-note-structure-general-to-/brainstorm/proposal.md",
+  "design": ".specdev/discussions/D00021_define-roadmap-design-note-structure-general-to-/brainstorm/design.md",
+  "artifacts": [
+    "brainstorm/proposal.md",
+    "brainstorm/design.md"
+  ]
+}
