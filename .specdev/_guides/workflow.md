@@ -129,8 +129,19 @@ may use folders that mirror their conceptual parent-child hierarchy. Designs
 retain high-level stable abstractions, general concepts, reusable conceptual
 templates, deliberate design choices, and their tradeoffs. Examples may clarify
 the intended design, but implementation details must not be reproduced.
-Conceptual design notes exclude runtime mechanics, verification history, and
-incidental source-code references rather than duplicating the code.
+Except for `source_code_folder_structure.md`, each design note begins with
+general descriptions and moves toward more specific detail, while remaining
+free to use whatever headings, sections, or other Markdown organization fits
+the subject. At the end, every design note except `core_concepts.md` and
+`source_code_folder_structure.md` identifies each source file it targets and
+gives the maximum total line count for the completed file; no particular format
+is required for that ending information. Design notes other than the two
+standard cross-cutting notes may include a small relevant folder tree and a
+pseudocode section when either helps clarify the design; neither is required.
+Outside those permitted illustrations and the deliberate source targets and line
+caps, conceptual design notes exclude runtime mechanics, verification history,
+code reproduction, and incidental source-code references rather than duplicating
+the code.
 `forecast.md` is a future-work roadmap of approved design
 requirements absent or incomplete in current code. The designs are the target
 state: forecast identifies code gaps versus designs, never design gaps versus

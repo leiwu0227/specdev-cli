@@ -13,7 +13,13 @@ words per numbered Markdown section, with each section citing the Roadmap
 design note or notes it is based on. Code may be a superset; code-only features do not
 create forecast items or automatic design updates. Design notes are drafted as
 `*_draft.md`, reported by path only, promoted to final `.md` only after user
-approval, and automatically committed when published. Roadmap has no active lifecycle; selecting
+approval, and automatically committed when published. Except for
+`source_code_folder_structure.md`, their prose moves from general descriptions
+toward more specific detail without a prescribed Markdown format. Notes other
+than `core_concepts.md` and `source_code_folder_structure.md` end by identifying
+their targeted source files and the maximum total completed-file line count for
+each, and may include a small relevant folder tree or pseudocode when helpful.
+Neither illustration is required. Roadmap has no active lifecycle; selecting
 another lane immediately supersedes it without an exit command or state
 transition. Explicitly user-selected Adhoc work creates one receipt and final
 commit but no RippleGraph run.

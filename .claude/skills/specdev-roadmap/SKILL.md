@@ -22,10 +22,20 @@ parent-child hierarchy.
 Design notes describe high-level stable abstractions, general concepts,
 reusable conceptual templates, deliberate design choices, and their tradeoffs.
 Use examples where they make the intended design obvious, but do not reproduce
-implementation details. Keep runtime mechanics, verification history, and
-incidental source-code references out of conceptual design notes. The design
-set retains stable abstractions and deliberate tradeoffs rather than duplicating
-the code.
+implementation details. Except for `source_code_folder_structure.md`, begin
+each design note with general descriptions and move toward more specific detail,
+but use whatever headings, sections, or other Markdown organization fits the
+subject. At the end of every design note except `core_concepts.md` and
+`source_code_folder_structure.md`, identify each source file the design targets
+and give the maximum total line count for the completed file. No particular
+format is required for this ending information. Design notes other than the two
+standard cross-cutting notes may include a small relevant folder tree and a
+pseudocode section when either helps clarify the design; neither is required.
+Outside those permitted illustrations and the deliberate source targets and line
+caps, keep runtime mechanics, verification history, code reproduction, and
+incidental source-code references out of conceptual design notes. The design set
+retains stable abstractions and deliberate tradeoffs rather than duplicating the
+code.
 
 `forecast.md` is a future-work roadmap. When creating or revising it, quickly
 inspect current code read-only against the Roadmap designs, identify design-note
