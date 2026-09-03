@@ -30,8 +30,14 @@ export async function roadmapCommand(flags = {}) {
         'Describe high-level stable abstractions and deliberate design choices without reproducing implementation details.',
       explanation:
         'Describe general concepts and reusable conceptual templates, using examples where they make the intended design obvious.',
+      progression:
+        'Except for source_code_folder_structure.md, begin each design note with general descriptions and move toward more specific detail; no fixed headings, sections, or Markdown format are required.',
+      source_targets:
+        'At the end of every design note except core_concepts.md and source_code_folder_structure.md, identify each targeted source file and its maximum total line count for the completed file; no particular Markdown format is required.',
+      illustration:
+        'Design notes other than core_concepts.md and source_code_folder_structure.md may include a small relevant folder tree and a pseudocode section when they help clarify the design; neither is required.',
       separation:
-        'Keep runtime mechanics, verification history, and incidental source-code references out of conceptual design notes; retain only stable abstractions and deliberate tradeoffs.',
+        'Outside permitted clarifying folder trees and pseudocode and the required ending source targets and line caps, keep runtime mechanics, verification history, code reproduction, and incidental source-code references out of conceptual design notes; retain only stable abstractions and deliberate tradeoffs.',
       presentation:
         'For design notes, report the intended final destination and concise scope, then write an approved draft as *_draft.md. After writing a draft, report only the draft Markdown path. After user approval, promote the draft to the final .md path, automatically commit the published design-note change, and report only the final path and commit. Do not echo full content or diffs unless the user asks.',
     },
@@ -78,6 +84,9 @@ export async function roadmapCommand(flags = {}) {
   console.log(`Additional design notes: ${payload.design_rules.additional_notes}`)
   console.log(`Design abstraction: ${payload.design_rules.abstraction}`)
   console.log(`Design explanation: ${payload.design_rules.explanation}`)
+  console.log(`Design progression: ${payload.design_rules.progression}`)
+  console.log(`Design source targets: ${payload.design_rules.source_targets}`)
+  console.log(`Design illustration: ${payload.design_rules.illustration}`)
   console.log(`Design separation: ${payload.design_rules.separation}`)
   console.log(`Design presentation: ${payload.design_rules.presentation}`)
   console.log(`Forecast purpose: ${payload.forecast_rules.purpose}`)

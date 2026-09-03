@@ -91,6 +91,17 @@ assert(
     roadmapPayload.design_rules.additional_notes.includes('one independent feature or module') &&
     roadmapPayload.design_rules.abstraction.includes('high-level stable abstractions') &&
     roadmapPayload.design_rules.explanation.includes('using examples') &&
+    roadmapPayload.design_rules.progression.includes('Except for source_code_folder_structure.md') &&
+    roadmapPayload.design_rules.progression.includes('general descriptions') &&
+    roadmapPayload.design_rules.progression.includes('no fixed headings, sections') &&
+    roadmapPayload.design_rules.source_targets.includes(
+      'except core_concepts.md and source_code_folder_structure.md'
+    ) &&
+    roadmapPayload.design_rules.source_targets.includes('maximum total line count') &&
+    roadmapPayload.design_rules.source_targets.includes('no particular Markdown format') &&
+    roadmapPayload.design_rules.illustration.includes('small relevant folder tree') &&
+    roadmapPayload.design_rules.illustration.includes('pseudocode section') &&
+    roadmapPayload.design_rules.illustration.includes('neither is required') &&
     roadmapPayload.design_rules.separation.includes('runtime mechanics') &&
     roadmapPayload.design_rules.presentation.includes('intended final destination') &&
     roadmapPayload.design_rules.presentation.includes('*_draft.md') &&
@@ -342,6 +353,17 @@ assert(
     roadmapSkillProse.includes('one independent feature or module') &&
     roadmapSkillProse.includes('high-level stable abstractions') &&
     roadmapSkillProse.includes('reusable conceptual templates') &&
+    roadmapSkillProse.includes('Except for `source_code_folder_structure.md`') &&
+    roadmapSkillProse.includes('general descriptions') &&
+    roadmapSkillProse.includes('whatever headings, sections') &&
+    roadmapSkillProse.includes(
+      'At the end of every design note except `core_concepts.md` and `source_code_folder_structure.md`'
+    ) &&
+    roadmapSkillProse.includes('maximum total line count for the completed file') &&
+    roadmapSkillProse.includes('No particular format is required') &&
+    roadmapSkillProse.includes('small relevant folder tree') &&
+    roadmapSkillProse.includes('pseudocode section') &&
+    roadmapSkillProse.includes('neither is required') &&
     roadmapSkillProse.includes('runtime mechanics, verification history') &&
     roadmapSkillProse.includes('Write the draft as `*_draft.md`') &&
     roadmapSkillProse.includes('report only the draft Markdown path') &&

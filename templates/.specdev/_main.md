@@ -111,7 +111,15 @@ verification, ownership, destination approval, or rebuild requirements.
   proposed edit and obtain user approval before writing. Every design file must
   contain fewer than 800 words (maximum 799). Besides `core_concepts.md` and
   `source_code_folder_structure.md`, each note covers one independent feature
-  or module with minimal overlap. `forecast.md` is a future-work roadmap of
+  or module with minimal overlap. Except for
+  `source_code_folder_structure.md`, each design note begins with general
+  descriptions and moves toward more specific detail without requiring fixed
+  sections or a particular Markdown format. Except for `core_concepts.md` and
+  `source_code_folder_structure.md`, each note ends by identifying every
+  targeted source file and giving the maximum total line count for the completed
+  file, and may include a small relevant folder tree or pseudocode when helpful
+  for clarifying the design. Neither illustration is required. `forecast.md` is
+  a future-work roadmap of
   approved design requirements absent or incomplete in current code. Treat the
   designs as the target state: identify code gaps versus designs, never design
   gaps versus code. Code may be a superset; code-only features create neither
