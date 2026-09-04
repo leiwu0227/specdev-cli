@@ -76,6 +76,7 @@ import {
   assignmentContractTemplate,
   normalizeReviewPolicy,
   reviewPolicyFromFlags,
+  validateContractPath,
 } from '../src/utils/assignment-vnext.js'
 import {
   classifyWorkspaceChanges,
@@ -644,6 +645,26 @@ the existing API stable.
   assert.match(
     assignmentContractTemplate({ description: 'Small fix' }),
     /fewest independent observable acceptance criteria \(normally 1-5\)/
+  )
+  const contractValidationPath = join(root, 'contract-validation.md')
+  writeFileSync(
+    contractValidationPath,
+    assignmentContractTemplate({
+      description:
+        'Add `.specdev/project_notes/roadmap/todo.md` with a canonical `# Todo` heading.',
+    }).replace(/\bTODO\b/g, 'Complete')
+  )
+  const legitimateTodoContract = await validateContractPath(contractValidationPath)
+  assert.equal(legitimateTodoContract.valid, true)
+  writeFileSync(
+    contractValidationPath,
+    assignmentContractTemplate({ description: 'Retain placeholder detection.' })
+  )
+  const placeholderContract = await validateContractPath(contractValidationPath)
+  assert.equal(placeholderContract.valid, false)
+  assert.equal(
+    placeholderContract.errors.includes('contract still contains TODO placeholders'),
+    true
   )
   assert.deepEqual(
     parseGitPorcelainPaths(' D .specdev/.current\n M src/index.js\n?? test/new.js\n'),

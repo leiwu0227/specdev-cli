@@ -1,0 +1,70 @@
+{
+  "callId": "D00022",
+  "status": "completed",
+  "graphId": "discussion-lifecycle",
+  "graphVersion": "2.1.0",
+  "packagePath": "workflows/discussion-lifecycle@2.1.0",
+  "position": {
+    "graph": "discussion-lifecycle",
+    "node": "done"
+  },
+  "input": {
+    "id": "D00022",
+    "path": ".specdev/discussions/D00022_allow-roadmap-todo-md-for-non-architecture-work-",
+    "description": "Allow Roadmap todo.md for non-architecture work using the forecast.md format",
+    "start_revision": "099ea09e5d48a90a3ff3d7f73e44f54519d91dd7"
+  },
+  "outputs": {
+    "brainstorm": {
+      "proposal": ".specdev/discussions/D00022_allow-roadmap-todo-md-for-non-architecture-work-/brainstorm/proposal.md",
+      "design": ".specdev/discussions/D00022_allow-roadmap-todo-md-for-non-architecture-work-/brainstorm/design.md",
+      "artifacts": [
+        "brainstorm/proposal.md",
+        "brainstorm/design.md"
+      ]
+    },
+    "finalize": {
+      "completed_revision": "099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "artifact_hash": "bf4aeb728024b70853b74c8aefa2f66d94be884878c55e6366d2969903a7aeff",
+      "artifact_manifest": {
+        "version": 1,
+        "files": [
+          {
+            "path": "brainstorm/proposal.md",
+            "size": 2148,
+            "sha256": "2cf66c46d42ac9fc239811b189468c2824f529b16257128ce727ed95de98eaae"
+          },
+          {
+            "path": "brainstorm/design.md",
+            "size": 1112,
+            "sha256": "c6b26e97c19435cfa068b98b4d9ef2851411019933c6c6b57dcbfc7800ca1cdc"
+          }
+        ],
+        "artifact_hash": "bf4aeb728024b70853b74c8aefa2f66d94be884878c55e6366d2969903a7aeff"
+      }
+    }
+  },
+  "createdAt": "2026-09-04T06:46:58.365Z",
+  "updatedAt": "2026-09-04T07:12:37.567Z",
+  "finalOutput": {
+    "completed_revision": "099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+    "artifact_hash": "bf4aeb728024b70853b74c8aefa2f66d94be884878c55e6366d2969903a7aeff",
+    "artifact_manifest": {
+      "version": 1,
+      "files": [
+        {
+          "path": "brainstorm/proposal.md",
+          "size": 2148,
+          "sha256": "2cf66c46d42ac9fc239811b189468c2824f529b16257128ce727ed95de98eaae"
+        },
+        {
+          "path": "brainstorm/design.md",
+          "size": 1112,
+          "sha256": "c6b26e97c19435cfa068b98b4d9ef2851411019933c6c6b57dcbfc7800ca1cdc"
+        }
+      ],
+      "artifact_hash": "bf4aeb728024b70853b74c8aefa2f66d94be884878c55e6366d2969903a7aeff"
+    }
+  },
+  "outputArtifact": "artifacts/finalize/output.json"
+}

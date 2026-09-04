@@ -1,0 +1,90 @@
+{
+  "runId": "assignment-lifecycle-20260904T07125025",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-09-04T07:12:50.254Z",
+  "updatedAt": "2026-09-04T08:10:42.751Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00067",
+      "name": "00067_proposal-roadmap-todo-list",
+      "path": ".specdev/assignments/00067_proposal-roadmap-todo-list",
+      "description": "Proposal: Roadmap Todo List",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00067_proposal-roadmap-todo-list/brainstorm/contract.md",
+      "contract_hash": "da67325a87de68eda6a5fb5953a91fa649bb356bdf32c5188db9657898552787"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "da67325a87de68eda6a5fb5953a91fa649bb356bdf32c5188db9657898552787",
+      "actor": "user",
+      "approved_at": "2026-09-04T07:15:14.530Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "099ea09e5d48a90a3ff3d7f73e44f54519d91dd7"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00067_proposal-roadmap-todo-list/design/plan.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00067_proposal-roadmap-todo-list/implementation/progress.json",
+      "outcome": ".specdev/assignments/00067_proposal-roadmap-todo-list/outcome.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00067_proposal-roadmap-todo-list/review/implementation-verdict.md",
+      "attempt": "Attempt-00178",
+      "disposition": "approved"
+    },
+    "repair": {
+      "attempt": "inline-foreground",
+      "result": ".specdev/assignments/00067_proposal-roadmap-todo-list/implementation/repair-result.md"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "da67325a87de68eda6a5fb5953a91fa649bb356bdf32c5188db9657898552787",
+      "actor": "user",
+      "approved_at": "2026-09-04T07:15:14.530Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "099ea09e5d48a90a3ff3d7f73e44f54519d91dd7"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.4.0",
+    "packagePath": "workflows/assignment-lifecycle@2.4.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00067_proposal-roadmap-todo-list/review/implementation-verdict.md",
+    "attempt": "Attempt-00178",
+    "disposition": "approved"
+  }
+}

@@ -63,10 +63,13 @@ const roadmapRoot = join(TEST_DIR, '.specdev', 'project_notes', 'roadmap')
 const roadmapCore = join(roadmapRoot, 'designs', 'core_concepts.md')
 const roadmapStructure = join(roadmapRoot, 'designs', 'source_code_folder_structure.md')
 const roadmapForecast = join(roadmapRoot, 'forecast.md')
+const roadmapTodo = join(roadmapRoot, 'todo.md')
 assert(
   existsSync(roadmapCore) &&
     existsSync(roadmapStructure) &&
     existsSync(roadmapForecast) &&
+    existsSync(roadmapTodo) &&
+    readFileSync(roadmapTodo, 'utf-8').startsWith('# Todo\n') &&
     !existsSync(join(roadmapRoot, 'designs', 'core-concept.md')) &&
     existsSync(join(TEST_DIR, '.claude', 'skills', 'specdev-roadmap', 'SKILL.md')),
   'init installs the exact roadmap scaffold and command skill'
@@ -83,15 +86,22 @@ assert(
         'project_notes/roadmap/designs/core_concepts.md',
         'project_notes/roadmap/designs/source_code_folder_structure.md',
         'project_notes/roadmap/forecast.md',
+        'project_notes/roadmap/todo.md',
       ].join('|') &&
     roadmapPayload.writable_paths.join('|') ===
-      ['project_notes/roadmap/designs/**/*.md', 'project_notes/roadmap/forecast.md'].join('|') &&
+      [
+        'project_notes/roadmap/designs/**/*.md',
+        'project_notes/roadmap/forecast.md',
+        'project_notes/roadmap/todo.md',
+      ].join('|') &&
     roadmapPayload.design_rules.word_limit.includes('maximum 799') &&
     roadmapPayload.design_rules.hierarchy.includes('conceptual parent-child hierarchy') &&
     roadmapPayload.design_rules.additional_notes.includes('one independent feature or module') &&
     roadmapPayload.design_rules.abstraction.includes('high-level stable abstractions') &&
     roadmapPayload.design_rules.explanation.includes('using examples') &&
-    roadmapPayload.design_rules.progression.includes('Except for source_code_folder_structure.md') &&
+    roadmapPayload.design_rules.progression.includes(
+      'Except for source_code_folder_structure.md'
+    ) &&
     roadmapPayload.design_rules.progression.includes('general descriptions') &&
     roadmapPayload.design_rules.progression.includes('no fixed headings, sections') &&
     roadmapPayload.design_rules.source_targets.includes(
@@ -118,22 +128,40 @@ assert(
     roadmapPayload.forecast_rules.ordering.includes('numbered Markdown section') &&
     roadmapPayload.forecast_rules.references.includes('design note or notes') &&
     roadmapPayload.forecast_rules.section_word_limit.includes('maximum 199') &&
+    roadmapPayload.todo_rules.purpose.includes('user-selected') &&
+    roadmapPayload.todo_rules.purpose.includes('non-architecture') &&
+    roadmapPayload.todo_rules.purpose.includes('distinct from design-derived Forecast gaps') &&
+    roadmapPayload.todo_rules.ordering.includes('dependency order') &&
+    roadmapPayload.todo_rules.ordering.includes('user-priority order') &&
+    roadmapPayload.todo_rules.format.includes('numbered Markdown section') &&
+    roadmapPayload.todo_rules.section_word_limit.includes('maximum 199') &&
+    roadmapPayload.todo_rules.provenance.includes('omit provenance metadata') &&
+    roadmapPayload.todo_rules.provenance.includes('do not require Based on references') &&
     JSON.stringify(snapshotTree(TEST_DIR)) === JSON.stringify(beforeRoadmap),
   'roadmap reports the stateless exact-path boundary without creating state'
 )
 
 const agreedCore = '# Agreed core concepts\n'
 const agreedForecast = '# Agreed forecast\n\n1. First item\n'
+const agreedTodo = '# Agreed todo\n\n1. User item\n'
 writeFileSync(roadmapCore, agreedCore)
 writeFileSync(roadmapForecast, agreedForecast)
+writeFileSync(roadmapTodo, agreedTodo)
 rmSync(roadmapStructure)
 result = runCmd(['update', `--target=${TEST_DIR}`, '--json'])
 assert(
   result.status === 0 &&
     readFileSync(roadmapCore, 'utf-8') === agreedCore &&
     readFileSync(roadmapForecast, 'utf-8') === agreedForecast &&
+    readFileSync(roadmapTodo, 'utf-8') === agreedTodo &&
     existsSync(roadmapStructure),
   'update preserves roadmap bytes and backfills a missing scaffold file'
+)
+rmSync(roadmapTodo)
+result = runCmd(['update', `--target=${TEST_DIR}`, '--json'])
+assert(
+  result.status === 0 && readFileSync(roadmapTodo, 'utf-8').startsWith('# Todo\n'),
+  'update backfills a missing Todo scaffold'
 )
 
 const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
@@ -172,6 +200,49 @@ assert(
     normalizedProse(mainMd).includes('not an implicit Adhoc selection') &&
     normalizedProse(mainMd).includes('re-anchor in that repository'),
   '_main.md defines the cross-repository handoff-note ownership boundary'
+)
+assert(
+  normalizedProse(mainMd).includes(
+    '`todo.md` records user-selected non-architecture future work, not design-derived gaps'
+  ) &&
+    normalizedProse(mainMd).includes('omits provenance metadata and `Based on:` references') &&
+    normalizedProse(mainMd).includes('authority to implement Forecast or Todo items'),
+  '_main.md distinguishes Todo from Forecast without granting implementation authority'
+)
+const workflowGuide = readFileSync(join(TEST_DIR, '.specdev', '_guides', 'workflow.md'), 'utf-8')
+assert(
+  normalizedProse(workflowGuide).includes(
+    '`todo.md` records user-selected non-architecture future work rather than design-derived gaps'
+  ) &&
+    normalizedProse(workflowGuide).includes(
+      'Todo items use the same dependency order followed by user priority'
+    ) &&
+    normalizedProse(workflowGuide).includes(
+      'omit provenance metadata and `Based on:` references'
+    ) &&
+    normalizedProse(workflowGuide).includes(
+      'does not authorize implementation of a Forecast or Todo item'
+    ),
+  'workflow guide documents Todo format and authority separately from Forecast'
+)
+const skillsReadme = readFileSync(join(TEST_DIR, '.specdev', 'skills', 'README.md'), 'utf-8')
+assert(
+  normalizedProse(skillsReadme).includes(
+    '`roadmap/forecast.md`, `roadmap/todo.md`, and bounded design Markdown files'
+  ) &&
+    normalizedProse(skillsReadme).includes(
+      'Todo records user-selected non-architecture future work'
+    ) &&
+    normalizedProse(skillsReadme).includes('omitting provenance') &&
+    normalizedProse(skillsReadme).includes('Neither list grants implementation authority'),
+  'skills README includes Todo in the Roadmap boundary and preserves its authority distinction'
+)
+const specdevIndex = readFileSync(join(TEST_DIR, '.specdev', '_index.md'), 'utf-8')
+assert(
+  specdevIndex.includes(
+    'project_notes/roadmap/todo.md        dependency-ordered user-selected non-architecture work'
+  ),
+  'canonical state index lists the Todo scaffold'
 )
 const claudeMd = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
 assert(claudeMd.includes('.specdev/_main.md'), 'CLAUDE.md points to _main.md')
@@ -377,6 +448,12 @@ assert(
     roadmapSkillProse.includes('numbered Markdown section') &&
     roadmapSkillProse.includes('design note or notes the section') &&
     roadmapSkillProse.includes('fewer than 200 words (maximum 199)') &&
+    roadmapSkillProse.includes(
+      '`todo.md` records non-architecture future work selected by the user'
+    ) &&
+    roadmapSkillProse.includes('dependency and then by user priority') &&
+    roadmapSkillProse.includes('Todo items omit provenance metadata') &&
+    roadmapSkillProse.includes('not grant authority to implement Forecast or Todo items') &&
     roadmapSkillProse.includes('Selecting another lane immediately supersedes') &&
     roadmapSkillProse.includes('no exit command or state transition is required'),
   'roadmap skill requires explicit selection and approval without workflow history'
@@ -443,13 +520,26 @@ console.log('\nhook installation:')
 const hookScript = join(TEST_DIR, '.claude', 'hooks', 'specdev-session-start.sh')
 assert(existsSync(hookScript), '.claude/hooks/specdev-session-start.sh exists')
 const hookContent = readFileSync(hookScript, 'utf-8')
+const trackedHookContent = readFileSync(
+  join(REPO_ROOT, '.claude', 'hooks', 'specdev-session-start.sh'),
+  'utf-8'
+)
 assert(hookContent.startsWith('#!/usr/bin/env bash'), 'hook script starts with bash shebang')
+assert(
+  hookContent === trackedHookContent,
+  '.claude tracked session hook matches the generated hook source'
+)
 assert(
   !hookContent.includes('Announce every subtask') &&
     hookContent.includes('Announce meaningful phases') &&
     hookContent.includes('small non-behavioral documentation writes') &&
+    hookContent.includes('only forecast.md, todo.md, and Markdown under designs/') &&
+    hookContent.includes(
+      'Todo contains dependency-ordered, user-prioritized non-architecture work'
+    ) &&
+    hookContent.includes('Neither list grants implementation authority') &&
     hookContent.includes('Direct writes create no workflow state, receipt, or automatic commit'),
-  'SessionStart guidance exposes Direct writes and meaningful-phase announcements'
+  'SessionStart guidance exposes Roadmap Todo, Direct writes, and meaningful-phase announcements'
 )
 const settingsFile = join(TEST_DIR, '.claude', 'settings.json')
 assert(existsSync(settingsFile), '.claude/settings.json exists')

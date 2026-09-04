@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "scope": "Initial focused Roadmap command, initialization, update, generated guidance, and host-copy synchronization acceptance",
+      "status": "failed",
+      "duration_ms": 2397,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "scope": "AC-1, AC-2, and AC-3 focused Roadmap command, initialization, update, generated guidance, and host-copy synchronization acceptance after repair",
+      "status": "passed",
+      "duration_ms": 2320,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:vnext-foundations",
+      "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "scope": "AC-4 Assignment contract placeholder validation regression coverage",
+      "status": "passed",
+      "duration_ms": 2642,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "scope": "AC-1, AC-2, and AC-3 final focused Roadmap acceptance after implementation-review repair, including installed skills README and canonical index coverage",
+      "status": "passed",
+      "duration_ms": 2312,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:vnext-foundations",
+      "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "scope": "AC-4 final Assignment contract placeholder validation regression coverage after implementation-review repair",
+      "status": "passed",
+      "duration_ms": 2252,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-init-platform.js",
+      "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "scope": "AC-1, AC-2, and AC-3 final focused Roadmap acceptance after tracked session-hook repair",
+      "status": "passed",
+      "duration_ms": 2253,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:vnext-foundations",
+      "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+      "scope": "AC-4 final Assignment contract placeholder validation regression coverage after tracked session-hook repair",
+      "status": "passed",
+      "duration_ms": 2298,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [
+    "The first authorized platform run exposed two tracked host-skill copies that still contained the previous Roadmap guidance. Both copies were synchronized with the generated skill prose, and the focused rerun passed.",
+    "Implementation review found two further installed guidance surfaces with a closed-world Forecast-only assumption: templates/.specdev/skills/README.md and templates/.specdev/_index.md. Both were updated and pinned with regression assertions.",
+    "A second implementation review found the tracked .claude session-hook copy had not been synchronized with hooks/session-start.sh. The copy was updated, an exact-equality regression assertion was added, and the final focused platform run passed 137 assertions."
+  ],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

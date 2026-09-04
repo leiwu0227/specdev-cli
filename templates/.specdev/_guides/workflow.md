@@ -120,7 +120,8 @@ evidence and returns the nested graph without rerunning a provider or command.
 `specdev roadmap` is an explicitly user-selected, stateless collaboration lane.
 It reports the standard files and the writable recursive
 `roadmap/designs/**/*.md` plus
-`roadmap/forecast.md` boundary without creating or changing state. Every design
+`roadmap/forecast.md` and `roadmap/todo.md` boundary without creating or
+changing state. Every design
 Markdown file must contain fewer than 800 words (maximum 799). Besides
 `core_concepts.md` and `source_code_folder_structure.md`, each design note must
 cover one independent feature or module and minimize overlap with the standard
@@ -151,7 +152,11 @@ collaboration to incorporate those features into the designs. When creating or
 revising the forecast, the coding agent quickly inspects current code read-only
 and lists code gaps in dependency order. Each gap is its own numbered Markdown
 section containing fewer than 200 words (maximum 199) and identifies the
-Roadmap design note or notes it is based on. For design notes, the coding agent
+Roadmap design note or notes it is based on. `todo.md` records user-selected
+non-architecture future work rather than design-derived gaps. Todo items use
+the same dependency order followed by user priority, numbered Markdown section
+format, and fewer-than-200-word limit as Forecast items, but omit provenance
+metadata and `Based on:` references. For design notes, the coding agent
 reports the intended final destination and a concise scope, then writes only
 after explicit user approval. Approval authorizes a `*_draft.md` draft within
 that agreed direction. After writing the draft, the agent reports only the
@@ -162,7 +167,8 @@ The agent does not echo the full document or diff unless asked. Product code and
 all other paths remain read-only. Roadmap creates no identity, graph, receipt, or
 snapshot. Draft writes are not committed automatically; published design-note
 changes are committed after user approval. Roadmap does not authorize
-implementation of a forecast item. It has no active lifecycle and applies only during explicit
+implementation of a Forecast or Todo item. It has no active lifecycle and
+applies only during explicit
 roadmap collaboration. Selecting another lane immediately supersedes Roadmap;
 no exit command or state transition is required.
 

@@ -5,6 +5,7 @@ export const ROADMAP_STANDARD_FILES = [
   'project_notes/roadmap/designs/core_concepts.md',
   'project_notes/roadmap/designs/source_code_folder_structure.md',
   'project_notes/roadmap/forecast.md',
+  'project_notes/roadmap/todo.md',
 ]
 
 export const ROADMAP_DESIGN_PATTERN = 'project_notes/roadmap/designs/**/*.md'
@@ -19,7 +20,11 @@ export async function roadmapCommand(flags = {}) {
     status: 'ready',
     state: 'stateless',
     standard_files: ROADMAP_STANDARD_FILES,
-    writable_paths: [ROADMAP_DESIGN_PATTERN, 'project_notes/roadmap/forecast.md'],
+    writable_paths: [
+      ROADMAP_DESIGN_PATTERN,
+      'project_notes/roadmap/forecast.md',
+      'project_notes/roadmap/todo.md',
+    ],
     design_rules: {
       word_limit: 'fewer than 800 words per Markdown file (maximum 799)',
       hierarchy:
@@ -57,6 +62,15 @@ export async function roadmapCommand(flags = {}) {
       references:
         'Each forecast section must identify the Roadmap design note or notes it is based on.',
       section_word_limit: 'fewer than 200 words per section (maximum 199)',
+    },
+    todo_rules: {
+      purpose:
+        'A user-selected list of non-architecture future work, distinct from design-derived Forecast gaps.',
+      ordering:
+        'List items in dependency order, then user-priority order when dependencies do not determine the order.',
+      format: 'Write each item as its own numbered Markdown section.',
+      section_word_limit: 'fewer than 200 words per section (maximum 199)',
+      provenance: 'Todo items omit provenance metadata and do not require Based on references.',
     },
     authority: {
       product_code: 'read_only',
@@ -97,6 +111,11 @@ export async function roadmapCommand(flags = {}) {
   console.log(`Forecast ordering: ${payload.forecast_rules.ordering}`)
   console.log(`Forecast references: ${payload.forecast_rules.references}`)
   console.log(`Forecast section word limit: ${payload.forecast_rules.section_word_limit}`)
+  console.log(`Todo purpose: ${payload.todo_rules.purpose}`)
+  console.log(`Todo ordering: ${payload.todo_rules.ordering}`)
+  console.log(`Todo format: ${payload.todo_rules.format}`)
+  console.log(`Todo section word limit: ${payload.todo_rules.section_word_limit}`)
+  console.log(`Todo provenance: ${payload.todo_rules.provenance}`)
   console.log(`Authority: ${payload.authority.writes}`)
   console.log(`History: ${payload.history}`)
   console.log(`Next: ${payload.next_action}`)

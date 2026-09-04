@@ -106,8 +106,9 @@ verification, ownership, destination approval, or rebuild requirements.
   non-behavioral user-requested documentation artifacts. No workflow, durable
   receipt, or automatic commit.
 - **Roadmap:** explicitly user-selected, stateless collaboration on
-  `project_notes/roadmap/forecast.md` and direct Markdown files under
-  `project_notes/roadmap/designs/`. Run `specdev roadmap`; show the exact
+  `project_notes/roadmap/forecast.md`, `project_notes/roadmap/todo.md`, and
+  direct Markdown files under `project_notes/roadmap/designs/`. Run
+  `specdev roadmap`; show the exact
   proposed edit and obtain user approval before writing. Every design file must
   contain fewer than 800 words (maximum 799). Besides `core_concepts.md` and
   `source_code_folder_structure.md`, each note covers one independent feature
@@ -128,7 +129,11 @@ verification, ownership, destination approval, or rebuild requirements.
   inspect current code read-only and list code gaps in dependency order, one
   numbered Markdown section per gap. Every forecast section must identify the
   Roadmap design note or notes it is based on and contain fewer than 200 words
-  (maximum 199). For design notes, report the intended final destination and
+  (maximum 199). `todo.md` records user-selected non-architecture future work,
+  not design-derived gaps. It uses the same dependency order followed by user
+  priority, numbered-section format, and fewer-than-200-word limit, but omits
+  provenance metadata and `Based on:` references. For design notes, report the
+  intended final destination and
   concise scope, then write an approved `*_draft.md` draft and report only the
   draft path. After user approval, promote it to the final `.md` path and
   automatically commit the published design-note change. Report only the final
@@ -136,7 +141,8 @@ verification, ownership, destination approval, or rebuild requirements.
   and every other path are read-only. Roadmap creates no ID, workflow state,
   receipt, or snapshot. Draft writes are not committed automatically; published
   design-note changes are committed after user approval. Roadmap grants no
-  implementation authority. It has no active lifecycle and applies only during
+  authority to implement Forecast or Todo items. It has no active lifecycle and
+  applies only during
   explicit roadmap collaboration. Selecting another lane immediately supersedes
   Roadmap without an exit command or state transition.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,

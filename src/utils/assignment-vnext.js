@@ -117,7 +117,7 @@ export async function validateContractPath(path) {
     errors.push('at least one acceptance criterion such as AC-1 is required')
   if (new Set(acceptanceIds).size !== acceptanceIds.length)
     errors.push('acceptance criterion IDs must be unique')
-  if (/\bTODO\b/i.test(content)) errors.push('contract still contains TODO placeholders')
+  if (/\bTODO\b/.test(content)) errors.push('contract still contains TODO placeholders')
   return {
     valid: errors.length === 0,
     path,

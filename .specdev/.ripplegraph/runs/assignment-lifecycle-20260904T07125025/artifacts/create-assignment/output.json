@@ -1,0 +1,10 @@
+{
+  "id": "00067",
+  "name": "00067_proposal-roadmap-todo-list",
+  "path": ".specdev/assignments/00067_proposal-roadmap-todo-list",
+  "description": "Proposal: Roadmap Todo List",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

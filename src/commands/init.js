@@ -295,6 +295,7 @@ outside these locations as read-only:
 
 - Markdown files recursively under \`.specdev/project_notes/roadmap/designs/\`
 - \`.specdev/project_notes/roadmap/forecast.md\`
+- \`.specdev/project_notes/roadmap/todo.md\`
 
 Every Markdown file under \`roadmap/designs/\` must contain fewer than 800
 words (maximum 799). \`core_concepts.md\` and
@@ -335,6 +336,13 @@ of the designs; extra code-only features do not create forecast items or
 automatic design-note updates. The user separately initiates Roadmap
 collaboration to incorporate such features into the design notes.
 
+\`todo.md\` records non-architecture future work selected by the user rather
+than gaps derived from Roadmap designs. Like Forecast, order Todo items by
+dependency and then by user priority when dependencies do not determine the
+order. Write each item as its own numbered Markdown section containing fewer
+than 200 words (maximum 199). Todo items omit provenance metadata and do not
+require \`Based on:\` references.
+
 Collaborate with the user on one intended edit at a time. For design notes,
 report the intended final destination and a concise scope, then wait for
 explicit user approval to write a draft within that agreed direction. Write the
@@ -345,7 +353,7 @@ path and commit. Do not echo the full document or diff unless the user asks.
 Invocation alone never authorizes a write. Roadmap creates no ID, RippleGraph
 state, receipt, or snapshot. Draft writes are not committed automatically;
 published design-note changes are committed after user approval. Roadmap does
-not grant authority to implement forecast items.
+not grant authority to implement Forecast or Todo items.
 
 Roadmap has no active lifecycle. It applies only while the user is explicitly
 collaborating on roadmap notes. Selecting another lane immediately supersedes

@@ -139,6 +139,7 @@ export async function updateSpecdevSystem(source, destination) {
       'project_notes/roadmap/designs/core_concepts.md',
       'project_notes/roadmap/designs/source_code_folder_structure.md',
       'project_notes/roadmap/forecast.md',
+      'project_notes/roadmap/todo.md',
       'guides/project/catalog.yaml',
       'skills/tools/README.md',
       'skills/tools/.gitkeep',

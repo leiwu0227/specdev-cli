@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "0a91c1e4054103e1e3f5153be31201d816b8d4609cd511f6deb390319a1c215b",
+  "assignment": {
+    "id": "00067",
+    "folder": "00067_proposal-roadmap-todo-list"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-04T07:15:20.680Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00067_proposal-roadmap-todo-list/brainstorm/contract.md",
+    "hash": "da67325a87de68eda6a5fb5953a91fa649bb356bdf32c5188db9657898552787"
+  },
+  "acceptance": {
+    "total": 4,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`node tests/test-init-platform.js` passed after repair, verifying the JSON standard/writable paths and explicit Todo rules.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`node tests/test-init-platform.js` passed, verifying init scaffold creation plus update preservation and missing-file backfill.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`node tests/test-init-platform.js` passed after review repair, verifying template, generated skill, host-skill copies, generated/tracked session hooks, skills README, and canonical-index guidance.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-4",
+        "evidence": "`npm run test:vnext-foundations` passed, verifying legitimate Todo domain text is accepted and uppercase placeholder markers remain rejected.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 7,
+    "items": [
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+        "scope": "AC-1, AC-2, and AC-3 final focused Roadmap acceptance after tracked session-hook repair",
+        "status": "passed",
+        "duration_ms": 2253,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 4,
+        "superseded": 3,
+        "history_counts": {
+          "passed": 3,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:vnext-foundations",
+        "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+        "scope": "AC-4 final Assignment contract placeholder validation regression coverage after tracked session-hook repair",
+        "status": "passed",
+        "duration_ms": 2298,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 6,
+      "failed": 1,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 6,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 7,
+      "counts": {
+        "passed": 6,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 6,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 2,
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 5,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-init-platform.js",
+        "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:vnext-foundations",
+        "revision": "working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 15,
+    "groups": [
+      {
+        "name": ".claude",
+        "count": 2,
+        "paths": [
+          ".claude/hooks/specdev-session-start.sh",
+          ".claude/skills/specdev-roadmap/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": ".codex",
+        "count": 1,
+        "paths": [
+          ".codex/skills/specdev-roadmap/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "hooks",
+        "count": 1,
+        "paths": [
+          "hooks/session-start.sh"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 4,
+        "paths": [
+          "src/commands/init.js",
+          "src/commands/roadmap.js",
+          "src/utils/assignment-vnext.js",
+          "src/utils/update.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 5,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md",
+          "templates/.specdev/_index.md",
+          "templates/.specdev/_main.md"
+        ],
+        "omitted": 2
+      },
+      {
+        "name": "tests",
+        "count": 2,
+        "paths": [
+          "tests/test-init-platform.js"
+        ],
+        "omitted": 1
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "none",
+    "items": [],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00067_proposal-roadmap-todo-list/brainstorm/contract.md",
+      "exists": true,
+      "digest": "da67325a87de68eda6a5fb5953a91fa649bb356bdf32c5188db9657898552787"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00067_proposal-roadmap-todo-list/design/plan.md",
+      "exists": true,
+      "digest": "10d1e339e3e84e753dedcae2b6e3c42534a62c4916b810808658fe129213550f"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00067_proposal-roadmap-todo-list/implementation/progress.json",
+      "exists": true,
+      "digest": "f5d1c967230d594b4763d5dbf440c954102d3b3629a7661812da9a4217326c60"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00067_proposal-roadmap-todo-list/outcome.md",
+      "exists": true,
+      "digest": "5285bf57b6ad6c4199a9a8a953be15864d5973529865088aefc55eada9fea866"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

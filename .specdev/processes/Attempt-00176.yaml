@@ -1,0 +1,103 @@
+id: Attempt-00176
+kind: reviewer
+status: completed
+workspace: .
+base_revision: 099ea09e5d48a90a3ff3d7f73e44f54519d91dd7
+started_at: 2026-09-04T07:58:11.367Z
+profile: reviewer
+provider: claude
+model: opus
+effort: xhigh
+filesystem: read-only
+network: false
+result_path: .specdev/assignments/00067_proposal-roadmap-todo-list/review/implementation-verdict.md
+guides:
+  - id: specdev-review
+    version: "1"
+context_catalog:
+  version: 1
+  phase: implementation-review
+  role: primary-reviewer
+  entries:
+    - identity: authority:repository-instructions:AGENTS.md
+      group: authority
+      kind: repository-instructions
+      path: AGENTS.md
+      purpose: Repository execution constraints
+    - identity: authority:workflow-authority:.specdev/_main.md
+      group: authority
+      kind: workflow-authority
+      path: .specdev/_main.md
+      purpose: Installed SpecDev workflow authority
+    - identity: authority:approved-contract:.specdev/assignments/00067_proposal-roadmap-todo-list/brainstorm/contract.md
+      group: authority
+      kind: approved-contract
+      path: .specdev/assignments/00067_proposal-roadmap-todo-list/brainstorm/contract.md
+      purpose: Approved Assignment contract
+    - identity: task:workflow-state:.specdev/assignments/00067_proposal-roadmap-todo-list/status.json
+      group: task
+      kind: workflow-state
+      path: .specdev/assignments/00067_proposal-roadmap-todo-list/status.json
+      purpose: Current Assignment workflow state
+    - identity: task:design-plan:.specdev/assignments/00067_proposal-roadmap-todo-list/design/plan.md
+      group: task
+      kind: design-plan
+      path: .specdev/assignments/00067_proposal-roadmap-todo-list/design/plan.md
+      purpose: Current ordered implementation plan
+    - identity: task:progress-evidence:.specdev/assignments/00067_proposal-roadmap-todo-list/implementation/progress.json
+      group: task
+      kind: progress-evidence
+      path: .specdev/assignments/00067_proposal-roadmap-todo-list/implementation/progress.json
+      purpose: Current progress and verification receipts
+    - identity: task:outcome:.specdev/assignments/00067_proposal-roadmap-todo-list/outcome.md
+      group: task
+      kind: outcome
+      path: .specdev/assignments/00067_proposal-roadmap-todo-list/outcome.md
+      purpose: Current Assignment outcome
+    - identity: task:candidate-receipt:.specdev/assignments/00067_proposal-roadmap-todo-list/review/candidate-receipt.json
+      group: task
+      kind: candidate-receipt
+      path: .specdev/assignments/00067_proposal-roadmap-todo-list/review/candidate-receipt.json
+      purpose: Exact candidate identity and evidence
+    - identity: supporting:project-context:.specdev/project_notes/big_picture.md
+      group: supporting
+      kind: project-context
+      path: .specdev/project_notes/big_picture.md
+      purpose: Durable project context
+    - identity: supporting:workflow-guide:.specdev/guides/review.md
+      group: supporting
+      kind: workflow-guide
+      path: .specdev/guides/review.md
+      purpose: Selected guide specdev-review@1
+    - identity: supporting:living-knowledge:.specdev/knowledge/architecture/workflow-contract-facts.md
+      group: supporting
+      kind: living-knowledge
+      path: .specdev/knowledge/architecture/workflow-contract-facts.md
+      purpose: Fresh living-knowledge result
+    - identity: supporting:living-knowledge:.specdev/knowledge/architecture/reduced-test-suite.md
+      group: supporting
+      kind: living-knowledge
+      path: .specdev/knowledge/architecture/reduced-test-suite.md
+      purpose: Fresh living-knowledge result
+    - identity: supporting:living-knowledge:.specdev/knowledge/architecture/reviewloop-autocontinue.md
+      group: supporting
+      kind: living-knowledge
+      path: .specdev/knowledge/architecture/reviewloop-autocontinue.md
+      purpose: Fresh living-knowledge result
+    - identity: supporting:roadmap-design:.specdev/project_notes/roadmap/designs/foundations/specdev_state_model.md
+      group: supporting
+      kind: roadmap-design
+      path: .specdev/project_notes/roadmap/designs/foundations/specdev_state_model.md
+      purpose: Relevant approved Roadmap design
+    - identity: supporting:roadmap-design:.specdev/project_notes/roadmap/designs/source_code_folder_structure.md
+      group: supporting
+      kind: roadmap-design
+      path: .specdev/project_notes/roadmap/designs/source_code_folder_structure.md
+      purpose: Relevant approved Roadmap design
+assignment: 00067_proposal-roadmap-todo-list
+continuity:
+  mode: fresh
+duration_ms: 176444
+result_revision: working-tree@099ea09e5d48a90a3ff3d7f73e44f54519d91dd7
+ended_at: 2026-09-04T08:01:07.884Z
+result_status: needs_changes
