@@ -2,55 +2,41 @@
 
 Parent design: `./specdev_state_model.md`
 
-## Purpose
+An installed `.specdev/` directory is a portable project layer with explicit
+ownership boundaries. Physical proximity does not make managed guidance,
+project-authored records, engine checkpoints, and caches interchangeable.
 
-The installed layout maps SpecDev’s state classes to stable locations inside a repository. It makes ownership, preservation, and recovery expectations understandable without treating every generated file or optional subdirectory as architecture.
+Managed roots include `_main.md`, `_index.md`, `workflow.json`, `workflows/`, core
+skills, built-in guides, and templates. They are copied from the package and may be
+refreshed. Generated platform skills and hooks mirror canonical product guidance.
 
-The layout is a spatial contract for state ownership, not a complete directory inventory.
+Project-owned roots include `project_notes/`, `knowledge/`, custom guides and tools,
+`assignments/`, `missions/`, `discussions/`, `test-audits/`, and durable receipts.
+Some are created only when first used. Their absence does not change ownership, and
+update does not overwrite their authored content.
 
-## Layout Template
+RippleGraph call state and identity counters are durable engine records, changed by
+semantic commands rather than hand editing. Ignored `cache/` and `worktrees/` hold
+operational indexes, journals, provider output, leases, and Mission worktrees.
 
-An installed `.specdev/` environment contains four kinds of roots:
+Configuration separates portable defaults from machine-local overrides. Tracked
+agent profiles express project policy; ignored local profile overlays express
+machine capability without becoming shared authority.
 
-| Ownership class | Typical contents | Preservation model |
-| --- | --- | --- |
-| **Managed runtime** | Workflow entry guidance, built-in guides and templates, core skills, and versioned workflow definitions | Refreshed from the installed SpecDev product |
-| **Project-owned state** | Project notes, living knowledge, configuration, custom guidance, workflow artifacts, evidence, outcomes, and receipts | Preserved unless an explicit migration is approved |
-| **Engine-owned state** | RippleGraph identities, checkpoints, transitions, and active orchestration | Mutated only through supported semantic operations |
-| **Operational state** | Caches, indexes, provider details, temporary worktrees, and session continuity | Replaceable and normally excluded from durable project history |
+Initialization creates a valid installation, managed Git-ignore boundaries, platform
+adapters, and the minimal project scaffold. Update refreshes managed roots, removes
+known deprecated managed assets, preserves custom content, backfills missing
+standard Roadmap files, and reconciles platform adapters. Semantic layout changes
+use the guided migration workflow; legacy assignment-root movement remains an
+explicit compatibility command.
 
-For example, refreshing a managed guide is installation maintenance. Rewriting a project design note is a project decision. Advancing a workflow checkpoint is an engine operation. Removing a cache is operational cleanup. Sharing one repository does not make these actions interchangeable.
+Adding a file inside an existing ownership class is ordinary evolution. Reclassifying
+a root, allowing update to overwrite project records, placing sole authority in
+ignored state, or treating direct checkpoint editing as a supported transition is a
+material architecture change.
 
-## Stable Root Boundaries
+## Source Targets
 
-Managed runtime and project-owned state remain separate even when both are tracked by Git. Update may replace managed runtime but must preserve user-authored project records.
-
-Engine-owned state is durable enough for recovery but is not manually authored. Human-readable workflow artifacts explain approved intent and accepted outcomes; engine state records where governed execution currently stands.
-
-Operational state may be recreated from durable sources. No ignored cache, temporary worktree, provider transcript, or private session may become the sole record of authority, evidence, or completion.
-
-Some project-owned roots appear only when first needed. Their absence does not change their ownership class, and creating them does not redefine the architecture.
-
-## Installation and Evolution
-
-Initialization establishes the layout and may create empty roots or starter records. Update refreshes managed runtime and may backfill missing scaffold files while preserving project-owned content. Migration is the explicit mechanism for changing project-owned structure or meaning.
-
-Adding or regrouping files inside a correctly owned root is ordinary evolution. A material design change occurs when the system:
-
-- renames or removes a stable ownership boundary;
-- changes a root between managed, project-owned, engine-owned, or operational state;
-- allows update to overwrite project-authored records;
-- moves durable authority exclusively into ignored or engine-private state;
-- treats direct file editing as equivalent to a supported workflow transition; or
-- automatically seeds records that are supposed to represent user-approved project decisions.
-
-New roots must declare their ownership and preservation behavior rather than inheriting authority from physical proximity.
-
-## Design Choices
-
-- The layout expresses ownership classes, not an exhaustive file tree.
-- Managed refresh and project preservation are separate policies.
-- Engine state is recoverable but changed only semantically.
-- Operational state is replaceable and never authoritative by itself.
-- On-demand directories retain predetermined ownership.
-- Root reclassification is a material architecture decision.
+- `src/commands/init.js` — maximum 850 lines — installation creation and canonical generated guidance.
+- `src/utils/update.js` — maximum 500 lines — managed/preserved path synchronization.
+- `src/utils/command-context.js` — maximum 40 lines — target repository and installation boundary.

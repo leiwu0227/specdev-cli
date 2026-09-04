@@ -2,62 +2,53 @@
 
 Parent design: `./workflow_lanes.md`
 
-## Purpose
+Mission is the foreground controller for a user-approved integrated objective whose
+delivery benefits from Assignment delegation, parent-level convergence, or bounded
+concurrency. It is not synonymous with large work: one deterministic full-scope
+child is preferred when semantic decomposition is unnecessary.
 
-Mission coordinates a user-approved objective whose delivery benefits from Assignment decomposition, integrated evidence, or controlled concurrency.
+The exact parent contract defines objective, integrated scope, constraints, reserved
+decisions, child-delegation boundaries, acceptance criteria, review policy, and one
+final verification command. User approval binds its hash, base revision, Mission
+branch, and policy. Brainstorm review may advise but never approves.
 
-It is a foreground controller, not a synonym for large work and not an autonomous backlog planner. A Mission may contain one full-scope Assignment when no meaningful decomposition is justified.
+The Mission owns the one focused scheduler. Its controller plans a static child queue,
+creates bounded Assignment contracts, launches Attempts, evaluates child evidence and
+review, integrates reviewed candidates, tracks durable gaps, and decides when the
+parent objective has converged. Children inherit parent authority and may specialize
+it but cannot expand it or independently land the parent result.
 
-## Authority
+Sequential execution is the default. A parallel wave may contain any planned set of
+mutually independent children, while the controller runs at most three concurrently.
+Parallel work requires isolated paths, dependencies, verification, and integration
+order. The controller alone leases ignored worktrees, integrates results into the
+Mission branch, and retires operational worktrees.
 
-Mission receives authority from the user’s approval of the exact parent contract. It uses the contract template defined by the Assignment lane at integrated scope. Its authority boundary governs decomposition, child delegation, and integration; its acceptance model covers the integrated candidate and exact final verification boundary.
+Child success is not parent success. The integrated candidate must satisfy all parent
+acceptance criteria and the exact final verification boundary. Findings, failed
+evidence, follow-up, conflicts, or materially changed assumptions become durable
+gaps. Resolution remains linked to parent authority rather than becoming an
+unbounded retry chain.
 
-The Mission delegates subsets of that authority to child Assignments. Child contracts inherit unchanged parent decisions and add only the bounded detail needed for their own work. No child may expand the parent objective or convert an unresolved product decision into implementation discretion.
+Material divergence pauses at a content-addressed user reapproval decision. Historical
+state is migrated only through explicit compatibility rules. Interrupted controller,
+worker, integration, or final-verification operations recover from durable queue,
+artifacts, Attempts, Git facts, and journals.
 
-Material divergence returns to the user through a visible reapproval boundary. Successful child work does not silently broaden later children’s authority.
+Completion records an integrated outcome and exact Mission commit, then automatically
+attempts the separate fast-forward landing operation. If landing preconditions are
+not satisfied, completion remains durable and an explicit landing command can retry
+the pending operation. Abandonment uses a reasoned two-step terminal transaction that
+preserves branches and inspectable partial work.
 
-## Workflow Shape
+Child designs own execution/waves and recovery/delivery mechanics.
 
-Mission is a focused RippleGraph workflow that owns the repository’s primary scheduler for its lifetime. A foreground controller maintains the parent lifecycle, child queue, integration order, convergence state, and final outcome.
+The current 5,000-line Mission command cap is a transitional compatibility ceiling,
+not a growth allowance. New responsibilities belong in focused child modules, and
+later extraction should lower the cap.
 
-Child Assignments retain normal Assignment authority, evidence, and review boundaries, but their delivery belongs to the Mission controller. The controller integrates reviewed child results rather than allowing children to independently land the parent objective.
+## Source Targets
 
-Durable Mission and child artifacts make the controller recoverable. An interrupted controller may be resumed or explicitly taken over after ownership is inspected; private session continuity is never required.
-
-## Child Design
-
-Mission begins with one full-scope child unless the approved objective contains a real execution, dependency, decision, verification, or rollback boundary.
-
-When multiple children are justified, their contracts form a static, understandable decomposition of the parent. File count, task count, or a desire for parallel speed does not by itself justify splitting authority.
-
-Unresolved review findings, failed evidence, or required follow-up become explicit durable gaps. Resolution work remains linked to the gap and constrained by the parent contract rather than becoming an unbounded retry chain.
-
-## Concurrency and Integration
-
-Children run sequentially by default. Mutually independent children may form a bounded parallel wave when their product ownership, dependencies, and verification do not interfere.
-
-Parallel children execute in isolated worktrees and are integrated in a declared order. The controller, not individual workers, owns concurrency and integration. Parallelism must not change authority, review requirements, or the meaning of the final candidate.
-
-Dependent children wait for the integrated results they require. Integration conflicts or ambiguous ownership fail closed rather than being resolved through silent precedence.
-
-## Evidence and Convergence
-
-Each child supplies evidence and review appropriate to its delegated contract. The Mission evaluates those results against the parent objective and preserves unresolved gaps until they are genuinely closed or returned to the user.
-
-Completion requires an integrated candidate that satisfies the parent acceptance criteria and its exact final verification boundary. Child success alone is insufficient when the combined result has not converged.
-
-A deterministic full-scope child may satisfy much of parent convergence when its reviewed candidate still represents the complete approved objective. The Mission nevertheless retains parent-level integration and completion authority.
-
-## Completion and Abandonment
-
-Successful completion produces a durable Mission outcome and an integrated Git identity ready for explicit landing. Landing is a repository-history decision, not an automatic consequence of child completion.
-
-A Mission may be explicitly abandoned when continuation is no longer desired. Abandonment preserves inspectable work and terminal facts; it does not silently delete branches, land partial changes, or reinterpret incomplete work as success.
-
-## Design Choices
-
-- Parent authority is delegated, never recreated independently by children.
-- One full-scope child is the default; decomposition requires a semantic reason.
-- The foreground controller owns scheduling, integration, and convergence.
-- Parallelism is bounded by independence and ownership isolation.
-- Integrated evidence, not child count, determines completion.
+- `src/commands/mission.js` — maximum 5000 lines — parent lifecycle, controller, queue, convergence, and public subcommands.
+- `src/utils/mission.js` — maximum 430 lines — Mission identity, queue, findings, and transition invariants.
+- `templates/.specdev/workflows/mission-lifecycle/graph.json` — maximum 420 lines — recoverable parent lifecycle.

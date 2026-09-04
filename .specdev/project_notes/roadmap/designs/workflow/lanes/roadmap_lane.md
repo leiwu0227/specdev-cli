@@ -2,52 +2,40 @@
 
 Parent design: `./workflow_lanes.md`
 
-## Purpose
+Roadmap is stateless user-approved collaboration on durable target architecture and
+the future implementation gaps derived from it. It may write only Markdown under
+`project_notes/roadmap/designs/` and `forecast.md`; product code and all other paths
+remain read-only.
 
-Roadmap is the lane for collaborating with the user on durable design direction and the anticipated sequence of future implementation work.
+The design set is hierarchical. `core_concepts.md` and
+`source_code_folder_structure.md` are standard cross-cutting notes at the root. Each
+other note owns one independent feature or module with minimal overlap and may live
+in folders that mirror conceptual parent-child relationships. Every design Markdown
+file contains at most 799 words.
 
-It preserves agreed intent without turning design collaboration into a delivery workflow. Roadmap answers what the system should become and which approved parts are not yet reflected in code; it does not implement those decisions.
+Except for the folder-structure note, designs explain general concepts before more
+specific detail without requiring fixed headings or a Markdown schema. Non-standard
+notes may use a small relevant folder tree or pseudocode when helpful. They end by
+identifying exact targeted source files and a maximum total completed-file line count
+for each. The two standard notes are exempt from that ending metadata.
 
-## Authority
+Roadmap collaborates on one intended edit at a time unless the user explicitly
+authorizes a bounded bulk draft. The agent reports destination and scope, waits for
+approval, writes `*_draft.md`, and reports the draft path. Drafts are not committed.
+After approval, the draft is promoted to its final path and the published design
+change is automatically committed.
 
-Roadmap may revise only the project’s roadmap designs and forecast with explicit user approval. Product code, workflow state, and every other project artifact remain read-only.
+Designs are the approved target state. Current code may be a superset; code-only
+behavior creates neither a forecast item nor an automatic design rewrite. The user
+may separately approve incorporating that behavior into the target design.
 
-Design authority belongs to the user. The agent may inspect, compare, organize, and propose, but a proposal becomes part of the roadmap only after the user agrees to it.
+The forecast compares code against approved designs, lists only absent or incomplete
+requirements, orders gaps by dependency, and uses one numbered section of at most
+199 words per gap with source-design references. Roadmap never grants implementation
+authority and has no identity, graph, receipt, or exit transition.
 
-Roadmap approval grants authority to record the design. It does not grant authority to change product code, launch another lane, or treat forecast items as approved implementation contracts.
+## Source Targets
 
-## Design Notes
-
-Roadmap design notes describe the intended architecture at a stable level of abstraction. They capture purpose, responsibilities, relationships, important choices, and invariants without duplicating current implementation details.
-
-The design set is hierarchical. Parent notes define shared abstractions; lane and feature notes specialize them without repeating their full content. Each focused note owns one independent concept or module and refers to its parent design when context is needed.
-
-Designs express the approved target state. They may intentionally lead current implementation, and current code may contain additional behavior that has not yet been incorporated into the designs.
-
-## Forecast
-
-The forecast identifies approved design requirements that are absent or incomplete in the codebase. It compares code against designs, not designs against code.
-
-Forecast gaps are ordered by dependency so foundational work appears before features that depend on it. The forecast describes future work at a planning level; it is not an implementation plan, backlog history, or record of completed work.
-
-Code-only features do not create forecast gaps because the codebase may be a superset of the designs. Incorporating such features into the target architecture requires a separate user-approved Roadmap decision.
-
-## Workflow Shape
-
-Roadmap is stateless collaboration. It creates no workflow identity, RippleGraph state, receipt, snapshot, or automatic commit. The durable result is the current approved roadmap content itself.
-
-There is no active Roadmap lifecycle to pause or resume. Roadmap applies while the user is explicitly collaborating on these notes. Selecting another lane immediately supersedes that collaboration without a transition or exit operation.
-
-## Relationship to Other Lanes
-
-Roadmap may inspect the codebase read-only to understand implementation gaps. That inspection does not become Discussion state or implementation authority.
-
-When the user decides to implement a forecast item, the work begins under a separately selected mutation-capable lane. The destination lane receives fresh authority appropriate to its scope and does not inherit approval merely because the design is agreed.
-
-## Design Choices
-
-- Roadmap records target design rather than implementation history.
-- Design approval and implementation approval remain separate.
-- Forecasting is one-way from approved designs to code gaps.
-- Stateless collaboration is sufficient because the notes themselves are the durable result.
-- Hierarchical notes favor stable abstractions over code-level replication.
+- `src/commands/roadmap.js` — maximum 140 lines — stateless Roadmap contract and JSON/text projection.
+- `src/commands/init.js` — maximum 850 lines — canonical generated Roadmap skill.
+- `templates/.specdev/_guides/workflow.md` — maximum 300 lines — installed Roadmap lifecycle guidance.

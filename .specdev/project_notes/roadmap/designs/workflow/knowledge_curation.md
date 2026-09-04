@@ -2,58 +2,41 @@
 
 Parent design: `./workflow_model.md`
 
-## Purpose
+Knowledge curation publishes reusable project guidance through a separate human
+authority boundary. Any lane may discover a useful fact, but discovery, code
+evidence, or completion of the originating work does not authorize publication.
 
-Knowledge curation maintains living, reusable project knowledge through an explicit human-authority boundary.
+Curation begins with a mutation-free scan of authoritative Markdown, current Git
+revision, dirty paths, existing knowledge owners, stale FAQs, and explicitly bounded
+repository evidence. Dirty sources are excluded rather than silently captured. The
+scan returns a content-addressed proposal template and instructs the agent to write
+the exact proposal separately in ignored operational state.
 
-It is a lane-independent governed action rather than a workflow lane. Useful knowledge may be discovered during Direct work, Adhoc, Discussion, Assignment, Mission, Test Audit, or ordinary inspection, but discovery does not authorize publication.
+A proposal identifies exact destinations, additions or replacements, durable source
+references, conflicts, exclusions, and any project-wide context change. Validation
+binds the proposal to unchanged source hashes, Git facts, and destination ownership.
+The user approves the exact proposal digest; a `big_picture.md` change requires a
+separate exact approval.
 
-## Knowledge Model
+Publication journals the approved transaction, writes each Markdown owner
+atomically, records a durable receipt, and rebuilds the disposable search index.
+Repeating the same approved action is idempotent. Interrupted publication recovers
+from its journal without treating partially written or unapproved content as
+accepted knowledge.
 
-Living knowledge records current project facts that should guide later work: conventions, domain rules, recurring constraints, troubleshooting knowledge, and reusable workflow guidance.
+Knowledge has one owning note per fact. Curation replaces or supersedes an owner
+rather than accumulating parallel truth. Repository code is bounded evidence, not a
+knowledge database. Roadmap designs, workflow contracts, and historical artifacts
+retain their own authority and cannot be rewritten through curation.
 
-Each fact should have one clear owning note. Curation updates or supersedes that owner instead of creating parallel sources that can silently disagree.
+Index failure does not undo publication because Markdown and the receipt are
+authoritative. Cancellation removes only operational proposal state and never
+reverts already published durable content.
 
-A proposed change identifies:
+The current 1,200-line utility cap is a transitional compatibility ceiling. New
+responsibilities should move into focused modules, allowing this ceiling to fall.
 
-- the knowledge owner and exact destination;
-- the reusable fact being added, changed, or retired;
-- durable evidence and current verification supporting it;
-- conflicts with existing knowledge; and
-- relevant observations intentionally excluded from publication.
+## Source Targets
 
-This is a conceptual proposal template, not a requirement that every note expose those fields in its final prose.
-
-## Evidence and Authority
-
-Repository inspection may establish that a reusable constraint currently exists, but code does not automatically become shared project memory. Code evidence supports a proposal; it does not replace an owning knowledge source or exact user approval.
-
-Artifacts from another lane may also support curation. Their approval, implementation, or review status does not silently authorize a knowledge update.
-
-The user approves the exact proposed knowledge change and destination. Materially changed content requires renewed approval. Broader project-context records may require a distinct approval boundary because they influence work beyond one knowledge topic.
-
-## Publication and Derived Views
-
-Approved curation updates the owning durable note and leaves a concise receipt connecting the proposal, authority, evidence, and applied result.
-
-Publication is idempotent: repeating the same approved action must not duplicate facts, receipts, or ownership. A partial failure must remain recoverable without treating an unapproved draft as published knowledge.
-
-Indexes and search databases are derived views. They may be rebuilt from authoritative Markdown and must never outrank it. Index failure may reduce discovery quality, but it cannot erase or roll back an approved knowledge record.
-
-## Relationship to Workflow Lanes
-
-Knowledge curation does not acquire product-code mutation authority, advance the lane in which evidence was discovered, or become a hidden child of that lane.
-
-For example, an Assignment may reveal a recurring repository convention. The Assignment can cite that observation, but publishing it for future work requires a separate curation decision. Likewise, knowledge curation cannot update Roadmap designs merely because current code contains an undocumented feature.
-
-Selecting curation temporarily supersedes stateless Roadmap collaboration, but it does not terminate or reinterpret durable workflow identities.
-
-## Design Choices
-
-- Discovery and publication are separate authorities.
-- Knowledge has one owning source rather than parallel truth.
-- Code and workflow artifacts provide evidence, not automatic publication.
-- Exact content and destination are approval-bound.
-- Durable Markdown is authoritative; indexes are replaceable projections.
-- Curation remains lane-independent and cannot inherit product mutation authority.
-- Roadmap design and living knowledge remain distinct forms of project memory.
+- `src/utils/knowledge-curation.js` — maximum 1200 lines — scan, binding, approval, publication, and recovery.
+- `src/commands/knowledge.js` — maximum 420 lines — knowledge command routing and user-facing curation states.

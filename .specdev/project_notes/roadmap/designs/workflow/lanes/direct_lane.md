@@ -2,62 +2,35 @@
 
 Parent design: `./workflow_lanes.md`
 
-## Purpose
+Direct is immediate work that does not need governed product mutation or a durable
+workflow identity. It covers answers, explanations, status, read-only inspection,
+and small user-requested documentation whose content does not change product,
+runtime, workflow, or public-contract behavior.
 
-Direct handles work whose authority is already complete in the user’s immediate request and whose consequences do not justify governed workflow state.
+The user's request is the complete authority boundary. Direct may inspect relevant
+files and may write only the explicitly requested non-behavioral artifact. It does
+not create a graph, receipt, snapshot, approval record, automatic review, or delivery
+commit.
 
-It is the normal lane for questions, explanations, status, read-only inspection, and bounded documentation that records or clarifies existing behavior without changing product semantics.
+Classification follows semantic effect. A one-line schema change, managed template
+edit, behavioral configuration, public compatibility promise, or Roadmap design
+revision is not Direct merely because it is text or small. Product mutation requires
+Adhoc, Assignment, or Mission; Roadmap and knowledge changes use their owning
+collaboration or curation boundary.
 
-Direct keeps lightweight work lightweight. It is a real lane with an explicit authority boundary, not an absence of classification.
+For a direct documentation write, the agent reads destination instructions and only
+the facts needed, writes once, and verifies narrowly. It does not load broad project
+context unless the artifact needs it. An explicitly requested handoff note in
+another repository remains auxiliary only when it does not change that repository's
+product or workflow state.
 
-## Authority
+Direct may coexist with all lanes because it owns no scheduler. It must preserve
+active identities, artifacts, dirty-path ownership, and mutation boundaries. A
+read-only discovery may motivate a governed action, but it cannot silently start one
+or carry authority into it.
 
-Direct may inspect the repository and answer from current evidence. It may create or revise a bounded non-behavioral documentation artifact when the user requests that artifact.
+## Source Targets
 
-Its authority does not include functional product changes, public-contract changes, workflow transitions, shared design decisions, or mutation of state owned by another lane. File extension and location do not determine this boundary; the meaning and consequence of the change do.
-
-A request to explain behavior may inspect implementation, but inspection does not authorize modification. A request to document behavior may record what exists, but it does not authorize redefining that behavior.
-
-## Workflow Shape
-
-Direct is stateless. It creates no workflow identity, RippleGraph state, lifecycle receipt, or approval record. It does not reserve the focused scheduler and does not pause, advance, or terminate active governed work.
-
-The immediate user request is the authority. If the request changes materially during execution, the work is reclassified rather than silently expanding Direct.
-
-Direct work uses only the context needed to answer or produce the requested artifact. Broad project orientation is unnecessary unless the question or an unresolved fact requires it.
-
-## Durable Outcome
-
-Many Direct interactions leave no repository artifact. When Direct writes documentation, that document is the durable outcome.
-
-Direct does not automatically create a Git commit. If the user explicitly requests one, the commit is ordinary repository history scoped to the requested artifact; it is not a SpecDev delivery, carries no lane receipt, and grants no additional mutation authority.
-
-## Selection and Escalation
-
-Direct is appropriate when an imperfect result is easy to inspect and correct and no durable governance boundary is needed.
-
-Work moves to another lane when it requires product mutation, collaborative design approval, durable evidence, independent review, recoverable workflow state, or broader coordination. The agent may recommend that escalation, but the user selects the governed lane.
-
-Importance alone does not force workflow state. Conversely, a small textual edit is not Direct when it changes behavior, authority, compatibility, or another normative contract.
-
-## Boundary Examples
-
-A comment inside a source file may remain Direct when it only explains existing behavior and cannot affect execution. The file type does not turn clarification into product mutation.
-
-A one-line schema, dependency, behavior-changing configuration, or managed runtime-template edit is not Direct. Its small size and textual form do not remove its functional consequences; it requires at least Adhoc authority.
-
-A Markdown file also follows its semantic owner. Revising an agreed Roadmap design uses Roadmap collaboration, while publishing a reusable project fact uses knowledge curation. Neither becomes Direct merely because the destination is documentation.
-
-A public compatibility promise or operational instruction may warrant governed delivery even when it changes no code, because the document itself creates a consequential external or normative commitment.
-
-## Concurrency
-
-Because Direct owns no scheduler or lifecycle, it may occur alongside other work. It must preserve the authority and artifacts of every active lane and cannot use its stateless nature to bypass their mutation boundaries.
-
-## Design Choices
-
-- Immediate user authority is sufficient only for bounded non-governed work.
-- Semantic impact, not file type or size, determines eligibility.
-- Read-only understanding does not imply mutation authority.
-- Direct leaves no workflow history merely to prove that simple work occurred.
-- Explicit escalation is preferred over silently adding ceremony or silently broadening scope.
+- `templates/.specdev/_main.md` — maximum 240 lines — canonical Direct classification guidance.
+- `templates/.specdev/_guides/workflow.md` — maximum 300 lines — installed Direct boundary examples.
+- `src/commands/dispatch.js` — maximum 240 lines — preservation of active governed boundaries.

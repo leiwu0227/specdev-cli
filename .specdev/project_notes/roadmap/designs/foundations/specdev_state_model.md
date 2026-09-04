@@ -2,67 +2,45 @@
 
 Parent design: `../core_concepts.md`
 
-## Purpose
+SpecDev keeps durable project meaning separate from managed software, workflow
+position, and replaceable execution state. This lets a repository recover without a
+hosted control plane or a surviving provider conversation.
 
-SpecDev keeps project intent, workflow recovery, operational execution, and product history understandable from the repository without requiring a hosted control plane or one agent session.
+Managed runtime is shipped by SpecDev: entry guidance, built-in skills, workflow
+packages, templates, and managed guides. Initialization installs it and update may
+refresh it. Local modifications are runtime drift, not product-source authority.
 
-The SpecDev state model separates information by ownership and durability. This prevents generated runtime, workflow checkpoints, caches, and human decisions from becoming interchangeable merely because they share the same installation.
+Project-owned durable state records the consuming project's context, designs,
+knowledge, configuration, contracts, evidence, findings, outcomes, receipts, and
+completed callable artifacts. Maintenance preserves these records unless an exact
+migration or user decision authorizes a semantic change.
 
-## State Classes
+Engine-owned state records identities, checkpoints, transitions, and active
+orchestration. RippleGraph bytes are changed only through semantic CLI operations.
+Human-readable contracts and outcomes explain meaning; engine state explains
+position. Neither substitutes for the other.
 
-An installed SpecDev environment contains four state classes.
+Operational state includes indexes, provider output, PID markers, temporary
+worktrees, review continuation leases, journals, and caches. It may improve recovery
+or performance, but it is normally ignored and must be reconstructible from durable
+sources or safely abandoned.
 
-### Managed Runtime
+Git is orthogonal to these classes. It owns revisions and delivery history, while
+the path classifier records which lane owns current dirt. Transactions bind current
+state to Git identities and fail closed on mismatched revisions, ambiguous ownership,
+changed artifacts, or live execution.
 
-Managed runtime is shipped by SpecDev and supplies workflow instructions, templates, built-in skills, and versioned workflow definitions. It may be refreshed when the installed SpecDev version changes.
+IDs are allocated atomically per entity family. A workflow identity is not an agent
+Attempt, process, branch, worktree, or review round. Terminal compaction preserves a
+bounded human summary before removing replaceable run and Attempt state.
 
-Local edits to managed runtime are overrides, not product-source changes or durable project authority.
+Initialization, update, migration, delivery, and recovery preserve authority before
+retiring operational data. Repeated recovery operations converge safely rather than
+creating duplicate identities or outcomes.
 
-### Project-Owned Durable State
+## Source Targets
 
-Project-owned state records the project’s intent and history: context, designs, living knowledge, configuration, workflow artifacts, evidence, findings, outcomes, and receipts.
-
-It is readable, diffable, and portable. Installation maintenance preserves it unless an explicit, user-authorized migration says otherwise.
-
-### Engine-Owned Workflow State
-
-Engine-owned state records recoverable workflow position, identities, transitions, and active orchestration. It is durable enough for recovery but is mutated only through supported semantic operations.
-
-Direct editing is outside the architecture because it can bypass validation and make workflow meaning disagree with human artifacts.
-
-### Operational State
-
-Operational state supports execution through caches, indexes, provider output, process details, temporary worktrees, and session continuity.
-
-It is local, replaceable, and often ignored by Git. Losing it may reduce convenience or require reconstruction, but it must not erase the sole record of authority, accepted evidence, or completed outcomes.
-
-## Authority and History
-
-Human-readable project artifacts are authoritative for approved intent and durable conclusions. Workflow state is authoritative for recoverable orchestration position. Git is authoritative for product revisions and delivery history.
-
-Derived views may summarize these sources but never replace them. When sources disagree, the system exposes the inconsistency and recovers from the owning authority rather than choosing whichever representation is easiest to read.
-
-## Product Source and Installation
-
-SpecDev product behavior is authored in the product source and packaged runtime templates. The installed project state is a consumer of that product, not a second implementation location.
-
-Initialization establishes the state classes for a new project. Update refreshes managed runtime while preserving project-owned state. A migration may transform project-owned state only when its scope is disclosed and the user explicitly authorizes it.
-
-Destructive reinitialization is a separate authority boundary. It must be deliberate because it may remove durable and operational state that SpecDev cannot reconstruct, even when some tracked content remains recoverable through Git.
-
-## Consistency and Recovery
-
-State-changing operations preserve ownership boundaries and fail closed when active execution or ambiguous state makes safe mutation uncertain.
-
-Durable authority is written before replaceable runtime is retired. Repeated maintenance or recovery operations should converge safely and avoid duplicating workflow identity, evidence, or project records.
-
-The layout may evolve without changing the architecture as long as each state class retains its ownership, preservation, and authority semantics.
-
-## Design Choices
-
-- Repository-portable files hold durable project meaning.
-- Managed runtime and project-owned state have different update policies.
-- Workflow state is recoverable but not manually authored.
-- Operational state improves execution without becoming authority.
-- Git history, workflow position, and human decisions remain distinct sources.
-- Destructive installation changes always require explicit authority.
+- `src/utils/current.js` — maximum 150 lines — focused identity pointer and validation.
+- `src/utils/id-reservation.js` — maximum 180 lines — atomic entity ID allocation.
+- `src/utils/workspace-changes.js` — maximum 110 lines — dirty-path ownership classification.
+- `src/utils/maintenance-quiescence.js` — maximum 260 lines — safe maintenance boundaries.

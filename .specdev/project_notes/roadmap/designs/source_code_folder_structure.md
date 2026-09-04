@@ -1,95 +1,56 @@
 # Source Code Folder Structure
 
-## Purpose
+The repository separates executable entry, command orchestration, reusable
+mechanisms, installed-runtime sources, packaged integrations, verification, and
+project documentation. The layout expresses ownership and dependency direction,
+not a permanent inventory of every file.
 
-The SpecDev repository layout separates the shipped Node.js CLI, the managed
-runtime installed into target repositories, packaged agent integrations,
-tests, and repository-only support material. The structure exists to keep
-authority clear: product behavior belongs in source code, installed workflow
-guidance belongs in templates, and project-specific runtime state belongs only
-in the consuming repository's `.specdev/` directory.
+```text
+bin/
+  specdev.js                 thin executable entry
+src/
+  commands/                  public CLI operations and orchestration
+  utils/                     reusable domain and infrastructure mechanisms
+templates/.specdev/
+  workflows/                 versioned RippleGraph packages
+  skills/core/               managed agent guidance
+  _guides/ and _templates/   installed documentation and seeds
+  project_notes/roadmap/     empty standard Roadmap scaffold only
+hooks/                       packaged platform integration
+tests/                       command-level regression coverage
+docs/                        product design and user-facing support material
+```
 
-This note describes stable layout responsibilities rather than a permanent file
-inventory. Files may move within these boundaries as the implementation grows.
+`bin/specdev.js` parses process entry and delegates to the CLI utilities. It owns no
+workflow semantics.
 
-## Problem Example
+`src/commands/` owns public operations. A command validates user-facing input,
+establishes authority, coordinates mechanisms, and shapes text or JSON output.
+Large commands may orchestrate a complete transaction, but reusable state, Git,
+provider, and validation behavior belongs in focused modules.
 
-SpecDev develops a tool that itself installs `.specdev/` workflow files into
-other repositories. Without a clear source layout, it is easy for agents to edit
-the installed runtime copy as if it were product source, add CLI behavior inside
-templates, or make hooks depend on private state shape instead of supported CLI
-interfaces.
+`src/utils/` owns those reusable mechanisms. Modules are grouped by domain name:
+Assignment, Mission, engine, knowledge, delivery, provider execution, maintenance,
+and workspace ownership. Commands may import utilities; utilities do not depend on
+the executable entry and should not use command output as an internal API.
 
-That confusion breaks the durable responsibility model. Git still records a
-change, but the change may have landed in the wrong authority layer, making the
-product hard to update, test, package, or reinstall consistently.
+`templates/.specdev/` is the canonical packaged source for managed files installed
+by `specdev init` and refreshed by `specdev update`. Declarative workflow packages,
+managed guides, built-in skills, configuration seeds, and scaffold notes live here.
+Templates describe installed behavior but do not duplicate the Node.js command
+engine. Project-authored Roadmap designs and other durable records live in the
+consumer repository and are preserved by update.
 
-## Design
+`hooks/` contains bounded coding-agent integration that queries supported CLI
+surfaces. Generated platform skills are produced from the canonical command-skill
+text in product source; installed `.claude/`, `.codex/`, and `.specdev/` copies are
+runtime results rather than independent product sources.
 
-### Executable Boundary
+`tests/` verifies user-blocking command behavior using isolated repositories.
+`docs/`, package metadata, and release automation support development without
+becoming runtime authority. The npm package boundary is explicitly limited to
+`bin/`, `src/`, `templates/`, and `hooks/`.
 
-`bin/specdev.js` is the thin executable boundary. It starts the CLI process and
-hands control to command dispatch. It should not own workflow semantics,
-durable state rules, or command-specific behavior.
-
-Keeping the executable thin makes the package entry point stable while allowing
-the implementation behind it to evolve.
-
-### Command Layer
-
-`src/commands/` owns public CLI command handlers and top-level orchestration.
-Commands interpret user intent, select reusable mechanisms, shape output, and
-enforce command-level boundaries.
-
-Commands may coordinate multiple lower-level modules, but they should not
-become alternate storage, workflow, provider, or packaging systems. Their role
-is to present product capabilities through explicit user-facing operations.
-
-### Reusable Mechanism Layer
-
-`src/utils/` owns reusable mechanisms and feature modules: durable state access,
-workflow integration, Git delivery helpers, knowledge support, provider
-adapters, and other shared behavior. Utility modules support commands and may
-support each other through stable local contracts.
-
-Dependency direction flows from executable to commands to reusable mechanisms.
-Reusable mechanisms must not import command modules or depend on executable
-entry behavior. This preserves reuse, testability, and clear ownership.
-
-### Managed Runtime Source
-
-`templates/.specdev/` is the canonical source for managed runtime files
-installed by `specdev init` and maintained by `specdev update`. It may contain
-workflow guides, skills, seed state, declarative assets, and bounded helper
-scripts used by installed agent environments.
-
-Templates are not a second Node.js CLI implementation. They describe and
-support repository-local SpecDev behavior, while product logic that creates,
-updates, validates, or interprets them remains in the CLI source.
-
-### Packaged Integrations
-
-`hooks/` contains packaged integrations for coding-agent environments. Hooks
-use supported SpecDev CLI interfaces for authoritative queries and operations.
-They may make bounded compatibility probes when an installation is old or
-incomplete, but private layout probing is advisory and must not mutate or
-advance workflow state.
-
-### Repository Support Roots
-
-`tests/`, `docs/`, and similar support roots help develop, verify, and explain
-the product. They are not runtime authority layers. The shipped package
-boundary remains explicit in `package.json`.
-
-## Design Choices and Tradeoffs
-
-- The layout favors authority boundaries over perfect domain grouping.
-- Source code owns behavior; templates own installed guidance and seed runtime
-  assets; target repositories own live `.specdev/` state.
-- Dependency direction stays one-way from entry point to commands to reusable
-  mechanisms.
-- Hooks and installed skills integrate through supported CLI surfaces instead
-  of becoming independent workflow engines.
-- Adding, regrouping, or removing repository support roots is ordinary
-  evolution. Adding a new runtime authority layer, reversing dependencies, or
-  moving CLI behavior into templates requires explicit architecture approval.
+Files may be split or regrouped inside these boundaries. Introducing a new authority
+layer, reversing executable-to-command-to-utility dependency direction, or moving
+behavior into installed state is an architectural change.

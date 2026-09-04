@@ -2,38 +2,39 @@
 
 Parent design: `./assignment_lane.md`
 
-## Purpose
+Candidate preflight determines whether implementation is complete and coherent enough
+to consume independent reviewer effort. It runs at the implementation-to-review
+boundary using the same artifact and evidence interpretation later used by delivery.
 
-Candidate preflight determines whether an Assignment’s implementation artifacts and acceptance evidence are complete enough to enter review.
+The preflight validates the approved contract, plan, progress record, outcome,
+worker result where applicable, acceptance evidence, verification history, review
+waiver evidence, Git boundary, and current product digest. It builds a bounded
+candidate receipt whose identity includes contract, artifacts, execution mode, and
+product state.
 
-It keeps predictable evidence repair with the implementation owner instead of creating reviewer state or consuming reviewer effort for a candidate that is not yet reviewable.
+A complete candidate may enter review. An incomplete candidate stays with the frozen
+implementation owner and receives exact repair obligations. No reviewer Attempt,
+round, verdict, continuation lease, or review-repair allowance is created for a
+candidate that never qualified.
 
-## Design
+Evidence history preserves failures and passing reruns. Bounded summaries may display
+current obligations, but truncation never determines completeness. Later evidence
+supersedes an earlier failure only when authority, command, candidate, and relevant
+conditions still match. Qualification evidence cannot replace acceptance evidence.
 
-Preflight occurs at the boundary between implementation and review. It evaluates the complete candidate through the same interpretation of artifacts and evidence used by later review and delivery checks.
+Review and final delivery repeat defensive validation because the product or artifacts
+may change after preflight. A changed digest, missing artifact, unresolved follow-up,
+or stale review returns to the owning phase rather than being patched by the reviewer.
 
-A complete candidate may advance to review. An incomplete candidate remains in implementation and receives a bounded explanation of what must be repaired. No reviewer, review round, verdict, or review-repair allowance is created for that failed boundary.
+The mechanism is execution-mode neutral. Inline work returns to the foreground;
+spawned work preserves the worker boundary or uses explicit replacement recovery.
 
-The behavior is independent of execution mode. Inline work returns to the foreground implementation owner; delegated work remains with its established worker boundary. Preflight does not transfer ownership or create a new executor.
+The current 1,200-line delivery-utility cap is a transitional compatibility ceiling.
+New responsibilities should move into focused modules so the cap can decrease.
 
-## Evidence Model
+## Source Targets
 
-The implementation evidence record preserves chronological history, including failures and later retries. Candidate summaries may present a bounded view of current obligations, but display limits never decide whether evidence is complete.
-
-Later evidence may satisfy an earlier failed obligation only when it represents the same authority and candidate context. Qualification evidence cannot silently replace required acceptance evidence.
-
-Candidate identity remains bound to the complete authoritative artifacts rather than only their summary.
-
-## Defensive Validation
-
-Review and final delivery repeat the same candidate validation. The earlier preflight prevents avoidable review churn, but it does not replace protection against resumed historical work, changed artifacts, or mutation after the first check.
-
-Any identity change or newly incomplete evidence fails closed and returns to the appropriate owner.
-
-## Design Choices
-
-- Reviewability is established before reviewer resources are used.
-- Evidence repair remains an implementation responsibility.
-- Historical evidence is preserved while current obligations may be summarized.
-- One shared interpretation prevents implementation, review, and delivery from disagreeing.
-- Preflight changes workflow timing, not test authority, review independence, or delivery gates.
+- `src/utils/assignment-delivery.js` — maximum 1200 lines — candidate receipt, preflight, and standalone delivery validation.
+- `src/utils/delivery-artifacts.js` — maximum 230 lines — acceptance and review artifact checks.
+- `src/utils/assignment-vnext.js` — maximum 350 lines — contract, approval, and status validation.
+- `src/commands/implement.js` — maximum 800 lines — preflight timing and repair routing.

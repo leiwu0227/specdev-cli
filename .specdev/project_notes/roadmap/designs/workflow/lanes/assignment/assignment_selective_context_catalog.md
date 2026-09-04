@@ -2,47 +2,34 @@
 
 Parent design: `./assignment_lane.md`
 
-## Purpose
+Selective context gives each Assignment role the smallest useful durable view of the
+project while ensuring that binding authority and evidence are never omitted.
 
-Selective context loading reduces repeated orientation by giving each Assignment role the smallest useful view of durable project context.
+The catalog groups context as authority, task, supporting, and optional material.
+Authority includes the exact contract, approval, execution decision, workflow state,
+and current evidence required for the role. Task context includes implementation
+artifacts and relevant current code. Supporting context includes matched Roadmap
+designs, living knowledge, guides, and promotion provenance. Optional context can be
+loaded when a specific uncertainty arises.
 
-The catalog describes available context sources and their purpose. It does not replace those sources, become workflow authority, or make hidden agent memory part of the Assignment.
+Selection begins from objective terms and deterministic required paths. Roadmap and
+knowledge matches are ranked and bounded. The catalog stores descriptors, purposes,
+freshness facts, and hashes rather than summarizing away the authoritative content.
+The agent opens the owning document when it must rely on a decision or constraint.
 
-## Context Template
+Workers receive implementation-relevant context within delegated scope. Reviewers
+receive the candidate, contract, evidence, and review policy without inheriting
+private author reasoning. Mission children receive only parent context relevant to
+their child objective. Recovery expands context when state changed or uncertainty
+cannot be resolved from the initial packet.
 
-Assignment context is organized into four conceptual groups:
+A changed or stale source invalidates dependent projections. Missing catalogs degrade
+to direct reading of durable sources; they never block recovery or become the sole
+record of authority.
 
-- **Authority context:** the approved contract and delegated decisions that bound the work.
-- **Task context:** the current plan, candidate, evidence, findings, and workflow state relevant to the active phase.
-- **Supporting context:** project guidance, living knowledge, and design notes relevant to the objective.
-- **Role history:** prior results that legitimately belong to the same bounded role lineage.
+## Source Targets
 
-Authority and task context are loaded whenever their facts govern the current action. Supporting context is selected according to the objective and known uncertainties. Role history is included only when role independence and continuity rules permit it.
-
-For example, an implementation owner may need relevant project guidance and earlier repair findings. An independent first reviewer instead receives the contract, exact candidate, and evidence without inheriting the author’s private reasoning.
-
-## Selection and Expansion
-
-The foreground agent or workflow host selects an initial context set from the catalog using the Assignment objective, phase, and role.
-
-Selection is intentionally conservative but not permanently closed. An unfamiliar convention, unexpected behavior, material repository change, or unresolved contradiction requires loading the relevant durable source before continuing.
-
-Selective loading must never turn absence of context into permission. When required authority or evidence cannot be located, the action stops or returns to a decision boundary rather than proceeding from assumption.
-
-## Authority and Freshness
-
-Catalog entries identify durable sources; they do not summarize away binding content. Approval, evidence, design decisions, and workflow state remain authoritative only in their owning artifacts.
-
-A changed or stale source invalidates any derived context projection that depends on it. Recovery rereads the durable source instead of trusting an earlier packet or private transcript.
-
-Mission-owned Assignments receive only parent context relevant to their delegated child objective. Context selection cannot expand child authority.
-
-## Design Choices
-
-- Context is selected by objective, phase, and role.
-- Durable sources outrank catalogs, packets, summaries, and transcripts.
-- Required authority and evidence are never optional context.
-- Context expands when uncertainty or material change demands it.
-- Reviewer independence limits inherited author context.
-- Catalog loss degrades to direct reading of durable sources.
-- Selective loading optimizes orientation without weakening recovery.
+- `src/utils/assignment-context.js` — maximum 680 lines — catalog construction, matching, and role selection.
+- `src/utils/guides.js` — maximum 110 lines — guide catalog loading.
+- `src/utils/knowledge.js` — maximum 1000 lines — ranked durable knowledge retrieval.
+- `src/commands/context.js` — maximum 120 lines — bounded project overview.
