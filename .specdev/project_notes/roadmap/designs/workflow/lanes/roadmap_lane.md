@@ -19,6 +19,15 @@ notes may use a small relevant folder tree or pseudocode when helpful. They end 
 identifying exact targeted source files and a maximum total completed-file line count
 for each. The two standard notes are exempt from that ending metadata.
 
+When the user explicitly asks for a separate public-function design note, Roadmap may
+suggest a concise typed signature style. Function names, parameters, defaults, and
+async form follow the implementation or approved target. Classes use CapCase, while
+named instances and returned values use `snake_case`. Each signature shows its return
+type and briefly describes what it returns; custom types, important side effects, and
+failures may be clarified when helpful. Signatures may appear as design clarification
+without function bodies. This is an optional style suggestion, not a standard
+`public_functions.md`, scaffold, fixed Markdown format, or validation rule.
+
 Roadmap collaborates on one intended edit at a time unless the user explicitly
 authorizes a bounded bulk draft. The agent reports destination and scope, waits for
 approval, writes `*_draft.md`, and reports the draft path. Drafts are not committed.
