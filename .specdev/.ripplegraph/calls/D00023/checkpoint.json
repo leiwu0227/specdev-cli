@@ -1,0 +1,70 @@
+{
+  "callId": "D00023",
+  "status": "completed",
+  "graphId": "discussion-lifecycle",
+  "graphVersion": "2.1.0",
+  "packagePath": "workflows/discussion-lifecycle@2.1.0",
+  "position": {
+    "graph": "discussion-lifecycle",
+    "node": "done"
+  },
+  "input": {
+    "id": "D00023",
+    "path": ".specdev/discussions/D00023_add-a-public-functions-roadmap-design-note-and-d",
+    "description": "Add a public_functions Roadmap design note and define its style",
+    "start_revision": "6abb608f9d7bcb0a12d987630966efc25b81b820"
+  },
+  "outputs": {
+    "brainstorm": {
+      "proposal": ".specdev/discussions/D00023_add-a-public-functions-roadmap-design-note-and-d/brainstorm/proposal.md",
+      "design": ".specdev/discussions/D00023_add-a-public-functions-roadmap-design-note-and-d/brainstorm/design.md",
+      "artifacts": [
+        "brainstorm/proposal.md",
+        "brainstorm/design.md"
+      ]
+    },
+    "finalize": {
+      "completed_revision": "6abb608f9d7bcb0a12d987630966efc25b81b820",
+      "artifact_hash": "74d4d2a5b73f55c95acb526a65b86658f37b3f174e09f68908addbe44558d4e2",
+      "artifact_manifest": {
+        "version": 1,
+        "files": [
+          {
+            "path": "brainstorm/proposal.md",
+            "size": 1302,
+            "sha256": "f25b88d83caffc2c41852dd45ee6a415ccf3921437daf7f2814b1f64c95fd9fa"
+          },
+          {
+            "path": "brainstorm/design.md",
+            "size": 755,
+            "sha256": "6ab3e1a47a89a506c78d0c04195509f272d671b408fd8a97e55341544e036eee"
+          }
+        ],
+        "artifact_hash": "74d4d2a5b73f55c95acb526a65b86658f37b3f174e09f68908addbe44558d4e2"
+      }
+    }
+  },
+  "createdAt": "2026-09-09T02:03:28.038Z",
+  "updatedAt": "2026-09-09T02:24:53.297Z",
+  "finalOutput": {
+    "completed_revision": "6abb608f9d7bcb0a12d987630966efc25b81b820",
+    "artifact_hash": "74d4d2a5b73f55c95acb526a65b86658f37b3f174e09f68908addbe44558d4e2",
+    "artifact_manifest": {
+      "version": 1,
+      "files": [
+        {
+          "path": "brainstorm/proposal.md",
+          "size": 1302,
+          "sha256": "f25b88d83caffc2c41852dd45ee6a415ccf3921437daf7f2814b1f64c95fd9fa"
+        },
+        {
+          "path": "brainstorm/design.md",
+          "size": 755,
+          "sha256": "6ab3e1a47a89a506c78d0c04195509f272d671b408fd8a97e55341544e036eee"
+        }
+      ],
+      "artifact_hash": "74d4d2a5b73f55c95acb526a65b86658f37b3f174e09f68908addbe44558d4e2"
+    }
+  },
+  "outputArtifact": "artifacts/finalize/output.json"
+}
