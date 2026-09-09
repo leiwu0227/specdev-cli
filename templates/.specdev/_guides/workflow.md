@@ -139,6 +139,13 @@ gives the maximum total line count for the completed file; no particular format
 is required for that ending information. Design notes other than the two
 standard cross-cutting notes may include a small relevant folder tree and a
 pseudocode section when either helps clarify the design; neither is required.
+Only when the user explicitly requests a separate public-function design note,
+Roadmap suggests concise typed signatures aligned with the implementation or
+approved target. Classes use CapCase; named instances and returned values use
+`snake_case`. Each signature shows its return type and briefly describes the
+returned value, with custom types, important side effects, and failures clarified
+when helpful. This is optional guidance, not a standard filename, scaffold,
+fixed format, or validation rule.
 Outside those permitted illustrations and the deliberate source targets and line
 caps, conceptual design notes exclude runtime mechanics, verification history,
 code reproduction, and incidental source-code references rather than duplicating

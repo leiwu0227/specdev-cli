@@ -119,7 +119,13 @@ verification, ownership, destination approval, or rebuild requirements.
   `source_code_folder_structure.md`, each note ends by identifying every
   targeted source file and giving the maximum total line count for the completed
   file, and may include a small relevant folder tree or pseudocode when helpful
-  for clarifying the design. Neither illustration is required. `forecast.md` is
+  for clarifying the design. Neither illustration is required. Only when the
+  user explicitly requests a separate public-function design note, suggest
+  concise typed signatures aligned with the implementation or approved target.
+  Classes use CapCase; named instances and returned values use `snake_case`.
+  Show the return type and briefly describe the returned value. This is optional
+  guidance, not a standard filename, scaffold, fixed format, or validation rule.
+  `forecast.md` is
   a future-work roadmap of
   approved design requirements absent or incomplete in current code. Treat the
   designs as the target state: identify code gaps versus designs, never design

@@ -23,7 +23,11 @@ toward more specific detail without a prescribed Markdown format. Notes other
 than `core_concepts.md` and `source_code_folder_structure.md` end by identifying
 their targeted source files and the maximum total completed-file line count for
 each, and may include a small relevant folder tree or pseudocode when helpful.
-Neither illustration is required. Roadmap has no active lifecycle; selecting
+Neither illustration is required. When the user explicitly requests a separate
+public-function design note, Roadmap may suggest typed, implementation-aligned
+signatures with CapCase classes, `snake_case` instance and returned-value names,
+and explicit return types and values. This is optional guidance, not a standard
+file, scaffold, fixed format, or validation rule. Roadmap has no active lifecycle; selecting
 another lane immediately supersedes it without an exit command or state
 transition. Explicitly user-selected Adhoc work creates one receipt and final
 commit but no RippleGraph run.

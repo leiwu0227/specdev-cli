@@ -70,6 +70,7 @@ assert(
     existsSync(roadmapForecast) &&
     existsSync(roadmapTodo) &&
     readFileSync(roadmapTodo, 'utf-8').startsWith('# Todo\n') &&
+    !existsSync(join(roadmapRoot, 'designs', 'public_functions.md')) &&
     !existsSync(join(roadmapRoot, 'designs', 'core-concept.md')) &&
     existsSync(join(TEST_DIR, '.claude', 'skills', 'specdev-roadmap', 'SKILL.md')),
   'init installs the exact roadmap scaffold and command skill'
@@ -112,6 +113,16 @@ assert(
     roadmapPayload.design_rules.illustration.includes('small relevant folder tree') &&
     roadmapPayload.design_rules.illustration.includes('pseudocode section') &&
     roadmapPayload.design_rules.illustration.includes('neither is required') &&
+    roadmapPayload.design_rules.public_function_notes.includes(
+      'Only when the user explicitly requests'
+    ) &&
+    roadmapPayload.design_rules.public_function_notes.includes('typed signatures') &&
+    roadmapPayload.design_rules.public_function_notes.includes('CapCase (PascalCase)') &&
+    roadmapPayload.design_rules.public_function_notes.includes('snake_case') &&
+    roadmapPayload.design_rules.public_function_notes.includes('return type and returned value') &&
+    roadmapPayload.design_rules.public_function_notes.includes('optional guidance') &&
+    roadmapPayload.design_rules.public_function_notes.includes('not a standard filename') &&
+    roadmapPayload.design_rules.public_function_notes.includes('validation rule') &&
     roadmapPayload.design_rules.separation.includes('runtime mechanics') &&
     roadmapPayload.design_rules.presentation.includes('intended final destination') &&
     roadmapPayload.design_rules.presentation.includes('*_draft.md') &&
@@ -209,6 +220,15 @@ assert(
     normalizedProse(mainMd).includes('authority to implement Forecast or Todo items'),
   '_main.md distinguishes Todo from Forecast without granting implementation authority'
 )
+assert(
+  normalizedProse(mainMd).includes(
+    'Only when the user explicitly requests a separate public-function design note'
+  ) &&
+    normalizedProse(mainMd).includes('concise typed signatures') &&
+    normalizedProse(mainMd).includes('named instances and returned values use `snake_case`') &&
+    normalizedProse(mainMd).includes('not a standard filename, scaffold, fixed format'),
+  '_main.md presents public-function note style as optional user-invoked guidance'
+)
 const workflowGuide = readFileSync(join(TEST_DIR, '.specdev', '_guides', 'workflow.md'), 'utf-8')
 assert(
   normalizedProse(workflowGuide).includes(
@@ -225,6 +245,15 @@ assert(
     ),
   'workflow guide documents Todo format and authority separately from Forecast'
 )
+assert(
+  normalizedProse(workflowGuide).includes(
+    'Only when the user explicitly requests a separate public-function design note'
+  ) &&
+    normalizedProse(workflowGuide).includes('Each signature shows its return type') &&
+    normalizedProse(workflowGuide).includes('custom types, important side effects, and failures') &&
+    normalizedProse(workflowGuide).includes('not a standard filename, scaffold'),
+  'workflow guide keeps public-function note guidance concise and optional'
+)
 const skillsReadme = readFileSync(join(TEST_DIR, '.specdev', 'skills', 'README.md'), 'utf-8')
 assert(
   normalizedProse(skillsReadme).includes(
@@ -234,7 +263,12 @@ assert(
       'Todo records user-selected non-architecture future work'
     ) &&
     normalizedProse(skillsReadme).includes('omitting provenance') &&
-    normalizedProse(skillsReadme).includes('Neither list grants implementation authority'),
+    normalizedProse(skillsReadme).includes('Neither list grants implementation authority') &&
+    normalizedProse(skillsReadme).includes(
+      'When the user explicitly requests a separate public-function design note'
+    ) &&
+    normalizedProse(skillsReadme).includes('CapCase classes') &&
+    normalizedProse(skillsReadme).includes('not a standard file, scaffold, fixed format'),
   'skills README includes Todo in the Roadmap boundary and preserves its authority distinction'
 )
 const specdevIndex = readFileSync(join(TEST_DIR, '.specdev', '_index.md'), 'utf-8')
@@ -454,6 +488,14 @@ assert(
     roadmapSkillProse.includes('dependency and then by user priority') &&
     roadmapSkillProse.includes('Todo items omit provenance metadata') &&
     roadmapSkillProse.includes('not grant authority to implement Forecast or Todo items') &&
+    roadmapSkillProse.includes(
+      'Only when the user explicitly requests a separate public-function design note'
+    ) &&
+    roadmapSkillProse.includes('concise typed signatures') &&
+    roadmapSkillProse.includes('Use CapCase (PascalCase) for classes') &&
+    roadmapSkillProse.includes('named instances and returned values') &&
+    roadmapSkillProse.includes('Show each return type') &&
+    roadmapSkillProse.includes('not a standard filename, scaffold, fixed Markdown format') &&
     roadmapSkillProse.includes('Selecting another lane immediately supersedes') &&
     roadmapSkillProse.includes('no exit command or state transition is required'),
   'roadmap skill requires explicit selection and approval without workflow history'

@@ -41,6 +41,8 @@ export async function roadmapCommand(flags = {}) {
         'At the end of every design note except core_concepts.md and source_code_folder_structure.md, identify each targeted source file and its maximum total line count for the completed file; no particular Markdown format is required.',
       illustration:
         'Design notes other than core_concepts.md and source_code_folder_structure.md may include a small relevant folder tree and a pseudocode section when they help clarify the design; neither is required.',
+      public_function_notes:
+        'Only when the user explicitly requests a separate public-function design note, suggest concise typed signatures aligned with the implementation or approved target. Use CapCase (PascalCase) for classes and snake_case for named instances and returned values, and show each return type and returned value; clarify custom types, important side effects, and failures when helpful. This is optional guidance, not a standard filename, scaffold, fixed Markdown format, or validation rule.',
       separation:
         'Outside permitted clarifying folder trees and pseudocode and the required ending source targets and line caps, keep runtime mechanics, verification history, code reproduction, and incidental source-code references out of conceptual design notes; retain only stable abstractions and deliberate tradeoffs.',
       presentation:
@@ -101,6 +103,7 @@ export async function roadmapCommand(flags = {}) {
   console.log(`Design progression: ${payload.design_rules.progression}`)
   console.log(`Design source targets: ${payload.design_rules.source_targets}`)
   console.log(`Design illustration: ${payload.design_rules.illustration}`)
+  console.log(`Public-function notes: ${payload.design_rules.public_function_notes}`)
   console.log(`Design separation: ${payload.design_rules.separation}`)
   console.log(`Design presentation: ${payload.design_rules.presentation}`)
   console.log(`Forecast purpose: ${payload.forecast_rules.purpose}`)

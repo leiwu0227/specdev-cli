@@ -317,6 +317,13 @@ and give the maximum total line count for the completed file. No particular
 format is required for this ending information. Design notes other than the two
 standard cross-cutting notes may include a small relevant folder tree and a
 pseudocode section when either helps clarify the design; neither is required.
+Only when the user explicitly requests a separate public-function design note,
+suggest concise typed signatures aligned with the implementation or approved
+target. Use CapCase (PascalCase) for classes and \`snake_case\` for named
+instances and returned values. Show each return type and briefly describe the
+returned value; clarify custom types, important side effects, and failures when
+helpful. This is optional guidance, not a standard filename, scaffold, fixed
+Markdown format, or validation rule.
 Outside those permitted illustrations and the deliberate source targets and line
 caps, keep runtime mechanics, verification history, code reproduction, and
 incidental source-code references out of conceptual design notes. The design set
