@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "27af50471cea5f65263ff3995c9c760037c0d8b55d7008db1cf689b64bdeee87",
+  "assignment": {
+    "id": "00068",
+    "folder": "00068_proposal-mission-wide-implementation-execution-c"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-10T01:17:27.213Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00068_proposal-mission-wide-implementation-execution-c/brainstorm/contract.md",
+    "hash": "b79a60c574025c0f262334de5a1aa3c854116e25c7f5c85df2628841257cf544"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Engine integration and Mission compatibility tests cover the no-default choice, durable selection, switching rejection, and legacy-spawn projection.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Engine integration and reviewloop mode tests cover initial, repair, and resolver foreground obligations with no implementation worker or parallel worktree.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Graph-package, successor-adoption, recovery, status-visibility, and update-workflow tests cover spawned compatibility and shared lifecycle invariants.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 1,
+    "items": [
+      {
+        "command": "npm run test:engine-integration && npm run test:reviewloop-modes && npm run test:mission-compatibility && npm run test:engine-graphpackages && npm run test:mission-successor-adoption && npm run test:implement-recovery && npm run test:sta...",
+        "revision": "working-tree@79dbc8f8f3f25aaae3325d6cb781cae5f478e38a",
+        "scope": "AC-1 through AC-3: Mission execution choice, inline handoffs and repair/resolver routing, legacy migration, graph packaging, recovery, and status visibility",
+        "status": "passed",
+        "duration_ms": 69000,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 1,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 1,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:engine-integration && npm run test:reviewloop-modes && npm run test:mission-compatibility && npm run test:engine-graphpackages && npm run test:mission-successor-adoption && npm run test:implement-recovery && npm run test:sta...",
+        "revision": "working-tree@79dbc8f8f3f25aaae3325d6cb781cae5f478e38a",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 21,
+    "groups": [
+      {
+        "name": ".claude",
+        "count": 1,
+        "paths": [
+          ".claude/skills/specdev-mission/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": ".codex",
+        "count": 1,
+        "paths": [
+          ".codex/skills/specdev-mission/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "README.md",
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 8,
+        "paths": [
+          "src/commands/help.js",
+          "src/commands/init.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/assignment-execution.js",
+          "src/utils/mission-compatibility.js"
+        ],
+        "omitted": 2
+      },
+      {
+        "name": "templates",
+        "count": 4,
+        "paths": [
+          "templates/.specdev/_guides/assignment_guide.md"
+        ],
+        "omitted": 3
+      },
+      {
+        "name": "tests",
+        "count": 5,
+        "paths": [
+          "tests/test-engine-graphpackages.js"
+        ],
+        "omitted": 4
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "none",
+    "items": [],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00068_proposal-mission-wide-implementation-execution-c/brainstorm/contract.md",
+      "exists": true,
+      "digest": "b79a60c574025c0f262334de5a1aa3c854116e25c7f5c85df2628841257cf544"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00068_proposal-mission-wide-implementation-execution-c/design/plan.md",
+      "exists": true,
+      "digest": "d162f5e71fa2fb24df8f5cea9508385b48c5e45c069176208f9d20514ab8bfbf"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00068_proposal-mission-wide-implementation-execution-c/implementation/progress.json",
+      "exists": true,
+      "digest": "c4373fefcced90ad65e3077b5cae3467027e8a32d019e014bfab145046603f31"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00068_proposal-mission-wide-implementation-execution-c/outcome.md",
+      "exists": true,
+      "digest": "9e71147969f801a36f6a5e29930e8a3da78de82cd5c601536f4da52a089a0b51"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

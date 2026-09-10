@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "npm run test:engine-integration && npm run test:reviewloop-modes && npm run test:mission-compatibility && npm run test:engine-graphpackages && npm run test:mission-successor-adoption && npm run test:implement-recovery && npm run test:status-visibility && npm run test:update-workflow",
+      "revision": "working-tree@79dbc8f8f3f25aaae3325d6cb781cae5f478e38a",
+      "scope": "AC-1 through AC-3: Mission execution choice, inline handoffs and repair/resolver routing, legacy migration, graph packaging, recovery, and status visibility",
+      "status": "passed",
+      "duration_ms": 69000,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

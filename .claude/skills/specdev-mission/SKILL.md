@@ -1,6 +1,6 @@
 ---
 name: specdev-mission
-description: Create and run a foreground Mission with automatic bounded waves
+description: Create and run a Mission with explicit implementation ownership
 ---
 
 Run `specdev mission create "<objective>"` and collaborate on the Mission
@@ -9,6 +9,19 @@ contract, including its exact final integrated verification command. Run
 the contract. Before requesting agreement, show the exact contract path and hash
 plus the command's concise contract-preview bullets. Only after explicit
 agreement run `specdev mission run M00001 --approve`.
+
+Approval stops at an explicit implementation execution choice. Ask the user to
+choose inline or spawned; never infer a default. Run the exact displayed
+`specdev mission run M00001 --inline` or `--spawned` command. The choice is
+frozen for the whole Mission.
+
+For inline execution, stay in this main coding session. Whenever Mission run
+returns `action_required`, read its selective context catalog and owning
+artifacts, complete the bounded implementation or repair obligations directly,
+and rerun the displayed Mission command. Do not create an implementation agent
+or stop for routine user input. Spawned execution keeps implementation in
+automatic workers; keep its controller command in the foreground until it ends
+or reaches an existing explicit user gate.
 
 When the user explicitly abandons an unwanted nonterminal Mission, run
 `specdev mission abandon M00001 --reason="..."` to display the read-only plan.
@@ -34,11 +47,13 @@ restate big-picture notes or turn implementation tasks into acceptance criteria.
 Multi-child Assignment contracts are narrow deltas that inherit unchanged
 Mission authority.
 
-The controller stays in the foreground and starts with one full-scope child.
+The controller starts with one full-scope child.
 Set `Initial child plan: planned` in the contract only for a concrete
 execution, dependency, decision, or verification boundary. Planned children
-receive static waves; independent children in one wave automatically use up to
-three validated ignored worktrees and integrate in declared order. Use
+receive static waves. Inline implementation executes them sequentially in the
+Mission worktree; spawned implementation may automatically use up to three
+validated ignored worktrees for an independent wave and integrates in declared
+order. Use
 `--takeover` only after inspecting an interrupted controller.
 
 Announce meaningful phases, plan changes, failed verification, and blockers

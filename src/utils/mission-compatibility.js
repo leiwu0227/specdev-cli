@@ -4,8 +4,8 @@ import { loadGraphPackage, readCheckpoint } from 'ripplegraph'
 import { inspectMissionMigration, readMissionMigrationJournal } from './mission-migration.js'
 
 const CONTROLLER_GRAPH_ID = 'mission-lifecycle'
-const CONTROLLER_GRAPH_VERSION = '1.5.0'
-const MIGRATABLE_GRAPH_VERSIONS = new Set(['1.3.0', '1.4.0'])
+const CONTROLLER_GRAPH_VERSION = '1.6.0'
+const MIGRATABLE_GRAPH_VERSIONS = new Set(['1.3.0', '1.4.0', '1.5.0'])
 
 const CONTROLLER_OUTPUTS = {
   'create-mission': [{ id: 'M00001', path: '.specdev/missions/example', objective: 'Example' }],

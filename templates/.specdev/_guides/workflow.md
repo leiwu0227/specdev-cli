@@ -96,10 +96,14 @@ when it remains unresolved, advances automatically through resolver and
 arbiter stages without sharing another child's recovery allowance. Repair
 descendants retain their parent gap identity, restarts deduplicate the same
 signal, and terminal semantic, authority, and infrastructure failures remain
-distinct. Children that do not depend on one another may share a wave. The
-foreground controller automatically runs up to three children in validated
-ignored worktrees and integrates reviewed deliveries in declared order. Users
-do not tune concurrency, and parallel speed is not a reason to split work.
+distinct. Immediately after contract approval, the user explicitly chooses
+inline or spawned implementation for the whole Mission; there is no silent
+default. Inline returns every implementation, repair, and resolver obligation to
+the current main coding session and executes children sequentially in the Mission
+worktree. Spawned retains automatic workers. Children that do not depend on one
+another may share a wave, and spawned execution automatically runs up to three in
+validated ignored worktrees before integrating reviewed deliveries in declared
+order. Users do not tune concurrency, and parallel speed is not a split reason.
 
 A planned child may use `execution: evidence-only` only with an exact
 `observation_command` equal to the Mission final-verification command. A
@@ -204,8 +208,8 @@ workflow before any test is changed.
 
 `.specdev/agents.yaml` chooses `implementation.mode: auto | inline | spawned`
 and the worker/reviewer provider, model, effort, and timeout. Omission defaults
-to `auto`, which freezes to inline for an ordinary standalone Assignment;
-Mission-controlled execution remains spawned. Ignored
+to `auto`, which freezes to inline for an ordinary standalone Assignment.
+Mission implementation instead uses its explicit post-approval choice. Ignored
 `cache/agents.local.yaml` overrides repository configuration on one machine.
 Prompts and up to three selected guides define temporary work; there are no
 permanent reviewer personas.

@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
@@ -181,6 +182,33 @@ function writeCompletedContinuation(path) {
   )
 }
 
+function inlineMissionExecution() {
+  return {
+    version: 1,
+    configured_mode: 'inline',
+    effective_mode: 'inline',
+    source: 'mission',
+    reason: null,
+    owner: 'foreground-agent',
+    frozen_at: '2026-09-10T00:00:00.000Z',
+  }
+}
+
+function workerAttemptCount(assignmentName) {
+  const processPath = join(root, '.specdev', 'processes')
+  if (!existsSync(processPath)) return 0
+  return readdirSync(processPath).filter((name) => {
+    const record = readFileSync(join(processPath, name), 'utf8')
+    return (
+      /^kind: worker$/m.test(record) &&
+      new RegExp(
+        `^assignment: ${assignmentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
+        'm'
+      ).test(record)
+    )
+  }).length
+}
+
 function mutateDuringNextReview(relativePath) {
   writeFileSync(join(root, '.git', 'specdev-review-mutation'), relativePath, 'utf8')
 }
@@ -223,6 +251,23 @@ case "$prompt" in
     mission_resolver_review_count=$((mission_resolver_review_count + 1))
     printf '%s' "$mission_resolver_review_count" >"$mission_resolver_review_count_file"
     printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'The foreground resolver satisfies the contract.'
+    exit 0
+    ;;
+  *"mission-inline-repair"*)
+    inline_repair_review_count_file="${root}.inline-repair-review-count"
+    inline_repair_review_count=0
+    if [ -f "$inline_repair_review_count_file" ]; then inline_repair_review_count=$(cat "$inline_repair_review_count_file"); fi
+    inline_repair_review_count=$((inline_repair_review_count + 1))
+    printf '%s' "$inline_repair_review_count" >"$inline_repair_review_count_file"
+    if [ "$inline_repair_review_count" -eq 1 ]; then
+      printf '%s\n' '---' 'verdict: needs_changes' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'Complete the inline Mission repair.'
+    else
+      printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'The inline Mission repair satisfies the contract.'
+    fi
+    exit 0
+    ;;
+  *"mission-inline-resolver"*)
+    printf '%s\n' '---' 'verdict: approved' 'material_divergence: false' 'scope_divergence: none' 'procedure_divergence: none' 'evidence_integrity: complete' 'user_reapproval_required: false' '---' '' '## Findings' '' 'The inline Mission resolver satisfies the contract.'
     exit 0
     ;;
   *"Continue the existing Assignment"*)
@@ -601,6 +646,149 @@ fi
   assert.equal(missionResolverState.resolver_source_attempt, missionResolverAttempt.id)
 
   runJson(['do', 'start an assignment'])
+  const inlineMissionRepair = runJson([
+    'assignment',
+    'Return a Mission inline repair to the foreground session',
+    '--slug=mission-inline-repair',
+    '--json',
+  ])
+  const inlineMissionRepairPath = join(root, inlineMissionRepair.path)
+  const inlineMissionRepairName = inlineMissionRepair.path.split('/').at(-1)
+  writeContract(inlineMissionRepairPath, 'Return a Mission inline repair obligation')
+  runJson(['checkpoint', 'brainstorm', '--json'])
+  runJson(['approve', 'brainstorm', '--json'])
+  writeImplementationDelivery(inlineMissionRepairPath)
+  const inlineMissionRepairStatusPath = join(inlineMissionRepairPath, 'status.json')
+  const inlineMissionRepairStatus = JSON.parse(readFileSync(inlineMissionRepairStatusPath, 'utf8'))
+  writeFileSync(
+    inlineMissionRepairStatusPath,
+    `${JSON.stringify(
+      {
+        ...inlineMissionRepairStatus,
+        mission: mission.id,
+        implementation_execution: inlineMissionExecution(),
+      },
+      null,
+      2
+    )}\n`,
+    'utf8'
+  )
+  writeParentQueue(
+    missionPath,
+    inlineMissionRepair.id,
+    'Return a Mission inline repair to the foreground session'
+  )
+  stepGuidedNode(root, 'design', {
+    plan: `${inlineMissionRepair.path}/design/plan.md`,
+    attempt: 'inline-foreground',
+  })
+  stepGuidedNode(root, 'implementation', {
+    progress: `${inlineMissionRepair.path}/implementation/progress.json`,
+    outcome: `${inlineMissionRepair.path}/outcome.md`,
+    attempt: 'inline-foreground',
+  })
+  const inlineRepairAction = runJson(['reviewloop', 'implementation', '--json'])
+  assert.equal(inlineRepairAction.status, 'action_required')
+  assert.equal(inlineRepairAction.implementation_execution.effective_mode, 'inline')
+  assert.match(inlineRepairAction.foreground.obligations.result, /repair-result\.md$/)
+  assert.equal(workerAttemptCount(inlineMissionRepairName), 0)
+  const inlineRepairResultPath = join(inlineMissionRepairPath, 'implementation', 'repair-result.md')
+  writeCompletedContinuation(inlineRepairResultPath)
+  const completedInlineRepair = runJson(['reviewloop', 'implementation', '--json'])
+  assert.equal(completedInlineRepair.status, 'approved')
+  assert.equal(workerAttemptCount(inlineMissionRepairName), 0)
+  const inlineRepairState = JSON.parse(
+    readFileSync(join(inlineMissionRepairPath, 'review', 'implementation-state.json'), 'utf8')
+  )
+  assert.equal(inlineRepairState.repair_attempt, 'inline-foreground')
+
+  runJson(['do', 'start an assignment'])
+  const inlineMissionResolver = runJson([
+    'assignment',
+    'Return a Mission inline resolver to the foreground session',
+    '--slug=mission-inline-resolver',
+    '--json',
+  ])
+  const inlineMissionResolverPath = join(root, inlineMissionResolver.path)
+  const inlineMissionResolverName = inlineMissionResolver.path.split('/').at(-1)
+  writeContract(inlineMissionResolverPath, 'Return a Mission inline resolver obligation')
+  runJson(['checkpoint', 'brainstorm', '--json'])
+  runJson(['approve', 'brainstorm', '--json'])
+  writeImplementationDelivery(inlineMissionResolverPath)
+  const inlineMissionResolverStatusPath = join(inlineMissionResolverPath, 'status.json')
+  const inlineMissionResolverStatus = JSON.parse(
+    readFileSync(inlineMissionResolverStatusPath, 'utf8')
+  )
+  writeFileSync(
+    inlineMissionResolverStatusPath,
+    `${JSON.stringify(
+      {
+        ...inlineMissionResolverStatus,
+        mission: mission.id,
+        implementation_execution: inlineMissionExecution(),
+      },
+      null,
+      2
+    )}\n`,
+    'utf8'
+  )
+  writeParentQueue(
+    missionPath,
+    inlineMissionResolver.id,
+    'Return a Mission inline resolver to the foreground session'
+  )
+  stepGuidedNode(root, 'design', {
+    plan: `${inlineMissionResolver.path}/design/plan.md`,
+    attempt: 'inline-foreground',
+  })
+  stepGuidedNode(root, 'implementation', {
+    progress: `${inlineMissionResolver.path}/implementation/progress.json`,
+    outcome: `${inlineMissionResolver.path}/outcome.md`,
+    attempt: 'inline-foreground',
+  })
+  mkdirSync(join(inlineMissionResolverPath, 'review'), { recursive: true })
+  writeFileSync(
+    join(inlineMissionResolverPath, 'review', 'implementation-state.json'),
+    `${JSON.stringify(
+      {
+        version: 2,
+        mode: 'automatic',
+        stage: 'resolver',
+        primary_round: 2,
+        round: 2,
+        status: 'converging',
+        history: [],
+      },
+      null,
+      2
+    )}\n`,
+    'utf8'
+  )
+  writeFileSync(
+    join(inlineMissionResolverPath, 'review', 'implementation-verdict.md'),
+    `---\nverdict: blocked\nmaterial_divergence: false\nscope_divergence: none\nprocedure_divergence: none\nevidence_integrity: complete\nuser_reapproval_required: false\n---\n\n## Findings\n\nComplete the inline Mission resolver.\n`,
+    'utf8'
+  )
+  const inlineResolverAction = runJson(['reviewloop', 'implementation', '--json'])
+  assert.equal(inlineResolverAction.status, 'action_required')
+  assert.equal(inlineResolverAction.implementation_execution.effective_mode, 'inline')
+  assert.match(inlineResolverAction.foreground.obligations.result, /resolver-result\.md$/)
+  assert.equal(workerAttemptCount(inlineMissionResolverName), 0)
+  const inlineResolverResultPath = join(
+    inlineMissionResolverPath,
+    'implementation',
+    'resolver-result.md'
+  )
+  writeCompletedContinuation(inlineResolverResultPath)
+  const completedInlineResolver = runJson(['reviewloop', 'implementation', '--json'])
+  assert.equal(completedInlineResolver.status, 'approved')
+  assert.equal(workerAttemptCount(inlineMissionResolverName), 0)
+  const inlineResolverState = JSON.parse(
+    readFileSync(join(inlineMissionResolverPath, 'review', 'implementation-state.json'), 'utf8')
+  )
+  assert.equal(inlineResolverState.resolver_attempt, 'inline-foreground')
+
+  runJson(['do', 'start an assignment'])
   const boundedRepair = runJson([
     'assignment',
     'Bound artifact preflight repair',
@@ -647,4 +835,5 @@ fi
   rmSync(`${root}.mission-repair-count`, { force: true })
   rmSync(`${root}.mission-review-count`, { force: true })
   rmSync(`${root}.mission-resolver-review-count`, { force: true })
+  rmSync(`${root}.inline-repair-review-count`, { force: true })
 }

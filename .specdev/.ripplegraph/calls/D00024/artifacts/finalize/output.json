@@ -1,0 +1,20 @@
+{
+  "completed_revision": "79dbc8f8f3f25aaae3325d6cb781cae5f478e38a",
+  "artifact_hash": "f33363861b23b9beae785f4facdd002b7cb4b7070f4d4cc95580a223d0782533",
+  "artifact_manifest": {
+    "version": 1,
+    "files": [
+      {
+        "path": "brainstorm/proposal.md",
+        "size": 5516,
+        "sha256": "3aaa2c01a710592a7e57510731a31b9054b45c6cb5c37e4e4c0d24ce8b729fe9"
+      },
+      {
+        "path": "brainstorm/design.md",
+        "size": 1385,
+        "sha256": "a43936ad0997eb1862e4731aeb7f20aaded1391ce2dac5f80841fe0fce144947"
+      }
+    ],
+    "artifact_hash": "f33363861b23b9beae785f4facdd002b7cb4b7070f4d4cc95580a223d0782533"
+  }
+}

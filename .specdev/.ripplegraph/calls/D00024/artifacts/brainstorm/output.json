@@ -1,0 +1,8 @@
+{
+  "proposal": ".specdev/discussions/D00024_allow-mission-implementation-to-preserve-foregro/brainstorm/proposal.md",
+  "design": ".specdev/discussions/D00024_allow-mission-implementation-to-preserve-foregro/brainstorm/design.md",
+  "artifacts": [
+    "brainstorm/proposal.md",
+    "brainstorm/design.md"
+  ]
+}

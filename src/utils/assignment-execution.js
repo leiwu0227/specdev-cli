@@ -10,7 +10,7 @@ export async function resolveAssignmentExecution(
   specdevPath,
   { flags = {}, mission = false, frozen = null, legacySpawned = false } = {}
 ) {
-  const explicit = explicitMode(flags)
+  const explicit = explicitImplementationMode(flags)
   const suppliedReason = boundedReason(flags['execution-reason'])
   if (suppliedReason && explicit !== 'spawned') {
     throw new Error('--execution-reason is supported only with --spawned')
@@ -148,7 +148,7 @@ export async function inlineImplementationObligations({
   }
 }
 
-function explicitMode(flags) {
+export function explicitImplementationMode(flags) {
   const inline = flags.inline !== undefined
   const spawned = flags.spawned !== undefined
   if (inline && flags.inline !== true) throw new Error('--inline does not accept a value')

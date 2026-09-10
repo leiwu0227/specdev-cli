@@ -10,8 +10,8 @@ import { readAttemptRecord } from './process-record.js'
 
 const GRAPH_ID = 'mission-lifecycle'
 const SOURCE_VERSION = '1.3.0'
-const SOURCE_VERSIONS = new Set(['1.3.0', '1.4.0'])
-const TARGET_VERSION = '1.5.0'
+const SOURCE_VERSIONS = new Set(['1.3.0', '1.4.0', '1.5.0'])
+const TARGET_VERSION = '1.6.0'
 const TARGET_PACKAGE_PATH = `workflows/${GRAPH_ID}@${TARGET_VERSION}`
 const ASSIGNMENT_GRAPH_ID = 'assignment-lifecycle'
 const ASSIGNMENT_TARGET_VERSION = '2.3.0'

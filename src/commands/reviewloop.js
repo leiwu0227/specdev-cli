@@ -783,17 +783,19 @@ export async function reviewImplementation(flags = {}) {
   let reviewState = initialAutomaticReviewState((await readJsonIfPresent(statePath)) || {})
 
   if (graph.position.node === 'repair') {
-    const recovered = mission
-      ? await recoverMissionReviewContinuation({
-          targetDir,
-          specdevPath,
-          assignmentPath,
-          name,
-          mission,
-          resultFile: 'repair-result.md',
-          acceptanceIds: contract.acceptanceIds,
-        })
-      : null
+    const inline = implementationExecution?.effective_mode === 'inline'
+    const recovered =
+      mission && !inline
+        ? await recoverMissionReviewContinuation({
+            targetDir,
+            specdevPath,
+            assignmentPath,
+            name,
+            mission,
+            resultFile: 'repair-result.md',
+            acceptanceIds: contract.acceptanceIds,
+          })
+        : null
     if (recovered) {
       stepGuidedNode(targetDir, 'repair', {
         attempt: recovered.attempt.id,
@@ -809,7 +811,7 @@ export async function reviewImplementation(flags = {}) {
         updated_at: new Date().toISOString(),
       }
       await writeJsonAtomic(statePath, reviewState)
-    } else if (!mission && implementationExecution?.effective_mode === 'inline') {
+    } else if (inline) {
       const repairResultPath = join(assignmentPath, 'implementation', 'repair-result.md')
       const repairResult = await readInlineContinuationResult(repairResultPath)
       if (repairResult.status !== 'completed') {
@@ -1032,20 +1034,22 @@ export async function reviewImplementation(flags = {}) {
   await writeJsonAtomic(statePath, reviewState)
 
   if (reviewState.stage === 'resolver') {
-    const recovered = mission
-      ? await recoverMissionReviewContinuation({
-          targetDir,
-          specdevPath,
-          assignmentPath,
-          name,
-          mission,
-          resultFile: 'resolver-result.md',
-          acceptanceIds: contract.acceptanceIds,
-        })
-      : null
+    const inline = implementationExecution?.effective_mode === 'inline'
+    const recovered =
+      mission && !inline
+        ? await recoverMissionReviewContinuation({
+            targetDir,
+            specdevPath,
+            assignmentPath,
+            name,
+            mission,
+            resultFile: 'resolver-result.md',
+            acceptanceIds: contract.acceptanceIds,
+          })
+        : null
     const resolved =
       recovered ||
-      (!mission && implementationExecution?.effective_mode === 'inline'
+      (inline
         ? await readInlineResolver({
             flags,
             targetDir,
@@ -1063,6 +1067,7 @@ export async function reviewImplementation(flags = {}) {
             guides: delivery.implementationGuides,
           }))
     if (!resolved) return null
+    if (resolved.actionRequired) return resolved.actionRequired
     if (resolved.result.frontmatter.status === 'completed') {
       delivery = await validateDeliveryArtifacts(
         specdevPath,
@@ -1604,18 +1609,19 @@ async function readInlineResolver({
   const resultPath = join(assignmentPath, 'implementation', 'resolver-result.md')
   const result = await readInlineContinuationResult(resultPath)
   if (result.status !== 'completed') {
-    await emitInlineRepair(flags, {
-      targetDir,
-      assignmentPath,
-      name,
-      contract,
-      implementationExecution,
-      graphNode: 'repair',
-      verdictPath,
-      issue: result.issue || 'Review convergence requires one final foreground repair.',
-      resultFile: 'resolver-result.md',
-    })
-    return null
+    return {
+      actionRequired: await emitInlineRepair(flags, {
+        targetDir,
+        assignmentPath,
+        name,
+        contract,
+        implementationExecution,
+        graphNode: 'repair',
+        verdictPath,
+        issue: result.issue || 'Review convergence requires one final foreground repair.',
+        resultFile: 'resolver-result.md',
+      }),
+    }
   }
   await validateDeliveryArtifacts(specdevPath, assignmentPath, contract.acceptanceIds)
   await retireTransientArtifact(targetDir, specdevPath, resultPath)

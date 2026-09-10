@@ -72,8 +72,8 @@ outcome, result, product changes, and authorized evidence. Rerun
 `specdev implement` to validate those artifacts and advance to independent
 review. Use fixed `spawned` configuration for unattended automation that relied
 on the former mandatory worker launch, or select `--spawned` before the boundary
-with a bounded `--execution-reason`. Mission-controlled execution remains
-spawned.
+with a bounded `--execution-reason`. Mission children inherit their Mission-wide
+explicit post-approval choice instead of resolving this standalone default.
 
 When a spawned worker returns blocked, its partial code and artifacts remain in
 place. A normal rerun reports the same blocker instead of launching another

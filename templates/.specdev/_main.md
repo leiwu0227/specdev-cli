@@ -156,10 +156,12 @@ verification, ownership, destination approval, or rebuild requirements.
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.
 - **Assignment:** one readable contract, one user approval, then automatic
   Design + Implementation + evidence + review.
-- **Mission:** a foreground controller on a dedicated branch. It uses the
-  normal worktree for sequential children and automatically leases up to three
-  ignored worktrees for an already-justified independent child wave. Mission is
-  user-selected and does not imply multiple children.
+- **Mission:** a foreground controller on a dedicated branch. Immediately after
+  contract approval, the user explicitly freezes inline or spawned implementation
+  for the whole Mission. Inline uses the main coding session and the normal worktree
+  sequentially; spawned execution may lease up to three ignored worktrees for an
+  already-justified independent child wave. Mission is user-selected and does not
+  imply multiple children.
 - **Discussion:** a concurrent code-read-only RippleGraph callable with required
   proposal/design entry points plus safe supporting artifacts and nested folders;
   it may later be promoted to fresh work.
@@ -181,6 +183,11 @@ a scheduler, but only one may be active in a worktree.
   Multi-child Mission contracts receive review; a deterministic full-scope
   single child reuses the approved parent authority without another Brainstorm
   author or reviewer.
+- Mission approval stops at an explicit no-default implementation choice. Inline
+  assigns every child implementation, repair, and resolver to the current main
+  coding session; the Mission skill fulfills each returned obligation and reruns
+  the controller without routine user interaction. Spawned retains automatic
+  workers and eligible parallel waves. Reviewers remain independent in both modes.
 - Mission abandonment is a reasoned two-step terminal command. Its first pass is
   read-only; exact confirmation preserves branch and worktree identities, records
   no delivery, compacts only owned runtime, and never lands or deletes partial work.

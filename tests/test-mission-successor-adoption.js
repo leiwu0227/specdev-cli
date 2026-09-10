@@ -331,8 +331,8 @@ try {
     graphSource: {
       kind: 'package',
       graphId: 'mission-lifecycle',
-      graphVersion: '1.5.0',
-      packagePath: 'workflows/mission-lifecycle@1.5.0',
+      graphVersion: '1.6.0',
+      packagePath: 'workflows/mission-lifecycle@1.6.0',
     },
     stack: [
       {
@@ -342,8 +342,8 @@ try {
           graphSource: {
             kind: 'package',
             graphId: 'mission-lifecycle',
-            graphVersion: '1.5.0',
-            packagePath: 'workflows/mission-lifecycle@1.5.0',
+            graphVersion: '1.6.0',
+            packagePath: 'workflows/mission-lifecycle@1.6.0',
           },
           scope: '',
         },

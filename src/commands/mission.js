@@ -145,6 +145,14 @@ import {
 } from '../utils/mission-successor-adoption.js'
 import { validateEvidenceOnlyObservation } from '../utils/mission-observation.js'
 import {
+  beginMissionImplementationChoice,
+  chooseMissionImplementation,
+  missionChildImplementationExecution,
+  missionImplementationProjection,
+  missionUsesSpawnedImplementation,
+  requestedMissionImplementationMode,
+} from '../utils/mission-implementation.js'
+import {
   decideMissionReapproval,
   inspectMissionReapproval,
   missionReapprovalPreview,
@@ -396,6 +404,40 @@ async function runMission(selector, flags) {
   }
   const compatibility = await evaluateMissionCompatibility({ specdevPath, missionPath, mission })
   if (!compatibility.compatible) return emitMissionCompatibility(flags, mission, compatibility)
+  let requestedImplementationMode
+  let implementationExecution
+  try {
+    requestedImplementationMode = requestedMissionImplementationMode(flags)
+    implementationExecution = missionImplementationProjection(mission)
+  } catch (error) {
+    return fail(flags, error.message)
+  }
+  if (requestedImplementationMode && !implementationExecution) {
+    return fail(
+      flags,
+      'Mission implementation execution can be selected only after the contract is approved; approve first, then choose --inline or --spawned'
+    )
+  }
+  if (implementationExecution?.status === 'pending') {
+    if (!requestedImplementationMode) return emitMissionImplementationChoice(context, flags)
+    try {
+      chooseMissionImplementation(mission, requestedImplementationMode)
+    } catch (error) {
+      return fail(flags, error.message)
+    }
+    mission.next_action = `Continue the ${requestedImplementationMode} Mission controller with specdev mission run ${mission.id}.`
+    delete mission.blocker
+    await writeMission(missionPath, mission)
+    implementationExecution = missionImplementationProjection(mission)
+  } else if (
+    requestedImplementationMode &&
+    requestedImplementationMode !== implementationExecution?.mode
+  ) {
+    return fail(
+      flags,
+      `Mission implementation execution is frozen as ${implementationExecution?.mode}; executor switching is not supported`
+    )
+  }
   if (mission.pending_parallel_user_reapproval) {
     return emitParallelMissionReapprovalGate(context, flags, 'mission run')
   }
@@ -503,24 +545,25 @@ async function runMission(selector, flags) {
       }
       mission.base_branch = git.branch
       await establishMissionBranch(targetDir, mission)
+      const approvedAt = new Date().toISOString()
       const decision = decideGuidedNode(targetDir, 'approve-mission', {
         approved: true,
         contract_hash: contract.hash,
         actor: 'user',
-        approved_at: new Date().toISOString(),
+        approved_at: approvedAt,
         review_override: Boolean(flags['override-review']),
         base_revision: git.revision || 'unborn',
         branch: mission.branch,
       })
       if (!decision.synchronized)
         throw new Error('Could not record Mission approval in the focused workflow')
-      mission.status = 'running'
       mission.approved_contract_hash = contract.hash
       mission.base_revision = git.revision || 'unborn'
-      mission.approved_at = new Date().toISOString()
+      mission.approved_at = approvedAt
       mission.approval_dirty_paths = classifyWorkspaceChanges(git.dirty_paths).projectPaths
       mission.execution_policy = executionPolicy
-      mission.next_action = `Continue the foreground controller with specdev mission run ${mission.id}.`
+      beginMissionImplementationChoice(mission)
+      mission.next_action = `Choose Mission implementation execution with specdev mission run ${mission.id} --inline or specdev mission run ${mission.id} --spawned.`
       delete mission.blocker
       await writeMission(missionPath, mission)
       await retireTransientArtifact(
@@ -528,6 +571,7 @@ async function runMission(selector, flags) {
         specdevPath,
         join(missionPath, 'review', 'brainstorm-baseline.md')
       )
+      return emitMissionImplementationChoice(context, flags)
     }
 
     if (graph.position.node !== 'approve-mission') {
@@ -572,7 +616,12 @@ async function runMission(selector, flags) {
       })
       if (payload?.status !== 'completed') {
         await updateAttemptRecord(specdevPath, controller.id, {
-          status: payload?.status === 'failed' ? 'failed' : 'blocked',
+          status:
+            payload?.status === 'failed'
+              ? 'failed'
+              : payload?.status === 'action_required'
+                ? 'completed'
+                : 'blocked',
         })
       }
       return payload
@@ -626,7 +675,10 @@ async function driveMission(context) {
       await writeMission(missionPath, mission)
     }
     if (graph.position?.graph === 'assignment-lifecycle') {
-      await runMissionChild(context, graph)
+      const childExecution = await runMissionChild(context, graph)
+      if (childExecution.actionRequired) {
+        return emitMissionInlineAction(context, childExecution)
+      }
       continue
     }
     if (node === 'design') {
@@ -665,7 +717,7 @@ async function driveMission(context) {
         follow_up_required: Boolean(gap),
         gap_open: Boolean(gap),
         ...(gap ? { gap_id: gap.id } : {}),
-        parallel: remaining ? missionWaveIsParallel(queue) : false,
+        parallel: remaining ? missionQueueRunsParallel(mission, queue) : false,
       })
       continue
     }
@@ -701,7 +753,7 @@ async function driveMission(context) {
         follow_up_required: Boolean(gap),
         gap_open: Boolean(gap),
         ...(gap ? { gap_id: gap.id } : {}),
-        parallel: remaining ? missionWaveIsParallel(queue) : false,
+        parallel: remaining ? missionQueueRunsParallel(mission, queue) : false,
       })
       continue
     }
@@ -795,7 +847,7 @@ async function driveMission(context) {
         disposition: resolved.disposition,
         gap_open: Boolean(nextGap),
         remaining,
-        parallel: remaining ? missionWaveIsParallel(resolutionQueue) : false,
+        parallel: remaining ? missionQueueRunsParallel(mission, resolutionQueue) : false,
       })
       if (
         ['semantic-failure', 'authority-failure', 'infrastructure-failure'].includes(
@@ -1017,7 +1069,7 @@ async function designMission(context) {
   stepGuidedNode(targetDir, 'design', {
     queue: relativeToRepo(targetDir, queuePath),
     attempt: result.attempt.id,
-    parallel: missionWaveIsParallel(queue),
+    parallel: missionQueueRunsParallel(mission, queue),
   })
   await retireTransientArtifact(targetDir, specdevPath, resultPath)
 }
@@ -1156,6 +1208,7 @@ async function runMissionChild(context, options = {}) {
     await writeAssignmentStatus(assignmentPath, {
       review_policy: reviewPolicy,
       review_policy_frozen_at: approvedAt,
+      implementation_execution: missionChildImplementationExecution(mission),
     })
     await retireTransientArtifact(
       targetDir,
@@ -1173,6 +1226,19 @@ async function runMissionChild(context, options = {}) {
       join(assignmentPath, 'review', 'brainstorm-revision-result.md')
     )
   }
+  const childStatus = await fse.readJson(join(assignmentPath, 'status.json'))
+  const expectedExecution = missionChildImplementationExecution(mission)
+  if (!childStatus.implementation_execution) {
+    await writeAssignmentStatus(assignmentPath, {
+      implementation_execution: expectedExecution,
+    })
+  } else if (
+    childStatus.implementation_execution.effective_mode !== expectedExecution.effective_mode
+  ) {
+    throw new Error(
+      `Mission ${mission.id} child ${child.id} implementation is frozen as ${childStatus.implementation_execution.effective_mode}, not ${expectedExecution.effective_mode}`
+    )
+  }
   let result
   try {
     result = await withSuppressedOutput(() =>
@@ -1182,6 +1248,10 @@ async function runMissionChild(context, options = {}) {
     if (!options.parallelRoot) {
       await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
     }
+  }
+  if (result?.status === 'action_required') {
+    process.exitCode = undefined
+    return { child, assignmentPath, result, actionRequired: true }
   }
   if (result?.status !== 'approved' && result?.status !== 'completed') {
     if (
@@ -1222,6 +1292,9 @@ async function runParallelMissionChild(selector, childId, flags) {
   const context = await missionContext(selector, flags)
   if (!context) return null
   const { targetDir, specdevPath, missionPath, mission } = context
+  if (!missionUsesSpawnedImplementation(mission)) {
+    return fail(flags, 'Inline Mission implementation cannot launch a parallel child process')
+  }
   const queue = await readMissionQueue(missionPath)
   const child = queue?.assignments?.find((item) => item.id === childId)
   if (!child) return fail(flags, `Mission child not found: ${childId}`)
@@ -1298,6 +1371,9 @@ async function runParallelMissionChild(selector, childId, flags) {
 
 async function executeParallelMissionWave(context) {
   const { targetDir, specdevPath, missionPath, mission } = context
+  if (!missionUsesSpawnedImplementation(mission)) {
+    throw new Error('Inline Mission implementation cannot execute a parallel worktree wave')
+  }
   let queue = await readMissionQueue(missionPath)
   validateMissionQueueStatuses(queue)
   normalizeMissionWaves(queue.assignments)
@@ -3511,6 +3587,7 @@ async function missionStatus(selector, flags) {
         ? { attempt: interruptedController.id, state: interruptedController.liveness.state }
         : null,
     last_checkpoint: lastCheckpoint,
+    implementation_execution: missionImplementationProjection(context.mission),
     execution_policy: executionPolicy,
     convergence_disposition: context.mission.convergence_disposition || null,
     successor_adoptions: context.mission.successor_adoptions || [],
@@ -3997,6 +4074,9 @@ function missionNextAction(mission, phase, liveController, interruptedController
   if (mission.status === 'blocked')
     return mission.next_action || `Resolve the blocker, then run specdev mission run ${mission.id}.`
   if (mission.status === 'paused') return `Resume with specdev mission run ${mission.id}.`
+  if (mission.status === 'awaiting_execution_choice') {
+    return `Choose Mission implementation execution with specdev mission run ${mission.id} --inline or specdev mission run ${mission.id} --spawned.`
+  }
   if (phase === 'await-user-reapproval' || mission.status === 'awaiting_user_reapproval') {
     return (
       mission.next_action ||
@@ -4009,6 +4089,61 @@ function missionNextAction(mission, phase, liveController, interruptedController
   if (phase === 'brainstorm')
     return `Finish the Mission contract, then run specdev mission run ${mission.id}.`
   return mission.next_action || `Run specdev mission run ${mission.id}.`
+}
+
+function emitMissionImplementationChoice(context, flags) {
+  const { mission } = context
+  const inline = `specdev mission run ${mission.id} --inline`
+  const spawned = `specdev mission run ${mission.id} --spawned`
+  return emit(flags, {
+    command: 'mission run',
+    version: 2,
+    status: 'awaiting_execution_choice',
+    mission: mission.id,
+    implementation_execution: missionImplementationProjection(mission),
+    choices: [
+      {
+        mode: 'inline',
+        command: inline,
+        effect:
+          'Use the current main coding session for all Mission implementation and repairs; execute children sequentially.',
+      },
+      {
+        mode: 'spawned',
+        command: spawned,
+        effect: 'Use automatic implementation workers and retain eligible parallel waves.',
+      },
+    ],
+    execution_policy: mission.execution_policy || null,
+    next_action: `Choose exactly one: ${inline} or ${spawned}.`,
+  })
+}
+
+async function emitMissionInlineAction(context, childExecution) {
+  const { mission, missionPath, flags } = context
+  const nextCommand = `specdev mission run ${mission.id}`
+  mission.status = 'running'
+  mission.next_action = nextCommand
+  delete mission.blocker
+  await writeMission(missionPath, mission)
+  return emit(flags, {
+    command: 'mission run',
+    version: 2,
+    status: 'action_required',
+    mission: mission.id,
+    assignment: childExecution.child.id,
+    implementation_execution: missionImplementationProjection(mission),
+    child_implementation_execution: childExecution.result.implementation_execution,
+    foreground: {
+      ...childExecution.result.foreground,
+      next_command: nextCommand,
+    },
+    next_action: `Complete the bounded foreground implementation obligations for ${childExecution.child.id}, then run ${nextCommand}.`,
+  })
+}
+
+function missionQueueRunsParallel(mission, queue) {
+  return missionUsesSpawnedImplementation(mission) && missionWaveIsParallel(queue)
 }
 
 async function decideMissionDivergence(selector, flags, decision) {
@@ -4415,6 +4550,32 @@ function emit(flags, payload) {
       )
       for (const decision of policy.preflight.decisions || []) {
         console.log(`Execution decision: ${decision.requirement} — ${decision.action}`)
+      }
+    }
+    if (payload.implementation_execution) {
+      const execution = payload.implementation_execution
+      console.log(
+        `Implementation execution: ${execution.status}${execution.mode ? ` (${execution.mode})` : ''}; owner ${execution.owner}`
+      )
+    }
+    if (payload.choices?.length > 0) {
+      console.log('Implementation choices:')
+      for (const choice of payload.choices) {
+        console.log(`  - ${choice.mode}: ${choice.command}`)
+        console.log(`    ${choice.effect}`)
+      }
+    }
+    if (payload.foreground) {
+      console.log(`Foreground Assignment: ${payload.assignment}`)
+      if (payload.foreground.issue) console.log(`Repair: ${payload.foreground.issue}`)
+      for (const [name, path] of Object.entries(payload.foreground.obligations || {})) {
+        console.log(`${name[0].toUpperCase()}${name.slice(1)}: ${path}`)
+      }
+      if (payload.foreground.context_catalog?.entries?.length > 0) {
+        console.log('Context catalog:')
+        for (const entry of payload.foreground.context_catalog.entries) {
+          console.log(`  - ${entry.identity} | ${entry.path} | ${entry.purpose}`)
+        }
       }
     }
     for (const line of workspaceChangeSummaryLines(payload.dirty_paths)) console.log(line)

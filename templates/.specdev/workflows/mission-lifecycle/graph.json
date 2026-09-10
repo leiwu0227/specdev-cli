@@ -1,6 +1,6 @@
 {
   "id": "mission-lifecycle",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "kind": "workflow",
   "title": "Mission lifecycle",
   "description": "Deliver an approved objective unattended through Assignment waves and durable gap convergence.",
@@ -46,7 +46,7 @@
       "edges": [{ "to": "approve-mission" }]
     },
     "approve-mission": {
-      "purpose": "Approve the exact Mission authority and establish its branch.",
+      "purpose": "Approve the exact Mission authority, establish its branch, and stop for explicit implementation execution choice.",
       "sideChannelActions": [
         {
           "id": "mission-brainstorm-review",
@@ -84,7 +84,7 @@
     },
     "design": {
       "purpose": "Derive one full-scope child by default, or write a justified ordered Assignment queue.",
-      "instructions": "Single-child Design is deterministic; a planned split invokes the worker profile and writes design/assignments.yaml.",
+      "instructions": "Single-child Design is deterministic; a planned split invokes the worker profile and writes design/assignments.yaml. Inline implementation serializes every wave; spawned implementation may select parallel execution.",
       "outputSchema": {
         "type": "object",
         "required": ["queue", "attempt", "parallel"],
@@ -203,8 +203,8 @@
       ]
     },
     "execute-wave": {
-      "purpose": "Run the current independent Assignment wave in bounded isolated worktrees.",
-      "instructions": "The foreground Mission controller launches up to three child Assignment runs, creates reviewed delivery commits, and integrates them in declared order.",
+      "purpose": "Run the current independent spawned Assignment wave in bounded isolated worktrees.",
+      "instructions": "For spawned implementation, the foreground Mission controller launches up to three child Assignment runs, creates reviewed delivery commits, and integrates them in declared order. Inline implementation never enters this node.",
       "outputSchema": {
         "type": "object",
         "required": ["wave", "completed"],

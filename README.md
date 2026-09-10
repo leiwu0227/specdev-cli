@@ -96,9 +96,12 @@ Design and Implementation in the foreground coding session; rerunning the
 command validates its delivery artifacts and starts an independent review.
 Set `implementation.mode: spawned` in `.specdev/agents.yaml` (or use
 `--spawned --execution-reason="..."` before the boundary) for unattended worker
-execution. Mission-controlled children always remain spawned. Both paths keep
-the same acceptance evidence, review, recovery, delivery receipt, and final
-commit guarantees.
+execution. Immediately after Mission contract approval, the user explicitly
+chooses inline or spawned implementation for the whole Mission. Inline keeps all
+implementation and repair work in the current main coding session and executes
+children sequentially; spawned retains automatic workers and eligible parallel
+waves. All paths keep the same acceptance evidence, review, recovery, delivery
+receipt, and final commit guarantees.
 
 Agent profiles in `.specdev/agents.yaml` keep network authority separate from
 filesystem authority. Networking defaults to false for reviewers. A Codex

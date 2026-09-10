@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdtempSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -993,7 +994,7 @@ try {
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
   assert.equal(Object.keys(registry.graphs).length, 8)
   assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.4\.0$/)
-  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.5\.0$/)
+  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.6\.0$/)
   assert.equal(registry.graphs['discussion-lifecycle'].kind, 'callable')
 
   assert.equal(runJson(root, ['next', '--json']).state, 'idle')
@@ -1395,6 +1396,85 @@ try {
     running: 0,
   })
   runJson(root, ['cancel', 'finish mission fixture'])
+
+  const missionChoiceRoot = tempProject('mission-execution-choice')
+  runGit(missionChoiceRoot, ['init', '-b', 'main'])
+  configureGit(missionChoiceRoot)
+  runJson(missionChoiceRoot, ['init', '--platform=none', '--json'])
+  writeBigPicture(missionChoiceRoot)
+  writeFileSync(join(missionChoiceRoot, 'README.md'), '# Mission choice fixture\n', 'utf8')
+  runGit(missionChoiceRoot, ['add', '--all'])
+  runGit(missionChoiceRoot, ['commit', '-m', 'install Mission choice fixture'])
+  const choiceMission = runJson(missionChoiceRoot, [
+    'mission',
+    'create',
+    'Exercise Mission implementation choice',
+    '--json',
+  ])
+  const choiceMissionPath = join(missionChoiceRoot, choiceMission.path)
+  writeMissionContract(choiceMissionPath)
+  runJson(missionChoiceRoot, ['mission', 'run', choiceMission.id, '--json'])
+  const approvedChoice = runJson(missionChoiceRoot, [
+    'mission',
+    'run',
+    choiceMission.id,
+    '--approve',
+    '--json',
+  ])
+  assert.equal(approvedChoice.status, 'awaiting_execution_choice')
+  assert.equal(approvedChoice.implementation_execution.status, 'pending')
+  assert.equal(approvedChoice.implementation_execution.mode, null)
+  assert.deepEqual(
+    approvedChoice.choices.map((choice) => choice.mode),
+    ['inline', 'spawned']
+  )
+  assert.match(approvedChoice.next_action, /--inline/)
+  assert.match(approvedChoice.next_action, /--spawned/)
+  const pendingChoiceStatus = runJson(missionChoiceRoot, [
+    'mission',
+    'status',
+    choiceMission.id,
+    '--json',
+  ])
+  assert.equal(pendingChoiceStatus.status, 'awaiting_execution_choice')
+  assert.equal(pendingChoiceStatus.implementation_execution.owner, 'user')
+  const conflictingChoice = runJson(
+    missionChoiceRoot,
+    ['mission', 'run', choiceMission.id, '--inline', '--spawned', '--json'],
+    1
+  )
+  assert.match(conflictingChoice.error, /choose exactly one/)
+  const inlineMission = runJson(missionChoiceRoot, [
+    'mission',
+    'run',
+    choiceMission.id,
+    '--inline',
+    '--json',
+  ])
+  assert.equal(inlineMission.status, 'action_required')
+  assert.equal(inlineMission.implementation_execution.mode, 'inline')
+  assert.equal(inlineMission.implementation_execution.owner, 'foreground-agent')
+  assert.equal(inlineMission.child_implementation_execution.effective_mode, 'inline')
+  assert.equal(inlineMission.foreground.owner, 'foreground-agent')
+  assert.equal(inlineMission.foreground.next_command, `specdev mission run ${choiceMission.id}`)
+  assert.match(inlineMission.foreground.obligations.result, /worker-result\.md$/)
+  const missionAttemptsPath = join(missionChoiceRoot, '.specdev', 'processes')
+  const missionAttempts = existsSync(missionAttemptsPath)
+    ? readdirSync(missionAttemptsPath).map((name) =>
+        readFileSync(join(missionAttemptsPath, name), 'utf8')
+      )
+    : []
+  assert.equal(
+    missionAttempts.some((attempt) => /^kind: worker$/m.test(attempt)),
+    false
+  )
+  assert.equal(existsSync(join(missionChoiceRoot, '.specdev', 'worktrees')), false)
+  const frozenChoice = runJson(
+    missionChoiceRoot,
+    ['mission', 'run', choiceMission.id, '--spawned', '--json'],
+    1
+  )
+  assert.match(frozenChoice.error, /frozen as inline/)
 
   runJson(root, ['migrate', '--json'])
   runJson(root, [
