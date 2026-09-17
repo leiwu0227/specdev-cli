@@ -1,0 +1,10 @@
+{
+  "id": "00070",
+  "name": "00070_run-missions-on-the-existing-checkout-without-au",
+  "path": ".specdev/assignments/00070_run-missions-on-the-existing-checkout-without-au",
+  "description": "Run Missions on the existing checkout without automatic Git branching or branch-management guidance",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

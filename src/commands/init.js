@@ -384,7 +384,9 @@ agreement run \`specdev mission run M00001 --approve\`.
 Approval stops at an explicit implementation execution choice. Ask the user to
 choose inline or spawned; never infer a default. Run the exact displayed
 \`specdev mission run M00001 --inline\` or \`--spawned\` command. The choice is
-frozen for the whole Mission.
+frozen for the whole Mission. Both modes execute sequential children in the existing
+checkout with local exact-path checkpoints. Workers record final product byte
+identities in progress.json owned_paths before returning completion.
 
 For inline execution, stay in this main coding session. Whenever Mission run
 returns \`action_required\`, read its selective context catalog and owning

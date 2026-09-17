@@ -4,15 +4,13 @@ import { loadGraphPackage, readCheckpoint } from 'ripplegraph'
 import { inspectMissionMigration, readMissionMigrationJournal } from './mission-migration.js'
 
 const CONTROLLER_GRAPH_ID = 'mission-lifecycle'
-const CONTROLLER_GRAPH_VERSION = '1.6.0'
-const MIGRATABLE_GRAPH_VERSIONS = new Set(['1.3.0', '1.4.0', '1.5.0'])
+const CONTROLLER_GRAPH_VERSION = '1.7.0'
+const MIGRATABLE_GRAPH_VERSIONS = new Set(['1.3.0', '1.4.0', '1.5.0', '1.6.0'])
 
 const CONTROLLER_OUTPUTS = {
   'create-mission': [{ id: 'M00001', path: '.specdev/missions/example', objective: 'Example' }],
   brainstorm: [{ contract: 'brainstorm/contract.md', contract_hash: 'sha256' }],
   design: [{ queue: 'design/assignments.yaml', attempt: 'Attempt-00001', parallel: false }],
-  'execute-wave': [{ wave: 1, completed: ['00001'] }],
-  'advance-wave': missionAdvanceOutputs(),
   'advance-queue': missionAdvanceOutputs(),
   'mission-review': [
     missionReviewOutput(true, 'approved'),

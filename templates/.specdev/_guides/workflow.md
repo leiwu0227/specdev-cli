@@ -99,11 +99,14 @@ signal, and terminal semantic, authority, and infrastructure failures remain
 distinct. Immediately after contract approval, the user explicitly chooses
 inline or spawned implementation for the whole Mission; there is no silent
 default. Inline returns every implementation, repair, and resolver obligation to
-the current main coding session and executes children sequentially in the Mission
-worktree. Spawned retains automatic workers. Children that do not depend on one
-another may share a wave, and spawned execution automatically runs up to three in
-validated ignored worktrees before integrating reviewed deliveries in declared
-order. Users do not tune concurrency, and parallel speed is not a split reason.
+the current main coding session. Spawned retains automatic workers. Both execute
+ordered children sequentially in the existing checkout, with local exact-path
+checkpoints. Unadopted dirty product paths block implementation; explicit adoption
+uses an exact JSON path array through `--adopt-paths=<file>`. Child progress
+records `owned_paths` as product paths with their final SHA256 byte identities.
+Unrelated paths and index entries remain untouched. A real starting commit and
+attached checkout are required. History rewrites that lose recorded revisions
+block continuation; status and guarded abandonment remain available.
 
 A planned child may use `execution: evidence-only` only with an exact
 `observation_command` equal to the Mission final-verification command. A

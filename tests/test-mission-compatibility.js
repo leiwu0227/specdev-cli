@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync, execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  realpathSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { parse as parseYaml, stringify } from 'yaml'
@@ -79,8 +87,8 @@ function fixture(version, mutateGraph = (graph) => graph) {
   const graph = mutateGraph(JSON.parse(readFileSync(sourceGraphPath, 'utf8')))
   graph.version = version
   writeFileSync(join(packagePath, 'graph.json'), `${JSON.stringify(graph, null, 2)}\n`, 'utf8')
-  if (version !== '1.6.0') {
-    const targetPath = join(specdevPath, 'workflows', 'mission-lifecycle@1.6.0')
+  if (version !== '1.7.0') {
+    const targetPath = join(specdevPath, 'workflows', 'mission-lifecycle@1.7.0')
     mkdirSync(targetPath, { recursive: true })
     writeFileSync(join(targetPath, 'graph.json'), readFileSync(sourceGraphPath), 'utf8')
   }
@@ -134,9 +142,9 @@ function fixture(version, mutateGraph = (graph) => graph) {
           },
           'mission-lifecycle': {
             id: 'mission-lifecycle',
-            version: '1.6.0',
+            version: '1.7.0',
             kind: 'workflow',
-            path: 'mission-lifecycle@1.6.0',
+            path: 'mission-lifecycle@1.7.0',
           },
           'workspace-dispatcher': {
             id: 'workspace-dispatcher',
@@ -199,6 +207,12 @@ function fixture(version, mutateGraph = (graph) => graph) {
   runGit(root, ['add', '--all'])
   runGit(root, ['commit', '--quiet', '-m', 'fixture'])
   runGit(root, ['branch', '-M', 'main'])
+  mission.checkout = { root: realpathSync(root) }
+  mission.created_revision = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: root,
+    encoding: 'utf8',
+  }).trim()
+  writeFileSync(join(missionPath, 'mission.yaml'), stringify(mission), 'utf8')
   return { root, specdevPath, missionPath, mission }
 }
 
@@ -339,7 +353,7 @@ function preparePreDesign(value, phase, { approved = false, review = false } = {
   if (approved) {
     mission.approved_contract_hash = contractHash
     mission.approved_at = '2026-08-01T00:01:00.000Z'
-    mission.base_revision = 'fixture-base-revision'
+    mission.base_revision = mission.created_revision
   } else {
     delete mission.approved_contract_hash
     delete mission.approved_at
@@ -656,6 +670,34 @@ Evidence is reused without a provider rerun.
 }
 
 try {
+  // A quiescent 1.6 Mission migrates to the new protocol without touching its
+  // immutable pinned package. Parallel child state stays preserved and blocked.
+  const legacy16 = fixture('1.6.0')
+  const legacyPackage = join(
+    legacy16.specdevPath,
+    'workflows',
+    'mission-lifecycle@1.6.0',
+    'graph.json'
+  )
+  const packageBefore = readFileSync(legacyPackage, 'utf8')
+  const migrated16 = await migrateActiveMission(legacy16)
+  assert.equal(migrated16.to.version, '1.7.0')
+  assert.equal(readFileSync(legacyPackage, 'utf8'), packageBefore)
+  const distributed16 = fixture('1.6.0')
+  const distributedQueuePath = join(distributed16.missionPath, 'design', 'assignments.yaml')
+  writeFileSync(
+    distributedQueuePath,
+    stringify({
+      version: 2,
+      design_mode: 'planned',
+      assignments: [{ id: '00001', wave: 1, status: 'running', branch: 'specdev/M00001/00001' }],
+    })
+  )
+  const distributedBefore = readFileSync(distributedQueuePath, 'utf8')
+  const distributedStatus = runJson(distributed16.root, ['mission', 'status', 'M00001', '--json'])
+  assert.equal(distributedStatus.status, 'migration-unsupported')
+  assert.match(distributedStatus.blocker, /00001.*guarded abandonment/)
+  assert.equal(readFileSync(distributedQueuePath, 'utf8'), distributedBefore)
   const followUpRoot = mkdtempSync(join(tmpdir(), 'specdev-child-follow-up-'))
   roots.push(followUpRoot)
   const followUpSpecdevPath = join(followUpRoot, '.specdev')
@@ -779,7 +821,7 @@ try {
   )
   assert.equal(
     readCheckpoint(priorCurrent.specdevPath, priorCurrent.mission.run_id).graphSource.graphVersion,
-    '1.6.0'
+    '1.7.0'
   )
 
   const immediatelyPrior = fixture('1.5.0')
@@ -794,7 +836,7 @@ try {
   assert.equal(
     readCheckpoint(immediatelyPrior.specdevPath, immediatelyPrior.mission.run_id).graphSource
       .graphVersion,
-    '1.6.0'
+    '1.7.0'
   )
   const migratedPriorStatus = runJson(immediatelyPrior.root, [
     'mission',
@@ -809,7 +851,7 @@ try {
   const updateCandidate = preparePreDesign(fixture('1.3.0', knownLegacyGraph), 'brainstorm', {
     review: true,
   })
-  const updateTargetPath = join(updateCandidate.specdevPath, 'workflows', 'mission-lifecycle@1.6.0')
+  const updateTargetPath = join(updateCandidate.specdevPath, 'workflows', 'mission-lifecycle@1.7.0')
   rmSync(updateTargetPath, { recursive: true, force: true })
   const updateMissionBefore = readFileSync(
     join(updateCandidate.missionPath, 'mission.yaml'),
@@ -913,8 +955,8 @@ try {
     expectedCheckpoint.graphSource = {
       kind: 'package',
       graphId: 'mission-lifecycle',
-      graphVersion: '1.6.0',
-      packagePath: 'workflows/mission-lifecycle@1.6.0',
+      graphVersion: '1.7.0',
+      packagePath: 'workflows/mission-lifecycle@1.7.0',
     }
     assert.deepEqual(checkpointAfter, expectedCheckpoint, fixtureCase.phase)
     const journal = JSON.parse(
@@ -987,7 +1029,7 @@ try {
       assert.equal(
         readCheckpoint(interrupted.specdevPath, interrupted.mission.run_id).graphSource
           .graphVersion,
-        '1.6.0'
+        '1.7.0'
       )
       assert.equal(
         readFileSync(join(interrupted.missionPath, 'mission.yaml'), 'utf8'),
@@ -1099,7 +1141,7 @@ try {
   assert.match(unknownStatus.next_action, /specdev mission status M00001 --json/)
   assert.match(unknownStatus.blocker, /workflow-incompatible/)
 
-  const compatible = fixture('1.6.0')
+  const compatible = fixture('1.7.0')
   const compatibleResult = await evaluateMissionCompatibility({
     specdevPath: compatible.specdevPath,
     missionPath: compatible.missionPath,
@@ -1148,7 +1190,7 @@ try {
           id: '00001',
           title: 'Delivered child',
           status: 'integrated',
-          delivery_revision: 'delivery-sha',
+          delivery_revision: preservedMission.created_revision,
         },
       ],
       final_verification: { command: 'node focused-check.js', scope: 'integrated' },
@@ -1194,7 +1236,7 @@ try {
   const migrated = runJson(preserved.root, ['mission', 'migrate', 'M00001', '--json'])
   assert.equal(migrated.status, 'migrated')
   assert.equal(migrated.from.version, '1.3.0')
-  assert.equal(migrated.to.version, '1.6.0')
+  assert.equal(migrated.to.version, '1.7.0')
   assert.equal(migrated.resumed, false)
   assert.equal(migrated.already_migrated, false)
   for (const [id, path] of [
@@ -1208,7 +1250,7 @@ try {
   }
   const migratedCheckpoint = readCheckpoint(preserved.specdevPath, preserved.mission.run_id)
   assert.equal(migratedCheckpoint.runId, preservedCheckpoint.runId)
-  assert.equal(migratedCheckpoint.graphSource.graphVersion, '1.6.0')
+  assert.equal(migratedCheckpoint.graphSource.graphVersion, '1.7.0')
   assert.deepEqual(migratedCheckpoint.outputs, preservedCheckpoint.outputs)
   assert.deepEqual(migratedCheckpoint.gateDecisions, preservedCheckpoint.gateDecisions)
   assert.equal(migratedCheckpoint.createdAt, preservedCheckpoint.createdAt)
@@ -1250,7 +1292,7 @@ try {
   const nestedMigrated = readCheckpoint(nested.specdevPath, nested.mission.run_id)
   assert.deepEqual(nestedMigrated.position, nestedCheckpoint.position)
   assert.equal(nestedMigrated.stack[0].scope, 'f1')
-  assert.equal(nestedMigrated.stack[0].parent.graphSource.graphVersion, '1.6.0')
+  assert.equal(nestedMigrated.stack[0].parent.graphSource.graphVersion, '1.7.0')
   assert.deepEqual(nestedMigrated.stack[0].child, {
     kind: 'package',
     graphId: 'assignment-lifecycle',
@@ -1288,7 +1330,7 @@ try {
     assert.equal(resumed.already_migrated, boundary === 'journal-completed')
     assert.equal(
       readCheckpoint(interrupted.specdevPath, interrupted.mission.run_id).graphSource.graphVersion,
-      '1.6.0'
+      '1.7.0'
     )
     const resumedMission = readMission(interrupted.missionPath)
     assert.equal(resumedMission.pending_transition.node, 'resolve-gap')
@@ -1352,7 +1394,7 @@ try {
   const recoveredCheckpoint = readCheckpoint(terminal.specdevPath, terminal.mission.run_id)
   assert.equal(recoveredCheckpoint.status, 'suspended')
   assert.equal(recoveredCheckpoint.position.node, 'mission-review')
-  assert.equal(recoveredCheckpoint.graphSource.graphVersion, '1.6.0')
+  assert.equal(recoveredCheckpoint.graphSource.graphVersion, '1.7.0')
   assert.equal(recoveredCheckpoint.outputs['resolve-gap'].disposition, 'evidence-closed')
   assert.equal(recoveredCheckpoint.outputs.replan.disposition, 'objective-failure')
   assert.equal(

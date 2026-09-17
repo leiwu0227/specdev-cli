@@ -1,0 +1,42 @@
+---
+verdict: approved
+material_divergence: true
+scope_divergence: material
+procedure_divergence: none
+evidence_integrity: complete
+user_reapproval_required: true
+---
+
+## Findings
+
+No blocking findings. Both prior open items are resolved with exact, observable dispositions, and the five earlier resolved items remain sound against current source. The contract still answers the original request — Missions run on the existing checkout with no SpecDev-created branch, and branch-management guidance is removed — and it is now internally consistent and implementable with existing machinery. Divergence from the frozen baseline is material but sound; it is classified below for the user's approval gate, not as a defect.
+
+### Prior blocking items verified resolved
+
+**B-4 (terminal dead end after a history rewrite) — resolved.** Line 24 now scopes commit containment to "resume, checkpoint discovery used to advance work, and eligible failed-Mission handoff" only; abandonment is removed from that list. Line 25 grants terminal abandonment an explicit containment exemption for new and historical Missions, requires the ancestry discrepancy and the observed current HEAD to be recorded in the immutable record and bound to its confirmation, and states "Do not require restoration of old history to abandon." AC-3 restates the same outcome observably. The asymmetry the prior round flagged against the legacy clause (line 26) is gone: legacy and new Missions now have the same terminal escape.
+
+The exemption is feasible on existing machinery, not an invention. `buildAbandonmentPlan` already captures `head = await requireGitHead(targetDir)` and publishes through `commitExactDelivery` with `expectedHead: plan.mission.head` (`src/commands/mission-abandon.js:180`, `:548-566`), re-checking "HEAD no longer matches the confirmed Mission revision" immediately before committing and closing with a compare-and-swap `update-ref HEAD <new> <expectedHead>` (`src/utils/git-delivery.js:146`). That is exactly the "gated on … current HEAD … bind them to its confirmation" semantics, so "current HEAD" cannot be read as "HEAD equals the recorded Mission revision" — that reading is foreclosed by "Do not require restoration of old history" and by AC-3 requiring abandonment to succeed with unreachable recorded revisions. What changes is dropping the `missionRevision !== head` half of the gate at `:181-187`; the checkout, liveness, ownership (`inspectMissionAttempts`, focus checks at `:150-177`) and cleanliness (`:188-192`) gates the contract retains are all already present. The child-attributability ancestry check at `:314-317` is unaffected by a rewrite on the user's own branch, since child tips still descend from their recorded base.
+
+**M-4 (unborn HEAD) — resolved.** Line 32 now requires "an existing Git HEAD on an attached checkout" for creation and mutating lifecycle operations, rejects unborn and detached checkouts factually before Git or workflow mutation, forbids auto-creating an initial commit or branch, keeps read-only inspection available for legacy records whose recorded start is the `unborn` sentinel (`src/commands/mission.js:493`, `:561`, `:567`, `:3679`; `src/utils/mission-landing.js:90-92`), and states the sentinel never counts as containment evidence. AC-1 makes this observable. The one remaining consequence is handled rather than left open: a legacy `unborn`-start Mission can never satisfy resume containment, and line 32's closing sentence routes it to abandonment on a valid current checkout.
+
+### Prior resolved items re-verified against current source
+
+- B-1 (publication): the single push site is still `src/commands/mission.js:3702-3705`, preceded by the `push_requested` workflow write at `:3671-3681` and by the staging/commit block — so "rejects before staging, committing, or changing workflow state" is orderable as written. No `--push` is issued from any `src/` or `templates/` code path, so the rejection breaks no internal caller.
+- B-2 (exact staging): `commitExactDelivery` seeds a temporary `GIT_INDEX_FILE` from `expectedHead`, asserts the exact staged path set twice, verifies the committed path set, and re-synchronizes only those paths into the real index (`src/utils/git-delivery.js:109-165`). That is precisely how "preserves unrelated working-tree bytes and pre-existing staged changes" is achieved; it replaces the broad `git add -A` at `src/commands/mission.js:3673` that line 21 disclaims.
+- B-3 (`mission land`): the auto-landing call site is still `src/commands/mission.js:372`; the pinned exit 1 / `status: unsupported` / `reason: branch_management_removed` response plus "solely as a compatibility response" and "normal completion/status never suggests landing" jointly retire that call site without ambiguity.
+- M-2 / M-3: branch-keyed gates (`mission.js:606`, `:3347-3352`, `:3671-3672`, `mission-abandon.js:180-187`) have a stated replacement; graph coupling is real (`templates/.specdev/workflows/mission-lifecycle/graph.json:66`, `:75` required `branch` approval field; template at `1.6.0`) and installed packages remain pinned side by side (`mission-lifecycle@1.2.0`–`@1.5.0`); the three named compatibility outcomes match shipped `update-required` / `migration-unsupported` / `migration-required` (`src/utils/mission-compatibility.js:147`, `:160`, `:174`).
+- No-mutation and preservation claims hold: the only worktree-removal and branch-deletion sites are `src/commands/mission.js:1529`, `:1675`, `:1698` and `src/utils/mission-worktrees.js:105`, all inside the parallel-child lifecycle this contract stops creating; abandonment inspects and records child branches/worktrees without deleting them.
+- Verification authority is accurate and complete: all ten proposed test files exist, and sweeping `tests/` for `branch` returns only files already in the list. The two prior outliers remain benign (`tests/test-implement-recovery.js:435` asserts `receipt.worktree.clean`; `tests/test-init-platform.js:335` asserts skill installation, not content). Both Assignments cited in line 9 exist and match their described subjects.
+
+### Non-blocking consequences the user should approve knowingly (no contract change requested)
+
+- Because SpecDev now commits onto the user's own branch, an ordinary `git commit --amend`, `git rebase -i`, or `git pull --rebase` mid-Mission makes recorded revisions unreachable and permanently blocks resume, checkpoint-advance, and handoff. The contract deliberately makes guarded abandonment plus a fresh approved work item the only path forward (line 25, line 26, AC-3) rather than re-anchoring through Mission trailers. That is a decided trade-off, stated observably; it is not a defect.
+- "Recorded checkout identity" is left to design. Line 26's contrast with "work distributed across other checkouts" fixes its meaning as the worktree rather than the branch, which is the reading that keeps the guard consistent with user-owned branch selection. Its failure mode is block-before-mutation and is user-reversible, so it needs no contract text.
+
+### Divergence classification
+
+Material, and the current text is the sounder one. Relative to the frozen baseline: scope adds owned staging/commits, publication removal, and versioned graph contracts (line 13); checkpoint publication changes from "remains available" to removed with a pinned `publishing_removed` rejection (baseline line 20 → line 20); `mission land` changes from an optional compatibility response to a pinned non-mutating one (baseline line 21 → line 22); unborn/detached rejection, the exact owned/adopted staging model, the abandonment ancestry exemption, and the new graph package version are all new; a new user-reserved authority appears ("explicit adoption of pre-existing dirty product paths", line 45); acceptance grows from three criteria to four, and the test list gains `test-mission-environment.js` and `test-mission-gaps.js`. These change behavior, constraints, authority, and acceptance meaning, so `user_reapproval_required` is true — the user should approve the amended text on its merits, not because it differs.
+
+### Process
+
+No tracked file was modified and no test command was run; this Assignment has no test approval and AGENTS.md requires explicit approval, so only read-only inspection was used. The candidate contract hashes to `a9e8e3d7d48aad732ca03943ab51957df0c719f7215e72c092c8d2e6735115a1` as stated; the frozen baseline (`aa759f17f51643cb6d7407eb3a887fe01aa61608c55e88944f3fb007198e0850`) and the prior verdict are both present and intact.

@@ -38,7 +38,7 @@ function run(root, args, expected = 0) {
     cwd: root,
     encoding: 'utf-8',
   })
-  assert.equal(result.status, expected, result.stderr || result.stdout)
+  assert.equal(result.status, expected, result.stderr + result.stdout)
   return result.stdout.trim() ? JSON.parse(result.stdout) : null
 }
 
@@ -470,10 +470,54 @@ executors:
   prepareMissionFixture(guardRoot, join(guardRoot, guardCreated.path), { terminal: false })
   writeFileSync(join(guardRoot, 'README.md'), '# Guard fixture\n\nUncheckpointed product change.\n')
   const refused = run(guardRoot, ['mission', 'run', guardCreated.id, '--json'], 1)
-  assert.match(refused.error, /Mission convergence refuses uncheckpointed product changes/)
+  assert.match(refused.error, /Unadopted dirty product paths/)
   assert.match(refused.error, /README\.md/)
-  assert.match(refused.error, new RegExp(`specdev mission checkpoint ${guardCreated.id}`))
+  assert.match(refused.error, /--adopt-paths/)
 
+  // Both selected execution modes complete locally, without altering Git topology.
+  for (const mode of ['inline', 'spawned']) {
+    const localRoot = mkdtempSync(join(tmpdir(), `specdev-mission-local-${mode}-`))
+    roots.push(localRoot)
+    git(localRoot, ['init', '-b', 'main'])
+    git(localRoot, ['config', 'user.name', 'SpecDev Test'])
+    git(localRoot, ['config', 'user.email', 'specdev@example.test'])
+    run(localRoot, ['init', '--platform=none', '--json'])
+    git(localRoot, ['add', '--all'])
+    git(localRoot, ['commit', '-m', 'initial'])
+    const created = run(localRoot, ['mission', 'create', 'Local completion', '--json'])
+    const path = join(localRoot, created.path)
+    const mission = prepareMissionFixture(localRoot, path, { terminal: false })
+    mission.implementation_execution = {
+      version: 1,
+      status: 'selected',
+      mode,
+      source: 'user',
+      selected_at: new Date().toISOString(),
+    }
+    writeFileSync(join(path, 'mission.yaml'), stringifyYaml(mission))
+    mkdirSync(join(path, 'design'), { recursive: true })
+    mkdirSync(join(path, 'review'), { recursive: true })
+    writeFileSync(
+      join(path, 'design', 'assignments.yaml'),
+      stringifyYaml({
+        version: 2,
+        design_mode: 'single',
+        assignments: [],
+        final_verification: { command: 'node --version', scope: 'integrated' },
+      })
+    )
+    const checkpoint = readCheckpoint(join(localRoot, '.specdev'), mission.run_id)
+    checkpoint.position.node = 'final-verification'
+    writeCheckpoint(join(localRoot, '.specdev'), checkpoint)
+    const completed = run(localRoot, ['mission', 'run', mission.id, '--json'])
+    assert.equal(completed.status, 'completed')
+    assert.equal(completed.landing, undefined)
+    assert.equal(completed.final_revision, git(localRoot, ['rev-parse', 'HEAD']))
+    assert.equal(git(localRoot, ['branch', '--format=%(refname:short)']), 'main')
+    assert.equal(existsSync(join(localRoot, '.specdev', 'worktrees')), false)
+    const repeated = run(localRoot, ['mission', 'run', mission.id, '--json'])
+    assert.equal(repeated.final_revision, completed.final_revision)
+  }
   console.log('Mission environment tests passed.')
 } finally {
   for (const root of roots) rmSync(root, { recursive: true, force: true })

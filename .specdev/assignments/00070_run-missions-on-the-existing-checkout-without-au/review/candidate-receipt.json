@@ -1,0 +1,438 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "fe72439cec24d53c0f8a9382e0ade8b1068203d885f6fd4f5910ce99c0a84145",
+  "assignment": {
+    "id": "00070",
+    "folder": "00070_run-missions-on-the-existing-checkout-without-au"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-17T06:06:03.083Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00070_run-missions-on-the-existing-checkout-without-au/brainstorm/contract.md",
+    "hash": "a9e8e3d7d48aad732ca03943ab51957df0c719f7215e72c092c8d2e6735115a1"
+  },
+  "acceptance": {
+    "total": 4,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Engine integration, graph package, Mission environment and checkout tests; both modes complete locally; attached/real HEAD and removed-command refusals",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Mission checkout tests commit owned bytes while retaining unrelated staged and unstaged bytes and blocking changed ownership digests; integration tests cover dirty refusal and exact adoption",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Compatibility tests cover 1.6→1.7 immutable-package migration and preserved distributed state; abandonment tests cover new and legacy history rewrites; successor and reapproval tests pass",
+        "result": "passed"
+      },
+      {
+        "id": "AC-4",
+        "evidence": "Source/template/help inspection and graph package checks; README, Quickstart, workflow guides, generated Mission skill, and artifact schema updated",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 10,
+    "items": [
+      {
+        "command": "node tests/test-engine-integration.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-engine-graphpackages.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+        "status": "passed",
+        "duration_ms": 125,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-landing.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-compatibility.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-abandonment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-successor-adoption.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-user-reapproval.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-environment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction",
+        "status": "passed",
+        "duration_ms": 34074,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-gaps.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 10,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 10,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-engine-integration.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-engine-graphpackages.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-landing.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-compatibility.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-abandonment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-successor-adoption.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-user-reapproval.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-environment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-gaps.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 30,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "QUICKSTART.md",
+          "README.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "docs",
+        "count": 1,
+        "paths": [
+          "docs/assignment-schema.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 15,
+        "paths": [
+          "src/commands/help.js",
+          "src/commands/implement.js",
+          "src/commands/init.js",
+          "src/commands/mission-abandon.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/assignment-delivery.js"
+        ],
+        "omitted": 8
+      },
+      {
+        "name": "templates",
+        "count": 4,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 3
+      },
+      {
+        "name": "tests",
+        "count": 8,
+        "paths": [
+          "tests/test-engine-graphpackages.js"
+        ],
+        "omitted": 7
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "History rewrites can block continuation and require guarded abandonment and a",
+      "fresh approved work item, as explicitly agreed. Historical parallel Missions",
+      "require separate user-directed recovery. Mission children must record final",
+      "product byte identities in progress.json owned_paths."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00070_run-missions-on-the-existing-checkout-without-au/brainstorm/contract.md",
+      "exists": true,
+      "digest": "a9e8e3d7d48aad732ca03943ab51957df0c719f7215e72c092c8d2e6735115a1"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00070_run-missions-on-the-existing-checkout-without-au/design/plan.md",
+      "exists": true,
+      "digest": "6fee18a00b42838f8d11b1da362775f2dfd5035a31daa1d604f8295bef195cd4"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00070_run-missions-on-the-existing-checkout-without-au/implementation/progress.json",
+      "exists": true,
+      "digest": "d5b2580aaf11d1f73c38c7fc0e5e8a61f7b7a85e49bc1b36b8faba9843bf9ae0"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00070_run-missions-on-the-existing-checkout-without-au/outcome.md",
+      "exists": true,
+      "digest": "02bf7accadfdd62f13a51ceaf5268f255a6dbf569895771f8e28484192196c27"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

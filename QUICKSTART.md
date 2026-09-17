@@ -153,11 +153,9 @@ Mission Design first tries one full-scope Assignment. It splits only for a
 context limit, an information dependency, an intermediate decision, or a
 meaningfully independent verification or rollback boundary.
 
-If several justified children are independent, Design places them in the same
-static wave. The foreground controller automatically leases up to three ignored
-`.specdev/worktrees/slot-N` worktrees and integrates completed deliveries in
-declared order. The user does not choose a concurrency count. A parallel setup
-failure before launch falls back to sequential execution.
+After approval, choose inline or spawned implementation explicitly. Both execute
+children sequentially in the existing checkout. Inline returns work to the main
+coding session; spawned uses automatic workers. Reviewers remain independent.
 
 Useful Mission commands:
 
@@ -165,17 +163,18 @@ Useful Mission commands:
 specdev mission status M00001
 specdev mission approve-divergence M00001 --child=00042 --identity=<sha256>
 specdev mission reject-divergence M00001 --child=00042 --identity=<sha256> --reason="..."
-specdev mission land M00001
 specdev mission pause M00001
 specdev mission run M00001 --takeover
 specdev mission checkpoint M00001
-specdev mission checkpoint M00001 --push
 ```
 
-Mission checkpoints and branches are portable through Git. Raw logs, SQLite,
-PIDs, and worktree slots remain local and ignored. Restart recovery recognizes
-live children, delivery commits, integration conflicts, and interrupted
-two-phase integrations without treating unrelated staged files as its own.
+Mission checkpoints are local commits containing only exact owned paths. A real
+Git HEAD and an attached checkout are required. Unadopted dirty product paths
+block implementation; explicit adoption uses an exact JSON path array with
+`--adopt-paths=<file>`. Workers record product path byte identities in
+`implementation/progress.json` under `owned_paths`; unrelated edits stay outside
+the commit. Missing or unreachable recorded revisions block continuation, while
+inspection and guarded abandonment remain available.
 
 ## 6. Explore concurrently without touching code
 
@@ -251,7 +250,6 @@ compatibility brief.
 | `specdev test-audit "<scope>"`         | Prepare a safe test-pruning proposal             |
 | `specdev mission create "<objective>"` | Create a user-chosen larger objective            |
 | `specdev mission run M00001`           | Run or resume its foreground controller          |
-| `specdev mission land M00001`          | Retry a completed Mission's safe fast-forward    |
 | `specdev reviewloop <phase>`           | Run the configured bounded reviewer loop         |
 | `specdev knowledge rebuild`            | Rebuild disposable SQLite search                 |
 | `specdev knowledge search "<terms>"`   | Precise-default search with explicit broad mode  |

@@ -94,10 +94,10 @@ assert.equal(
 )
 assert.equal(byId['mission-lifecycle'].nodes['advance-queue'].edges[0].when.gap_open, true)
 assert.equal(byId['assignment-lifecycle'].version, '2.4.0')
-assert.equal(byId['mission-lifecycle'].version, '1.6.0')
+assert.equal(byId['mission-lifecycle'].version, '1.7.0')
 assert.deepEqual(validateNestedWorkflowEdges(packages), [])
-assert.ok(byId['mission-lifecycle'].nodes['execute-wave'])
-assert.ok(byId['mission-lifecycle'].nodes['advance-wave'])
+assert.equal(byId['mission-lifecycle'].nodes['execute-wave'], undefined)
+assert.equal(byId['mission-lifecycle'].nodes['advance-wave'], undefined)
 assert.ok(byId['assignment-lifecycle'].nodes.failed.terminal)
 assert.ok(byId['mission-lifecycle'].nodes.failed.terminal)
 assert.equal(
@@ -118,8 +118,10 @@ assert.deepEqual(
   ]
 )
 assert.equal(
-  byId['mission-lifecycle'].nodes['execute-wave'].outputSchema.properties.wave.type,
-  'number'
+  byId['mission-lifecycle'].nodes['approve-mission'].gate.decisionSchema.required.includes(
+    'branch'
+  ),
+  false
 )
 assert.deepEqual(byId['mission-lifecycle'].nodes.design.outputSchema.required, [
   'queue',
@@ -139,7 +141,7 @@ try {
   assert.equal(installed.length, expectedIds.length)
   const catalog = JSON.parse(readFileSync(join(installRoot, 'catalog.json'), 'utf8'))
   assert.equal(catalog.packages['assignment-lifecycle'].path, 'assignment-lifecycle@2.4.0')
-  assert.equal(catalog.packages['mission-lifecycle'].path, 'mission-lifecycle@1.6.0')
+  assert.equal(catalog.packages['mission-lifecycle'].path, 'mission-lifecycle@1.7.0')
   const legacyRoot = join(installRoot, 'assignment-lifecycle@2.3.0')
   const legacyGraph = join(legacyRoot, 'graph.json')
   const legacyBytes = '{"legacy":true}\n'

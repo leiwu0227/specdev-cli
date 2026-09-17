@@ -33,6 +33,8 @@ import {
   updateAttemptRecord,
 } from '../utils/process-record.js'
 
+import { assertMissionCheckout } from '../utils/mission-checkout.js'
+
 const execFile = promisify(execFileCallback)
 const JOURNAL_VERSION = 1
 const COMMIT_TYPE = 'abandonment'
@@ -122,7 +124,7 @@ export async function inspectAbandonedMission(targetDir, mission) {
         targetDir,
         'SpecDev-Abandonment-Plan',
         mission.abandonment.plan_digest,
-        { revision: mission.branch || 'HEAD' }
+        { revision: '--all' }
       )
     : null
   return {
@@ -177,14 +179,9 @@ async function buildAbandonmentPlan(context, reason) {
     )
   }
 
-  const head = await requireGitHead(targetDir)
-  const branch = await currentGitBranch(targetDir)
-  const missionRevision = await branchRevision(targetDir, mission.branch)
-  if (branch !== mission.branch || missionRevision !== head) {
-    throw new Error(
-      `Mission abandonment requires checked-out branch ${mission.branch} at its HEAD; current branch is ${branch || 'detached'}`
-    )
-  }
+  const authority = await assertMissionCheckout(targetDir, mission, { containment: false })
+  const head = authority.checkout.head
+  const branch = authority.checkout.branch
   const dirty = await gitStatusEntries(targetDir)
   if (dirty.length > 0) {
     throw new Error(
@@ -204,9 +201,7 @@ async function buildAbandonmentPlan(context, reason) {
   const baseRevision = mission.base_branch
     ? await branchRevision(targetDir, mission.base_branch)
     : mission.base_revision || null
-  if (mission.base_branch && !baseRevision) {
-    throw new Error(`Mission base branch is missing: ${mission.base_branch}`)
-  }
+
   const missionPathRelative = relativeToRepo(targetDir, missionPath)
   const terminalPaths = await prospectiveTerminalPaths(
     targetDir,
@@ -224,7 +219,10 @@ async function buildAbandonmentPlan(context, reason) {
       path: missionPathRelative,
       status: mission.status,
       run_id: mission.run_id,
-      branch: mission.branch,
+      branch,
+      recorded_branch: mission.branch,
+      revision_facts: authority.revisions,
+      checkout: authority.checkout.root,
       head,
       base_branch: mission.base_branch || null,
       base_revision: baseRevision || mission.base_revision || null,
@@ -242,7 +240,11 @@ async function buildAbandonmentPlan(context, reason) {
       attempts: attempts.facts,
     },
     retained: {
-      mission_branch: { name: mission.branch, revision: head },
+      revision_facts: authority.revisions,
+      mission_branch: {
+        name: mission.branch,
+        revision: await branchRevision(targetDir, mission.branch),
+      },
       base_branch: { name: mission.base_branch || null, revision: baseRevision || null },
       child_branches: children,
       child_worktrees: worktrees,
@@ -721,7 +723,7 @@ function renderArtifact(mission, abandonment) {
           `- Child ${item.assignment}: \`${item.path}\` on \`${item.branch}\` at \`${item.revision}\``
       )
     : ['- None registered']
-  return `# Abandoned Mission\n\n- Mission: ${mission.id}\n- Disposition: abandoned (terminal and immutable)\n- Abandoned at: ${abandonment.abandoned_at}\n- Reason: ${abandonment.reason}\n- Prior lifecycle: ${abandonment.source_lifecycle.status} (run ${abandonment.source_lifecycle.run_id}; ${abandonment.source_lifecycle.run_status})\n- Plan digest: \`${abandonment.plan_digest}\`\n- Delivery: none\n\n## Retained Git identities\n\n${branches.join('\n')}\n\n## Retained child worktrees\n\n${worktrees.join('\n')}\n\n## Terminal result\n\nNo partial work was landed, merged, deleted, or reinterpreted as success. The retained identities above remain available for explicit inspection or later user-directed cleanup.\n`
+  return `# Abandoned Mission\n\n- Mission: ${mission.id}\n- Disposition: abandoned (terminal and immutable)\n- Abandoned at: ${abandonment.abandoned_at}\n- Reason: ${abandonment.reason}\n- Prior lifecycle: ${abandonment.source_lifecycle.status} (run ${abandonment.source_lifecycle.run_id}; ${abandonment.source_lifecycle.run_status})\n- Plan digest: \`${abandonment.plan_digest}\`\n- Delivery: none\n\n## Retained Git identities\n\n${branches.join('\n')}\n\n## Revision containment at abandonment\n\n${JSON.stringify(abandonment.retained.revision_facts || [])}\n\n## Retained child worktrees\n\n${worktrees.join('\n')}\n\n## Terminal result\n\nNo partial work was landed, merged, deleted, or reinterpreted as success. The retained identities above remain available for explicit inspection or later user-directed cleanup.\n`
 }
 
 function planned(plan, flags) {

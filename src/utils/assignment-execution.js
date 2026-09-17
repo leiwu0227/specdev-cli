@@ -144,6 +144,8 @@ export async function inlineImplementationObligations({
     },
     verification:
       'Run only repository-authorized focused verification and record every receipt in implementation/progress.json.',
+    mission_ownership:
+      'For a Mission child, progress.json must include owned_paths: [{path, sha256}]. Hash the final bytes prefixed with file: (executable: for executable files), symlink: plus link target for symlinks, or null for deletion. Include only owned product paths; use [] for no product edits. Later overlapping edits block delivery.',
     next_command: 'specdev implement',
   }
 }

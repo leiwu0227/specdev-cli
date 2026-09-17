@@ -22,6 +22,8 @@ import { compactCompletedWorkflowRuntime, retireTransientArtifact } from './arti
 import { attemptActivitySummary } from './process-record.js'
 import { parseResultEnvelope } from './result-envelope.js'
 import { validateDeliveryArtifacts } from './delivery-artifacts.js'
+import { resolveMissionSelector, readMission } from './mission.js'
+import { assertMissionCheckout } from './mission-checkout.js'
 
 const RECEIPT_LIMITS = Object.freeze({ items: 12, groups: 8, text: 240 })
 
@@ -217,6 +219,31 @@ export async function ensureAssignmentGitBoundary({
   adoptDirty = false,
 }) {
   if (assignmentStatus?.mission) {
+    const resolved = await resolveMissionSelector(specdevPath, assignmentStatus.mission)
+    if (!resolved || resolved.ambiguous)
+      throw new Error('Mission child has ambiguous parent authority')
+    const mission = await readMission(resolved.path)
+    await assertMissionCheckout(targetDir, mission)
+    if (!assignmentStatus.git_boundary) {
+      const dirty = (await gitStatusPaths(targetDir)).filter(
+        (path) => !path.startsWith('.specdev/')
+      )
+      const adopted = new Set(mission.product_boundary?.adopted_paths || [])
+      const unrelated = dirty.filter((path) => !adopted.has(path))
+      if (unrelated.length)
+        return {
+          ok: false,
+          state: 'dirty_worktree',
+          next_action: `Unadopted dirty product paths: ${unrelated.join(', ')}`,
+        }
+      await writeAssignmentStatus(assignmentPath, {
+        git_boundary: {
+          starting_git_commit_hash: await requireGitHead(targetDir),
+          adopted_paths: dirty,
+          established_at: new Date().toISOString(),
+        },
+      })
+    }
     if (implementationExecution && !assignmentStatus?.implementation_execution) {
       await writeAssignmentStatus(assignmentPath, {
         implementation_execution: implementationExecution,

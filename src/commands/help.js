@@ -48,6 +48,5 @@ export function helpCommand(flags = {}) {
     '  specdev mission reject-divergence M00001 --child=00042 --identity=<sha256> --reason="..."',
     '  specdev mission handoff M00001 --successor-assignment',
     '  specdev mission adopt-successor M00001 --assignment=00042',
-    '  specdev mission land M00001',
   ])
 }

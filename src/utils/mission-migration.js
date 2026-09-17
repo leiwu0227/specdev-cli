@@ -1,3 +1,4 @@
+import { assertMissionCheckout, assertSequentialMission } from './mission-checkout.js'
 import { createHash } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import { join, relative, resolve, sep } from 'node:path'
@@ -10,8 +11,8 @@ import { readAttemptRecord } from './process-record.js'
 
 const GRAPH_ID = 'mission-lifecycle'
 const SOURCE_VERSION = '1.3.0'
-const SOURCE_VERSIONS = new Set(['1.3.0', '1.4.0', '1.5.0'])
-const TARGET_VERSION = '1.6.0'
+const SOURCE_VERSIONS = new Set(['1.3.0', '1.4.0', '1.5.0', '1.6.0'])
+const TARGET_VERSION = '1.7.0'
 const TARGET_PACKAGE_PATH = `workflows/${GRAPH_ID}@${TARGET_VERSION}`
 const ASSIGNMENT_GRAPH_ID = 'assignment-lifecycle'
 const ASSIGNMENT_TARGET_VERSION = '2.3.0'
@@ -346,6 +347,8 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
   const targetPackage = loadPinnedPackage(specdevPath, TARGET_PACKAGE_PATH, TARGET_VERSION)
   if (journal) validateJournal(journal, mission)
 
+  const authority = await assertMissionCheckout(resolve(specdevPath, '..'), currentMission)
+  await assertSequentialMission(missionPath, currentMission)
   const queue = await validatePhaseArtifacts(missionPath, currentMission, mode)
   if (journal?.recovery) {
     return resumeTerminalRecoveryPlan({
@@ -388,6 +391,7 @@ async function planMigration({ specdevPath, missionPath, mission, checkpoint, jo
       journal && digest(currentMission) === journal.target.mission_digest
     ),
   })
+  missionMapping.targetMission.checkout = { root: authority.checkout.root }
   const targetCheckpoint = mapCheckpoint(checkpoint, targetPackage.manifest)
   validateMappedPosition(targetCheckpoint, targetPackage.manifest)
   validateDurablePosition(specdevPath, targetCheckpoint, targetPackage.manifest)

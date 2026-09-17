@@ -24,7 +24,7 @@
   knowledge-curations/KC-<hash>.json   verified publication receipts
   processes/ATT-<id>.yaml              durable invocation summaries
   cache/                               ignored machine-local state
-  worktrees/slot-N/                    ignored, bounded Mission child leases
+  worktrees/                          retained historical child checkouts
 ```
 
 ## Main commands

@@ -1,9 +1,9 @@
 {
   "id": "mission-lifecycle",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "kind": "workflow",
   "title": "Mission lifecycle",
-  "description": "Deliver an approved objective unattended through Assignment waves and durable gap convergence.",
+  "description": "Deliver an approved objective in the existing checkout through sequential Assignments and durable gap convergence.",
   "activationHints": ["mission", "large objective", "multi assignment change"],
   "entry": "create-mission",
   "nodes": {
@@ -14,16 +14,26 @@
         "type": "object",
         "required": ["id", "path", "objective"],
         "properties": {
-          "id": { "type": "string" },
-          "path": { "type": "string" },
-          "objective": { "type": "string" }
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "objective": {
+            "type": "string"
+          }
         }
       },
       "operatorContext": {
         "phase": "mission",
         "command": "specdev mission create \"<objective>\""
       },
-      "edges": [{ "to": "brainstorm" }]
+      "edges": [
+        {
+          "to": "brainstorm"
+        }
+      ]
     },
     "brainstorm": {
       "purpose": "Collaborate with the user on the Mission contract.",
@@ -32,8 +42,12 @@
         "type": "object",
         "required": ["contract", "contract_hash"],
         "properties": {
-          "contract": { "type": "string" },
-          "contract_hash": { "type": "string" }
+          "contract": {
+            "type": "string"
+          },
+          "contract_hash": {
+            "type": "string"
+          }
         }
       },
       "sideChannelActions": [
@@ -42,11 +56,18 @@
           "purpose": "Run optional Mission contract review without advancing approval."
         }
       ],
-      "operatorContext": { "phase": "brainstorm", "command": "specdev mission run <id>" },
-      "edges": [{ "to": "approve-mission" }]
+      "operatorContext": {
+        "phase": "brainstorm",
+        "command": "specdev mission run <id>"
+      },
+      "edges": [
+        {
+          "to": "approve-mission"
+        }
+      ]
     },
     "approve-mission": {
-      "purpose": "Approve the exact Mission authority, establish its branch, and stop for explicit implementation execution choice.",
+      "purpose": "Approve exact Mission authority on the existing checkout and stop for explicit implementation execution choice.",
       "sideChannelActions": [
         {
           "id": "mission-brainstorm-review",
@@ -57,72 +78,141 @@
         "type": "external_decision",
         "decisionSchema": {
           "type": "object",
-          "required": [
-            "approved",
-            "contract_hash",
-            "actor",
-            "approved_at",
-            "base_revision",
-            "branch"
-          ],
+          "required": ["approved", "contract_hash", "actor", "approved_at", "base_revision"],
           "properties": {
-            "approved": { "type": "boolean" },
-            "contract_hash": { "type": "string" },
-            "actor": { "type": "string" },
-            "approved_at": { "type": "string" },
-            "review_override": { "type": "boolean" },
-            "base_revision": { "type": "string" },
-            "branch": { "type": "string" }
+            "approved": {
+              "type": "boolean"
+            },
+            "contract_hash": {
+              "type": "string"
+            },
+            "actor": {
+              "type": "string"
+            },
+            "approved_at": {
+              "type": "string"
+            },
+            "review_override": {
+              "type": "boolean"
+            },
+            "base_revision": {
+              "type": "string"
+            }
           }
         }
       },
-      "operatorContext": { "phase": "brainstorm", "command": "specdev mission run <id> --approve" },
+      "operatorContext": {
+        "phase": "brainstorm",
+        "command": "specdev mission run <id> --approve"
+      },
       "edges": [
-        { "to": "design", "when": { "approved": true } },
-        { "to": "brainstorm", "when": { "approved": false } }
+        {
+          "to": "design",
+          "when": {
+            "approved": true
+          }
+        },
+        {
+          "to": "brainstorm",
+          "when": {
+            "approved": false
+          }
+        }
       ]
     },
     "design": {
       "purpose": "Derive one full-scope child by default, or write a justified ordered Assignment queue.",
-      "instructions": "Single-child Design is deterministic; a planned split invokes the worker profile and writes design/assignments.yaml. Inline implementation serializes every wave; spawned implementation may select parallel execution.",
+      "instructions": "Single-child Design is deterministic; a justified split writes an ordered queue. Both implementation modes execute children sequentially in the existing checkout.",
       "outputSchema": {
         "type": "object",
         "required": ["queue", "attempt", "parallel"],
         "properties": {
-          "queue": { "type": "string" },
-          "attempt": { "type": "string" },
-          "parallel": { "type": "boolean" }
+          "queue": {
+            "type": "string"
+          },
+          "attempt": {
+            "type": "string"
+          },
+          "parallel": {
+            "const": false
+          }
         }
       },
-      "operatorContext": { "phase": "design" },
+      "operatorContext": {
+        "phase": "design"
+      },
       "edges": [
-        { "to": "execute-wave", "when": { "parallel": true } },
-        { "to": "child-assignment", "when": { "parallel": false } }
+        {
+          "to": "child-assignment",
+          "when": {
+            "parallel": false
+          }
+        }
       ]
     },
     "child-assignment": {
       "purpose": "Run the next pending child through the normal Assignment lifecycle.",
-      "workflowRef": { "graphId": "assignment-lifecycle" },
-      "operatorContext": { "phase": "child-assignment" },
+      "workflowRef": {
+        "graphId": "assignment-lifecycle"
+      },
+      "operatorContext": {
+        "phase": "child-assignment"
+      },
       "edges": [
-        { "to": "advance-queue", "when": { "disposition": "approved" } },
         {
           "to": "advance-queue",
-          "when": { "disposition": "nonblocking-override" }
+          "when": {
+            "disposition": "approved"
+          }
         },
         {
           "to": "advance-queue",
-          "when": { "disposition": "approved-with-user-reapproval" }
+          "when": {
+            "disposition": "nonblocking-override"
+          }
+        },
+        {
+          "to": "advance-queue",
+          "when": {
+            "disposition": "approved-with-user-reapproval"
+          }
         },
         {
           "to": "await-user-reapproval",
-          "when": { "disposition": "awaiting-user-reapproval" }
+          "when": {
+            "disposition": "awaiting-user-reapproval"
+          }
         },
-        { "to": "resolve-gap", "when": { "disposition": "repair" } },
-        { "to": "resolve-gap", "when": { "disposition": "objective-failure" } },
-        { "to": "resolve-gap", "when": { "disposition": "semantic-failure" } },
-        { "to": "failed", "when": { "disposition": "authority-failure" } },
-        { "to": "failed", "when": { "disposition": "infrastructure-failure" } }
+        {
+          "to": "resolve-gap",
+          "when": {
+            "disposition": "repair"
+          }
+        },
+        {
+          "to": "resolve-gap",
+          "when": {
+            "disposition": "objective-failure"
+          }
+        },
+        {
+          "to": "resolve-gap",
+          "when": {
+            "disposition": "semantic-failure"
+          }
+        },
+        {
+          "to": "failed",
+          "when": {
+            "disposition": "authority-failure"
+          }
+        },
+        {
+          "to": "failed",
+          "when": {
+            "disposition": "infrastructure-failure"
+          }
+        }
       ]
     },
     "await-user-reapproval": {
@@ -141,17 +231,31 @@
             "decided_at"
           ],
           "properties": {
-            "approved": { "type": "boolean" },
+            "approved": {
+              "type": "boolean"
+            },
             "disposition": {
               "type": "string",
               "enum": ["approved-with-user-reapproval", "repair", "authority-failure"]
             },
-            "mission": { "type": "string" },
-            "child": { "type": "string" },
-            "identity": { "type": "string" },
-            "actor": { "type": "string" },
-            "decided_at": { "type": "string" },
-            "reason": { "type": "string" }
+            "mission": {
+              "type": "string"
+            },
+            "child": {
+              "type": "string"
+            },
+            "identity": {
+              "type": "string"
+            },
+            "actor": {
+              "type": "string"
+            },
+            "decided_at": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            }
           }
         }
       },
@@ -162,15 +266,24 @@
       "edges": [
         {
           "to": "advance-queue",
-          "when": { "approved": true, "disposition": "approved-with-user-reapproval" }
+          "when": {
+            "approved": true,
+            "disposition": "approved-with-user-reapproval"
+          }
         },
         {
           "to": "resolve-gap",
-          "when": { "approved": false, "disposition": "repair" }
+          "when": {
+            "approved": false,
+            "disposition": "repair"
+          }
         },
         {
           "to": "failed",
-          "when": { "approved": false, "disposition": "authority-failure" }
+          "when": {
+            "approved": false,
+            "disposition": "authority-failure"
+          }
         }
       ]
     },
@@ -180,68 +293,49 @@
         "type": "object",
         "required": ["remaining", "completed", "follow_up_required", "gap_open", "parallel"],
         "properties": {
-          "remaining": { "type": "boolean" },
-          "completed": { "type": "string" },
-          "follow_up_required": { "type": "boolean" },
-          "gap_open": { "type": "boolean" },
-          "gap_id": { "type": "string" },
-          "parallel": { "type": "boolean" }
+          "remaining": {
+            "type": "boolean"
+          },
+          "completed": {
+            "type": "string"
+          },
+          "follow_up_required": {
+            "type": "boolean"
+          },
+          "gap_open": {
+            "type": "boolean"
+          },
+          "gap_id": {
+            "type": "string"
+          },
+          "parallel": {
+            "const": false
+          }
         }
       },
-      "operatorContext": { "phase": "mission" },
+      "operatorContext": {
+        "phase": "mission"
+      },
       "edges": [
-        { "to": "resolve-gap", "when": { "gap_open": true } },
         {
-          "to": "execute-wave",
-          "when": { "remaining": true, "parallel": true }
+          "to": "resolve-gap",
+          "when": {
+            "gap_open": true
+          }
         },
         {
           "to": "child-assignment",
-          "when": { "remaining": true, "parallel": false }
-        },
-        { "to": "mission-review", "when": { "remaining": false } }
-      ]
-    },
-    "execute-wave": {
-      "purpose": "Run the current independent spawned Assignment wave in bounded isolated worktrees.",
-      "instructions": "For spawned implementation, the foreground Mission controller launches up to three child Assignment runs, creates reviewed delivery commits, and integrates them in declared order. Inline implementation never enters this node.",
-      "outputSchema": {
-        "type": "object",
-        "required": ["wave", "completed"],
-        "properties": {
-          "wave": { "type": "number" },
-          "completed": { "type": "array", "items": { "type": "string" } }
-        }
-      },
-      "operatorContext": { "phase": "parallel-wave" },
-      "edges": [{ "to": "advance-wave" }]
-    },
-    "advance-wave": {
-      "purpose": "Record the integrated wave and select the next sequential or parallel stage.",
-      "outputSchema": {
-        "type": "object",
-        "required": ["remaining", "completed", "follow_up_required", "gap_open", "parallel"],
-        "properties": {
-          "remaining": { "type": "boolean" },
-          "completed": { "type": "string" },
-          "follow_up_required": { "type": "boolean" },
-          "gap_open": { "type": "boolean" },
-          "gap_id": { "type": "string" },
-          "parallel": { "type": "boolean" }
-        }
-      },
-      "operatorContext": { "phase": "mission" },
-      "edges": [
-        { "to": "resolve-gap", "when": { "gap_open": true } },
-        {
-          "to": "execute-wave",
-          "when": { "remaining": true, "parallel": true }
+          "when": {
+            "remaining": true,
+            "parallel": false
+          }
         },
         {
-          "to": "child-assignment",
-          "when": { "remaining": true, "parallel": false }
-        },
-        { "to": "mission-review", "when": { "remaining": false } }
+          "to": "mission-review",
+          "when": {
+            "remaining": false
+          }
+        }
       ]
     },
     "mission-review": {
@@ -250,22 +344,44 @@
         "type": "object",
         "required": ["approved", "verdict", "attempt", "disposition"],
         "properties": {
-          "approved": { "type": "boolean" },
-          "verdict": { "type": "string" },
-          "attempt": { "type": "string" },
+          "approved": {
+            "type": "boolean"
+          },
+          "verdict": {
+            "type": "string"
+          },
+          "attempt": {
+            "type": "string"
+          },
           "disposition": {
             "type": "string",
             "enum": ["approved", "nonblocking-override", "repair", "semantic-failure"]
           }
         }
       },
-      "operatorContext": { "phase": "mission-review" },
+      "operatorContext": {
+        "phase": "mission-review"
+      },
       "edges": [
-        { "to": "final-verification", "when": { "approved": true } },
-        { "to": "resolve-gap", "when": { "approved": false, "disposition": "repair" } },
+        {
+          "to": "final-verification",
+          "when": {
+            "approved": true
+          }
+        },
+        {
+          "to": "resolve-gap",
+          "when": {
+            "approved": false,
+            "disposition": "repair"
+          }
+        },
         {
           "to": "failed",
-          "when": { "approved": false, "disposition": "semantic-failure" }
+          "when": {
+            "approved": false,
+            "disposition": "semantic-failure"
+          }
         }
       ]
     },
@@ -285,17 +401,31 @@
           "parallel"
         ],
         "properties": {
-          "queue": { "type": "string" },
-          "reason": { "type": "string" },
-          "gap_id": { "type": "string" },
+          "queue": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "gap_id": {
+            "type": "string"
+          },
           "stage": {
             "type": "string",
             "enum": ["resolution", "resolver", "arbiter"]
           },
-          "attempt": { "type": "string" },
-          "gap_open": { "type": "boolean" },
-          "remaining": { "type": "boolean" },
-          "parallel": { "type": "boolean" },
+          "attempt": {
+            "type": "string"
+          },
+          "gap_open": {
+            "type": "boolean"
+          },
+          "remaining": {
+            "type": "boolean"
+          },
+          "parallel": {
+            "const": false
+          },
           "disposition": {
             "type": "string",
             "enum": [
@@ -308,20 +438,21 @@
           }
         }
       },
-      "operatorContext": { "phase": "gap-resolution" },
+      "operatorContext": {
+        "phase": "gap-resolution"
+      },
       "edges": [
-        { "to": "child-assignment", "when": { "disposition": "resolution-added" } },
         {
-          "to": "resolve-gap",
-          "when": { "disposition": "evidence-closed", "gap_open": true }
+          "to": "child-assignment",
+          "when": {
+            "disposition": "resolution-added"
+          }
         },
         {
-          "to": "execute-wave",
+          "to": "resolve-gap",
           "when": {
             "disposition": "evidence-closed",
-            "gap_open": false,
-            "remaining": true,
-            "parallel": true
+            "gap_open": true
           }
         },
         {
@@ -341,9 +472,24 @@
             "remaining": false
           }
         },
-        { "to": "failed", "when": { "disposition": "semantic-failure" } },
-        { "to": "failed", "when": { "disposition": "authority-failure" } },
-        { "to": "failed", "when": { "disposition": "infrastructure-failure" } }
+        {
+          "to": "failed",
+          "when": {
+            "disposition": "semantic-failure"
+          }
+        },
+        {
+          "to": "failed",
+          "when": {
+            "disposition": "authority-failure"
+          }
+        },
+        {
+          "to": "failed",
+          "when": {
+            "disposition": "infrastructure-failure"
+          }
+        }
       ]
     },
     "final-verification": {
@@ -352,19 +498,38 @@
         "type": "object",
         "required": ["passed", "receipt", "recoverable"],
         "properties": {
-          "passed": { "type": "boolean" },
-          "receipt": { "type": "string" },
-          "recoverable": { "type": "boolean" }
+          "passed": {
+            "type": "boolean"
+          },
+          "receipt": {
+            "type": "string"
+          },
+          "recoverable": {
+            "type": "boolean"
+          }
         }
       },
-      "operatorContext": { "phase": "verification" },
+      "operatorContext": {
+        "phase": "verification"
+      },
       "edges": [
-        { "to": "done", "when": { "passed": true } },
-        { "to": "resolve-gap", "when": { "passed": false, "recoverable": true } }
+        {
+          "to": "done",
+          "when": {
+            "passed": true
+          }
+        },
+        {
+          "to": "resolve-gap",
+          "when": {
+            "passed": false,
+            "recoverable": true
+          }
+        }
       ]
     },
     "done": {
-      "purpose": "Mission lifecycle is complete on its Mission branch.",
+      "purpose": "Mission lifecycle is complete at its local completion commit.",
       "terminal": true
     },
     "failed": {

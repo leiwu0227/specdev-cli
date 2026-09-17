@@ -1,8 +1,6 @@
 import { spawn } from 'node:child_process'
 import { execFile as execFileCallback } from 'node:child_process'
-import { createWriteStream } from 'node:fs'
 import { basename, join, resolve, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
 import {
@@ -76,23 +74,17 @@ import {
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import {
   currentMissionWave,
-  integratableMissionPrefix,
-  MAX_PARALLEL_MISSION_CHILDREN,
-  missionIntegrationRecoveryAction,
   missionQueueHasRemaining,
-  missionWaveItems,
-  missionWaveIsParallel,
   normalizeMissionWaves,
-  validateMissionQueueStatuses,
 } from '../utils/mission-waves.js'
 import {
-  createMissionChildDelivery,
-  ensureMissionWorktree,
-  listMissionWorktrees,
-  missionChildBranch,
-  removeMissionWorktree,
-} from '../utils/mission-worktrees.js'
-import { inspectMissionLanding, landMission } from '../utils/mission-landing.js'
+  assertMissionCheckout,
+  assertSequentialMission,
+  missionCheckout,
+  missionRevisionFacts,
+} from '../utils/mission-checkout.js'
+import { commitExactDelivery, findCommitsByTrailer } from '../utils/git-delivery.js'
+import { missionOwnedPaths, ensureMissionProductBoundary } from '../utils/mission-ownership.js'
 import { assignmentCommand } from './assignment.js'
 import { checkpointCommand } from './checkpoint.js'
 import { implementCommand } from './implement.js'
@@ -149,7 +141,6 @@ import {
   chooseMissionImplementation,
   missionChildImplementationExecution,
   missionImplementationProjection,
-  missionUsesSpawnedImplementation,
   requestedMissionImplementationMode,
 } from '../utils/mission-implementation.js'
 import {
@@ -165,22 +156,48 @@ import {
 } from './mission-abandon.js'
 
 const execFile = promisify(execFileCallback)
-const LOCAL_SPECDEV_BIN = fileURLToPath(new URL('../../bin/specdev.js', import.meta.url))
 
 export async function missionCommand(positionalArgs = [], flags = {}) {
   const subcommand = positionalArgs[0]
   const rest = positionalArgs.slice(1)
-  if (subcommand === 'child' && process.env.SPECDEV_PARALLEL_CHILD === '1') {
-    return runParallelMissionChild(rest[0], rest[1], flags)
+  if (subcommand === 'land') return missionLand(rest[0], flags)
+  if (subcommand === 'checkpoint' && flags.push) {
+    process.exitCode = 1
+    return emit(flags, {
+      command: 'mission checkpoint',
+      status: 'unsupported',
+      reason: 'publishing_removed',
+      error: 'Mission checkpoints are local; SpecDev no longer publishes them.',
+    })
+  }
+  if (subcommand === 'child')
+    return fail(
+      flags,
+      'Parallel Mission execution is no longer supported; historical work is preserved'
+    )
+  if (subcommand !== 'status' && subcommand !== 'create') {
+    const context = await missionContext(rest[0], flags)
+    if (!context) return null
+    try {
+      if (!['failed', 'abandoned'].includes(context.mission.status) || subcommand !== 'run') {
+        await assertMissionCheckout(context.targetDir, context.mission, {
+          containment: subcommand !== 'abandon',
+        })
+        if (subcommand !== 'abandon')
+          await assertSequentialMission(context.missionPath, context.mission)
+      }
+    } catch (error) {
+      return fail(flags, error.message)
+    }
   }
   if (subcommand === 'create') return createMission(rest, flags)
   if (subcommand === 'run') return runMission(rest[0], flags)
   if (subcommand === 'abandon') return abandonMission(rest[0], flags)
   if (subcommand === 'migrate') return migrateMission(rest[0], flags)
   if (subcommand === 'status') return missionStatus(rest[0], flags)
-  if (subcommand === 'land') return missionLand(rest[0], flags)
   if (subcommand === 'pause') return pauseMission(rest[0], flags)
-  if (subcommand === 'checkpoint') return checkpointMission(rest[0], flags)
+  if (subcommand === 'checkpoint')
+    return checkpointMission(rest[0], flags).catch((error) => fail(flags, error.message))
   if (subcommand === 'handoff') return handoffMission(rest[0], flags)
   if (subcommand === 'adopt-successor') return adoptMissionSuccessor(rest[0], flags)
   if (subcommand === 'approve-divergence') {
@@ -278,6 +295,21 @@ async function createMission(args, flags) {
   if (!(await gitSucceeds(targetDir, ['rev-parse', '--is-inside-work-tree']))) {
     return fail(flags, 'A Mission requires a Git worktree')
   }
+  let checkout
+  try {
+    checkout = await missionCheckout(targetDir)
+  } catch (error) {
+    return fail(flags, error.message)
+  }
+  const catalog = await fse.readJson(join(specdevPath, 'workflows', 'catalog.json'))
+  if (catalog.packages?.['mission-lifecycle']?.version !== '1.7.0') {
+    return emit(flags, {
+      command: 'mission create',
+      status: 'update-required',
+      next_action: 'specdev update',
+      blocker: 'New Missions require mission-lifecycle@1.7.0; no Mission state was created.',
+    })
+  }
   let source
   try {
     source = await resolveSourceDiscussion(targetDir, specdevPath, flags['from-discussion'], flags)
@@ -301,7 +333,7 @@ async function createMission(args, flags) {
   const name = `${id}_${slugify(objective)}`
   const missionPath = join(specdevPath, 'missions', name)
   const git = await gitSnapshot(targetDir)
-  const branch = `specdev/${id}-${slugify(objective).slice(0, 32)}`
+  const branch = git.branch
   await fse.ensureDir(join(missionPath, 'brainstorm'))
   let contract = assignmentContractTemplate({
     description: objective,
@@ -319,6 +351,7 @@ async function createMission(args, flags) {
     objective,
     status: 'brainstorming',
     run_id: guided.state.run.id,
+    checkout: { root: checkout.root },
     base_branch: git.branch,
     created_revision: git.revision,
     base_revision: null,
@@ -369,7 +402,8 @@ async function runMission(selector, flags) {
       terminalOwner: { mission: mission.id, status: 'completed' },
       focus: { kind: 'mission', id: mission.id },
     })
-    const landing = await missionLanding(context, { attempt: true })
+    const finalRevision =
+      mission.final_revision || (await latestMissionCompletionRevision(targetDir, null, mission.id))
     return emit(flags, {
       command: 'mission run',
       version: 1,
@@ -377,9 +411,8 @@ async function runMission(selector, flags) {
       mission: mission.id,
       branch: mission.branch,
       base_branch: mission.base_branch,
-      final_revision: landing.final_revision,
-      landing,
-      next_action: landingNextAction(mission, landing),
+      final_revision: finalRevision,
+      next_action: null,
       outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
     })
   }
@@ -423,6 +456,17 @@ async function runMission(selector, flags) {
       flags,
       'Mission implementation execution can be selected only after the contract is approved; approve first, then choose --inline or --spawned'
     )
+  }
+  if (
+    implementationExecution &&
+    (implementationExecution.status === 'selected' || requestedImplementationMode) &&
+    !['brainstorming', 'awaiting_approval'].includes(mission.status)
+  ) {
+    try {
+      await ensureMissionProductBoundary(context, flags)
+    } catch (error) {
+      return fail(flags, error.message)
+    }
   }
   if (implementationExecution?.status === 'pending') {
     if (!requestedImplementationMode) return emitMissionImplementationChoice(context, flags)
@@ -475,11 +519,7 @@ async function runMission(selector, flags) {
       if (!contract.valid) return fail(flags, contract.errors.join('; '))
       const executionPolicy = await deriveApprovedExecutionPolicy(context, contract)
       const git = await gitSnapshot(targetDir)
-      if (!git.branch)
-        return fail(
-          flags,
-          'Mission approval requires a named Git base branch; switch from detached HEAD first'
-        )
+      if (!git.branch) return fail(flags, 'Mission approval requires an attached checkout')
       const checkpointed = graph.context?.previous?.find(
         (entry) => entry.id === 'brainstorm'
       )?.output
@@ -490,7 +530,7 @@ async function runMission(selector, flags) {
           contract_hash: checkpointed?.contract_hash || contract.hash,
           actor: 'contract-recheckpoint',
           approved_at: new Date().toISOString(),
-          base_revision: git.revision || 'unborn',
+          base_revision: git.revision,
           branch: mission.branch,
         })
         if (!reset.synchronized)
@@ -550,7 +590,7 @@ async function runMission(selector, flags) {
         )
       }
       mission.base_branch = git.branch
-      await establishMissionBranch(targetDir, mission)
+      await assertMissionCheckout(targetDir, mission)
       const approvedAt = new Date().toISOString()
       const decision = decideGuidedNode(targetDir, 'approve-mission', {
         approved: true,
@@ -587,7 +627,7 @@ async function runMission(selector, flags) {
           'Mission contract changed after approval; restore the approved contract or create a new Mission for changed authority'
         )
       }
-      await establishMissionBranch(targetDir, mission)
+      await assertMissionCheckout(targetDir, mission)
       if (mission.status === 'paused' || mission.status === 'blocked') {
         mission.status = 'running'
         delete mission.blocker
@@ -689,42 +729,6 @@ async function driveMission(context) {
     }
     if (node === 'design') {
       await designMission(context)
-      continue
-    }
-    if (node === 'execute-wave') {
-      const wave = await executeParallelMissionWave(context)
-      const stepped = stepGuidedNode(targetDir, 'execute-wave', {
-        wave: wave.number,
-        completed: wave.children,
-      })
-      if (!stepped.synchronized) throw new Error(`Could not record Mission wave ${wave.number}`)
-      mission.completed_wave = wave.number
-      await writeMission(missionPath, mission)
-      continue
-    }
-    if (node === 'advance-wave') {
-      const queue = await readMissionQueue(missionPath)
-      const wave = Number(mission.completed_wave)
-      const completed = queue.assignments.filter((item) => item.wave === wave)
-      if (!Number.isSafeInteger(wave) || completed.length === 0) {
-        throw new Error('Mission has no completed parallel wave to advance')
-      }
-      const remaining = missionQueueHasRemaining(queue)
-      for (const child of completed) {
-        await recordMissionChildGap(context, child)
-      }
-      delete mission.completed_wave
-      await writeMission(missionPath, mission)
-      await checkpointMissionBoundary(context, `wave-${wave}`)
-      const gap = actionableMissionGap(mission)
-      await durableMissionStep(context, 'advance-wave', {
-        remaining,
-        completed: `wave-${wave}`,
-        follow_up_required: Boolean(gap),
-        gap_open: Boolean(gap),
-        ...(gap ? { gap_id: gap.id } : {}),
-        parallel: remaining ? missionQueueRunsParallel(mission, queue) : false,
-      })
       continue
     }
     if (node === 'advance-queue') {
@@ -1055,7 +1059,7 @@ async function designMission(context) {
         `Every kind must be one of: ${ASSIGNMENT_KINDS.join(', ')}.`,
         'Start by trying to express the entire Mission as one Assignment. Split only for a worker/reviewer context limit, an information dependency, an intermediate user/operational decision, or meaningfully independent verification/rollback.',
         'File count, architectural layers, and the existence of several implementation Tasks are not split reasons. When uncertain, write one Assignment.',
-        "Use dense positive wave numbers beginning at 1. Put children in the same wave only when neither requires the other's output, decision, artifact, or intermediate verification.",
+        'Use one child per sequential wave with dense positive wave numbers beginning at 1. Preserve dependency order.',
         'Parallel speed alone is not a split reason. Do not predict file ownership, assign IDs, add dependency edges, create a graph, or invoke agents.',
         'Do not create evidence-only children for requirements that the approved execution policy marks impossible; retain their explicit bypass, escalation, or residual-risk decision instead.',
       ]
@@ -1292,813 +1296,6 @@ async function runMissionChild(context, options = {}) {
     }
   }
   return { child, assignmentPath, result }
-}
-
-async function runParallelMissionChild(selector, childId, flags) {
-  const context = await missionContext(selector, flags)
-  if (!context) return null
-  const { targetDir, specdevPath, missionPath, mission } = context
-  if (!missionUsesSpawnedImplementation(mission)) {
-    return fail(flags, 'Inline Mission implementation cannot launch a parallel child process')
-  }
-  const queue = await readMissionQueue(missionPath)
-  const child = queue?.assignments?.find((item) => item.id === childId)
-  if (!child) return fail(flags, `Mission child not found: ${childId}`)
-  if (queue.design_mode === 'single' || queue.assignments.length < 2) {
-    return fail(flags, 'The internal parallel child command requires a planned multi-child Mission')
-  }
-
-  try {
-    await assertApprovedMissionContract(missionPath, mission)
-    const workflowRoot = workflowRootFor(targetDir)
-    let graph = getState({ workflowRoot })
-    const existing = await findAssignmentFolder(specdevPath, child.id, { allowMissing: true })
-    if (!existing) {
-      if (graph.status === 'ok' && graph.run?.status === 'active') {
-        suspendRun({ workflowRoot, note: `parallel Mission child ${child.id}` })
-      }
-      const created = await withSuppressedOutput(() =>
-        assignmentCommand([child.title], {
-          target: targetDir,
-          mission: mission.id,
-          id: child.id,
-          kind: child.kind || 'change',
-          slug: slugify(child.title),
-          json: true,
-          'mission-root': true,
-          'brainstorm-review': 'required',
-          'implementation-review': 'required',
-        })
-      )
-      if (!created) throw new Error(`Could not create parallel child Assignment ${child.id}`)
-    } else {
-      const status = await fse.readJson(join(existing.path, 'status.json')).catch(() => null)
-      if (status?.mission !== mission.id || status?.id !== child.id) {
-        throw new Error(`Existing Assignment ${child.id} does not belong to Mission ${mission.id}`)
-      }
-      graph = getState({ workflowRoot })
-      if (graph.run?.id !== status.run_id && graph.run?.status === 'active') {
-        suspendRun({ workflowRoot, note: `resume parallel Mission child ${child.id}` })
-      }
-      const run = listRuns({ workflowRoot }).runs.find(
-        (candidate) => candidate.id === status.run_id
-      )
-      if (run?.status === 'suspended') {
-        resumeRun({ workflowRoot, runId: status.run_id })
-      }
-      await writeCurrentFocus(specdevPath, { kind: 'assignment', id: child.id })
-    }
-
-    const delivered = await runMissionChild(context, { childId: child.id, parallelRoot: true })
-    if (delivered.awaitingUserReapproval) {
-      return emit(flags, {
-        command: 'mission child',
-        version: 1,
-        status: 'awaiting_user_reapproval',
-        mission: mission.id,
-        assignment: child.id,
-        folder: delivered.child.folder,
-        reapproval_identity: delivered.result.reapproval_identity,
-      })
-    }
-    return emit(flags, {
-      command: 'mission child',
-      version: 1,
-      status: 'completed',
-      mission: mission.id,
-      assignment: child.id,
-      folder: delivered.child.folder,
-      outcome: relativeToRepo(targetDir, join(delivered.assignmentPath, 'outcome.md')),
-    })
-  } catch (error) {
-    return fail(flags, error.message)
-  }
-}
-
-async function executeParallelMissionWave(context) {
-  const { targetDir, specdevPath, missionPath, mission } = context
-  if (!missionUsesSpawnedImplementation(mission)) {
-    throw new Error('Inline Mission implementation cannot execute a parallel worktree wave')
-  }
-  let queue = await readMissionQueue(missionPath)
-  validateMissionQueueStatuses(queue)
-  normalizeMissionWaves(queue.assignments)
-  const waveNumber = currentMissionWave(queue)
-  const waveItems = missionWaveItems(queue, waveNumber)
-  if (!waveNumber) throw new Error('Parallel Mission execution has no active wave')
-  if (waveItems.length === 1) {
-    return executeMissionWaveSequentialFallback(context, queue, waveNumber)
-  }
-  if (waveItems.length === 0) throw new Error(`Mission wave ${waveNumber} has no executable child`)
-
-  let baseRevision = waveItems.map((item) => item.base_revision).find(Boolean)
-  if (!baseRevision) {
-    const snapshot = await gitSnapshot(targetDir)
-    const productChanges = snapshot.dirty_paths.filter((path) => !path.startsWith('.specdev/'))
-    if (productChanges.length > 0) {
-      throw new Error(
-        `Cannot start a parallel Mission wave while the main worktree has product changes: ${productChanges.join(', ')}`
-      )
-    }
-    const checkpoint = await withSuppressedOutput(() =>
-      checkpointMission(mission.id, { target: targetDir, json: true })
-    )
-    if (!checkpoint?.revision) throw new Error('Could not create the parallel wave base checkpoint')
-    baseRevision = checkpoint.revision
-    for (const item of waveItems) {
-      item.base_revision = baseRevision
-      item.branch = missionChildBranch(mission.id, item.id)
-    }
-    await writeMissionQueue(missionPath, queue)
-  }
-  if (waveItems.some((item) => item.base_revision !== baseRevision)) {
-    throw new Error(`Mission wave ${waveNumber} has inconsistent base revisions`)
-  }
-
-  const active = new Map()
-  let blocker = null
-  let launched = false
-  while (true) {
-    queue = await readMissionQueue(missionPath)
-    await integrateCompletedMissionChildren(context, queue, waveNumber)
-    queue = await readMissionQueue(missionPath)
-    await releaseIntegratedMissionWorktrees(context, queue, waveNumber)
-    const currentItems = queue.assignments.filter((item) => item.wave === waveNumber)
-    if (currentItems.every((item) => ['integrated', 'cancelled'].includes(item.status))) break
-
-    const launchable = currentItems.filter((item) => {
-      const retryableBlocker =
-        item.status === 'blocked' && !String(item.blocker || '').startsWith('integration ')
-      return (
-        (['pending', 'running'].includes(item.status) || retryableBlocker) && !active.has(item.id)
-      )
-    })
-    while (!blocker && active.size < MAX_PARALLEL_MISSION_CHILDREN && launchable.length > 0) {
-      const child = launchable.shift()
-      let worktree
-      try {
-        worktree = await leaseMissionChildWorktree(context, child, active)
-      } catch (error) {
-        if (!launched && active.size === 0) {
-          process.stderr.write(
-            `SpecDev wave ${waveNumber}: worktree parallelism unavailable; continuing sequentially (${error.message}).\n`
-          )
-          return executeMissionWaveSequentialFallback(context, queue, waveNumber)
-        }
-        child.status = 'blocked'
-        child.blocker = `worktree_setup: ${error.message}`
-        await writeMissionQueue(missionPath, queue)
-        blocker = child.blocker
-        continue
-      }
-      child.status = 'running'
-      child.started_at ||= new Date().toISOString()
-      child.branch ||= missionChildBranch(mission.id, child.id)
-      delete child.blocker
-      await writeMissionQueue(missionPath, queue)
-      try {
-        const execution = await launchMissionChildProcess(context, child, worktree)
-        active.set(child.id, { ...execution, child, worktree })
-        launched = true
-      } catch (error) {
-        child.status = 'blocked'
-        child.blocker = `launch: ${error.message}`
-        await writeMissionQueue(missionPath, queue)
-        blocker = child.blocker
-      }
-    }
-
-    if (active.size === 0) {
-      if (blocker) break
-      const unresolved = currentItems.find(
-        (item) => !['integrated', 'cancelled'].includes(item.status)
-      )
-      if (unresolved?.status === 'completed') {
-        await integrateCompletedMissionChildren(context, queue, waveNumber)
-        continue
-      }
-      throw new Error(`Mission wave ${waveNumber} cannot make progress`)
-    }
-
-    const settled = await Promise.race(
-      [...active.entries()].map(([id, execution]) =>
-        execution.promise.then((result) => ({ id, execution, result }))
-      )
-    )
-    active.delete(settled.id)
-    queue = await readMissionQueue(missionPath)
-    const child = queue.assignments.find((item) => item.id === settled.id)
-    try {
-      if (settled.result.exitCode !== 0) {
-        throw new Error(
-          settled.result.error || `child command exited with status ${settled.result.exitCode}`
-        )
-      }
-      const resolved = await findAssignmentFolder(
-        join(settled.execution.worktree.path, '.specdev'),
-        child.id
-      )
-      const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
-      if (status?.status === 'awaiting_user_reapproval') {
-        await recordParallelMissionReapproval(context, child, settled.execution.worktree, status)
-        throw new Error(`Child ${child.id} awaits exact user reapproval`)
-      }
-      if (status?.status !== 'completed') {
-        throw new Error(`Child ${child.id} exited without a completed Assignment status`)
-      }
-      const delivery = await createMissionChildDelivery({
-        worktreePath: settled.execution.worktree.path,
-        missionPath: join(
-          settled.execution.worktree.path,
-          '.specdev',
-          'missions',
-          basename(missionPath)
-        ),
-        missionId: mission.id,
-        childId: child.id,
-        wave: waveNumber,
-      })
-      child.folder = resolved.name
-      child.outcome = `.specdev/assignments/${resolved.name}/outcome.md`
-      child.delivery_revision = delivery
-      child.completed_at = new Date().toISOString()
-      child.status = 'completed'
-      delete child.blocker
-      await writeMissionQueue(missionPath, queue)
-      try {
-        await removeMissionWorktree({
-          projectRoot: targetDir,
-          specdevPath,
-          worktreePath: settled.execution.worktree.path,
-        })
-      } catch (error) {
-        process.stderr.write(
-          `SpecDev ${child.id}: delivery is safe, but its worktree remains: ${error.message}\n`
-        )
-      }
-    } catch (error) {
-      child.status = 'blocked'
-      child.blocker = `execution: ${error.message}`
-      await writeMissionQueue(missionPath, queue)
-      blocker ||= child.blocker
-    }
-  }
-
-  queue = await readMissionQueue(missionPath)
-  await integrateCompletedMissionChildren(context, queue, waveNumber)
-  queue = await readMissionQueue(missionPath)
-  const finalItems = queue.assignments.filter((item) => item.wave === waveNumber)
-  const finalBlocker = finalItems.find((item) => item.status === 'blocked')
-  if (finalBlocker) {
-    throw new Error(`Parallel child ${finalBlocker.id} blocked: ${finalBlocker.blocker}`)
-  }
-  if (!launched && !finalItems.every((item) => ['integrated', 'cancelled'].includes(item.status))) {
-    throw new Error(`Mission wave ${waveNumber} did not launch or recover any child`)
-  }
-  if (!finalItems.every((item) => ['integrated', 'cancelled'].includes(item.status))) {
-    throw new Error(`Mission wave ${waveNumber} is incomplete after child execution`)
-  }
-  return { number: waveNumber, children: finalItems.map((item) => item.id) }
-}
-
-async function executeMissionWaveSequentialFallback(context, queue, waveNumber) {
-  const { targetDir, specdevPath, missionPath, mission } = context
-  const children = queue.assignments.filter((item) => item.wave === waveNumber)
-  for (const child of children) {
-    if (['integrated', 'cancelled'].includes(child.status)) continue
-    const workflowRoot = workflowRootFor(targetDir)
-    const current = getState({ workflowRoot })
-    if (current.status === 'ok' && current.run?.status === 'active') {
-      suspendRun({ workflowRoot, note: `sequential fallback child ${child.id}` })
-    }
-    const existing = await findAssignmentFolder(specdevPath, child.id, { allowMissing: true })
-    let existingStatus = null
-    if (!existing) {
-      const created = await withSuppressedOutput(() =>
-        assignmentCommand([child.title], {
-          target: targetDir,
-          mission: mission.id,
-          id: child.id,
-          kind: child.kind || 'change',
-          slug: slugify(child.title),
-          json: true,
-          'mission-root': true,
-          'internal-mission-child': true,
-          'brainstorm-review': 'required',
-          'implementation-review': 'required',
-        })
-      )
-      if (!created) throw new Error(`Could not create fallback child Assignment ${child.id}`)
-    } else {
-      existingStatus = await fse.readJson(join(existing.path, 'status.json')).catch(() => null)
-      const run = listRuns({ workflowRoot }).runs.find(
-        (candidate) => candidate.id === existingStatus?.run_id
-      )
-      if (run?.status === 'suspended') {
-        resumeRun({ workflowRoot, runId: existingStatus.run_id })
-      }
-    }
-    child.status = 'running'
-    child.started_at ||= new Date().toISOString()
-    await writeMissionQueue(missionPath, queue)
-    const delivered =
-      existingStatus?.status === 'completed'
-        ? { child: { ...child, folder: existing.name }, assignmentPath: existing.path }
-        : await runMissionChild(context, { childId: child.id, parallelRoot: true })
-    const refreshed = await readMissionQueue(missionPath)
-    const item = refreshed.assignments.find((candidate) => candidate.id === child.id)
-    item.folder = delivered.child.folder
-    item.outcome = `.specdev/assignments/${delivered.child.folder}/outcome.md`
-    item.follow_up = await missionChildFollowUp(specdevPath, item)
-    item.status = 'integrated'
-    item.completed_at = new Date().toISOString()
-    item.integrated_at = item.completed_at
-    item.execution = 'sequential-fallback'
-    await writeMissionQueue(missionPath, refreshed)
-    const missionRun = listRuns({ workflowRoot }).runs.find(
-      (candidate) => candidate.id === mission.run_id
-    )
-    if (missionRun?.status === 'suspended') resumeRun({ workflowRoot, runId: mission.run_id })
-    await writeCurrentFocus(specdevPath, { kind: 'mission', id: mission.id })
-    const checkpoint = await withSuppressedOutput(() =>
-      checkpointMission(
-        mission.id,
-        { target: targetDir, json: true },
-        { commitType: 'integration', assignmentId: child.id }
-      )
-    )
-    if (!checkpoint?.revision) {
-      throw new Error(`Could not checkpoint sequential fallback child ${child.id}`)
-    }
-    queue = refreshed
-  }
-  return { number: waveNumber, children: children.map((item) => item.id), fallback: true }
-}
-
-async function leaseMissionChildWorktree(context, child, active) {
-  const { targetDir, specdevPath, mission } = context
-  const branch = child.branch || missionChildBranch(mission.id, child.id)
-  const registered = await listMissionWorktrees(targetDir, specdevPath)
-  const recovered = registered.find((item) => item.branch === branch)
-  let slot
-  if (recovered) {
-    slot = recovered.worktree.split('/').at(-1)
-  } else {
-    const occupied = new Set([
-      ...registered.map((item) => item.worktree.split('/').at(-1)),
-      ...[...active.values()].map((item) => item.worktree.path.split('/').at(-1)),
-    ])
-    slot = Array.from(
-      { length: MAX_PARALLEL_MISSION_CHILDREN },
-      (_, index) => `slot-${String(index + 1).padStart(2, '0')}`
-    ).find((candidate) => !occupied.has(candidate))
-  }
-  if (!slot) throw new Error('No safe Mission worktree slot is available')
-  return ensureMissionWorktree({
-    projectRoot: targetDir,
-    specdevPath,
-    slot,
-    branch,
-    baseRevision: child.base_revision,
-  })
-}
-
-async function releaseIntegratedMissionWorktrees(context, queue, waveNumber) {
-  const { targetDir, specdevPath, mission } = context
-  const registered = await listMissionWorktrees(targetDir, specdevPath)
-  for (const child of queue.assignments.filter(
-    (item) => item.wave === waveNumber && item.status === 'integrated' && item.branch
-  )) {
-    const worktree = registered.find((item) => item.branch === child.branch)
-    if (worktree) {
-      try {
-        await removeMissionWorktree({
-          projectRoot: targetDir,
-          specdevPath,
-          worktreePath: worktree.worktree,
-        })
-      } catch (error) {
-        process.stderr.write(
-          `SpecDev ${child.id}: integrated delivery is safe, but its worktree remains: ${error.message}\n`
-        )
-        continue
-      }
-    }
-    const integration = await missionChildIntegrationRevision(targetDir, mission, child)
-    if (
-      integration &&
-      (await gitSucceeds(targetDir, [
-        'show-ref',
-        '--verify',
-        '--quiet',
-        `refs/heads/${child.branch}`,
-      ]))
-    ) {
-      try {
-        await execFile('git', ['branch', '-D', child.branch], { cwd: targetDir })
-      } catch (error) {
-        process.stderr.write(
-          `SpecDev ${child.id}: integrated delivery is safe, but its local branch remains: ${error.message}\n`
-        )
-      }
-    }
-  }
-}
-
-async function launchMissionChildProcess(context, child, worktree) {
-  const { targetDir, specdevPath, mission } = context
-  const previous = (
-    await listAttemptRecords(specdevPath, {
-      kind: 'mission-child',
-      mission: mission.id,
-      assignment: child.id,
-      status: 'running',
-    })
-  ).at(-1)
-  if (previous && (await attemptLiveness(specdevPath, previous.id)).state === 'live_local') {
-    process.stderr.write(`SpecDev ${child.id}: reattaching to live child ${previous.id}.\n`)
-    return {
-      worktree,
-      promise: waitForExistingMissionChild(specdevPath, previous, worktree.path, child.id),
-    }
-  }
-  if (previous) {
-    await updateAttemptRecord(specdevPath, previous.id, {
-      status: 'interrupted',
-      error: 'recovered by a new Mission controller',
-    })
-    await clearLocalProcessMarker(specdevPath, previous.id)
-  }
-
-  const attempt = await createAttemptRecord(specdevPath, {
-    kind: 'mission-child',
-    mission: mission.id,
-    assignment: child.id,
-    workspace: worktree.relativePath,
-    base_revision: child.base_revision,
-  })
-  const logDir = join(specdevPath, 'cache', 'missions', mission.id, `wave-${child.wave}`)
-  await fse.ensureDir(logDir)
-  const stdoutLog = createWriteStream(join(logDir, `${child.id}.stdout.log`), { flags: 'a' })
-  const stderrLog = createWriteStream(join(logDir, `${child.id}.stderr.log`), { flags: 'a' })
-  const processChild = spawn(
-    process.execPath,
-    [
-      LOCAL_SPECDEV_BIN,
-      'mission',
-      'child',
-      mission.id,
-      child.id,
-      `--target=${worktree.path}`,
-      '--json',
-    ],
-    {
-      cwd: worktree.path,
-      env: {
-        ...process.env,
-        SPECDEV_PARALLEL_CHILD: '1',
-        SPECDEV_ATTEMPT_NAMESPACE: child.id,
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }
-  )
-  await writeLocalProcessMarker(specdevPath, attempt.id, {
-    pid: processChild.pid,
-    cwd: worktree.path,
-  })
-  process.stderr.write(
-    `SpecDev ${child.id}: parallel Assignment started in ${worktree.relativePath}.\n`
-  )
-  processChild.stdout.pipe(stdoutLog)
-  processChild.stderr.on('data', (chunk) => {
-    stderrLog.write(chunk)
-    if (process.env.SPECDEV_AGENT_STREAM === '1') process.stderr.write(`[${child.id}] ${chunk}`)
-  })
-  const promise = new Promise((resolvePromise) => {
-    let settled = false
-    processChild.on('error', async (error) => {
-      if (settled) return
-      settled = true
-      stdoutLog.end()
-      stderrLog.end()
-      await clearLocalProcessMarker(specdevPath, attempt.id)
-      await updateAttemptRecord(specdevPath, attempt.id, {
-        status: 'failed',
-        error: error.message,
-      })
-      resolvePromise({ exitCode: 1, error: error.message })
-    })
-    processChild.on('close', async (code) => {
-      if (settled) return
-      settled = true
-      stdoutLog.end()
-      stderrLog.end()
-      await clearLocalProcessMarker(specdevPath, attempt.id)
-      await updateAttemptRecord(specdevPath, attempt.id, {
-        status: code === 0 ? 'completed' : 'failed',
-        ...(code === 0 ? {} : { error: `child command exited with status ${code ?? 1}` }),
-      })
-      process.stderr.write(
-        `SpecDev ${child.id}: parallel Assignment ${code === 0 ? 'finished' : 'failed'}.\n`
-      )
-      resolvePromise({
-        exitCode: code ?? 1,
-        ...(code === 0 ? {} : { error: `child command exited with status ${code ?? 1}` }),
-      })
-    })
-  })
-  return { attempt, worktree, promise }
-}
-
-async function waitForExistingMissionChild(specdevPath, attempt, worktreePath, childId) {
-  while ((await attemptLiveness(specdevPath, attempt.id)).state === 'live_local') {
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1_000))
-  }
-  const resolved = await findAssignmentFolder(join(worktreePath, '.specdev'), childId, {
-    allowMissing: true,
-  })
-  const status = resolved
-    ? await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
-    : null
-  await updateAttemptRecord(specdevPath, attempt.id, {
-    status: status?.status === 'completed' ? 'completed' : 'interrupted',
-    ...(status?.status === 'completed'
-      ? {}
-      : { error: 'live child ended without a completed Assignment status' }),
-  })
-  return status?.status === 'completed'
-    ? { exitCode: 0 }
-    : { exitCode: 1, error: 'live child ended without a completed Assignment status' }
-}
-
-async function integrateCompletedMissionChildren(context, queue, waveNumber) {
-  const { targetDir, missionPath, mission } = context
-  await reconcileMissionWaveIntegrations(context, queue, waveNumber)
-  for (const child of integratableMissionPrefix(queue, waveNumber)) {
-    if (!child.delivery_revision) {
-      throw new Error(`Completed child ${child.id} has no delivery revision`)
-    }
-    const existingRevision = await missionChildIntegrationRevision(targetDir, mission, child)
-    if (existingRevision) {
-      await recordIntegratedMissionChild(context, queue, child, existingRevision)
-      continue
-    }
-    const snapshot = await gitSnapshot(targetDir)
-    const productChanges = snapshot.dirty_paths.filter((path) => !path.startsWith('.specdev/'))
-    if (productChanges.length > 0) {
-      throw new Error(
-        `Cannot integrate child ${child.id} while the Mission worktree has product changes: ${productChanges.join(', ')}`
-      )
-    }
-    const stagedPaths = await gitOutputLines(targetDir, ['diff', '--cached', '--name-only'])
-    if (stagedPaths.length > 0) {
-      throw new Error(
-        `Cannot integrate child ${child.id} while unrelated paths are staged: ${stagedPaths.join(', ')}`
-      )
-    }
-    await beginMissionChildIntegration(context, queue, child, waveNumber)
-    try {
-      await execFile('git', ['cherry-pick', '--no-commit', child.delivery_revision], {
-        cwd: targetDir,
-      })
-    } catch (error) {
-      child.status = 'blocked'
-      const conflict = Boolean(await gitRevision(targetDir, 'CHERRY_PICK_HEAD'))
-      child.blocker = conflict
-        ? `integration conflict for ${child.delivery_revision}`
-        : `integration failed for ${child.delivery_revision}: ${error.message}`
-      await writeMissionQueue(missionPath, queue)
-      throw new Error(
-        conflict
-          ? `Integration conflict for child ${child.id}; resolve and stage the files, then rerun the Mission, or abort the Git cherry-pick to retry`
-          : `Integration failed for child ${child.id}: ${error.message}`
-      )
-    }
-    child.integration.phase = 'committing'
-    child.integration.updated_at = new Date().toISOString()
-    await writeMissionQueue(missionPath, queue)
-    await finishMissionChildIntegration(context, queue, child, waveNumber)
-  }
-}
-
-async function reconcileMissionWaveIntegrations(context, queue, waveNumber) {
-  const { targetDir, mission } = context
-  const cherryPickHead = await gitRevision(targetDir, 'CHERRY_PICK_HEAD')
-  if (cherryPickHead) {
-    const child = queue.assignments.find(
-      (item) =>
-        item.wave === waveNumber &&
-        item.delivery_revision === cherryPickHead &&
-        String(item.blocker || '').startsWith('integration conflict')
-    )
-    if (!child) {
-      throw new Error(
-        'An unrelated Git cherry-pick is in progress; finish or abort it before resuming the Mission'
-      )
-    }
-    const unmerged = await gitOutputLines(targetDir, ['diff', '--name-only', '--diff-filter=U'])
-    if (unmerged.length > 0) {
-      throw new Error(
-        `Integration conflict for child ${child.id} is unresolved in: ${unmerged.join(', ')}. Resolve and stage those files, then rerun the Mission; or abort the cherry-pick to retry.`
-      )
-    }
-    await finishMissionChildIntegration(context, queue, child, waveNumber)
-  }
-
-  const pendingCommit = queue.assignments.find(
-    (item) =>
-      item.wave === waveNumber &&
-      item.delivery_revision &&
-      item.status === 'blocked' &&
-      String(item.blocker || '').startsWith('integration commit failed')
-  )
-  if (pendingCommit) {
-    const unmerged = await gitOutputLines(targetDir, ['diff', '--name-only', '--diff-filter=U'])
-    if (unmerged.length > 0) {
-      throw new Error(
-        `Integration for child ${pendingCommit.id} still has unresolved files: ${unmerged.join(', ')}`
-      )
-    }
-    await finishMissionChildIntegration(context, queue, pendingCommit, waveNumber)
-  }
-
-  for (const child of queue.assignments.filter((item) => item.wave === waveNumber)) {
-    if (!child.delivery_revision) continue
-    const integratedRevision = await missionChildIntegrationRevision(targetDir, mission, child)
-    if (integratedRevision) {
-      await recordIntegratedMissionChild(context, queue, child, integratedRevision)
-      continue
-    }
-    if (child.integration) {
-      await recoverPendingMissionChildIntegration(context, queue, child, waveNumber)
-      continue
-    }
-    if (child.status === 'blocked' && String(child.blocker || '').startsWith('integration ')) {
-      child.status = 'completed'
-      delete child.blocker
-      await writeMissionQueue(context.missionPath, queue)
-    }
-  }
-}
-
-async function beginMissionChildIntegration(context, queue, child, waveNumber) {
-  child.integration = {
-    delivery_revision: child.delivery_revision,
-    wave: waveNumber,
-    phase: 'applying',
-    started_at: new Date().toISOString(),
-  }
-  await writeMissionQueue(context.missionPath, queue)
-}
-
-async function recoverPendingMissionChildIntegration(context, queue, child, waveNumber) {
-  const { targetDir, missionPath } = context
-  if (
-    child.integration.delivery_revision !== child.delivery_revision ||
-    Number(child.integration.wave) !== Number(waveNumber)
-  ) {
-    throw new Error(`Child ${child.id} has inconsistent pending integration metadata`)
-  }
-  const unmerged = await gitOutputLines(targetDir, ['diff', '--name-only', '--diff-filter=U'])
-  if (unmerged.length > 0) {
-    throw new Error(
-      `Integration for child ${child.id} still has unresolved files: ${unmerged.join(', ')}`
-    )
-  }
-  const stagedPaths = await gitOutputLines(targetDir, ['diff', '--cached', '--name-only'])
-  const action = await missionIntegrationRecoveryActionForIndex(context, child, stagedPaths)
-  if (action === 'commit') {
-    child.integration.phase = 'committing'
-    child.integration.updated_at = new Date().toISOString()
-    await writeMissionQueue(missionPath, queue)
-    await finishMissionChildIntegration(context, queue, child, waveNumber)
-    return
-  }
-
-  child.status = 'completed'
-  delete child.blocker
-  delete child.integrated_at
-  delete child.integration_revision
-  delete child.integration
-  await writeMissionQueue(missionPath, queue)
-}
-
-async function missionIntegrationRecoveryActionForIndex(context, child, stagedPaths) {
-  const { targetDir, missionPath } = context
-  const missionPrefix = relativeToRepo(targetDir, missionPath)
-  const deliveryPaths = await gitOutputLines(targetDir, [
-    'diff-tree',
-    '--no-commit-id',
-    '--name-only',
-    '-r',
-    child.delivery_revision,
-  ])
-  try {
-    return missionIntegrationRecoveryAction({
-      phase: child.integration.phase,
-      stagedPaths,
-      deliveryPaths,
-      missionPrefix,
-    })
-  } catch (error) {
-    throw new Error(`Cannot recover integration for child ${child.id}: ${error.message}`)
-  }
-}
-
-async function finishMissionChildIntegration(context, queue, child, waveNumber) {
-  const { targetDir, mission, missionPath } = context
-  child.integration = {
-    ...child.integration,
-    delivery_revision: child.delivery_revision,
-    wave: waveNumber,
-    phase: 'committing',
-    started_at: child.integration?.started_at || new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
-  await recordIntegratedMissionChild(context, queue, child)
-  await execFile('git', ['add', '-A', '--', relativeToRepo(targetDir, missionPath)], {
-    cwd: targetDir,
-  })
-  let integrationRevision
-  try {
-    await execFile(
-      'git',
-      [
-        'commit',
-        '-m',
-        `specdev(${mission.id}): integrate ${child.id}`,
-        '-m',
-        `SpecDev-Mission: ${mission.id}\nSpecDev-Assignment: ${child.id}\nSpecDev-Wave: ${waveNumber}\nSpecDev-Delivery: ${child.delivery_revision}\nSpecDev-Commit-Type: integration`,
-      ],
-      { cwd: targetDir }
-    )
-    integrationRevision = await gitRevision(targetDir, 'HEAD')
-  } catch (error) {
-    child.status = 'blocked'
-    child.blocker = `integration commit failed for ${child.delivery_revision}: ${error.message}`
-    delete child.integrated_at
-    delete child.integration_revision
-    await writeMissionQueue(context.missionPath, queue)
-    throw new Error(`Could not commit integration for child ${child.id}: ${error.message}`)
-  }
-  child.integration_revision = integrationRevision
-  delete child.integration
-  await writeMissionQueue(missionPath, queue)
-}
-
-async function recordIntegratedMissionChild(context, queue, child, integrationRevision = null) {
-  const resolved = await findAssignmentFolder(context.specdevPath, child.id)
-  child.folder = resolved.name
-  child.outcome = `.specdev/assignments/${resolved.name}/outcome.md`
-  child.follow_up = await missionChildFollowUp(context.specdevPath, child)
-  child.disposition =
-    child.execution === 'evidence-only' && child.follow_up === 'required'
-      ? 'completed-with-follow-up'
-      : 'completed'
-  child.status = 'integrated'
-  child.integrated_at ||= new Date().toISOString()
-  if (integrationRevision) {
-    child.integration_revision = integrationRevision
-    delete child.integration
-  }
-  delete child.blocker
-  await writeMissionQueue(context.missionPath, queue)
-}
-
-async function missionChildIntegrationRevision(targetDir, mission, child) {
-  for (const message of [
-    `SpecDev-Delivery: ${child.delivery_revision}`,
-    `specdev(${mission.id}): deliver ${child.id}`,
-  ]) {
-    try {
-      const { stdout } = await execFile(
-        'git',
-        ['log', 'HEAD', '-1', '--format=%H', '--fixed-strings', `--grep=${message}`],
-        { cwd: targetDir }
-      )
-      if (stdout.trim()) return stdout.trim()
-    } catch {
-      // An unborn Mission branch cannot contain an integrated child.
-    }
-  }
-  return null
-}
-
-async function gitRevision(cwd, ref) {
-  try {
-    const { stdout } = await execFile('git', ['rev-parse', '--verify', ref], { cwd })
-    return stdout.trim() || null
-  } catch {
-    return null
-  }
-}
-
-async function gitOutputLines(cwd, args) {
-  const { stdout } = await execFile('git', args, { cwd })
-  return stdout
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
 }
 
 async function authorChildContract(context, child, assignmentPath) {
@@ -2786,6 +1983,7 @@ async function writeBlockedVerificationReceipt(
 
 async function finishMissionDelivery(context) {
   const { targetDir, specdevPath, missionPath, mission, flags } = context
+  await missionOwnedPaths(context)
   await completeMission(context)
   await updateAttemptRecord(specdevPath, context.controller.id, { status: 'completed' })
   await clearLocalProcessMarker(specdevPath, context.controller.id)
@@ -2809,10 +2007,7 @@ async function finishMissionDelivery(context) {
     throw new Error(checkpoint?.error || 'Mission completion checkpoint failed')
   }
   mission.final_revision = checkpoint.revision
-  const landing = await missionLanding(context, {
-    attempt: true,
-    finalRevision: checkpoint.revision,
-  })
+  await writeMission(missionPath, mission)
   const finalGit = await gitSnapshot(targetDir)
   mission.final_dirty_paths = finalGit.dirty_paths
   return emit(flags, {
@@ -2825,8 +2020,7 @@ async function finishMissionDelivery(context) {
     final_revision: mission.final_revision,
     dirty_paths: mission.final_dirty_paths || [],
     checked_out_branch: finalGit.branch,
-    landing,
-    next_action: landingNextAction(mission, landing),
+    next_action: null,
     outcome: relativeToRepo(targetDir, join(missionPath, 'outcome.md')),
     runtime_compaction: runtime,
   })
@@ -2842,7 +2036,7 @@ async function completeMission(context) {
   const gaps = compactMissionGaps(mission)
   await fse.writeFile(
     join(missionPath, 'outcome.md'),
-    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Base\n\n- Branch: ${mission.base_branch || 'unknown'}\n- Revision: ${mission.base_revision || 'unborn'}\n\n## Assignments\n\n${lines.join('\n')}\n\n## Gap convergence\n\n- Opened: ${gaps.opened}\n- Evidence-closed: ${gaps.closed}\n- Failed: ${gaps.failed}\n\n## Activity\n\n- Orchestration Attempts: ${activity.orchestration_attempt_count}\n- Provider agent Attempts: ${formatProviderAttemptOutcomes(activity.provider_attempts)}\n- Elapsed: ${formatDuration(activity.elapsed_ms)}\n- Provider-reported tokens: ${activity.provider_reported_tokens ?? 'not reported'}\n\n## Delivery\n\nFinal verification passed. The Mission completion commit on branch \`${mission.branch}\` is the durable final checkpoint. Landing onto \`${mission.base_branch}\` is derived separately and is always fast-forward-only.\n`,
+    `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Base\n\n- Branch: ${mission.base_branch || 'unknown'}\n- Revision: ${mission.base_revision || 'unborn'}\n\n## Assignments\n\n${lines.join('\n')}\n\n## Gap convergence\n\n- Opened: ${gaps.opened}\n- Evidence-closed: ${gaps.closed}\n- Failed: ${gaps.failed}\n\n## Activity\n\n- Orchestration Attempts: ${activity.orchestration_attempt_count}\n- Provider agent Attempts: ${formatProviderAttemptOutcomes(activity.provider_attempts)}\n- Elapsed: ${formatDuration(activity.elapsed_ms)}\n- Provider-reported tokens: ${activity.provider_reported_tokens ?? 'not reported'}\n\n## Delivery\n\nFinal verification passed. The local Mission completion commit is the durable final checkpoint in the existing checkout.\n`,
     'utf-8'
   )
   mission.activity = activity
@@ -2946,7 +2140,7 @@ async function validateAndReserveQueue(
   }
 
   const assignments = []
-  const normalized = normalizeMissionWaves(queue.assignments)
+  const normalized = normalizeMissionWaves(queue.assignments, { sequential: true })
   for (const item of normalized) {
     if (
       item.execution === 'evidence-only' &&
@@ -3126,37 +2320,6 @@ function authorizedVerificationCommand(content) {
   return commands.length === 1 ? commands[0] : ''
 }
 
-async function establishMissionBranch(targetDir, mission) {
-  const git = await gitSnapshot(targetDir)
-  if (git.branch === mission.branch) return
-  const localExists = await gitSucceeds(targetDir, [
-    'show-ref',
-    '--verify',
-    '--quiet',
-    `refs/heads/${mission.branch}`,
-  ])
-  const remoteBranch = `origin/${mission.branch}`
-  const remoteExists = await gitSucceeds(targetDir, [
-    'show-ref',
-    '--verify',
-    '--quiet',
-    `refs/remotes/${remoteBranch}`,
-  ])
-  if (localExists) {
-    if (git.dirty_paths.length > 0)
-      throw new Error(`Wrong branch with a dirty worktree. Switch to ${mission.branch} manually.`)
-    await execFile('git', ['switch', mission.branch], { cwd: targetDir })
-  } else if (remoteExists) {
-    if (git.dirty_paths.length > 0)
-      throw new Error(`Wrong branch with a dirty worktree. Switch to ${mission.branch} manually.`)
-    await execFile('git', ['switch', '--track', '-c', mission.branch, remoteBranch], {
-      cwd: targetDir,
-    })
-  } else {
-    await execFile('git', ['switch', '-c', mission.branch], { cwd: targetDir })
-  }
-}
-
 async function focusMissionRun({ targetDir, mission }) {
   const workflowRoot = workflowRootFor(targetDir)
   const current = getState({ workflowRoot })
@@ -3267,25 +2430,13 @@ async function pauseMission(selector, flags) {
 }
 
 async function missionLand(selector, flags) {
-  const context = await missionContext(selector, flags, { recoverCompleted: true })
-  if (!context) return null
-  if (rejectAbandonedMission(context, flags, 'landing')) return null
-  if (context.mission.status !== 'completed') {
-    return fail(flags, `Mission ${context.mission.id} must be completed before it can land`)
-  }
-  const landing = await missionLanding(context, { attempt: true })
+  process.exitCode = 1
   return emit(flags, {
     command: 'mission land',
     version: 1,
-    status: landing.status,
-    mission: context.mission.id,
-    branch: context.mission.branch,
-    base_branch: context.mission.base_branch,
-    final_revision: landing.final_revision,
-    checked_out_branch: landing.checked_out_branch,
-    dirty_paths: landing.dirty_paths || [],
-    landing,
-    next_action: landingNextAction(context.mission, landing),
+    status: 'unsupported',
+    reason: 'branch_management_removed',
+    error: 'SpecDev no longer performs Mission landing; Git state is unchanged.',
   })
 }
 
@@ -3344,12 +2495,7 @@ async function handoffMission(selector, flags) {
     return fail(flags, `Mission ${mission.id} has no unresolved acceptance criteria to hand off`)
   }
   const snapshot = await gitSnapshot(targetDir)
-  if (snapshot.branch !== mission.branch) {
-    return fail(
-      flags,
-      `Mission handoff requires checked-out candidate branch ${mission.branch}; current branch is ${snapshot.branch || 'detached'}.`
-    )
-  }
+  await assertMissionCheckout(targetDir, mission)
   const candidate = {
     revision: candidateRevision(snapshot),
     dirty_paths: snapshot.dirty_paths,
@@ -3533,19 +2679,22 @@ async function missionStatus(selector, flags) {
   const lastCheckpoint = context.mission.last_checkpoint
     ? {
         ...context.mission.last_checkpoint,
-        revision: await latestCheckpointRevision(
-          context.targetDir,
-          context.mission.branch,
-          context.mission.id
-        ),
+        revision:
+          context.mission.last_checkpoint.revision ||
+          (await latestCheckpointRevision(
+            context.targetDir,
+            context.mission.branch,
+            context.mission.id
+          )),
       }
     : null
   const activity = await missionActivitySummary(context.specdevPath, context.mission)
   const abandonment = await inspectAbandonedMission(context.targetDir, context.mission)
-  const landing =
-    context.mission.status === 'completed'
-      ? await missionLanding(context, { attempt: false })
-      : null
+  const finalRevision =
+    context.mission.final_revision ||
+    (context.mission.status === 'completed'
+      ? await latestMissionCompletionRevision(context.targetDir, null, context.mission.id)
+      : null)
   let executionPolicy = context.mission.execution_policy || null
   if (!['completed', 'failed', 'abandoned'].includes(context.mission.status)) {
     try {
@@ -3556,7 +2705,6 @@ async function missionStatus(selector, flags) {
   }
   const nextAction =
     (compatibility && !compatibility.compatible ? compatibility.next_action : null) ||
-    landingNextAction(context.mission, landing) ||
     missionNextAction(context.mission, phase, Boolean(liveController), interruptedController)
   const userReapproval = abandonment
     ? null
@@ -3572,8 +2720,7 @@ async function missionStatus(selector, flags) {
     mission: context.mission.id,
     phase,
     branch: context.mission.branch,
-    revision:
-      (await gitBranchRevision(context.targetDir, context.mission.branch)) || currentGit.revision,
+    revision: finalRevision || currentGit.revision,
     checked_out_branch: currentGit.branch,
     dirty_paths: currentGit.dirty_paths,
     current_child: assignments.find((item) => item.status === 'running')?.id || null,
@@ -3599,7 +2746,8 @@ async function missionStatus(selector, flags) {
     convergence_disposition: context.mission.convergence_disposition || null,
     successor_adoptions: context.mission.successor_adoptions || [],
     activity,
-    landing,
+    final_revision: finalRevision,
+    revision_facts: await missionRevisionFacts(context.targetDir, context.mission),
     abandonment,
     delivery: abandonment ? null : undefined,
     blocker,
@@ -3628,7 +2776,10 @@ function emitMissionCompatibility(flags, mission, compatibility) {
 async function checkpointMissionBoundary(context, boundary) {
   const snapshot = await gitSnapshot(context.targetDir)
   const projectPaths = classifyWorkspaceChanges(snapshot.dirty_paths).projectPaths
-  const protectedPaths = new Set(context.mission.approval_dirty_paths || [])
+  const adopted = new Set(context.mission.product_boundary?.adopted_paths || [])
+  const protectedPaths = new Set(
+    (context.mission.approval_dirty_paths || []).filter((path) => !adopted.has(path))
+  )
   const overlap = projectPaths.filter((path) => protectedPaths.has(path))
   if (overlap.length > 0) {
     throw new Error(
@@ -3640,7 +2791,10 @@ async function checkpointMissionBoundary(context, boundary) {
     checkpointMission(
       context.mission.id,
       { target: context.targetDir, json: true },
-      { commitType: 'checkpoint' }
+      {
+        commitType: /^\d{5}$/.test(boundary) ? 'delivery' : 'checkpoint',
+        assignmentId: /^\d{5}$/.test(boundary) ? boundary : null,
+      }
     )
   )
   if (!checkpoint || checkpoint.status !== 'ok' || !checkpoint.revision) {
@@ -3653,8 +2807,7 @@ async function checkpointMissionBoundary(context, boundary) {
 }
 
 async function assertMissionCandidateCheckpoint(context) {
-  const snapshot = await gitSnapshot(context.targetDir)
-  const changes = classifyWorkspaceChanges(snapshot.dirty_paths)
+  const changes = classifyWorkspaceChanges(await missionOwnedPaths(context))
   if (changes.projectPaths.length > 0) {
     throw new Error(
       `Mission convergence refuses uncheckpointed product changes: ${changes.projectPaths.join(', ')}. ` +
@@ -3664,54 +2817,66 @@ async function assertMissionCandidateCheckpoint(context) {
 }
 
 async function checkpointMission(selector, flags, metadata = {}) {
+  if (flags.push) {
+    process.exitCode = 1
+    return emit(flags, {
+      status: 'unsupported',
+      reason: 'publishing_removed',
+      error: 'Mission checkpoints are local; SpecDev no longer publishes them.',
+    })
+  }
   const context = await missionContext(selector, flags)
   if (!context) return null
   if (rejectAbandonedMission(context, flags, 'checkpointing')) return null
+  await assertMissionCheckout(context.targetDir, context.mission)
+  await assertSequentialMission(context.missionPath, context.mission)
   const git = await gitSnapshot(context.targetDir)
-  if (git.branch !== context.mission.branch)
-    return fail(flags, `Mission checkpoint requires branch ${context.mission.branch}`)
-  await execFile('git', ['add', '-A'], { cwd: context.targetDir })
-  await unstageIncompleteDiscussions(context)
-  await unstageIncompleteTestAudits(context)
-  const hasChanges = !(await gitSucceeds(context.targetDir, ['diff', '--cached', '--quiet']))
+  let paths = await missionOwnedPaths(context)
+  const missionRecord = relativeToRepo(context.targetDir, join(context.missionPath, 'mission.yaml'))
+  if (
+    paths.length === 1 &&
+    paths[0] === missionRecord &&
+    context.mission.last_checkpoint?.revision
+  ) {
+    const { stdout } = await execFile('git', ['show', `HEAD:${missionRecord}`], {
+      cwd: context.targetDir,
+    })
+    const recorded = parseYaml(stdout)
+    const current = structuredClone(context.mission)
+    delete current.last_checkpoint.revision
+    if (JSON.stringify(current) === JSON.stringify(recorded)) paths = []
+  }
+  const hasChanges = paths.length > 0
+  let revision = git.revision
   if (hasChanges) {
     context.mission.last_checkpoint = {
-      base_revision: git.revision || 'unborn',
-      push_requested: Boolean(flags.push),
+      base_revision: git.revision,
+      commit_type: metadata.commitType || 'checkpoint',
       created_at: new Date().toISOString(),
     }
     await writeMission(context.missionPath, context.mission)
-    await execFile(
-      'git',
-      ['add', '--', relativeToRepo(context.targetDir, join(context.missionPath, 'mission.yaml'))],
-      { cwd: context.targetDir }
-    )
-    const trailers = [
-      `SpecDev-Mission: ${context.mission.id}`,
-      metadata.assignmentId ? `SpecDev-Assignment: ${metadata.assignmentId}` : null,
-      `SpecDev-Commit-Type: ${metadata.commitType || 'checkpoint'}`,
-    ]
-      .filter(Boolean)
-      .join('\n')
-    await execFile(
-      'git',
-      ['commit', '-m', `specdev: checkpoint ${context.mission.id}`, '-m', trailers],
-      { cwd: context.targetDir }
-    )
-  }
-  if (flags.push) {
-    await execFile('git', ['push', '-u', 'origin', context.mission.branch], {
-      cwd: context.targetDir,
+    paths = await missionOwnedPaths(context)
+    const delivery = await commitExactDelivery(context.targetDir, {
+      expectedHead: git.revision,
+      paths,
+      subject: 'specdev: checkpoint ' + context.mission.id,
+      trailers: {
+        'SpecDev-Mission': context.mission.id,
+        'SpecDev-Assignment': metadata.assignmentId,
+        'SpecDev-Commit-Type': metadata.commitType || 'checkpoint',
+      },
     })
+    revision = delivery.commit
+    context.mission.last_checkpoint.revision = revision
+    await writeMission(context.missionPath, context.mission)
   }
-  const revision = (await gitSnapshot(context.targetDir)).revision
   return emit(flags, {
     command: 'mission checkpoint',
     version: 1,
     status: 'ok',
     mission: context.mission.id,
     committed: hasChanges,
-    pushed: Boolean(flags.push),
+    pushed: false,
     revision,
   })
 }
@@ -3722,59 +2887,6 @@ function readMissionPhase(specdevPath, runId) {
     return readCheckpoint(specdevPath, runId).position?.node || null
   } catch {
     return null
-  }
-}
-
-async function unstageIncompleteDiscussions(context) {
-  const root = join(context.specdevPath, 'discussions')
-  if (!(await fse.pathExists(root))) return
-  const hasHead = await gitSucceeds(context.targetDir, ['rev-parse', '--verify', 'HEAD'])
-  for (const entry of await fse.readdir(root, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue
-    const id = entry.name.match(/^D\d{4,5}/)?.[0]
-    if (!id) continue
-    let completed = false
-    try {
-      const call = readGuidedCall(context.targetDir, id)
-      completed = call.synchronized && call.state.status === 'completed'
-    } catch {
-      // A folder without a readable callable checkpoint is incomplete.
-    }
-    if (completed) continue
-    const path = `.specdev/discussions/${entry.name}`
-    if (hasHead) {
-      await execFile('git', ['restore', '--staged', '--', path], { cwd: context.targetDir })
-    } else {
-      await execFile('git', ['rm', '--cached', '-r', '--ignore-unmatch', '--', path], {
-        cwd: context.targetDir,
-      })
-    }
-  }
-}
-
-async function unstageIncompleteTestAudits(context) {
-  const root = join(context.specdevPath, 'test-audits')
-  if (!(await fse.pathExists(root))) return
-  const hasHead = await gitSucceeds(context.targetDir, ['rev-parse', '--verify', 'HEAD'])
-  for (const entry of await fse.readdir(root, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue
-    const id = entry.name.match(/^TA\d{5}/)?.[0]
-    if (!id) continue
-    let completed = false
-    try {
-      const call = readGuidedCall(context.targetDir, id)
-      completed = call.synchronized && call.state.status === 'completed'
-    } catch {
-      // A folder without a readable callable checkpoint is incomplete.
-    }
-    if (completed) continue
-    const path = `.specdev/test-audits/${entry.name}`
-    if (hasHead)
-      await execFile('git', ['restore', '--staged', '--', path], { cwd: context.targetDir })
-    else
-      await execFile('git', ['rm', '--cached', '-r', '--ignore-unmatch', '--', path], {
-        cwd: context.targetDir,
-      })
   }
 }
 
@@ -3951,61 +3063,17 @@ async function gitSucceeds(cwd, args) {
   }
 }
 
-async function gitBranchRevision(cwd, branch) {
-  try {
-    const { stdout } = await execFile('git', ['rev-parse', branch], { cwd })
-    return stdout.trim() || null
-  } catch {
-    return null
-  }
-}
-
 async function latestCheckpointRevision(cwd, branch, missionId) {
-  try {
-    const { stdout } = await execFile(
-      'git',
-      [
-        'log',
-        `refs/heads/${branch}`,
-        '-1',
-        '--format=%H',
-        '--fixed-strings',
-        `--grep=specdev: checkpoint ${missionId}`,
-      ],
-      { cwd }
-    )
-    return stdout.trim() || null
-  } catch {
-    return null
-  }
-}
-
-async function missionLanding(context, { attempt, finalRevision = null } = {}) {
-  const revision =
-    finalRevision ||
-    context.mission.final_revision ||
-    (await latestMissionCompletionRevision(
-      context.targetDir,
-      context.mission.branch,
-      context.mission.id
-    ))
-  const options = { finalRevision: revision }
-  return attempt
-    ? landMission(context.targetDir, context.mission, options)
-    : inspectMissionLanding(context.targetDir, context.mission, options)
+  return (
+    (await findCommitsByTrailer(cwd, 'SpecDev-Mission', missionId, { revision: 'HEAD' }))[0] || null
+  )
 }
 
 async function latestMissionCompletionRevision(cwd, branch, missionId) {
   try {
     const { stdout } = await execFile(
       'git',
-      [
-        'log',
-        `refs/heads/${branch}`,
-        '--format=%H',
-        '--fixed-strings',
-        `--grep=SpecDev-Mission: ${missionId}`,
-      ],
+      ['log', '--all', '--format=%H', '--fixed-strings', `--grep=SpecDev-Mission: ${missionId}`],
       { cwd }
     )
     for (const revision of stdout
@@ -4024,7 +3092,7 @@ async function latestMissionCompletionRevision(cwd, branch, missionId) {
       }
     }
   } catch {
-    // A missing local Mission branch is reported by the landing classifier.
+    // Missing historical completion evidence remains a factual inspection result.
   }
   return null
 }
@@ -4118,7 +3186,8 @@ function emitMissionImplementationChoice(context, flags) {
       {
         mode: 'spawned',
         command: spawned,
-        effect: 'Use automatic implementation workers and retain eligible parallel waves.',
+        effect:
+          'Use automatic implementation workers; execute children sequentially in the current checkout.',
       },
     ],
     execution_policy: mission.execution_policy || null,
@@ -4150,7 +3219,7 @@ async function emitMissionInlineAction(context, childExecution) {
 }
 
 function missionQueueRunsParallel(mission, queue) {
-  return missionUsesSpawnedImplementation(mission) && missionWaveIsParallel(queue)
+  return false
 }
 
 async function decideMissionDivergence(selector, flags, decision) {
@@ -4325,34 +3394,6 @@ async function missionReapprovalStatus(context) {
   }
 }
 
-async function recordParallelMissionReapproval(context, child, worktree, assignmentStatus) {
-  const worktreeMissionPath = join(
-    worktree.path,
-    '.specdev',
-    'missions',
-    basename(context.missionPath)
-  )
-  const worktreeMission = await readMission(worktreeMissionPath)
-  const pending = worktreeMission.pending_user_reapproval
-  if (
-    !pending ||
-    pending.child !== child.id ||
-    pending.identity !== assignmentStatus.reapproval_identity
-  ) {
-    throw new Error(`Parallel child ${child.id} has no matching durable user-reapproval gate`)
-  }
-  const stored = await readMissionReapproval(worktreeMissionPath, pending.child, pending.identity)
-  context.mission.pending_parallel_user_reapproval = {
-    child: pending.child,
-    identity: pending.identity,
-    workspace: worktree.relativePath,
-    preview: missionReapprovalPreview(stored.record),
-  }
-  context.mission.status = 'awaiting_user_reapproval'
-  context.mission.next_action = `Review the exact gate with specdev mission status ${context.mission.id}.`
-  await writeMission(context.missionPath, context.mission)
-}
-
 async function parallelMissionReapprovalStatus(context) {
   const pending = context.mission.pending_parallel_user_reapproval
   const worktreePath = confinedMissionWorktree(context.targetDir, pending.workspace)
@@ -4399,57 +3440,11 @@ async function emitParallelMissionReapprovalGate(context, flags, command) {
   })
 }
 
-async function decideParallelMissionDivergence(context, flags, decision, child, identity) {
-  const pending = context.mission.pending_parallel_user_reapproval
-  if (pending.child !== child || pending.identity !== identity) {
-    return fail(flags, 'The supplied identity is not the pending parallel user-reapproval gate.')
-  }
-  try {
-    const worktreePath = confinedMissionWorktree(context.targetDir, pending.workspace)
-    const nested = await withSuppressedOutput(() =>
-      decideMissionDivergence(
-        context.mission.id,
-        { ...flags, target: worktreePath, json: true },
-        decision
-      )
-    )
-    if (!nested || !['approved', 'rejected'].includes(nested.status)) return nested
-    const queue = await readMissionQueue(context.missionPath)
-    const queueChild = queue.assignments.find((item) => item.id === child)
-    if (!queueChild) throw new Error(`Mission queue does not contain parallel child ${child}`)
-    if (decision === 'approve') {
-      queueChild.status = 'running'
-      delete queueChild.blocker
-    } else {
-      queueChild.status = 'cancelled'
-      queueChild.blocker = flags.reason.trim()
-      recordMissionSourceGap(context.mission, {
-        kind: 'child-user-reapproval',
-        sourceId: child,
-        signalId: `parallel-user-reapproval:${identity}:rejected`,
-        artifact: pending.preview.verdict,
-      })
-    }
-    await writeMissionQueue(context.missionPath, queue)
-    delete context.mission.pending_parallel_user_reapproval
-    context.mission.status = 'running'
-    context.mission.next_action = `Resume the Mission with specdev mission run ${context.mission.id}.`
-    delete context.mission.blocker
-    await writeMission(context.missionPath, context.mission)
-    return emit(flags, {
-      command: `mission ${decision}-divergence`,
-      version: 1,
-      status: nested.status,
-      mission: context.mission.id,
-      child,
-      identity,
-      disposition: nested.disposition,
-      parallel: true,
-      next_action: context.mission.next_action,
-    })
-  } catch (error) {
-    return fail(flags, error.message)
-  }
+async function decideParallelMissionDivergence(context, flags) {
+  return fail(
+    flags,
+    'Historical parallel state is preserved; inspect it or use guarded abandonment.'
+  )
 }
 
 function confinedMissionWorktree(targetDir, workspace) {
@@ -4474,11 +3469,6 @@ async function inspectPendingMissionReapproval(context) {
     assignmentStatus,
     pending,
   })
-}
-
-function landingNextAction(mission, landing) {
-  if (!landing || landing.status !== 'pending') return null
-  return `Inspect landing reason ${landing.reason}, then run specdev mission land ${mission.id}.`
 }
 
 async function missionActivitySummary(specdevPath, mission) {
@@ -4519,6 +3509,7 @@ function emit(flags, payload) {
     if (payload.path) console.log(`Path: ${payload.path}`)
     if (payload.contract) console.log(`Contract: ${payload.contract}`)
     if (payload.phase) console.log(`Phase: ${payload.phase}`)
+    if (payload.error) console.log(payload.error)
     if (payload.branch) console.log(`Branch: ${payload.branch}`)
     if (payload.contract_hash) console.log(`Contract hash: ${payload.contract_hash}`)
     if (payload.contract_preview?.length > 0) {
@@ -4588,16 +3579,6 @@ function emit(flags, payload) {
     for (const line of workspaceChangeSummaryLines(payload.dirty_paths)) console.log(line)
     if (payload.base_branch) console.log(`Base branch: ${payload.base_branch}`)
     if (payload.final_revision) console.log(`Final revision: ${payload.final_revision}`)
-    if (payload.landing) {
-      console.log(`Landing: ${payload.landing.status} (${payload.landing.reason})`)
-      if (payload.landing.detail) console.log(`Landing detail: ${payload.landing.detail}`)
-      if (payload.landing.choices?.length > 0) {
-        console.log('Landing choices:')
-        for (const choice of payload.landing.choices) {
-          console.log(`  - ${choice.action}: ${choice.command || 'leave Git state unchanged'}`)
-        }
-      }
-    }
     if (payload.blocker) console.log(`Blocker: ${payload.blocker}`)
     if (payload.abandonment) {
       console.log(`Abandonment reason: ${payload.abandonment.reason}`)

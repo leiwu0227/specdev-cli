@@ -33,6 +33,11 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
   }
 
   const progress = await fse.readJson(progressPath)
+  if (!standalone && !Array.isArray(progress.owned_paths)) {
+    throw new Error(
+      'Mission child progress requires owned_paths: exact product path/sha256 entries (or [] for no product edits)'
+    )
+  }
   if (!Array.isArray(progress.tasks) || progress.tasks.length === 0) {
     throw new Error('implementation/progress.json requires a non-empty tasks array')
   }

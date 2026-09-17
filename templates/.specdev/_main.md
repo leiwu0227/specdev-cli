@@ -165,12 +165,10 @@ verification, ownership, destination approval, or rebuild requirements.
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.
 - **Assignment:** one readable contract, one user approval, then automatic
   Design + Implementation + evidence + review.
-- **Mission:** a foreground controller on a dedicated branch. Immediately after
-  contract approval, the user explicitly freezes inline or spawned implementation
-  for the whole Mission. Inline uses the main coding session and the normal worktree
-  sequentially; spawned execution may lease up to three ignored worktrees for an
-  already-justified independent child wave. Mission is user-selected and does not
-  imply multiple children.
+- **Mission:** a foreground controller in the existing checkout. Immediately
+  after approval, explicitly choose inline (main session) or spawned workers.
+  Both execute sequential children with independent review and local checkpoints.
+  Mission is user-selected and does not imply multiple children.
 - **Discussion:** a concurrent code-read-only RippleGraph callable with required
   proposal/design entry points plus safe supporting artifacts and nested folders;
   it may later be promoted to fresh work.
@@ -196,7 +194,7 @@ a scheduler, but only one may be active in a worktree.
   assigns every child implementation, repair, and resolver to the current main
   coding session; the Mission skill fulfills each returned obligation and reruns
   the controller without routine user interaction. Spawned retains automatic
-  workers and eligible parallel waves. Reviewers remain independent in both modes.
+  workers executing children sequentially. Reviewers remain independent in both modes.
 - Mission abandonment is a reasoned two-step terminal command. Its first pass is
   read-only; exact confirmation preserves branch and worktree identities, records
   no delivery, compacts only owned runtime, and never lands or deletes partial work.
@@ -230,9 +228,7 @@ a scheduler, but only one may be active in a worktree.
   not receive or validate the strict SpecDev result envelope.
 - Never run a full suite when narrower evidence answers the current question.
   Repository confirmation rules always take precedence.
-- Do not create worktrees for normal Assignments, sequential Mission children,
-  Missions, or Discussions. Only the Mission controller may lease the validated
-  `.specdev/worktrees/slot-N` pool for a parallel wave.
+- Use the existing checkout for Assignments, Mission children, and Discussions.
 - Raw provider output, PID state, SQLite, and scratch data belong in ignored
   `cache/`; ordinary interrupted source can be inspected and repaired.
 - A reviewed Mission child that only exceeds automatic authority pauses at an

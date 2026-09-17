@@ -145,6 +145,7 @@ function writeRecoveredDelivery(path) {
     JSON.stringify({
       version: 1,
       tasks: [{ id: 'T-1', status: 'completed' }],
+      owned_paths: [],
       selected_guides: { implementation: [], review: [] },
       verification: [
         {
@@ -995,7 +996,7 @@ try {
   let registry = JSON.parse(readFileSync(registryPath, 'utf8'))
   assert.equal(Object.keys(registry.graphs).length, 8)
   assert.match(registry.graphs['assignment-lifecycle'].path, /assignment-lifecycle@2\.4\.0$/)
-  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.6\.0$/)
+  assert.match(registry.graphs['mission-lifecycle'].path, /mission-lifecycle@1\.7\.0$/)
   assert.equal(registry.graphs['discussion-lifecycle'].kind, 'callable')
 
   assert.equal(runJson(root, ['next', '--json']).state, 'idle')
@@ -1509,11 +1510,23 @@ try {
     1
   )
   assert.match(conflictingChoice.error, /choose exactly one/)
+  writeFileSync(join(missionChoiceRoot, 'adopted.txt'), 'pre-existing product work\n')
+  const dirtyMission = runJson(
+    missionChoiceRoot,
+    ['mission', 'run', choiceMission.id, '--inline', '--json'],
+    1
+  )
+  assert.match(dirtyMission.error, /Unadopted dirty product paths/)
+  writeFileSync(
+    join(missionChoiceRoot, '.specdev', 'cache', 'adoption.json'),
+    JSON.stringify(['adopted.txt'])
+  )
   const inlineMission = runJson(missionChoiceRoot, [
     'mission',
     'run',
     choiceMission.id,
     '--inline',
+    '--adopt-paths=.specdev/cache/adoption.json',
     '--json',
   ])
   assert.equal(inlineMission.status, 'action_required')
@@ -1534,6 +1547,22 @@ try {
     false
   )
   assert.equal(existsSync(join(missionChoiceRoot, '.specdev', 'worktrees')), false)
+  assert.equal(gitText(missionChoiceRoot, ['branch', '--format=%(refname:short)']), 'main')
+  assert.equal(
+    readFileSync(join(missionChoiceRoot, 'adopted.txt'), 'utf8'),
+    'pre-existing product work\n'
+  )
+  // A local Mission checkpoint during foreground child work must be resumable.
+  const midChildCheckpoint = runJson(missionChoiceRoot, [
+    'mission',
+    'checkpoint',
+    choiceMission.id,
+    '--json',
+  ])
+  assert.equal(midChildCheckpoint.status, 'ok')
+  const resumedChild = runJson(missionChoiceRoot, ['mission', 'run', choiceMission.id, '--json'])
+  assert.equal(resumedChild.status, 'action_required')
+  assert.equal(resumedChild.assignment, inlineMission.assignment)
   const frozenChoice = runJson(
     missionChoiceRoot,
     ['mission', 'run', choiceMission.id, '--spawned', '--json'],

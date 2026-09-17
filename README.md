@@ -149,14 +149,13 @@ specdev mission run M00001
 # after you explicitly approve the Mission contract
 specdev mission run M00001 --approve
 specdev mission status M00001
-specdev mission land M00001
 ```
 
 Missions are designed for long-running executions that may outlive one agent
-session. A Mission runs on its own branch, advances a durable assignment queue,
-and checkpoints its progress so interrupted work can resume safely. Independent
-children may run concurrently; final verification and landing bring the
-integrated result back to the base branch.
+session. A Mission runs sequential children in the existing checkout, advances a
+durable assignment queue, and records local checkpoints. Approval is followed by
+an explicit inline or spawned implementation choice. Both modes preserve the
+selected checkout and use independent reviewers and final verification.
 
 Before approval, Mission output includes one contract-bound execution policy:
 worker and reviewer profiles, the exact verification executable and command,
@@ -204,7 +203,7 @@ block abandonment.
 
 If an interrupted controller has no local process marker, inspect it before
 using `specdev mission pause M00001` to record the interruption. Pause refuses a
-live local controller. Commit the pause changes on the Mission branch before
+live local controller. Record the pause changes in a local commit before
 retrying abandonment, which requires a clean worktree. Do not resume an unwanted
 Mission just to clear its controller record.
 

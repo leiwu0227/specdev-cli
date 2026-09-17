@@ -51,6 +51,14 @@ acceptance IDs. Implementation validates Task coverage, guide selections and
 their catalog versions, verification receipts, structured deviations,
 `follow_up`, and final results before the frozen review policy is applied.
 
+Mission children additionally record `owned_paths` in `implementation/progress.json`:
+an exact array of `{ "path": "src/example.js", "sha256": "..." }` entries, or `[]`
+when there are no product edits. Paths are repository-relative individual files.
+The digest is SHA256 over `file:` followed by bytes (`executable:` for executable
+files), or `symlink:` followed by the link target; deletion uses `null`. Refresh
+this manifest after repairs. Mission commits include only matching owned paths
+and Mission artifacts; changed byte identities or overlapping index edits block.
+
 Review policy is stored in `status.json` while Brainstorm is editable and copied
 into the exact approval decision. Supported values are Brainstorm
 `optional|required` and implementation `required|waived`. A waiver is valid only

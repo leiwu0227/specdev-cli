@@ -56,7 +56,6 @@ function fixture() {
   const mission = parseYaml(readFileSync(join(missionPath, 'mission.yaml'), 'utf8'))
   git(root, ['add', '--all'])
   git(root, ['commit', '-m', 'record mission'])
-  git(root, ['switch', '-c', mission.branch])
   return { root, missionPath, mission, created, parent: git(root, ['rev-parse', 'HEAD']) }
 }
 
@@ -112,6 +111,35 @@ function prepareChildWorktree(context) {
 }
 
 try {
+  for (const legacy of [false, true]) {
+    const { root, missionPath, mission } = fixture()
+    if (legacy) {
+      delete mission.checkout
+      writeFileSync(join(missionPath, 'mission.yaml'), stringifyYaml(mission))
+      git(root, ['add', '--all'])
+      git(root, ['commit', '-m', 'legacy checkout authority'])
+    }
+    // Replace ancestry with a new root while retaining the exact current tree.
+    const oldHead = git(root, ['rev-parse', 'HEAD'])
+    const rewritten = git(root, ['commit-tree', 'HEAD^{tree}', '-m', 'user history rewrite'])
+    git(root, ['update-ref', 'HEAD', rewritten, oldHead])
+    assert.match(runJson(root, ['mission', 'run', mission.id], 1).error, /missing or unreachable/)
+    const status = runJson(root, ['mission', 'status', mission.id])
+    assert(status.revision_facts.some((fact) => !fact.contained))
+    const plan = runJson(root, ['mission', 'abandon', mission.id, '--reason=history rewritten'])
+    assert.equal(plan.plan.mission.head, rewritten)
+    assert(plan.plan.mission.revision_facts.some((fact) => !fact.contained))
+    const result = runJson(root, [
+      'mission',
+      'abandon',
+      mission.id,
+      '--reason=history rewritten',
+      `--confirm=${plan.plan.digest}`,
+    ])
+    assert.equal(result.status, 'abandoned')
+    assert.equal(git(root, ['rev-parse', 'HEAD^']), rewritten)
+    assert.match(readFileSync(join(missionPath, 'abandoned.md'), 'utf8'), /"contained":false/)
+  }
   {
     const context = fixture()
     const { root, missionPath, mission, parent } = context
@@ -160,7 +188,7 @@ try {
     assert.equal(existsSync(join(root, '.specdev', '.ripplegraph', 'runs', mission.run_id)), false)
     assert.equal(existsSync(join(root, '.specdev', '.current')), false)
     assert.equal(git(root, ['status', '--porcelain=v1', '--untracked-files=all']), '')
-    assert.equal(git(root, ['rev-parse', 'main']), parent)
+    assert.equal(git(root, ['rev-parse', 'HEAD^']), parent)
     const message = git(root, ['show', '-s', '--format=%B', 'HEAD'])
     assert.match(message, new RegExp(`SpecDev-Mission: ${mission.id}`))
     assert.match(message, /SpecDev-Commit-Type: abandonment/)
@@ -171,7 +199,7 @@ try {
     assert.equal(status.abandonment.reason, 'objective is no longer wanted')
     assert.equal(status.abandonment.terminal_commit, abandoned.repository.terminal_commit)
     assert.equal(status.delivery, null)
-    assert.equal(status.landing, null)
+    assert.equal(status.landing, undefined)
     assert.equal(status.next_action, null)
     const runStatus = runJson(root, ['mission', 'run', mission.id])
     assert.equal(runStatus.status, 'abandoned')
@@ -218,7 +246,10 @@ try {
       ['focus', mission.id],
     ]
     for (const args of guarded) {
-      assert.match(runJson(root, args, 1).error, /abandoned and immutable/)
+      assert.match(
+        runJson(root, args, 1).error,
+        args[1] === 'land' ? /no longer performs Mission landing/ : /abandoned and immutable/
+      )
       assert.equal(git(root, ['rev-parse', 'HEAD']), terminalHead)
     }
   }
@@ -251,13 +282,13 @@ try {
 
   {
     const { root, mission } = fixture()
-    git(root, ['switch', 'main'])
+    git(root, ['checkout', '--detach'])
     const wrong = runJson(
       root,
       ['mission', 'abandon', mission.id, '--reason=wrong branch refusal'],
       1
     )
-    assert.match(wrong.error, /requires checked-out branch/)
+    assert.match(wrong.error, /requires an attached checkout/)
   }
 
   {

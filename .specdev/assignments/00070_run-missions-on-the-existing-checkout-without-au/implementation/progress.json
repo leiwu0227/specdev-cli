@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-engine-integration.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction",
+      "status": "passed",
+      "duration_ms": 34075,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-engine-graphpackages.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+      "status": "passed",
+      "duration_ms": 125,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+      "status": "passed",
+      "duration_ms": 34075,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-landing.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+      "status": "passed",
+      "duration_ms": 34075,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-compatibility.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction",
+      "status": "passed",
+      "duration_ms": 34075,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-abandonment.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+      "status": "passed",
+      "duration_ms": 34075,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-successor-adoption.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+      "status": "passed",
+      "duration_ms": 34075,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-user-reapproval.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+      "status": "passed",
+      "duration_ms": 34075,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-environment.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction",
+      "status": "passed",
+      "duration_ms": 34074,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-gaps.js",
+      "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+      "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage",
+      "status": "passed",
+      "duration_ms": 0,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

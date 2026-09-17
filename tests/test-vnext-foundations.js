@@ -1161,6 +1161,7 @@ the existing API stable.
     JSON.stringify({
       version: 1,
       tasks: [{ id: 'T-1', status: 'completed' }],
+      owned_paths: [],
       selected_guides: { implementation: ['api-security'], review: ['frontend'] },
       verification: [
         {
