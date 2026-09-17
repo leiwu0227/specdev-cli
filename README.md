@@ -180,6 +180,20 @@ history immutable and draft a fresh approval boundary with:
 specdev mission handoff M00001 --successor-assignment
 ```
 
+To abandon an unwanted Mission, run `specdev mission abandon M00001
+--reason="objective withdrawn"`, inspect the plan, then rerun its exact
+`--confirm=<plan-digest>` command. The command preserves partial work and checks
+only that Mission's child worktrees; registered worktrees with another Mission's
+canonical child branch remain untouched, even when dirty. Unknown ownership,
+unregistered pool contents, and dirty children of the retiring Mission still
+block abandonment.
+
+If an interrupted controller has no local process marker, inspect it before
+using `specdev mission pause M00001` to record the interruption. Pause refuses a
+live local controller. Commit the pause changes on the Mission branch before
+retrying abandonment, which requires a clean worktree. Do not resume an unwanted
+Mission just to clear its controller record.
+
 ## Learn more
 
 See [QUICKSTART.md](QUICKSTART.md) for an end-to-end walkthrough, or run:

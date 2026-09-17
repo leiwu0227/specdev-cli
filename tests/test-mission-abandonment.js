@@ -271,6 +271,43 @@ try {
     const live = runJson(root, ['mission', 'abandon', mission.id, '--reason=live refusal'], 1)
     assert.match(live.error, /live or ambiguous Attempts/)
     assert.match(live.error, /live_local/)
+    assert.match(
+      runJson(root, ['mission', 'pause', mission.id], 1).error,
+      /Stop the foreground Mission controller/
+    )
+  }
+
+  {
+    const { root, mission } = fixture()
+    const attempt = await createAttemptRecord(join(root, '.specdev'), {
+      kind: 'mission-controller',
+      mission: mission.id,
+      workspace: '.',
+    })
+    git(root, ['add', '--all'])
+    git(root, ['commit', '-m', 'record interrupted controller without local marker'])
+    const blocked = runJson(root, ['mission', 'abandon', mission.id, '--reason=cancel'], 1)
+    assert.match(blocked.error, /live or ambiguous Attempts/)
+    assert.match(blocked.error, /unknown/)
+    assert.equal(runJson(root, ['mission', 'pause', mission.id]).status, 'paused')
+    assert.equal(
+      parseYaml(readFileSync(join(root, '.specdev', 'processes', `${attempt.id}.yaml`), 'utf8'))
+        .status,
+      'interrupted'
+    )
+    git(root, ['add', '--all'])
+    git(root, ['commit', '-m', 'record explicit pause before abandonment'])
+    const planned = runJson(root, ['mission', 'abandon', mission.id, '--reason=cancel'])
+    assert.equal(
+      runJson(root, [
+        'mission',
+        'abandon',
+        mission.id,
+        '--reason=cancel',
+        `--confirm=${planned.plan.digest}`,
+      ]).status,
+      'abandoned'
+    )
   }
 
   {
@@ -290,6 +327,69 @@ try {
     assert.equal(git(root, ['rev-parse', child.childBranch]), child.childRevision)
     assert.match(git(root, ['worktree', 'list', '--porcelain']), /slot-01/)
     assert.equal(abandoned.retained.child_worktrees[0].revision, child.childRevision)
+  }
+
+  {
+    const context = fixture()
+    const { root, mission } = context
+    const child = prepareChildWorktree(context)
+    const foreignBranch = 'specdev/M99999/00002'
+    const foreignPath = join(root, '.specdev', 'worktrees', 'slot-02')
+    git(root, ['worktree', 'add', '-b', foreignBranch, foreignPath, 'HEAD'])
+    const foreignRevision = git(foreignPath, ['rev-parse', 'HEAD'])
+    writeFileSync(join(foreignPath, 'unfinished.txt'), 'other mission work\n')
+    const foreignStatus = git(foreignPath, ['status', '--porcelain=v1', '--untracked-files=all'])
+    const before = durableSnapshot(root)
+    const planned = runJson(root, [
+      'mission',
+      'abandon',
+      mission.id,
+      '--reason=retain other mission',
+    ])
+    assert.equal(durableSnapshot(root), before)
+    assert.deepEqual(
+      planned.plan.retained.child_worktrees.map((item) => item.branch),
+      [child.childBranch]
+    )
+    const abandoned = runJson(root, [
+      'mission',
+      'abandon',
+      mission.id,
+      '--reason=retain other mission',
+      `--confirm=${planned.plan.digest}`,
+    ])
+    assert.equal(abandoned.status, 'abandoned')
+    assert.equal(git(foreignPath, ['rev-parse', 'HEAD']), foreignRevision)
+    assert.equal(git(foreignPath, ['branch', '--show-current']), foreignBranch)
+    assert.equal(
+      git(foreignPath, ['status', '--porcelain=v1', '--untracked-files=all']),
+      foreignStatus
+    )
+    assert.equal(readFileSync(join(foreignPath, 'unfinished.txt'), 'utf8'), 'other mission work\n')
+    assert.equal(git(child.worktreePath, ['rev-parse', 'HEAD']), child.childRevision)
+    git(root, ['worktree', 'remove', '--force', foreignPath])
+  }
+
+  for (const kind of ['unqueued-child', 'unknown-branch', 'detached', 'unregistered']) {
+    const { root, mission } = fixture()
+    const worktreePath = join(root, '.specdev', 'worktrees', 'slot-01')
+    if (kind === 'unregistered') {
+      mkdirSync(worktreePath, { recursive: true })
+      writeFileSync(join(worktreePath, 'unknown.txt'), 'unregistered work\n')
+    } else if (kind === 'detached') {
+      git(root, ['worktree', 'add', '--detach', worktreePath, 'HEAD'])
+    } else {
+      const branch = kind === 'unqueued-child' ? `specdev/${mission.id}/99999` : 'unknown-owner'
+      git(root, ['worktree', 'add', '-b', branch, worktreePath, 'HEAD'])
+    }
+    const before = durableSnapshot(root)
+    const blocked = runJson(
+      root,
+      ['mission', 'abandon', mission.id, '--reason=unknown ownership'],
+      1
+    )
+    assert.match(blocked.error, /not attributable|Unregistered Mission worktree/)
+    assert.equal(durableSnapshot(root), before)
   }
 
   {
@@ -341,12 +441,14 @@ try {
   console.log('Mission abandonment tests passed.')
 } finally {
   for (const root of roots) {
-    const worktreePath = join(root, '.specdev', 'worktrees', 'slot-01')
-    if (existsSync(worktreePath)) {
-      try {
-        git(root, ['worktree', 'remove', '--force', worktreePath])
-      } catch {
-        // A failed assertion may leave incomplete worktree metadata.
+    for (const slot of ['slot-01', 'slot-02']) {
+      const worktreePath = join(root, '.specdev', 'worktrees', slot)
+      if (existsSync(join(worktreePath, '.git'))) {
+        try {
+          git(root, ['worktree', 'remove', '--force', worktreePath])
+        } catch {
+          // A failed assertion may leave incomplete worktree metadata.
+        }
       }
     }
     rmSync(root, { recursive: true, force: true })

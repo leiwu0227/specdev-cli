@@ -336,6 +336,9 @@ async function inspectChildWorktrees(targetDir, specdevPath, mission, queue) {
   for (const item of registered) {
     const child = byBranch.get(item.branch)
     if (!child) {
+      // The pool is shared: another Mission's worktree is outside this operation.
+      const owner = /^specdev\/(M\d{5})\/\d{5}$/.exec(item.branch || '')?.[1]
+      if (owner && owner !== mission.id) continue
       throw new Error(
         `Registered worktree ${relativeToRepo(targetDir, item.worktree)} is not attributable to Mission ${mission.id}`
       )
