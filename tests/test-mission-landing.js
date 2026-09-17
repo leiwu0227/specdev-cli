@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { parse, stringify } from 'yaml'
 import { missionPathDigest } from '../src/utils/mission-ownership.js'
 import { inspectMissionLanding, landMission } from '../src/utils/mission-landing.js'
+import { checkpointMissionBoundary } from '../src/commands/mission.js'
 
 const CLI = fileURLToPath(new URL('../bin/specdev.js', import.meta.url))
 const roots = []
@@ -108,6 +109,13 @@ try {
       assignments: [{ id: '00001', folder: child, status: 'completed', wave: 1 }],
     })
   )
+  writeFileSync(join(ownedRoot, 'owned.txt'), 'user work at approval\n')
+  git(ownedRoot, ['add', 'owned.txt'])
+  git(ownedRoot, ['commit', '-m', 'separately record pre-existing product work'])
+  const mission = parse(readFileSync(join(missionPath, 'mission.yaml'), 'utf8'))
+  mission.approval_dirty_paths = ['owned.txt']
+  mission.product_boundary = { adopted_paths: [], established_at: new Date().toISOString() }
+  writeFileSync(join(missionPath, 'mission.yaml'), stringify(mission))
   writeFileSync(join(ownedRoot, 'owned.txt'), 'owned\n')
   writeFileSync(
     join(childPath, 'implementation', 'progress.json'),
@@ -119,7 +127,10 @@ try {
   git(ownedRoot, ['add', 'unrelated.txt'])
   writeFileSync(join(ownedRoot, 'unrelated.txt'), 'working bytes\n')
   const indexBefore = git(ownedRoot, ['show', ':unrelated.txt'])
-  const checkpoint = run(ownedRoot, ['mission', 'checkpoint', created.id])
+  const checkpoint = await checkpointMissionBoundary(
+    { targetDir: ownedRoot, specdevPath: join(ownedRoot, '.specdev'), missionPath, mission },
+    '00001'
+  )
   assert.equal(checkpoint.committed, true)
   const repeated = run(ownedRoot, ['mission', 'checkpoint', created.id])
   assert.equal(repeated.committed, false)

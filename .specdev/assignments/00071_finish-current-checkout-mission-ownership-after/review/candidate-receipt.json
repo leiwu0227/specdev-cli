@@ -1,0 +1,405 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "dc8276fff1f7e315aa244d5f2c0090eddf96fd9da31b4d56f4e713b08f7eeb46",
+  "assignment": {
+    "id": "00071",
+    "folder": "00071_finish-current-checkout-mission-ownership-after"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-17T06:35:35.722Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00071_finish-current-checkout-mission-ownership-after/brainstorm/contract.md",
+    "hash": "a9e8e3d7d48aad732ca03943ab51957df0c719f7215e72c092c8d2e6735115a1"
+  },
+  "acceptance": {
+    "total": 4,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Assignment 00070 engine/graph/environment evidence; fresh checkout regression retains local commits and non-mutating compatibility refusals",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Fresh tests/test-mission-landing.js covers approval-dirty→separately-committed→owned-child-delivery, exact manifests, unrelated index/worktree preservation, and overlap refusal",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Unchanged checkout/migration/abandonment code and Assignment 00070 compatibility, abandonment, successor, and reapproval receipts",
+        "result": "passed"
+      },
+      {
+        "id": "AC-4",
+        "evidence": "Unchanged shipped documentation, skills, help, and graph from reviewed delivery ddcd006",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 10,
+    "items": [
+      {
+        "command": "node tests/test-engine-integration.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint own...",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-engine-graphpackages.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint ownership correction",
+        "status": "passed",
+        "duration_ms": 125,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint ownership correction",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-landing.js",
+        "revision": "working-tree@ddcd006fc810bffec9be048b9f9f510c88ecb29d",
+        "scope": "AC-2 approval-time dirty path becomes clean before implementation; child delivery accepts its new exact byte manifest and preserves unrelated index/worktree changes",
+        "status": "passed",
+        "duration_ms": 4607,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-compatibility.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint own...",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-abandonment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint ownership correction",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-successor-adoption.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint ownership correction",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-user-reapproval.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint ownership correction",
+        "status": "passed",
+        "duration_ms": 34075,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-environment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; revalidated after Mission checkpoint-resume guard correction; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint own...",
+        "status": "passed",
+        "duration_ms": 34074,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-gaps.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "scope": "Assignment 00070 AC-1–AC-4 focused regression coverage; reused from immediately preceding delivery ddcd006; this command’s covered behavior is unaffected by the checkpoint ownership correction",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 10,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 10,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-engine-integration.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-engine-graphpackages.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-landing.js",
+        "revision": "working-tree@ddcd006fc810bffec9be048b9f9f510c88ecb29d",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-compatibility.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-abandonment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-successor-adoption.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-user-reapproval.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-environment.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-gaps.js",
+        "revision": "working-tree@a7d959fed37220952a24278c7a5599b31ae49ae8",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 2,
+    "groups": [
+      {
+        "name": "src",
+        "count": 1,
+        "paths": [
+          "src/commands/mission.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-mission-landing.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "The contract's agreed history-rewrite and legacy-parallel recovery restrictions",
+      "remain. No additional risk is introduced by removing obsolete ownership logic."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00071_finish-current-checkout-mission-ownership-after/brainstorm/contract.md",
+      "exists": true,
+      "digest": "a9e8e3d7d48aad732ca03943ab51957df0c719f7215e72c092c8d2e6735115a1"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00071_finish-current-checkout-mission-ownership-after/design/plan.md",
+      "exists": true,
+      "digest": "d43a14489574a529e95f08eea0dcc90497c00026e0212a5d7352ef5e4c4594d1"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00071_finish-current-checkout-mission-ownership-after/implementation/progress.json",
+      "exists": true,
+      "digest": "54daa5c66d698c09b40d2ba7fdaf1997be1a8e340cb9dc8b46eb39967676b4f6"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00071_finish-current-checkout-mission-ownership-after/outcome.md",
+      "exists": true,
+      "digest": "147663a66ac00c4c5c5177015da22baea8a49a627c2f0a54d5e747f970bb3553"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

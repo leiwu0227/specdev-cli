@@ -2773,20 +2773,9 @@ function emitMissionCompatibility(flags, mission, compatibility) {
   })
 }
 
-async function checkpointMissionBoundary(context, boundary) {
-  const snapshot = await gitSnapshot(context.targetDir)
-  const projectPaths = classifyWorkspaceChanges(snapshot.dirty_paths).projectPaths
-  const adopted = new Set(context.mission.product_boundary?.adopted_paths || [])
-  const protectedPaths = new Set(
-    (context.mission.approval_dirty_paths || []).filter((path) => !adopted.has(path))
-  )
-  const overlap = projectPaths.filter((path) => protectedPaths.has(path))
-  if (overlap.length > 0) {
-    throw new Error(
-      `Mission boundary ${boundary} overlaps user-owned approval paths: ${overlap.join(', ')}. ` +
-        'Checkpoint or relocate those changes explicitly, then resume the Mission.'
-    )
-  }
+export async function checkpointMissionBoundary(context, boundary) {
+  // Implementation-start adoption and exact current byte manifests own this
+  // decision. Approval-time dirtiness is historical, not continuing ownership.
   const checkpoint = await withSuppressedOutput(() =>
     checkpointMission(
       context.mission.id,
