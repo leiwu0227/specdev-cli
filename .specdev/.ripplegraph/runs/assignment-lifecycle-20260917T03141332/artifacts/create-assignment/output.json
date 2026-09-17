@@ -1,0 +1,10 @@
+{
+  "id": "00069",
+  "name": "00069_clean-up-owned-temporary-logs-and-runtime-after",
+  "path": ".specdev/assignments/00069_clean-up-owned-temporary-logs-and-runtime-after",
+  "description": "Clean up owned temporary logs and runtime after Assignment, Discussion, and Mission completion, with previewable cleanup of existing leftovers",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

@@ -24,6 +24,7 @@ import { engineCommand } from './engine.js'
 import { missionCommand } from './mission.js'
 import { testAuditCommand } from './test-audit.js'
 import { adhocCommand } from './adhoc.js'
+import { cleanupCommand } from './cleanup.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { readFocusedRevalidation } from '../utils/adhoc-focused.js'
 
@@ -65,6 +66,7 @@ const commandHandlers = {
   mission: ({ positionalArgs, flags }) => missionCommand(positionalArgs, flags),
   'test-audit': ({ positionalArgs, flags }) => testAuditCommand(positionalArgs, flags),
   adhoc: ({ positionalArgs, flags }) => adhocCommand(positionalArgs, flags),
+  cleanup: ({ positionalArgs, flags }) => cleanupCommand(positionalArgs, flags),
   context: ({ flags }) => contextCommand(flags),
 }
 

@@ -111,6 +111,17 @@ try {
   rmSync(join(processDir, 'ATT-999.yaml'))
   rmSync(join(markerDir, 'ATT-999.json'))
 
+  const shelvedCacheDir = join(
+    cleanRoot,
+    '.specdev',
+    'cache',
+    'retired-artifacts',
+    `assignment--${clean.name}`
+  )
+  mkdirSync(shelvedCacheDir, { recursive: true })
+  const shelvedLog = join(shelvedCacheDir, 'diagnostic.md')
+  writeFileSync(shelvedLog, 'Keep diagnostics for unfinished work\n')
+
   const shelf = runJson(cleanRoot, [
     'assignment',
     'shelf',
@@ -119,6 +130,14 @@ try {
     '--json',
   ])
   assert.equal(shelf.status, 'shelved')
+  assert.equal(existsSync(shelvedLog), true)
+  const shelfCleanup = runJson(cleanRoot, ['cleanup', '--apply', '--json'])
+  assert.equal(shelfCleanup.status, 'completed')
+  assert.equal(existsSync(shelvedLog), true)
+  assert.equal(
+    shelfCleanup.skipped.some((item) => item.reason.includes('shelved')),
+    true
+  )
   assert.equal(shelf.immutable, true)
   assert.equal(shelf.shelf.repository.boundary, 'clean-head')
   assert.equal(shelf.repository.boundary_commit, cleanBoundary)

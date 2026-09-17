@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { suspendRun } from 'ripplegraph'
+import { createAttemptRecord, updateAttemptRecord } from '../src/utils/process-record.js'
 
 const repoRoot = resolve(import.meta.dirname, '..')
 const bin = join(repoRoot, 'bin', 'specdev.js')
@@ -1118,8 +1119,60 @@ try {
   rmSync(unsafeLink)
   const awaitingReview = runJson(root, ['discussion', discussion.id, '--json'])
   assert.equal(awaitingReview.status, 'awaiting_review')
+  const discussionAttempt = await createAttemptRecord(join(root, '.specdev'), {
+    kind: 'reviewer',
+    discussion: discussion.id,
+  })
+  await updateAttemptRecord(join(root, '.specdev'), discussionAttempt.id, { status: 'completed' })
+  mkdirSync(join(root, '.specdev', 'cache', 'attempts'), { recursive: true })
+  const discussionLog = join(
+    root,
+    '.specdev',
+    'cache',
+    'attempts',
+    `${discussionAttempt.id}.stdout.log`
+  )
+  writeFileSync(discussionLog, 'Disposable reviewer output\n')
+  const concurrentDiscussion = runJson(root, [
+    'discussion',
+    'Keep concurrent research active',
+    '--json',
+  ])
   const discussionDone = runJson(root, ['discussion', discussion.id, '--complete', '--json'])
   assert.equal(discussionDone.status, 'completed')
+  assert.equal(existsSync(discussionLog), false)
+  assert.equal(
+    existsSync(join(root, '.specdev', 'processes', `${discussionAttempt.id}.yaml`)),
+    false
+  )
+  assert.equal(existsSync(join(root, '.specdev', '.ripplegraph', 'calls', discussion.id)), false)
+  assert.equal(
+    existsSync(join(root, '.specdev', '.ripplegraph', 'calls', concurrentDiscussion.id)),
+    true
+  )
+  assert.equal(
+    JSON.parse(readFileSync(join(discussionPath, 'completion.json'), 'utf8')).activity
+      .attempt_count,
+    1
+  )
+  assert.equal(runJson(root, ['discussion', discussion.id, '--json']).status, 'completed')
+  assert.equal(
+    runJson(root, ['discussion', discussion.id, '--complete', '--json']).status,
+    'completed'
+  )
+  assert.equal(
+    runJson(root, ['discussion', '--list', '--json']).discussions.find(
+      (item) => item.id === discussion.id
+    ).status,
+    'completed'
+  )
+  const cleanupPreview = runJson(root, ['cleanup', '--json'])
+  assert.equal(cleanupPreview.status, 'preview')
+  assert.equal(runJson(root, ['cleanup', '--apply', '--json']).status, 'completed')
+  assert.equal(
+    existsSync(join(root, '.specdev', '.ripplegraph', 'calls', concurrentDiscussion.id)),
+    true
+  )
   assert.deepEqual(
     discussionDone.artifact_manifest.files.map((file) => file.path),
     [
@@ -1306,6 +1359,18 @@ try {
   assert.equal(compacted.status, 'completed')
   assert.equal(compacted.recovered, true)
   assert.equal(compacted.runtime_compaction.compacted, true)
+  assert.equal(
+    existsSync(
+      join(
+        root,
+        '.specdev',
+        'cache',
+        'retired-artifacts',
+        `assignment--${compactedAssignment.name}`
+      )
+    ),
+    false
+  )
   assert.deepEqual(compacted.activity.provider_attempts, {
     total: 0,
     completed: 0,

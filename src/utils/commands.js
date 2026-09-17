@@ -17,6 +17,11 @@ export const COMMANDS = [
   { name: 'decide', usage: 'decide <value>', description: 'Submit an explicit workflow decision' },
   { name: 'cancel', usage: 'cancel <reason>', description: 'Abandon the focused guided workflow' },
   {
+    name: 'cleanup',
+    usage: 'cleanup [--apply]',
+    description: 'Preview or remove owned terminal workflow leftovers',
+  },
+  {
     name: 'assignment',
     usage: 'assignment <objective>|shelf <id>',
     description: 'Create, succeed, or shelf a standalone Assignment',

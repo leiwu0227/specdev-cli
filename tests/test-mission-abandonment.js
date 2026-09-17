@@ -115,6 +115,10 @@ try {
   {
     const context = fixture()
     const { root, missionPath, mission, parent } = context
+    const missionCacheDir = join(root, '.specdev', 'cache', 'missions', mission.id, 'wave-1')
+    mkdirSync(missionCacheDir, { recursive: true })
+    const missionLog = join(missionCacheDir, '00001.stdout.log')
+    writeFileSync(missionLog, 'Retire abandoned Mission output\n')
     const before = durableSnapshot(root)
     const planned = runJson(root, [
       'mission',
@@ -147,6 +151,7 @@ try {
       `--confirm=${planned.plan.digest}`,
     ])
     assert.equal(abandoned.status, 'abandoned')
+    assert.equal(existsSync(missionLog), false)
     assert.equal(abandoned.reason, 'objective is no longer wanted')
     assert.equal(abandoned.repository.parent, parent)
     assert.equal(abandoned.delivery, null)

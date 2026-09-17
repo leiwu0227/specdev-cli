@@ -363,6 +363,12 @@ async function runMission(selector, flags) {
   if (!context) return null
   const { targetDir, specdevPath, missionPath, mission } = context
   if (mission.status === 'completed') {
+    await compactCompletedWorkflowRuntime(specdevPath, {
+      runId: mission.run_id,
+      attemptFilter: { mission: mission.id },
+      terminalOwner: { mission: mission.id, status: 'completed' },
+      focus: { kind: 'mission', id: mission.id },
+    })
     const landing = await missionLanding(context, { attempt: true })
     return emit(flags, {
       command: 'mission run',
@@ -2782,6 +2788,7 @@ async function finishMissionDelivery(context) {
   const { targetDir, specdevPath, missionPath, mission, flags } = context
   await completeMission(context)
   await updateAttemptRecord(specdevPath, context.controller.id, { status: 'completed' })
+  await clearLocalProcessMarker(specdevPath, context.controller.id)
   const runtime = await compactCompletedWorkflowRuntime(specdevPath, {
     runId: mission.run_id,
     attemptFilter: { mission: mission.id },

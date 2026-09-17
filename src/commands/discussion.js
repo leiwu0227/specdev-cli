@@ -16,6 +16,8 @@ import {
 } from '../utils/callable-sync.js'
 import { assertWorkspaceEngine } from '../utils/engine.js'
 import { attemptLiveness, listAttemptRecords } from '../utils/process-record.js'
+import { compactDiscussion } from '../utils/discussion-completion.js'
+import { assertInactiveAttempts } from '../utils/cache-retention.js'
 
 export async function discussCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
@@ -103,6 +105,7 @@ async function resumeDiscussion(targetDir, specdevPath, selector, flags) {
     return fail(flags, 'RippleGraph callable runtime is unavailable; run specdev update')
   if (call.state.status === 'completed') {
     await releaseDiscussion(specdevPath, selector)
+    await compactDiscussion(specdevPath, resolved.path, call.state)
     return emit(flags, discussionPayload(targetDir, resolved, call.state, 'completed'))
   }
 
@@ -127,6 +130,10 @@ async function resumeDiscussion(targetDir, specdevPath, selector, flags) {
   }
 
   if (flags.complete) {
+    await assertInactiveAttempts(
+      specdevPath,
+      await listAttemptRecords(specdevPath, { discussion: selector })
+    )
     const runningReviews = await listAttemptRecords(specdevPath, {
       kind: 'reviewer',
       status: 'running',
@@ -148,6 +155,7 @@ async function resumeDiscussion(targetDir, specdevPath, selector, flags) {
     if (discussionGraphSupportsManifest(call.state)) output.artifact_manifest = manifest
     const completed = stepGuidedCall(targetDir, selector, output)
     await releaseDiscussion(specdevPath, selector)
+    await compactDiscussion(specdevPath, resolved.path, completed.state)
     return emit(flags, {
       ...discussionPayload(targetDir, resolved, completed.state, 'completed'),
       completed_revision: revision,

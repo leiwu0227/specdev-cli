@@ -68,6 +68,15 @@ owned Attempt records after their compact activity summary has been preserved.
 Attempt execution records use IDs such as `Attempt-00001`; they are temporary
 worker, reviewer, or controller invocations, not Assignment identities. Legacy
 `ATT-*` records may remain while older in-flight work resumes.
+Successful Assignment, Discussion, and Mission completion also removes owned
+raw logs and scratch results. Discussion completion preserves compact durable
+completion/activity metadata for listing and promotion. Explicit abandonment
+cleans owned temporary cache after its terminal record is preserved. Active,
+interrupted, failed/recoverable, and shelved work retains diagnostic cache.
+Use `specdev cleanup` to preview eligible leftovers and reclaimable bytes;
+`specdev cleanup --apply` revalidates ownership before removing them. Both accept
+`--json`. Unknown ownership, live/uncertain Attempts, symlinks, and unsafe paths
+are retained and reported. Shared caches and durable evidence are preserved.
 Assignment and Mission transitions are owned by their semantic commands;
 generic `specdev step`, `decide`, and `action` cannot advance those graphs.
 

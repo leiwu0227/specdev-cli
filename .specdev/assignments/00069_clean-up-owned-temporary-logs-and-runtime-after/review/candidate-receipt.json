@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "ecf04376a002c9aff32db0f594f0666bb933e594d8eeff8b307c48c39a09c924",
+  "assignment": {
+    "id": "00069",
+    "folder": "00069_clean-up-owned-temporary-logs-and-runtime-after"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-17T03:17:50.653Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00069_clean-up-owned-temporary-logs-and-runtime-after/brainstorm/contract.md",
+    "hash": "db078613a9c050ca6315eea0b8937352e427393d3043ae4a44beb6c4acd93c04"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Approved foundations, engine integration, Mission abandonment, and Assignment shelf suites verify terminal cleanup and retained workflow behavior.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Foundations fixtures verify preview bytes, apply/repeat, partial deletion with retained ownership and retry; engine integration verifies the public cleanup command.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Foundations fixtures cover live/running/uncertain Attempts, shelved and active cache, unknown legacy files, shared caches, symlink leaves/ancestors and traversal. Integration preserves concurrent Discussion runtime and promotion; shelf/a...",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 5,
+    "items": [
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "scope": "AC-1 AC-2 AC-3: owned cache cleanup, partial recovery, safety guards",
+        "status": "passed",
+        "duration_ms": 2580,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-engine-integration.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "scope": "AC-1 AC-2 AC-3: Assignment completion, Discussion completion/listing/promotion, cleanup CLI and concurrency",
+        "status": "passed",
+        "duration_ms": 29000,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-abandonment.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "scope": "AC-1 AC-3: Mission abandonment logs and retained delivery/worktree invariants",
+        "status": "passed",
+        "duration_ms": 23600,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-assignment-shelf.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "scope": "AC-1 AC-3: shelved diagnostics, cancellation history, terminal recovery",
+        "status": "passed",
+        "duration_ms": 13180,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "git diff --check",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "scope": "changed files",
+        "status": "passed",
+        "duration_ms": 10,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 5,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 5,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-engine-integration.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-abandonment.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-assignment-shelf.js",
+        "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 20,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "README.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 13,
+        "paths": [
+          "src/commands/cleanup.js",
+          "src/commands/discussion.js",
+          "src/commands/dispatch.js",
+          "src/commands/engine.js",
+          "src/commands/mission.js",
+          "src/utils/artifact-retention.js",
+          "src/utils/cache-retention.js",
+          "src/utils/callable-sync.js",
+          "src/utils/cleanup.js"
+        ],
+        "omitted": 4
+      },
+      {
+        "name": "templates",
+        "count": 2,
+        "paths": [
+          "templates/.specdev/_index.md"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "tests",
+        "count": 4,
+        "paths": [
+          "tests/test-assignment-shelf.js"
+        ],
+        "omitted": 3
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "Legacy logs whose Attempt records have already been removed may remain because ownership cannot be proven; cleanup reports them for inspection as specified in the contract."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00069_clean-up-owned-temporary-logs-and-runtime-after/brainstorm/contract.md",
+      "exists": true,
+      "digest": "db078613a9c050ca6315eea0b8937352e427393d3043ae4a44beb6c4acd93c04"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00069_clean-up-owned-temporary-logs-and-runtime-after/design/plan.md",
+      "exists": true,
+      "digest": "b81a38812b9b53028d197b52b457fb928b72eca1a0f7ca5b677490b023593fdb"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00069_clean-up-owned-temporary-logs-and-runtime-after/implementation/progress.json",
+      "exists": true,
+      "digest": "b9e6d07450791a04a9a5323fe7d38c64db577fc0de371ef0384868f31fd858e8"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00069_clean-up-owned-temporary-logs-and-runtime-after/outcome.md",
+      "exists": true,
+      "digest": "da32e9975855cf375945fa02fe62852ae4dd42d5bfbd5b8e10394a348d33778a"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

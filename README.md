@@ -14,6 +14,20 @@ Choose the lightest workflow that fits the job:
 - **Assignment** for a contracted change with approval, implementation, and review.
 - **Mission** for a larger objective coordinated across multiple assignments.
 
+## Temporary logs
+
+Successful Assignments, Discussions, and Missions automatically remove their
+owned execution logs, scratch results, and temporary runtime after preserving
+durable evidence and activity summaries. Explicit abandonment also cleans owned
+temporary cache. Active, interrupted, failed/recoverable, and shelved work retains
+diagnostics. Discussion completion metadata preserves listing and later promotion.
+
+Preview existing leftovers with `specdev cleanup`; use `specdev cleanup --apply`
+to revalidate and remove eligible files. Both support `--json` and report paths,
+reclaimable bytes, and reasons for keeping files. Older logs with missing ownership
+records are retained, as are shared caches, live/uncertain Attempts, and unsafe
+paths. Filesystem failures are reported; rerun cleanup after resolving the cause.
+
 ## Install
 
 Node.js 22.13 or newer is required.

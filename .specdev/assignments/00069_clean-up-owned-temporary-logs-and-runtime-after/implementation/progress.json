@@ -1,0 +1,82 @@
+{
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [
+      "api-security"
+    ],
+    "review": [
+      "api-security"
+    ]
+  },
+  "verification": [
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+      "scope": "AC-1 AC-2 AC-3: owned cache cleanup, partial recovery, safety guards",
+      "status": "passed",
+      "duration_ms": 2580,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-engine-integration.js",
+      "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+      "scope": "AC-1 AC-2 AC-3: Assignment completion, Discussion completion/listing/promotion, cleanup CLI and concurrency",
+      "status": "passed",
+      "duration_ms": 29000,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-abandonment.js",
+      "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+      "scope": "AC-1 AC-3: Mission abandonment logs and retained delivery/worktree invariants",
+      "status": "passed",
+      "duration_ms": 23600,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-assignment-shelf.js",
+      "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+      "scope": "AC-1 AC-3: shelved diagnostics, cancellation history, terminal recovery",
+      "status": "passed",
+      "duration_ms": 13180,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "git diff --check",
+      "revision": "working-tree@6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+      "scope": "changed files",
+      "status": "passed",
+      "duration_ms": 10,
+      "role": "qualification"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ],
+    "review": [
+      {
+        "id": "api-security",
+        "version": "1"
+      }
+    ]
+  }
+}

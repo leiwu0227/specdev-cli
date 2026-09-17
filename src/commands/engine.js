@@ -17,6 +17,8 @@ import { readFocusedAssignmentLifecycle } from '../utils/assignment-lifecycle.js
 import { writeAssignmentStatus } from '../utils/assignment-vnext.js'
 import { buildStatusViews, formatStatusView } from '../utils/status-view.js'
 import { assignmentExecutionProjection } from '../utils/assignment-execution.js'
+import { attemptActivitySummary } from '../utils/process-record.js'
+import { compactShelvedWorkflowRuntime } from '../utils/artifact-retention.js'
 
 export async function engineCommand(command, positionalArgs = [], flags = {}) {
   const projectRoot = resolveTargetDir(flags)
@@ -39,10 +41,17 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
       if (execution) result.assignment_execution = execution
     }
     if (command === 'cancel' && result.state === 'cancelled' && assignmentBefore?.status) {
+      const specdevPath = join(projectRoot, '.specdev')
       await writeAssignmentStatus(assignmentBefore.path, {
         status: 'abandoned',
         abandoned_at: new Date().toISOString(),
         abandon_reason: positionalArgs.join(' ').trim(),
+        activity: await attemptActivitySummary(specdevPath, { assignment: assignmentBefore.name }),
+      })
+      await compactShelvedWorkflowRuntime(specdevPath, {
+        runId: assignmentBefore.status.run_id,
+        attemptFilter: { assignment: assignmentBefore.name },
+        terminalOwner: { assignment: assignmentBefore.name, status: 'abandoned' },
       })
     }
     if (command === 'status') {

@@ -8,6 +8,7 @@ import {
   readFileSync,
   rmSync,
   writeFileSync,
+  symlinkSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -83,7 +84,13 @@ import {
   parseGitPorcelainPaths,
   workspaceChangeSummaryLines,
 } from '../src/utils/workspace-changes.js'
-import { compactCompletedWorkflowRuntime } from '../src/utils/artifact-retention.js'
+import {
+  compactCompletedWorkflowRuntime,
+  retireTransientArtifact,
+} from '../src/utils/artifact-retention.js'
+import { cleanup } from '../src/utils/cleanup.js'
+import { cleanOwnedCache } from '../src/utils/cache-retention.js'
+import { safeStat } from '../src/utils/retention-files.js'
 import { durableAttemptStatusForResult, runSpawnedAgent } from '../src/utils/spawned-agent.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
@@ -870,6 +877,22 @@ the existing API stable.
     mission: 'M00001',
   })
   await updateAttemptRecord(specdevPath, missionAttempt.id, { status: 'completed' })
+  const completedMissionLog = join(
+    specdevPath,
+    'cache',
+    'missions',
+    'M00001',
+    'wave-1',
+    '00001.stdout.log'
+  )
+  await fse.outputFile(completedMissionLog, 'Mission child execution log\n')
+  const completedMissionAttemptLog = join(
+    specdevPath,
+    'cache',
+    'attempts',
+    `${missionAttempt.id}.stdout.log`
+  )
+  await fse.outputFile(completedMissionAttemptLog, 'Mission controller execution log\n')
   await assert.rejects(
     compactCompletedWorkflowRuntime(specdevPath, {
       runId: completedRunId,
@@ -900,6 +923,8 @@ the existing API stable.
   assert.deepEqual(compaction, { compacted: true, run_id: completedRunId, attempts_removed: 2 })
   assert.equal(existsSync(join(specdevPath, '.ripplegraph', 'runs', completedRunId)), false)
   assert.equal(await readAttemptRecord(specdevPath, missionAttempt.id), null)
+  assert.equal(existsSync(completedMissionLog), false)
+  assert.equal(existsSync(completedMissionAttemptLog), false)
   assert.equal(await readAttemptRecord(specdevPath, namespacedAttempt.id), null)
   assert.notEqual(await readAttemptRecord(specdevPath, attempt.id), null)
   assert.equal(readRippleCurrent(specdevPath).focusedRunId, null)
@@ -954,6 +979,159 @@ the existing API stable.
     { compacted: true, run_id: checkpointlessRunId, attempts_removed: 1 }
   )
   assert.equal(existsSync(checkpointlessRunPath), false)
+
+  // Terminal cache cleanup is ownership-based, previewable and recoverable.
+  {
+    const retentionRoot = join(root, 'retention', '.specdev')
+    const completedOwner = { assignment: '00901_cleanup' }
+    const retainedOwner = { assignment: '00902_shelved' }
+    const activeOwner = { assignment: '00903_active' }
+    for (const [owner, status] of [
+      [completedOwner, 'completed'],
+      [retainedOwner, 'shelved'],
+      [activeOwner, 'active'],
+    ]) {
+      await fse.outputJson(join(retentionRoot, 'assignments', owner.assignment, 'status.json'), {
+        id: owner.assignment.split('_')[0],
+        status,
+        run_id: `run-${owner.assignment}`,
+        activity: { attempt_count: 1 },
+      })
+      await fse.outputFile(
+        join(retentionRoot, 'assignments', owner.assignment, 'outcome.md'),
+        'Durable evidence\n'
+      )
+    }
+    const terminalAttempt = await createAttemptRecord(retentionRoot, {
+      ...completedOwner,
+      kind: 'worker',
+    })
+    await updateAttemptRecord(retentionRoot, terminalAttempt.id, { status: 'completed' })
+    const liveAttempt = await createAttemptRecord(retentionRoot, { ...activeOwner, kind: 'worker' })
+    const terminalLog = join(retentionRoot, 'cache', 'attempts', `${terminalAttempt.id}.stdout.log`)
+    const liveLog = join(retentionRoot, 'cache', 'attempts', `${liveAttempt.id}.stdout.log`)
+    const unknownLog = join(retentionRoot, 'cache', 'attempts', 'Attempt-99999.stdout.log')
+    const sharedCache = join(retentionRoot, 'cache', 'knowledge.sqlite')
+    const shelvedCache = join(
+      retentionRoot,
+      'cache',
+      'retired-artifacts',
+      'assignment--00902_shelved',
+      'result.md'
+    )
+    for (const file of [terminalLog, liveLog, unknownLog, sharedCache, shelvedCache])
+      await fse.outputFile(file, 'Keep or clean by ownership\n')
+    const transient = join(
+      retentionRoot,
+      'assignments',
+      completedOwner.assignment,
+      'implementation',
+      'worker-result.md'
+    )
+    await fse.outputFile(transient, 'Disposable foreground envelope\n')
+    await retireTransientArtifact(join(root, 'retention'), retentionRoot, transient)
+    const beforePreview = await fse.readFile(terminalLog, 'utf8')
+    const preview = await cleanup(retentionRoot)
+    assert.equal(preview.status, 'preview')
+    assert.equal(await fse.readFile(terminalLog, 'utf8'), beforePreview)
+    assert(
+      preview.candidates.some((file) => file.path.endsWith(`${terminalAttempt.id}.stdout.log`))
+    )
+    assert(preview.candidates.some((file) => file.path.includes('assignment--00901_cleanup')))
+    assert.equal(
+      preview.reclaimable_bytes,
+      preview.candidates.reduce((sum, file) => sum + file.bytes, 0)
+    )
+    assert(preview.skipped.some((entry) => entry.path?.endsWith('Attempt-99999.stdout.log')))
+    assert(preview.skipped.some((entry) => entry.reason.includes('shelved')))
+    const applied = await cleanup(retentionRoot, { apply: true })
+    assert.equal(applied.status, 'completed')
+    assert.equal(existsSync(terminalLog), false)
+    assert.equal(await readAttemptRecord(retentionRoot, terminalAttempt.id), null)
+    for (const file of [
+      liveLog,
+      unknownLog,
+      sharedCache,
+      shelvedCache,
+      join(retentionRoot, 'assignments', completedOwner.assignment, 'outcome.md'),
+    ])
+      assert(existsSync(file))
+    assert.equal((await cleanup(retentionRoot, { apply: true })).removed.length, 0)
+
+    // A terminal owner cannot override a running or live/uncertain Attempt.
+    const unsafeAttempt = await createAttemptRecord(retentionRoot, {
+      ...completedOwner,
+      kind: 'worker',
+    })
+    const unsafeLog = join(retentionRoot, 'cache', 'attempts', `${unsafeAttempt.id}.stdout.log`)
+    await fse.outputFile(unsafeLog, 'still running\n')
+    assert(
+      (await cleanup(retentionRoot, { apply: true })).skipped.some((entry) =>
+        /running or uncertain/.test(entry.reason)
+      )
+    )
+    assert(existsSync(unsafeLog))
+    await updateAttemptRecord(retentionRoot, unsafeAttempt.id, { status: 'completed' })
+    const markerPath = join(retentionRoot, 'cache', 'processes', `${unsafeAttempt.id}.json`)
+    await fse.outputJson(markerPath, { pid: process.pid })
+    assert(
+      (await cleanup(retentionRoot, { apply: true })).skipped.some((entry) =>
+        /live or uncertain/.test(entry.reason)
+      )
+    )
+    await fse.writeJson(markerPath, { pid: 'unknown' })
+    assert(
+      (await cleanup(retentionRoot, { apply: true })).skipped.some((entry) =>
+        /live or uncertain/.test(entry.reason)
+      )
+    )
+    await fse.remove(markerPath)
+
+    // Symlinks are rejected at leaves and ancestors; malformed owner paths cannot escape.
+    const outside = join(root, 'outside-retention.txt')
+    writeFileSync(outside, 'outside evidence\n')
+    await fse.remove(unsafeLog)
+    symlinkSync(outside, unsafeLog)
+    assert(
+      (await cleanup(retentionRoot, { apply: true })).skipped.some((entry) =>
+        /symlink/.test(entry.reason)
+      )
+    )
+    assert.equal(readFileSync(outside, 'utf8'), 'outside evidence\n')
+    await fse.remove(unsafeLog)
+    assert.throws(() => safeStat(retentionRoot, outside), /escapes/)
+    await assert.rejects(
+      cleanOwnedCache(retentionRoot, { assignment: '../outside' }),
+      /invalid cleanup owner/
+    )
+    const attemptsDir = join(retentionRoot, 'cache', 'attempts')
+    await fse.move(attemptsDir, `${attemptsDir}-saved`)
+    symlinkSync(`${attemptsDir}-saved`, attemptsDir)
+    assert(
+      (await cleanup(retentionRoot, { apply: true })).skipped.some((entry) =>
+        /symlink/.test(entry.reason)
+      )
+    )
+    await fse.remove(attemptsDir)
+    await fse.move(`${attemptsDir}-saved`, attemptsDir)
+
+    // A changed candidate can fail after another file was removed. Ownership
+    // survives that partial deletion, and a fresh retry finishes the remainder.
+    const firstResult = join(attemptsDir, `${unsafeAttempt.id}-result.md`)
+    const secondResult = join(attemptsDir, `${unsafeAttempt.id}.stdout.log`)
+    await fse.outputFile(firstResult, 'first result\n')
+    await fse.outputFile(secondResult, 'second result\n')
+    await assert.rejects(
+      cleanOwnedCache(retentionRoot, completedOwner, {
+        validate: async () => fse.writeFile(secondResult, 'changed after inspection\n'),
+      }),
+      /candidate changed/
+    )
+    assert.equal(existsSync(firstResult), false)
+    assert.notEqual(await readAttemptRecord(retentionRoot, unsafeAttempt.id), null)
+    assert.equal((await cleanup(retentionRoot, { apply: true })).status, 'completed')
+    assert.equal(existsSync(secondResult), false)
+  }
 
   const templateGuides = resolve('templates', '.specdev', 'guides')
   await fse.copy(templateGuides, join(specdevPath, 'guides'))

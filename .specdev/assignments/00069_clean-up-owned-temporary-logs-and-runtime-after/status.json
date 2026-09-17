@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "00069",
+  "kind": "change",
+  "description": "Clean up owned temporary logs and runtime after Assignment, Discussion, and Mission completion, with previewable cleanup of existing leftovers",
+  "run_id": "assignment-lifecycle-20260917T03141332",
+  "created_at": "2026-09-17T03:14:13.329Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-09-17T03:37:15.350Z",
+  "review_policy_frozen_at": "2026-09-17T03:17:49.498Z",
+  "approved_at": "2026-09-17T03:17:49.498Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "6c61a1ec3b1cd2892d2a4a7e26496f5a506075d1",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-09-17T03:17:50.702Z"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-17T03:17:50.653Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-09-17T03:37:15.275Z",
+  "activity": {
+    "attempt_count": 1,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 1,
+    "provider_attempts": {
+      "total": 1,
+      "completed": 1,
+      "failed": 0,
+      "blocked": 0,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 1165777,
+    "agent_duration_ms": 347311,
+    "provider_reported_tokens": null
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-09-17T03:37:15.350Z"
+}

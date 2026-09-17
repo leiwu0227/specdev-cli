@@ -40,6 +40,8 @@ specdev checkpoint brainstorm
 specdev reviewloop brainstorm          # optional
 specdev approve brainstorm
 specdev implement
+specdev cleanup                       # preview eligible terminal leftovers
+specdev cleanup --apply               # revalidate and remove eligible files
 
 specdev roadmap
 

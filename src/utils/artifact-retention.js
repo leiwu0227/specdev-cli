@@ -10,6 +10,16 @@ import {
 import { relativeToRepo } from './assignment-vnext.js'
 import { clearCurrent, readCurrentFocus } from './current.js'
 import {
+  artifactOwner,
+  ownerDirectory,
+  cleanOwnedCache,
+  assertInactiveAttempts,
+  matchesOwner,
+  retentionAttempts,
+} from './cache-retention.js'
+import { missionChildOwners, completedChildRuntimes } from './retention-owners.js'
+import { safeStat, inspectTree, removeSafeTree } from './retention-files.js'
+import {
   clearLocalProcessMarker,
   listAttemptRecords,
   updateAttemptRecord,
@@ -21,8 +31,17 @@ export async function retireTransientArtifact(targetDir, specdevPath, path) {
   const attempts = await listAttemptRecords(specdevPath)
   const owners = attempts.filter((attempt) => attempt.result_path === repoPath)
   const key = owners[0]?.id || createHash('sha256').update(repoPath).digest('hex').slice(0, 12)
-  const destination = join(specdevPath, 'cache', 'retired-artifacts', `${key}-${basename(path)}`)
-  await fse.ensureDir(join(specdevPath, 'cache', 'retired-artifacts'))
+  const owner = artifactOwner(specdevPath, path)
+  const directory = join(
+    specdevPath,
+    'cache',
+    'retired-artifacts',
+    ...(owner ? [ownerDirectory(owner)] : [])
+  )
+  const destination = join(directory, `${key}-${basename(path)}`)
+  safeStat(specdevPath, path)
+  safeStat(specdevPath, destination)
+  await fse.ensureDir(directory)
   await fse.move(path, destination, { overwrite: true })
   for (const attempt of owners) {
     await updateAttemptRecord(specdevPath, attempt.id, {
@@ -141,8 +160,10 @@ async function compactTerminalWorkflowRuntime(
     throw new Error('terminal runtime compaction requires one Attempt owner filter')
   }
   const ownerFilter = { [filterEntries[0][0]]: String(filterEntries[0][1]).trim() }
+  ownerDirectory(ownerFilter)
 
   const path = runDir(specdevPath, runId)
+  inspectTree(specdevPath, path)
   const runExists = await fse.pathExists(path)
   const checkpointExists = runExists && (await fse.pathExists(join(path, 'checkpoint.json')))
   if (checkpointExists) {
@@ -154,7 +175,12 @@ async function compactTerminalWorkflowRuntime(
     assertTerminalOwner(options?.terminalOwner, ownerFilter, allowedOwnerStatuses, runId)
   }
 
-  const attempts = await listAttemptRecords(specdevPath, ownerFilter)
+  const extraOwners = ownerFilter.mission
+    ? await missionChildOwners(specdevPath, ownerFilter.mission)
+    : []
+  const attempts = (await retentionAttempts(specdevPath)).filter((attempt) =>
+    [ownerFilter, ...extraOwners].some((owner) => matchesOwner(attempt, owner))
+  )
   const running = attempts.filter((attempt) => attempt.status === 'running')
   if (running.length > 0) {
     throw new Error(
@@ -163,20 +189,31 @@ async function compactTerminalWorkflowRuntime(
   }
 
   const current = readRippleCurrent(specdevPath)
+  safeStat(specdevPath, join(specdevPath, '.ripplegraph', 'current.json'))
   if (!checkpointExists && runExists && current.focusedRunId === runId) {
     throw new Error(`cannot compact focused checkpoint-less RippleGraph run ${runId}`)
+  }
+  const terminalStatus = options?.terminalOwner?.status || [...allowedOwnerStatuses][0]
+  const childRuntimes = await completedChildRuntimes(specdevPath, ownerFilter.mission, runId)
+  if (['completed', 'abandoned'].includes(terminalStatus)) {
+    await assertInactiveAttempts(specdevPath, attempts)
+    await cleanOwnedCache(specdevPath, ownerFilter, {
+      extraOwners,
+    })
   }
   if (checkpointExists && current.focusedRunId === runId) {
     writeRippleCurrent(specdevPath, { focusedRunId: null })
   }
-  if (runExists) await fse.remove(path)
+  if (runExists) removeSafeTree(specdevPath, path)
+  for (const childPath of childRuntimes) removeSafeTree(specdevPath, childPath)
 
   for (const attempt of attempts) {
     await clearLocalProcessMarker(specdevPath, attempt.id)
-    await fse.remove(join(specdevPath, 'processes', `${attempt.id}.yaml`))
+    removeSafeTree(specdevPath, join(specdevPath, 'processes', `${attempt.id}.yaml`))
   }
 
   if (focus) {
+    safeStat(specdevPath, join(specdevPath, '.current'))
     const currentFocus = await readCurrentFocus(specdevPath)
     if (currentFocus?.kind === focus.kind && currentFocus.id === String(focus.id)) {
       await clearCurrent(specdevPath)
