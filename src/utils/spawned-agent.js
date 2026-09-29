@@ -6,6 +6,7 @@ import { dirname, join, relative } from 'node:path'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
 import { buildProviderInvocation, decodeProviderOutput } from './provider-adapters.js'
+import { implementationGuidance } from './assignment-execution.js'
 import {
   parseResultEnvelope,
   resultEnvelopeBlockedFallback,
@@ -76,9 +77,18 @@ export async function runSpawnedAgent(options) {
         ...assignmentContext,
       })
     : null
-  const contextualPrompt = contextCatalog
-    ? `${prompt.trim()}\n\n${renderAssignmentContextCatalog(contextCatalog)}`
-    : prompt
+  const implementationWorker =
+    role === 'worker' &&
+    ['implementation', 'implementation-repair', 'implementation-recovery'].includes(
+      assignmentContext?.phase
+    )
+  const contextualPrompt = [
+    prompt.trim(),
+    implementationWorker ? implementationGuidance : null,
+    contextCatalog ? renderAssignmentContextCatalog(contextCatalog) : null,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 
   const digestExclusions = [repoRelative(targetDir, resultPath)].filter(Boolean)
   const reviewCandidate = role === 'reviewer' ? reviewerCandidateRoot(targetDir, resultPath) : null

@@ -46,6 +46,20 @@ try {
   assert.equal(statSync(join(repairable, '.codex')).isDirectory(), true)
   assert.equal(existsSync(join(repairable, '.codex', 'skills', 'specdev-adhoc', 'SKILL.md')), true)
   assert.equal(existsSync(join(repairable, '.specdev', 'workflow.json')), true)
+  const adhoc = readFileSync(
+    join(repairable, '.codex', 'skills', 'specdev-adhoc', 'SKILL.md'),
+    'utf8'
+  )
+  assert.match(adhoc, /smallest complete change/)
+  assert.match(adhoc, /principles add no Brainstorm phase/)
+  const brainstorm = readFileSync(
+    join(repairable, '.specdev', 'skills', 'core', 'brainstorming', 'SKILL.md'),
+    'utf8'
+  )
+  assert.match(brainstorm, /leave routine implementation\nchoices open/)
+  const review = readFileSync(join(repairable, '.specdev', 'guides', 'review.md'), 'utf8')
+  assert.match(review, /name a concrete alternative/)
+  assert.match(review, /Complexity blocks only for an actual defect/)
 
   const protectedTarget = prepareFixture('protected', 'preserve this file\n')
   const sentinelPath = join(protectedTarget, '.specdev', '_main.md')

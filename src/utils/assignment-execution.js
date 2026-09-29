@@ -6,6 +6,15 @@ import { resolveGuides } from './guides.js'
 
 const EXECUTION_MODES = new Set(['auto', 'inline', 'spawned'])
 
+export const implementationGuidance = [
+  'Deliver the simplest complete implementation of approved behavior. Understand the affected flow and relevant callers before editing; fix the actual source of a problem.',
+  'Prefer existing code and project patterns, standard-library or native capabilities, and suitable installed dependencies. Stop searching once a sound, appropriately scoped approach is established.',
+  'New abstractions, dependencies, configuration, compatibility paths, and fallbacks need a concrete current justification. Preserve readability and useful architectural boundaries; a single caller or fewer lines alone does not establish a better design.',
+  'Resolve routine choices within delegated authority without reopening settled scope. Ask when missing information materially affects behavior, scope, or authority, or an actual conflict prevents delivery; hypothetical concerns alone do not justify blocking.',
+  'Preserve requested behavior, required validation, security, accessibility, error handling, and acceptance evidence. Run only proportionate authorized verification and reuse valid receipts.',
+  'Finish when approved behavior and delivery obligations are complete. Record actual limitations and revisit triggers in existing artifacts or comments when useful; ordinary simplicity needs no debt ledger or speculative follow-up work.',
+].join('\n')
+
 export async function resolveAssignmentExecution(
   specdevPath,
   { flags = {}, mission = false, frozen = null, legacySpawned = false } = {}
@@ -136,6 +145,7 @@ export async function inlineImplementationObligations({
       result: relative(join(assignmentPath, 'implementation', resultFile)),
     },
     context_catalog: contextCatalog,
+    implementation_guidance: implementationGuidance,
     ...(issue ? { issue: String(issue).slice(0, 500) } : {}),
     result_contract: {
       format: 'worker-result-envelope',

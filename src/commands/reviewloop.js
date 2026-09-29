@@ -1724,6 +1724,7 @@ async function emitInlineRepair(
     console.log(`Verdict: ${payload.verdict}`)
     console.log(`Repair: ${payload.foreground.issue}`)
     console.log(`Result: ${payload.foreground.obligations.result}`)
+    console.log(payload.foreground.implementation_guidance)
     console.log('Context catalog:')
     for (const entry of payload.foreground.context_catalog.entries) {
       console.log(`  - ${entry.identity} | ${entry.path} | ${entry.purpose}`)

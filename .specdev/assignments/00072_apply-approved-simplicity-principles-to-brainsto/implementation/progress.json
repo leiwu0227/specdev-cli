@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-assignment-context.js",
+      "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+      "scope": "Initial added repair assertion ran before fixture plan existed; fixture ordering corrected",
+      "status": "failed",
+      "duration_ms": 30,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-assignment-context.js",
+      "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+      "scope": "Inline implementation, recovery, and repair guidance with existing context boundaries",
+      "status": "passed",
+      "duration_ms": 48,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-implement-recovery.js",
+      "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+      "scope": "Recovery lifecycle and implementation guidance at fake worker provider boundary; timed repeat after initial passing run lacked total duration",
+      "status": "passed",
+      "duration_ms": 25693,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-update-skill-roots.js",
+      "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+      "scope": "Isolated update delivers Brainstorm, Adhoc, and review guidance",
+      "status": "passed",
+      "duration_ms": 319,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

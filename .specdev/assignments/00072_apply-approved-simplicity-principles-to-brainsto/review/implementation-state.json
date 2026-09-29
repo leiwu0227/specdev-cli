@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "mode": "automatic",
+  "stage": "complete",
+  "primary_round": 1,
+  "round": 1,
+  "history": [
+    {
+      "round": 1,
+      "candidate_digest": "674756b5386e68e3cd4e0523b1733fa58a4c5d54acb176ccf3a90927214f5cd7",
+      "findings_digest": "24d71989280a6a3f0907b72d7934407948c8c15a539f156f5966f58ce704d11f"
+    }
+  ],
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "xhigh",
+    "filesystem": "read-only",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "contract_hash": "41489fe1445ea688f282fdaf316f548a135f31f2d69ac9d9a8f6d1244a66a78d",
+  "candidate_receipt_identity": "f38bed1c53595dc157e49d166884961c5a28dcfbdbe7250afdf9eb8d8b9ce6f4",
+  "status": "approved",
+  "candidate_digest": "674756b5386e68e3cd4e0523b1733fa58a4c5d54acb176ccf3a90927214f5cd7",
+  "findings_digest": "24d71989280a6a3f0907b72d7934407948c8c15a539f156f5966f58ce704d11f",
+  "attempt": "Attempt-00189",
+  "updated_at": "2026-09-29T00:29:05.618Z",
+  "reviewer_continuity": {
+    "mode": "fresh"
+  },
+  "material_divergence": false,
+  "scope_divergence": "none",
+  "procedure_divergence": "disclosed",
+  "evidence_integrity": "complete",
+  "user_reapproval_required": false,
+  "taxonomy_source": "structured",
+  "reviewer_continuation_lease": "unavailable"
+}

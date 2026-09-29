@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "f38bed1c53595dc157e49d166884961c5a28dcfbdbe7250afdf9eb8d8b9ce6f4",
+  "assignment": {
+    "id": "00072",
+    "folder": "00072_apply-approved-simplicity-principles-to-brainsto"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-29T00:21:57.109Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00072_apply-approved-simplicity-principles-to-brainsto/brainstorm/contract.md",
+    "hash": "41489fe1445ea688f282fdaf316f548a135f31f2d69ac9d9a8f6d1244a66a78d"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Updated canonical templates and generated Adhoc skill; test-update-skill-roots passes with installed guidance assertions.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Shared guidance in inline and spawned handoffs; test-assignment-context and test-implement-recovery pass; separate path inspection above covers Mission and repair routing.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Common review guide requires concrete alternatives and preserved behavior while retaining advisory preferences; isolated update confirms delivery; existing review loading and unchanged verdict semantics inspected.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 4,
+    "items": [
+      {
+        "command": "node tests/test-assignment-context.js",
+        "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+        "scope": "Inline implementation, recovery, and repair guidance with existing context boundaries",
+        "status": "passed",
+        "duration_ms": 48,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 2,
+        "superseded": 1,
+        "history_counts": {
+          "passed": 1,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-implement-recovery.js",
+        "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+        "scope": "Recovery lifecycle and implementation guidance at fake worker provider boundary; timed repeat after initial passing run lacked total duration",
+        "status": "passed",
+        "duration_ms": 25693,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-update-skill-roots.js",
+        "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+        "scope": "Isolated update delivers Brainstorm, Adhoc, and review guidance",
+        "status": "passed",
+        "duration_ms": 319,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 1,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 3,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 4,
+      "counts": {
+        "passed": 3,
+        "failed": 1,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 3,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 3,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 1,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-assignment-context.js",
+        "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-implement-recovery.js",
+        "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-update-skill-roots.js",
+        "revision": "working-tree@4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 11,
+    "groups": [
+      {
+        "name": "src",
+        "count": 5,
+        "paths": [
+          "src/commands/implement.js",
+          "src/commands/init.js",
+          "src/commands/reviewloop.js",
+          "src/utils/assignment-execution.js",
+          "src/utils/spawned-agent.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 3,
+        "paths": [
+          "templates/.specdev/_guides/assignment_guide.md",
+          "templates/.specdev/guides/review.md",
+          "templates/.specdev/skills/core/brainstorming/SKILL.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 3,
+        "paths": [
+          "tests/test-assignment-context.js",
+          "tests/test-implement-recovery.js",
+          "tests/test-update-skill-roots.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "Guidance delivery is verified; actual model adherence or reductions in code size,",
+      "latency, and cost are not measured. The recovery test passed again in a timed run",
+      "after the initial passing run lacked a complete duration receipt."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00072_apply-approved-simplicity-principles-to-brainsto/brainstorm/contract.md",
+      "exists": true,
+      "digest": "41489fe1445ea688f282fdaf316f548a135f31f2d69ac9d9a8f6d1244a66a78d"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00072_apply-approved-simplicity-principles-to-brainsto/design/plan.md",
+      "exists": true,
+      "digest": "0e507e113cafb9cd76bf240780a7e15fc726a34d69a32718706d889d74fe6c55"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00072_apply-approved-simplicity-principles-to-brainsto/implementation/progress.json",
+      "exists": true,
+      "digest": "ff269bd85cbbb02a58ee0e8ed3e363868c24ebd51a543ac27d3e37acd3236030"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00072_apply-approved-simplicity-principles-to-brainsto/outcome.md",
+      "exists": true,
+      "digest": "1ce8eec99e9d91a86bcb5a52a695d81e09d1e6ad92903ca8ec748a17d0ee11fa"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

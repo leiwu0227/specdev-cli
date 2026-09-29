@@ -624,6 +624,7 @@ function emitInlineAction(flags, payload) {
     console.log(`Progress: ${payload.foreground.obligations.progress}`)
     console.log(`Outcome: ${payload.foreground.obligations.outcome}`)
     console.log(`Result: ${payload.foreground.obligations.result}`)
+    console.log(payload.foreground.implementation_guidance)
     console.log('Context catalog:')
     for (const entry of payload.foreground.context_catalog.entries) {
       console.log(`  - ${entry.identity} | ${entry.path} | ${entry.purpose}`)

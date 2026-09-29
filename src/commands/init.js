@@ -59,6 +59,19 @@ does not want that detour to become another Assignment. This does not reject or
 terminate an unrelated active Assignment. Start with \`specdev adhoc start
 "<scope>"\`.
 
+Make the smallest complete change within the selected scope. Understand the affected
+flow and callers, reuse existing code and patterns, and prefer suitable standard-library,
+native, or installed capabilities. New abstractions, dependencies, configuration, and
+fallbacks need a concrete current justification. Preserve readability, architectural
+boundaries, and required validation, security, accessibility, and error handling.
+Resolve routine choices autonomously within authority; ask when material unknowns
+affect behavior or scope, authority is missing, or an actual conflict prevents delivery.
+Hypothetical concerns alone should not block work. Verify proportionally with
+authorization, reuse valid evidence, and finish when the change and existing delivery
+obligations are complete. Record actual limitations and revisit triggers only when
+useful. These principles add no Brainstorm phase, contract approval, worker delegation,
+or automatic review gate.
+
 Read \`.specdev/project_notes/big_picture.md\` only when project-wide intent is
 materially relevant to the bounded change. When repository behavior,
 conventions, or a recurring failure is unfamiliar, run a bounded

@@ -248,6 +248,12 @@ if (prompt.includes('Choose exactly one verdict')) {
   process.exit(0)
 }
 const countFile = ${JSON.stringify(join(root, '.fake-worker-count'))}
+if (!prompt.includes('simplest complete implementation') ||
+    !prompt.includes('within delegated authority') ||
+    !prompt.includes('required validation, security, accessibility')) {
+  process.stderr.write('Missing implementation guidance at the provider boundary')
+  process.exit(1)
+}
 const count = fs.existsSync(countFile) ? Number(fs.readFileSync(countFile, 'utf8')) + 1 : 1
 fs.writeFileSync(countFile, String(count))
 process.stdout.write(['---', 'status: completed', 'revision: null', 'follow_up: none', '---', '', '## Changes', '', 'Fake worker completed the recovery fixture.', ''].join('\\n'))

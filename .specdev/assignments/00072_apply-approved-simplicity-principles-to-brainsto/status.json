@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "00072",
+  "kind": "change",
+  "description": "Apply approved simplicity principles to Brainstorm, Assignment and Mission implementation, Adhoc, and existing review",
+  "run_id": "assignment-lifecycle-20260929T00164483",
+  "created_at": "2026-09-29T00:16:44.841Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-09-29T00:29:05.765Z",
+  "review_policy_frozen_at": "2026-09-29T00:21:56.021Z",
+  "approved_at": "2026-09-29T00:21:56.021Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "4553f3a9b193f60cdaa2e6d3be75c027d3389c5a",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-09-29T00:21:57.153Z"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-09-29T00:21:57.109Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-09-29T00:29:05.683Z",
+  "activity": {
+    "attempt_count": 2,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 2,
+    "provider_attempts": {
+      "total": 2,
+      "completed": 2,
+      "failed": 0,
+      "blocked": 0,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 429662,
+    "agent_duration_ms": 182383,
+    "provider_reported_tokens": null
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-09-29T00:29:05.765Z"
+}

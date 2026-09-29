@@ -126,6 +126,9 @@ try {
     issue: 'The delivery artifacts are incomplete.',
   })
   assert.equal(recovery.context_catalog.phase, 'implementation-recovery')
+  assert.match(inline.implementation_guidance, /simplest complete implementation/)
+  assert.match(inline.implementation_guidance, /within delegated authority/)
+  assert.equal(recovery.implementation_guidance, inline.implementation_guidance)
   assert.equal(
     recovery.context_catalog.entries.some((entry) => entry.kind === 'design-plan'),
     false
@@ -183,6 +186,13 @@ try {
   write(join(assignmentPath, 'outcome.md'), '# Outcome\n')
   write(join(assignmentPath, 'review', 'candidate-receipt.json'), '{"version":1}\n')
   write(join(assignmentPath, 'review', 'implementation-verdict.md'), '# Prior findings\n')
+  const repair = await inlineImplementationObligations({
+    targetDir: root,
+    assignmentPath,
+    contract: { path: contractPath },
+    resultFile: 'repair-result.md',
+  })
+  assert.equal(repair.implementation_guidance, inline.implementation_guidance)
   const candidateReview = await buildAssignmentContextCatalog({
     targetDir: root,
     specdevPath,
