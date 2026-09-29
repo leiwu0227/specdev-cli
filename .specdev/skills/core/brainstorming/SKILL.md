@@ -9,11 +9,19 @@ phase: brainstorm
 
 The current coding CLI is the author. Do not spawn a separate Brainstorm agent.
 
+Seek the smallest complete behavior that solves the user's current problem.
+Separate concrete needs from speculative extensions and consider existing
+architecture before proposing new subsystems. Discuss alternatives only when they
+materially affect behavior, cost, or constraints; leave routine implementation
+choices open. Preserve explicitly requested behavior. Scale discussion to the
+change without adding mandatory sections, choices, or approval gates.
+
 1. Read project context and repository instructions. Use the context script and
    precise-default knowledge search only when useful; use explicit broad mode
    only for deliberate any-term discovery.
-2. Ask focused questions about objective, scope/non-goals, expected behavior,
-   constraints, authority, risks, and verification.
+2. Ask focused questions about material unknowns in objective, scope/non-goals,
+   expected behavior, constraints, authority, risks, and verification. Reuse known
+   answers rather than reopening settled decisions.
 3. Present a few meaningfully different approaches when a real choice exists,
    lead with a recommendation, and record the user's decisions.
 4. Validate sections incrementally instead of presenting an opaque finished

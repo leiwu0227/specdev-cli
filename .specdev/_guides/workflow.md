@@ -96,10 +96,17 @@ when it remains unresolved, advances automatically through resolver and
 arbiter stages without sharing another child's recovery allowance. Repair
 descendants retain their parent gap identity, restarts deduplicate the same
 signal, and terminal semantic, authority, and infrastructure failures remain
-distinct. Children that do not depend on one another may share a wave. The
-foreground controller automatically runs up to three children in validated
-ignored worktrees and integrates reviewed deliveries in declared order. Users
-do not tune concurrency, and parallel speed is not a reason to split work.
+distinct. Immediately after contract approval, the user explicitly chooses
+inline or spawned implementation for the whole Mission; there is no silent
+default. Inline returns every implementation, repair, and resolver obligation to
+the current main coding session. Spawned retains automatic workers. Both execute
+ordered children sequentially in the existing checkout, with local exact-path
+checkpoints. Unadopted dirty product paths block implementation; explicit adoption
+uses an exact JSON path array through `--adopt-paths=<file>`. Child progress
+records `owned_paths` as product paths with their final SHA256 byte identities.
+Unrelated paths and index entries remain untouched. A real starting commit and
+attached checkout are required. History rewrites that lose recorded revisions
+block continuation; status and guarded abandonment remain available.
 
 A planned child may use `execution: evidence-only` only with an exact
 `observation_command` equal to the Mission final-verification command. A
@@ -120,7 +127,8 @@ evidence and returns the nested graph without rerunning a provider or command.
 `specdev roadmap` is an explicitly user-selected, stateless collaboration lane.
 It reports the standard files and the writable recursive
 `roadmap/designs/**/*.md` plus
-`roadmap/forecast.md` boundary without creating or changing state. Every design
+`roadmap/forecast.md` and `roadmap/todo.md` boundary without creating or
+changing state. Every design
 Markdown file must contain fewer than 800 words (maximum 799). Besides
 `core_concepts.md` and `source_code_folder_structure.md`, each design note must
 cover one independent feature or module and minimize overlap with the standard
@@ -138,6 +146,13 @@ gives the maximum total line count for the completed file; no particular format
 is required for that ending information. Design notes other than the two
 standard cross-cutting notes may include a small relevant folder tree and a
 pseudocode section when either helps clarify the design; neither is required.
+Only when the user explicitly requests a separate public-function design note,
+Roadmap suggests concise typed signatures aligned with the implementation or
+approved target. Classes use CapCase; named instances and returned values use
+`snake_case`. Each signature shows its return type and briefly describes the
+returned value, with custom types, important side effects, and failures clarified
+when helpful. This is optional guidance, not a standard filename, scaffold,
+fixed format, or validation rule.
 Outside those permitted illustrations and the deliberate source targets and line
 caps, conceptual design notes exclude runtime mechanics, verification history,
 code reproduction, and incidental source-code references rather than duplicating
@@ -151,7 +166,11 @@ collaboration to incorporate those features into the designs. When creating or
 revising the forecast, the coding agent quickly inspects current code read-only
 and lists code gaps in dependency order. Each gap is its own numbered Markdown
 section containing fewer than 200 words (maximum 199) and identifies the
-Roadmap design note or notes it is based on. For design notes, the coding agent
+Roadmap design note or notes it is based on. `todo.md` records user-selected
+non-architecture future work rather than design-derived gaps. Todo items use
+the same dependency order followed by user priority, numbered Markdown section
+format, and fewer-than-200-word limit as Forecast items, but omit provenance
+metadata and `Based on:` references. For design notes, the coding agent
 reports the intended final destination and a concise scope, then writes only
 after explicit user approval. Approval authorizes a `*_draft.md` draft within
 that agreed direction. After writing the draft, the agent reports only the
@@ -162,7 +181,8 @@ The agent does not echo the full document or diff unless asked. Product code and
 all other paths remain read-only. Roadmap creates no identity, graph, receipt, or
 snapshot. Draft writes are not committed automatically; published design-note
 changes are committed after user approval. Roadmap does not authorize
-implementation of a forecast item. It has no active lifecycle and applies only during explicit
+implementation of a Forecast or Todo item. It has no active lifecycle and
+applies only during explicit
 roadmap collaboration. Selecting another lane immediately supersedes Roadmap;
 no exit command or state transition is required.
 
@@ -191,8 +211,8 @@ workflow before any test is changed.
 
 `.specdev/agents.yaml` chooses `implementation.mode: auto | inline | spawned`
 and the worker/reviewer provider, model, effort, and timeout. Omission defaults
-to `auto`, which freezes to inline for an ordinary standalone Assignment;
-Mission-controlled execution remains spawned. Ignored
+to `auto`, which freezes to inline for an ordinary standalone Assignment.
+Mission implementation instead uses its explicit post-approval choice. Ignored
 `cache/agents.local.yaml` overrides repository configuration on one machine.
 Prompts and up to three selected guides define temporary work; there are no
 permanent reviewer personas.

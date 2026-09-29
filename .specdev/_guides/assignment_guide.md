@@ -24,6 +24,23 @@ Implementation tasks, file lists, generic quality expectations, and repeated
 project conventions belong in the plan or existing guidance, not acceptance
 criteria. A required section may say that no change-specific item exists.
 
+Plan the simplest complete implementation of approved behavior. Understand the
+affected flow and callers, reuse existing code and project patterns, and prefer
+suitable standard-library, native, or installed capabilities before new machinery.
+Stop searching once a sound scoped approach is established. Fix root causes;
+abstractions, dependencies, configuration, compatibility paths, and fallbacks need
+concrete current justification. Preserve readability and useful architecture;
+single callers and line counts alone do not determine whether a design is sound.
+
+In either execution mode, including Mission children and repairs, resolve routine
+choices within delegated authority. Ask only when material unknowns affect behavior,
+scope, or authority, or an actual conflict prevents delivery. Hypothetical concerns
+alone should not block work. Preserve required validation, security, accessibility,
+error handling, and acceptance evidence. Verify proportionally with authorization,
+reuse valid receipts, and finish when approved behavior and delivery obligations
+are complete. Document actual limitations and revisit triggers in existing artifacts
+or comments when useful; do not create a debt ledger or speculative follow-up work.
+
 `design/plan.md` uses ordered Task IDs and acceptance references. Tasks run
 inline by default; they do not imply subagents, worktrees, commits, reviews, or
 full suites. `implementation/progress.json` owns compact Task state, selected
@@ -72,8 +89,8 @@ outcome, result, product changes, and authorized evidence. Rerun
 `specdev implement` to validate those artifacts and advance to independent
 review. Use fixed `spawned` configuration for unattended automation that relied
 on the former mandatory worker launch, or select `--spawned` before the boundary
-with a bounded `--execution-reason`. Mission-controlled execution remains
-spawned.
+with a bounded `--execution-reason`. Mission children inherit their Mission-wide
+explicit post-approval choice instead of resolving this standalone default.
 
 When a spawned worker returns blocked, its partial code and artifacts remain in
 place. A normal rerun reports the same blocker instead of launching another

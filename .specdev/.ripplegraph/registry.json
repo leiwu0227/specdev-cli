@@ -55,10 +55,10 @@
     },
     "mission-lifecycle": {
       "id": "mission-lifecycle",
-      "version": "1.5.0",
+      "version": "1.7.0",
       "kind": "workflow",
       "title": "Mission lifecycle",
-      "description": "Deliver an approved objective unattended through Assignment waves and durable gap convergence.",
+      "description": "Deliver an approved objective in the existing checkout through sequential Assignments and durable gap convergence.",
       "activationHints": [
         "mission",
         "large objective",
@@ -66,8 +66,8 @@
       ],
       "requires": [],
       "effects": [],
-      "path": "workflows/mission-lifecycle@1.5.0",
-      "registeredAt": "2026-09-01T04:06:28.465Z"
+      "path": "workflows/mission-lifecycle@1.7.0",
+      "registeredAt": "2026-09-29T00:42:51.846Z"
     },
     "project-orientation": {
       "id": "project-orientation",

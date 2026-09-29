@@ -68,6 +68,15 @@ owned Attempt records after their compact activity summary has been preserved.
 Attempt execution records use IDs such as `Attempt-00001`; they are temporary
 worker, reviewer, or controller invocations, not Assignment identities. Legacy
 `ATT-*` records may remain while older in-flight work resumes.
+Successful Assignment, Discussion, and Mission completion also removes owned
+raw logs and scratch results. Discussion completion preserves compact durable
+completion/activity metadata for listing and promotion. Explicit abandonment
+cleans owned temporary cache after its terminal record is preserved. Active,
+interrupted, failed/recoverable, and shelved work retains diagnostic cache.
+Use `specdev cleanup` to preview eligible leftovers and reclaimable bytes;
+`specdev cleanup --apply` revalidates ownership before removing them. Both accept
+`--json`. Unknown ownership, live/uncertain Attempts, symlinks, and unsafe paths
+are retained and reported. Shared caches and durable evidence are preserved.
 Assignment and Mission transitions are owned by their semantic commands;
 generic `specdev step`, `decide`, and `action` cannot advance those graphs.
 
@@ -106,8 +115,9 @@ verification, ownership, destination approval, or rebuild requirements.
   non-behavioral user-requested documentation artifacts. No workflow, durable
   receipt, or automatic commit.
 - **Roadmap:** explicitly user-selected, stateless collaboration on
-  `project_notes/roadmap/forecast.md` and direct Markdown files under
-  `project_notes/roadmap/designs/`. Run `specdev roadmap`; show the exact
+  `project_notes/roadmap/forecast.md`, `project_notes/roadmap/todo.md`, and
+  direct Markdown files under `project_notes/roadmap/designs/`. Run
+  `specdev roadmap`; show the exact
   proposed edit and obtain user approval before writing. Every design file must
   contain fewer than 800 words (maximum 799). Besides `core_concepts.md` and
   `source_code_folder_structure.md`, each note covers one independent feature
@@ -118,7 +128,13 @@ verification, ownership, destination approval, or rebuild requirements.
   `source_code_folder_structure.md`, each note ends by identifying every
   targeted source file and giving the maximum total line count for the completed
   file, and may include a small relevant folder tree or pseudocode when helpful
-  for clarifying the design. Neither illustration is required. `forecast.md` is
+  for clarifying the design. Neither illustration is required. Only when the
+  user explicitly requests a separate public-function design note, suggest
+  concise typed signatures aligned with the implementation or approved target.
+  Classes use CapCase; named instances and returned values use `snake_case`.
+  Show the return type and briefly describe the returned value. This is optional
+  guidance, not a standard filename, scaffold, fixed format, or validation rule.
+  `forecast.md` is
   a future-work roadmap of
   approved design requirements absent or incomplete in current code. Treat the
   designs as the target state: identify code gaps versus designs, never design
@@ -128,7 +144,11 @@ verification, ownership, destination approval, or rebuild requirements.
   inspect current code read-only and list code gaps in dependency order, one
   numbered Markdown section per gap. Every forecast section must identify the
   Roadmap design note or notes it is based on and contain fewer than 200 words
-  (maximum 199). For design notes, report the intended final destination and
+  (maximum 199). `todo.md` records user-selected non-architecture future work,
+  not design-derived gaps. It uses the same dependency order followed by user
+  priority, numbered-section format, and fewer-than-200-word limit, but omits
+  provenance metadata and `Based on:` references. For design notes, report the
+  intended final destination and
   concise scope, then write an approved `*_draft.md` draft and report only the
   draft path. After user approval, promote it to the final `.md` path and
   automatically commit the published design-note change. Report only the final
@@ -136,7 +156,8 @@ verification, ownership, destination approval, or rebuild requirements.
   and every other path are read-only. Roadmap creates no ID, workflow state,
   receipt, or snapshot. Draft writes are not committed automatically; published
   design-note changes are committed after user approval. Roadmap grants no
-  implementation authority. It has no active lifecycle and applies only during
+  authority to implement Forecast or Todo items. It has no active lifecycle and
+  applies only during
   explicit roadmap collaboration. Selecting another lane immediately supersedes
   Roadmap without an exit command or state transition.
 - **Adhoc:** one explicitly user-selected bounded repository change with no graph,
@@ -144,10 +165,10 @@ verification, ownership, destination approval, or rebuild requirements.
   receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.
 - **Assignment:** one readable contract, one user approval, then automatic
   Design + Implementation + evidence + review.
-- **Mission:** a foreground controller on a dedicated branch. It uses the
-  normal worktree for sequential children and automatically leases up to three
-  ignored worktrees for an already-justified independent child wave. Mission is
-  user-selected and does not imply multiple children.
+- **Mission:** a foreground controller in the existing checkout. Immediately
+  after approval, explicitly choose inline (main session) or spawned workers.
+  Both execute sequential children with independent review and local checkpoints.
+  Mission is user-selected and does not imply multiple children.
 - **Discussion:** a concurrent code-read-only RippleGraph callable with required
   proposal/design entry points plus safe supporting artifacts and nested folders;
   it may later be promoted to fresh work.
@@ -169,6 +190,11 @@ a scheduler, but only one may be active in a worktree.
   Multi-child Mission contracts receive review; a deterministic full-scope
   single child reuses the approved parent authority without another Brainstorm
   author or reviewer.
+- Mission approval stops at an explicit no-default implementation choice. Inline
+  assigns every child implementation, repair, and resolver to the current main
+  coding session; the Mission skill fulfills each returned obligation and reruns
+  the controller without routine user interaction. Spawned retains automatic
+  workers executing children sequentially. Reviewers remain independent in both modes.
 - Mission abandonment is a reasoned two-step terminal command. Its first pass is
   read-only; exact confirmation preserves branch and worktree identities, records
   no delivery, compacts only owned runtime, and never lands or deletes partial work.
@@ -202,9 +228,7 @@ a scheduler, but only one may be active in a worktree.
   not receive or validate the strict SpecDev result envelope.
 - Never run a full suite when narrower evidence answers the current question.
   Repository confirmation rules always take precedence.
-- Do not create worktrees for normal Assignments, sequential Mission children,
-  Missions, or Discussions. Only the Mission controller may lease the validated
-  `.specdev/worktrees/slot-N` pool for a parallel wave.
+- Use the existing checkout for Assignments, Mission children, and Discussions.
 - Raw provider output, PID state, SQLite, and scratch data belong in ignored
   `cache/`; ordinary interrupted source can be inspected and repaired.
 - A reviewed Mission child that only exceeds automatic authority pauses at an

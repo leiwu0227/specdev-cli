@@ -19,11 +19,12 @@
     source_code_folder_structure.md    user-approved source-code folder design
     <feature-or-module>.md              one bounded, minimally overlapping design
   project_notes/roadmap/forecast.md    dependency-ordered design-to-code gaps
+  project_notes/roadmap/todo.md        dependency-ordered user-selected non-architecture work
   knowledge/faq/                       current, freshness-aware troubleshooting
   knowledge-curations/KC-<hash>.json   verified publication receipts
   processes/ATT-<id>.yaml              durable invocation summaries
   cache/                               ignored machine-local state
-  worktrees/slot-N/                    ignored, bounded Mission child leases
+  worktrees/                          retained historical child checkouts
 ```
 
 ## Main commands
@@ -39,6 +40,8 @@ specdev checkpoint brainstorm
 specdev reviewloop brainstorm          # optional
 specdev approve brainstorm
 specdev implement
+specdev cleanup                       # preview eligible terminal leftovers
+specdev cleanup --apply               # revalidate and remove eligible files
 
 specdev roadmap
 
