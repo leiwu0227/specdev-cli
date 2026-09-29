@@ -12,6 +12,15 @@ filled project context, reserves an ID atomically, establishes focus, and may pr
 completed Discussion, Test Audit, prior Assignment, or Mission provenance. Approval
 binds the exact contract hash and Git base. Material edits invalidate approval.
 
+Brainstorm seeks the smallest complete behavior that solves the user's current
+problem. Separate concrete needs from speculative extensions and consider existing
+architecture before proposing new subsystems. Discuss alternatives when they
+materially change behavior, cost, or constraints; leave routine implementation
+choices open. Contracts specify observable behavior and genuine constraints without
+prematurely prescribing machinery. Scale discussion to the change and preserve
+explicitly requested behavior. These principles also guide Mission Brainstorm before
+parent authority is delegated to children; they add no sections or approval gates.
+
 The RippleGraph lifecycle moves through Brainstorm, optional Brainstorm review, exact
 approval, design and implementation, candidate qualification, required review or
 approved waiver, repair or divergence handling, evidence capture, and delivery.
@@ -50,3 +59,4 @@ continuation, and terminal operations.
 - `src/utils/assignment.js` — maximum 180 lines — assignment path and selector resolution.
 - `src/utils/assignment-lifecycle.js` — maximum 80 lines — lifecycle status mapping.
 - `templates/.specdev/workflows/assignment-lifecycle/graph.json` — maximum 360 lines — recoverable Assignment graph.
+- `templates/.specdev/skills/core/brainstorming/SKILL.md` — maximum 75 lines — scope simplicity and proportionate decisions for Assignment and Mission Brainstorm.

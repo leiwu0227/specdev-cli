@@ -29,6 +29,20 @@ implementation review defaults to required unless the exact approved contract
 freezes a supported waiver. Mission child review and parent convergence preserve the
 same independence and evidence rules.
 
+Existing reviews also assess unnecessary scope or machinery. Brainstorm review
+distinguishes concrete needs from speculative commitments; implementation review
+checks complete delivery and identifies behavior-preserving simplifications. A useful
+finding names a concrete alternative and explains why it preserves required behavior
+and architectural boundaries. A single implementation, caller, or export alone does
+not prove that an abstraction or file is unnecessary.
+
+Line counts, file counts, and stylistic preferences remain advisory. Complexity
+blocks only when supported by an actual defect or binding requirement violation.
+Do not prolong review to pursue smaller diffs or expand candidate review into a
+repository cleanup. Simplification preserves validation, security, accessibility,
+error handling, and required evidence. Apply this judgment in existing review rounds
+without introducing another reviewer, score, artifact, or gate.
+
 The current 2,200-line command cap is a transitional compatibility ceiling. New
 review responsibilities should be extracted into focused modules so the cap can
 decrease over time.
@@ -39,3 +53,4 @@ decrease over time.
 - `src/utils/review-convergence.js` — maximum 240 lines — bounded automatic-stage state.
 - `src/utils/reviewer-continuation.js` — maximum 450 lines — candidate-bound reviewer session leases.
 - `src/utils/result-envelope.js` — maximum 260 lines — strict review outcome parsing.
+- `templates/.specdev/guides/review.md` — maximum 45 lines — concrete, behavior-preserving simplicity findings.
