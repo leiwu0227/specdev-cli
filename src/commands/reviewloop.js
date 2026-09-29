@@ -30,6 +30,7 @@ import { resolveGuides } from '../utils/guides.js'
 import { productStateDigest, runSpawnedAgent } from '../utils/spawned-agent.js'
 import {
   assignmentExecutionProjection,
+  implementationGuidance,
   inlineImplementationObligations,
 } from '../utils/assignment-execution.js'
 import { readGuidedCall } from '../utils/callable-sync.js'
@@ -1520,6 +1521,8 @@ async function runImplementationResolver({
       'Stay inside approved scope and authority. Reuse receipts; run only explicitly authorized focused verification.',
       'Update progress.json and outcome.md honestly. If a finding requires expanded authority or cannot be satisfied, return blocked.',
       'For a Mission child, refresh progress.json owned_paths with the exact final product path/sha256 byte identities after repairs; never claim unrelated edits.',
+      '',
+      implementationGuidance,
     ].join('\n'),
     resultPath,
     resultKind: 'worker',
@@ -1563,6 +1566,8 @@ async function runRepairWorker({
       `Blocking review findings: ${relativeToRepo(targetDir, verdictPath)}`,
       'Fix only the blocking findings, run only authorized focused verification, update implementation/progress.json (including deviations and follow_up) and outcome.md, and do not rerun completed work blindly.',
       'For a Mission child, refresh progress.json owned_paths with the exact final product path/sha256 byte identities after repairs; never claim unrelated edits.',
+      '',
+      implementationGuidance,
     ].join('\n'),
     resultPath,
     resultKind: 'worker',

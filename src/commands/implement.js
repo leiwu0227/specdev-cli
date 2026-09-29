@@ -25,6 +25,7 @@ import { reviewImplementation } from './reviewloop.js'
 import { retireTransientArtifact } from '../utils/artifact-retention.js'
 import {
   assignmentExecutionProjection,
+  implementationGuidance,
   inlineImplementationObligations,
   resolveAssignmentExecution,
 } from '../utils/assignment-execution.js'
@@ -586,6 +587,8 @@ function workerPrompt({ targetDir, assignmentPath, contract, catalog, knowledgeP
     'progress.json must use this exact top-level shape: { "version": 1, "tasks": [{ "id": "T-1", "status": "completed" }], "selected_guides": { "implementation": ["guide-id"], "review": ["guide-id"] }, "verification": [{ "command": "...", "revision": "...", "scope": "...", "status": "passed|failed|skipped", "duration_ms": 123, "role": "qualification|authoritative_acceptance" }], "deviations": [], "follow_up": "none|required" }. Do not rename these keys. Record every material contract or plan deviation in deviations. Use follow_up: required only when another bounded Assignment is actually needed. For a dirty tested candidate, record revision as `working-tree@<HEAD>` rather than implying HEAD contains the changes. Every Task must be completed before returning completed. Verification role records evidence classification only and never authorizes or reruns a command.',
     'For a Mission child, progress.json must also include owned_paths: an exact array of { path, sha256 } for product files you changed. Compute each sha256 using missionPathDigest from src/utils/mission-ownership.js in SpecDev (SHA256 of file: or executable: plus bytes; symlink: plus link target; null for deletion). Include only your own changes. The controller refuses changed byte identities and never infers ownership from Git dirtiness.',
     'outcome.md must use this exact skeleton: # Outcome, ## Delivered behavior, ## Deviations, ## Unresolved risks, then one compact table with exactly three columns: Acceptance, Evidence, Result. Put only Passed, Failed, or Blocked (optional terminal punctuation is allowed) in the Result cell for every acceptance ID.',
+    '',
+    implementationGuidance,
   ].join('\n')
 }
 
