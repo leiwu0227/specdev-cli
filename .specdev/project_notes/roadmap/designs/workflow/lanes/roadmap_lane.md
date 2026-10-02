@@ -2,49 +2,73 @@
 
 Parent design: `./workflow_lanes.md`
 
-Roadmap is stateless user-approved collaboration on durable target architecture and
-the future implementation gaps derived from it. It may write only Markdown under
-`project_notes/roadmap/designs/` and `forecast.md`; product code and all other paths
-remain read-only.
+Roadmap lets the user and agent define the target architecture and future work.
+The user approves changes to these notes. Roadmap has no active lifecycle.
+It can write Markdown under `project_notes/roadmap/designs/`, plus
+`project_notes/roadmap/forecast.md` and `project_notes/roadmap/todo.md`.
+Product code and all other paths remain read-only.
 
-The design set is hierarchical. `core_concepts.md` and
-`source_code_folder_structure.md` are standard cross-cutting notes at the root. Each
-other note owns one independent feature or module with minimal overlap and may live
-in folders that mirror conceptual parent-child relationships. Every design Markdown
-file contains at most 799 words.
+## Writing style
 
-Except for the folder-structure note, designs explain general concepts before more
-specific detail without requiring fixed headings or a Markdown schema. Non-standard
-notes may use a small relevant folder tree or pseudocode when helpful. They end by
-identifying exact targeted source files and a maximum total completed-file line count
-for each. The two standard notes are exempt from that ending metadata.
+Roadmap prose uses ASD-STE100 Simplified Technical English as its default style
+guide. Sentences are short and direct. Each sentence has one main idea.
+Active voice is preferred, and technical terms are consistent.
+Natural wording and established software terms are allowed when strict STE rules
+would reduce clarity or precision. Exact paths, commands, identifiers, and code
+remain unchanged.
 
-When the user explicitly asks for a separate public-function design note, Roadmap may
-suggest a concise typed signature style. Function names, parameters, defaults, and
-async form follow the implementation or approved target. Classes use CapCase, while
-named instances and returned values use `snake_case`. Each signature shows its return
-type and briefly describes what it returns; custom types, important side effects, and
-failures may be clarified when helpful. Signatures may appear as design clarification
-without function bodies. This is an optional style suggestion, not a standard
-`public_functions.md`, scaffold, fixed Markdown format, or validation rule.
+This style applies to design notes, Forecast, Todo, drafts, and Roadmap review
+comments. The aim is a practical approximation, not formal STE compliance.
+An “80%” description expresses this flexibility; it is not a score or acceptance
+threshold. Formal dictionary compliance is not required. Existing document
+structure and word limits still apply. Existing notes adopt the style when edited;
+the rule does not require a separate rewrite of all notes.
 
-Roadmap collaborates on one intended edit at a time unless the user explicitly
-authorizes a bounded bulk draft. The agent reports destination and scope, waits for
-approval, writes `*_draft.md`, and reports the draft path. Drafts are not committed.
-After approval, the draft is promoted to its final path and the published design
-change is automatically committed.
+## Design notes
 
-Designs are the approved target state. Current code may be a superset; code-only
-behavior creates neither a forecast item nor an automatic design rewrite. The user
-may separately approve incorporating that behavior into the target design.
+The design set has a hierarchy. `core_concepts.md` and
+`source_code_folder_structure.md` are the two standard notes at its root.
+Each other note covers one independent feature or module with minimal overlap.
+Folders can show conceptual parent-child relationships. Each design Markdown file
+contains at most 799 words.
 
-The forecast compares code against approved designs, lists only absent or incomplete
-requirements, orders gaps by dependency, and uses one numbered section of at most
-199 words per gap with source-design references. Roadmap never grants implementation
-authority and has no identity, graph, receipt, or exit transition.
+Except for the folder-structure note, designs start with general concepts and then
+give specific details. No fixed headings or Markdown schema are required.
+Other than the two standard notes, each note can include a small folder tree or
+pseudocode when useful. Each such note ends with the exact source files it targets
+and the maximum total line count for each completed file.
+
+If the user requests a separate public-function design note, Roadmap can suggest
+concise typed signatures. Function names, parameters, defaults, and async forms
+match the implementation or approved target. Classes use CapCase.
+Named instances and returned values use `snake_case`. Each signature shows its
+return type and briefly describes the returned value. The note can explain custom
+types, important side effects, and failures when useful. Signatures can clarify
+the design without function bodies. This optional style does not require a
+`public_functions.md` file, scaffold, fixed format, or validation rule.
+
+## Collaboration and future work
+
+Roadmap handles one intended edit at a time unless the user explicitly authorizes
+a bounded group of drafts. The agent reports the destination and scope, then waits
+for approval. It writes `*_draft.md` and reports the draft path. Drafts are not
+committed. After approval, the agent promotes the draft to its final path and
+automatically commits the published design change.
+
+Approved designs define the target state. Current code can contain additional
+behavior. Such behavior creates neither a forecast item nor an automatic design
+change. The user can separately approve its addition to the target design.
+
+Forecast compares code with approved designs. It lists only absent or incomplete
+requirements in dependency order. Each gap has one numbered section, at most
+199 words, with references to its source designs. Todo records user-selected
+future work outside architecture, rather than gaps derived from designs.
+
+Roadmap grants no implementation authority. It creates no identity, graph, or
+receipt and requires no exit transition.
 
 ## Source Targets
 
-- `src/commands/roadmap.js` — maximum 140 lines — stateless Roadmap contract and JSON/text projection.
-- `src/commands/init.js` — maximum 850 lines — canonical generated Roadmap skill.
-- `templates/.specdev/_guides/workflow.md` — maximum 300 lines — installed Roadmap lifecycle guidance.
+- `src/commands/roadmap.js` — maximum 140 lines — Roadmap rules and JSON/text output.
+- `src/commands/init.js` — maximum 850 lines — generated Roadmap skill.
+- `templates/.specdev/_guides/workflow.md` — maximum 300 lines — installed Roadmap guidance.
