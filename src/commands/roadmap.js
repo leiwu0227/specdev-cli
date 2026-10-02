@@ -19,6 +19,8 @@ export async function roadmapCommand(flags = {}) {
     version: 1,
     status: 'ready',
     state: 'stateless',
+    writing_style:
+      'Use ASD-STE100 as the default style guide for Roadmap prose: design notes, Forecast, Todo, drafts, and review comments. Write short, direct sentences with one main idea each. Prefer active voice and consistent technical terms. Allow natural wording and established software terms when strict STE would reduce clarity or precision. Preserve exact paths, commands, identifiers, and code. Formal dictionary compliance is not required. The 80% aim describes flexibility, not a score or acceptance threshold. Keep existing document structure and word limits. Apply the style when editing existing notes; no separate rewrite is required.',
     standard_files: ROADMAP_STANDARD_FILES,
     writable_paths: [
       ROADMAP_DESIGN_PATTERN,
@@ -91,6 +93,7 @@ export async function roadmapCommand(flags = {}) {
 
   console.log('SpecDev Roadmap')
   console.log('State: stateless')
+  console.log(`Writing style: ${payload.writing_style}`)
   console.log('Standard files:')
   for (const path of payload.standard_files) console.log(`  .specdev/${path}`)
   console.log('Writable paths:')
