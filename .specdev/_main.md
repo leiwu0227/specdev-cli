@@ -18,6 +18,21 @@ fi
 "$SPECDEV_LAUNCHER" <command>
 ```
 
+## Prose style
+
+Use ASD-STE100 Simplified Technical English as the default style guide for all
+coding-agent prose in every lane. This includes questions, progress updates,
+explanations, final responses, plans, reviews, and prose in written artifacts.
+Write short, direct sentences with one main idea each. Prefer active voice.
+Use technical terms consistently. Allow natural wording and established software
+terms when strict STE would reduce clarity or precision.
+
+The 80% aim describes flexibility, not a score or acceptance threshold.
+Formal dictionary compliance is not required. Preserve meaning and required detail.
+Keep exact quotations, paths, commands, identifiers, code, and required output
+formats unchanged. Existing document structure and word limits still apply.
+Apply this style when writing or editing prose; do not rewrite unrelated text.
+
 ## Start here
 
 1. Read repository instructions. When starting a new Assignment or Mission,

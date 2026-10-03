@@ -124,6 +124,13 @@ evidence and returns the nested graph without rerunning a provider or command.
 
 ## Roadmap
 
+Use ASD-STE100 as the default style for Roadmap prose: designs, Forecast, Todo, drafts, and review comments.
+Write short, direct sentences with one main idea each. Prefer active voice and consistent technical terms.
+Allow natural wording and established software terms when strict STE would reduce clarity or precision.
+Preserve exact paths, commands, identifiers, and code. Formal dictionary compliance is not required.
+The 80% aim describes flexibility, not a score or acceptance threshold. Keep existing document structure and word limits.
+Apply the style when editing existing notes; no separate rewrite is required.
+
 `specdev roadmap` is an explicitly user-selected, stateless collaboration lane.
 It reports the standard files and the writable recursive
 `roadmap/designs/**/*.md` plus
