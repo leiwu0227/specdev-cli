@@ -7,7 +7,7 @@ export function helpCommand(flags = {}) {
     return
   }
   blankLine()
-  printSection('SpecDev — contract-governed orchestration for coding agents')
+  printSection('SpecDev — approved workflows for coding agents')
   blankLine()
   printSection('Usage:')
   printLines(['  specdev <command> [options]'])
@@ -30,7 +30,7 @@ export function helpCommand(flags = {}) {
     '  specdev cancel "work is no longer wanted"   # irreversible abandonment',
   ])
   blankLine()
-  printSection('Parallel thought work and larger objectives:')
+  printSection('Concurrent exploration and larger objectives:')
   printLines([
     '  specdev roadmap',
     '  specdev discussion "<topic>"',

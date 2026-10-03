@@ -23,8 +23,8 @@ writes create no graph, receipt, or automatic commit. Use Roadmap, Adhoc,
 Discussion, Assignment, or Mission only when the user explicitly selects that
 lane; never silently make every request an Assignment.
 
-For a Direct documentation write, announce once, read destination instructions
-and only the facts needed for the artifact, write it, and verify it narrowly.
+For a Direct documentation write, announce once. Read destination instructions
+and only the facts needed for the artifact. Write it, then verify it narrowly.
 Do not require broad project orientation for a low-risk note. For example,
 writing an HTTP usage manual under project notes is Direct; "Use SpecDev Adhoc
 to update the public API manual and commit it" is explicitly selected Adhoc.
@@ -60,11 +60,11 @@ terminate an unrelated active Assignment. Start with \`specdev adhoc start
 "<scope>"\`.
 
 Make the smallest complete change within the selected scope. Understand the affected
-flow and callers, reuse existing code and patterns, and prefer suitable standard-library,
+flow and callers. Reuse existing code and patterns. Prefer suitable standard-library,
 native, or installed capabilities. New abstractions, dependencies, configuration, and
-fallbacks need a concrete current justification. Preserve readability, architectural
+fallbacks need a concrete current reason. Preserve readability, architectural
 boundaries, and required validation, security, accessibility, and error handling.
-Resolve routine choices autonomously within authority; ask when material unknowns
+Resolve routine choices within authority. Ask when material unknowns
 affect behavior or scope, authority is missing, or an actual conflict prevents delivery.
 Hypothetical concerns alone should not block work. Verify proportionally with
 authorization, reuse valid evidence, and finish when the change and existing delivery
@@ -205,8 +205,8 @@ Run \`specdev assignment "<objective>"\`. Collaborate directly with the user in
 When starting a new Assignment, read
 \`.specdev/project_notes/big_picture.md\` unconditionally, then run one bounded
 \`specdev knowledge search "<objective terms>"\` while shaping the contract.
-Read only relevant fresh result paths, keep repository instructions and the
-approved contract authoritative, and never bulk-load the knowledge directory.
+Read only relevant fresh result paths. Keep repository instructions and the
+approved contract authoritative. Never bulk-load the knowledge directory.
 Carry relevant paths into contract context or the implementation plan. Search
 again with symptom terms after an unexpected failure. Precise all-term and
 quoted-phrase matching is the default; narrow partial or noisy results first and
@@ -219,17 +219,17 @@ bulk-index source or publish the search result itself. Stale results require
 explicit retrieval and revalidation.
 
 Keep the contract proportional. Reference existing project context instead of
-restating it, record only change-specific decisions and constraints, and use the
-fewest independent observable acceptance criteria (normally 1-3 for a small
-change and rarely more than 5). Tasks, file lists, and generic quality checks
+repeating it. Record only decisions and constraints specific to the change.
+Use the fewest independent observable acceptance criteria: normally 1-3 for a small
+change and rarely more than 5. Tasks, file lists, and generic quality checks
 belong in the plan, not the contract.
 
 Use the selective context catalog returned by implementation and repair
-handoffs. It is a replaceable ordered projection of durable authority, current
-task state, bounded supporting paths, and permitted role history; read the
-owning artifacts rather than treating the catalog as authority. Missing required
-authority or task evidence blocks, optional absence never grants permission,
-and material change or uncertainty requires a regenerated bounded selection.
+handoffs. It lists durable authority, current task state, bounded supporting paths,
+and permitted role history in order. It can be replaced. Read the owning artifacts;
+the catalog itself is not authority. Missing required authority or task evidence
+blocks work. Missing optional context never grants permission. Regenerate the
+bounded selection after a material change or when its accuracy is uncertain.
 First independent reviewers receive no author history. Mission children may
 only narrow their parent-selected supporting envelope.
 
@@ -751,8 +751,8 @@ export async function initCommand(flags = {}) {
       '   specdev-continue      Resume from current phase',
       '   specdev-discussion    Concurrent code-read-only exploration',
       '   specdev-roadmap       Stateless user-approved roadmap collaboration',
-      '   specdev-mission       Mission orchestration with explicit implementation ownership',
-      '   specdev-knowledge-curation  Verified living-knowledge publication',
+      '   specdev-mission       Run a Mission with an explicit implementation owner',
+      '   specdev-knowledge-curation  Verify and publish living knowledge',
       '   specdev-reviewloop    Configured reviewer loop',
       '   specdev-rewind        Full workflow re-read',
     ])

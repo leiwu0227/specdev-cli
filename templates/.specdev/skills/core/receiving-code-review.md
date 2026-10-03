@@ -1,8 +1,8 @@
 # Skill: Receiving Code Review
 
-**Always-apply.** Read at assignment start, follow throughout.
+**Always-apply.** Read at Assignment start. Apply throughout the work.
 
-**Core principle:** Verify before implementing. Push back when wrong. Technical correctness over social comfort.
+**Core principle:** Check findings before making changes. Disagree when evidence shows that a finding is wrong.
 
 ## The Response Pattern
 
@@ -16,7 +16,7 @@ WHEN receiving code review feedback:
 5. IMPLEMENT: One item at a time, test each
 ```
 
-If any item is unclear, STOP and ask for clarification before implementing anything — items may be related.
+If any item is unclear, stop and ask for clarification before making changes. The items may be related.
 
 ## No Performative Agreement
 
@@ -41,7 +41,7 @@ Push back when:
 - Technically incorrect for this stack
 - Conflicts with user's architectural decisions
 
-How: use technical reasoning and reference working tests/code. Involve user if architectural.
+Explain the technical reason and cite working tests or code. Involve the user in architectural decisions.
 
 If you pushed back and were wrong: "Verified and you're correct. My initial understanding was wrong because [reason]. Fixing." State it factually and move on.
 

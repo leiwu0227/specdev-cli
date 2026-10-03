@@ -56,7 +56,7 @@ try {
     join(repairable, '.specdev', 'skills', 'core', 'brainstorming', 'SKILL.md'),
     'utf8'
   )
-  assert.match(brainstorm, /leave routine implementation\s+choices open/)
+  assert.match(brainstorm, /leave routine implementation\s+choices open/i)
   const review = readFileSync(join(repairable, '.specdev', 'guides', 'review.md'), 'utf8')
   assert.match(review, /name a concrete alternative/)
   assert.match(review, /Complexity blocks only for an actual defect/)

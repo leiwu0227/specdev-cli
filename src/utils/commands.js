@@ -12,14 +12,14 @@ export const COMMANDS = [
     usage: 'adhoc <start|verify|finish|status|show|cancel|revalidate>',
     description: 'Run one user-selected bounded change with a receipt and final commit',
   },
-  { name: 'next', usage: 'next', description: 'Show the canonical focused-workflow action' },
+  { name: 'next', usage: 'next', description: 'Show the next action for the focused workflow' },
   { name: 'step', usage: 'step --json=<output>', description: 'Submit explicit workflow evidence' },
   { name: 'decide', usage: 'decide <value>', description: 'Submit an explicit workflow decision' },
   { name: 'cancel', usage: 'cancel <reason>', description: 'Abandon the focused guided workflow' },
   {
     name: 'cleanup',
     usage: 'cleanup [--apply]',
-    description: 'Preview or remove owned terminal workflow leftovers',
+    description: 'Preview or remove temporary files owned by terminal workflows',
   },
   {
     name: 'assignment',
@@ -44,7 +44,7 @@ export const COMMANDS = [
   {
     name: 'reviewloop',
     usage: 'reviewloop <phase>',
-    description: 'Run interactive review or bounded automatic convergence',
+    description: 'Run interactive review or limited automatic review rounds',
   },
   {
     name: 'discussion',
@@ -70,7 +70,7 @@ export const COMMANDS = [
   {
     name: 'focus',
     usage: 'focus <id>',
-    description: 'Set the committed foreground convenience pointer',
+    description: 'Set the tracked pointer to the foreground workflow',
   },
   {
     name: 'status',
@@ -85,12 +85,12 @@ export const COMMANDS = [
   {
     name: 'knowledge rebuild',
     usage: 'knowledge rebuild',
-    description: 'Atomically rebuild disposable SQLite search',
+    description: 'Rebuild the SQLite search cache atomically',
   },
   {
     name: 'knowledge search',
     usage: 'knowledge search <terms>',
-    description: 'OR-search authoritative Markdown knowledge',
+    description: 'Search authoritative Markdown knowledge',
   },
   { name: 'knowledge list', usage: 'knowledge list', description: 'List curated knowledge files' },
   {

@@ -7,16 +7,17 @@ phase: brainstorm, implementation, discussion, mission
 
 # Reviewloop
 
-Reviewer capability comes from `.specdev/agents.yaml`, with optional ignored
-machine overrides in `.specdev/cache/agents.local.yaml`. Prompts and selected
-guides define the temporary review task; there is no reviewer persona picker.
+`.specdev/agents.yaml` sets reviewer capabilities. Optional machine overrides
+are stored in the ignored `.specdev/cache/agents.local.yaml` file.
+Prompts and selected guides define the temporary review task.
+There is no reviewer persona picker.
 
 ## Brainstorm
 
 Run `specdev reviewloop brainstorm`. The command freezes the contract baseline,
 runs the configured reviewer once, and reports the verdict, textual changes,
 material-divergence classification, and exact contract hash. Findings return
-control to the user; a later explicit invocation may review again without a
+control to the user. A later explicit invocation can review again without a
 round lockout.
 
 Never approve automatically. Show the verdict, exact contract path and hash,

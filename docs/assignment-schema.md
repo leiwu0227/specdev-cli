@@ -1,9 +1,8 @@
 # Assignment Artifacts
 
-SpecDev deliberately has no second generalized Assignment schema. Lifecycle
-shape belongs to the versioned `assignment-lifecycle` RippleGraph package, while
-small command-level validators check the few durable artifacts that need a
-mechanical contract.
+The versioned `assignment-lifecycle` RippleGraph package defines the Assignment
+lifecycle. SpecDev has no second general Assignment schema. Small validators in
+the commands check durable artifacts that need a machine-readable contract.
 
 ## Current Canonical Structure
 
@@ -33,11 +32,11 @@ plan. The artifact and all tracked runtime/focus effects are published in one
 `unsupported-terminal` commit; the commit hash is derived from Git rather than
 written into its own tree.
 
-Required sections are authority boundaries, not invitations to repeat the
-repository's big picture. Keep each section to change-specific information (or
-state that none exists), and use the fewest independent observable acceptance
-criteria—normally 1-3 for a small Assignment and rarely more than 5. Tasks and
-file lists belong in `design/plan.md`.
+Required sections define authority boundaries. Do not repeat the repository's
+big picture in them. Include only information specific to the change, or state
+that none applies. Use the fewest independent observable acceptance criteria:
+normally 1-3 for a small Assignment and rarely more than 5. Tasks and file lists
+belong in `design/plan.md`.
 
 ## Validation
 

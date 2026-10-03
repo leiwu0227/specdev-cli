@@ -1,9 +1,8 @@
 # SpecDev CLI
 
-SpecDev turns coding-agent work into a durable, reviewable engineering
-workflow. It keeps scope, approvals, implementation evidence, and recovery
-state alongside your code in a tracked `.specdev/` directory. Work stays
-inspectable, restartable, and portable across agents and machines.
+SpecDev helps you scope, approve, implement, and review work with a coding agent.
+It stores approvals, evidence, and recovery state beside your code in `.specdev/`.
+You can inspect or resume the work with another agent or on another machine.
 
 Choose the lightest workflow that fits the job:
 
@@ -16,11 +15,11 @@ Choose the lightest workflow that fits the job:
 
 ## Temporary logs
 
-Successful Assignments, Discussions, and Missions automatically remove their
-owned execution logs, scratch results, and temporary runtime after preserving
-durable evidence and activity summaries. Explicit abandonment also cleans owned
-temporary cache. Active, interrupted, failed/recoverable, and shelved work retains
-diagnostics. Discussion completion metadata preserves listing and later promotion.
+Successful Assignments, Discussions, and Missions first preserve evidence and
+activity summaries. They then remove their execution logs, scratch results, and
+temporary runtime files. Explicit abandonment also removes owned temporary cache.
+Active, interrupted, recoverable failed, and shelved work keeps diagnostic files.
+Completed Discussions keep the metadata needed for listing and later promotion.
 
 Preview existing leftovers with `specdev cleanup`; use `specdev cleanup --apply`
 to revalidate and remove eligible files. Both support `--json` and report paths,
@@ -52,10 +51,9 @@ creates one.
 
 ## Examples
 
-In normal use, you do not drive SpecDev by memorizing commands. Tell your coding
-agent what you want in natural language. The agent discusses scope and
-approvals with you, then runs the workflow commands. The snippets below show
-what the agent does behind the scenes.
+Tell your coding agent what you want in natural language. You do not need to
+memorize commands. The agent discusses scope and approvals with you, then runs
+the workflow commands. The examples below show those commands.
 
 ### Ask for a small documentation artifact
 
@@ -151,11 +149,11 @@ specdev mission run M00001 --approve
 specdev mission status M00001
 ```
 
-Missions are designed for long-running executions that may outlive one agent
-session. A Mission runs sequential children in the existing checkout, advances a
-durable assignment queue, and records local checkpoints. Approval is followed by
-an explicit inline or spawned implementation choice. Both modes preserve the
-selected checkout and use independent reviewers and final verification.
+Missions support work that may continue across agent sessions. A Mission runs
+children in sequence in the existing checkout. It advances a durable Assignment
+queue and records local checkpoints. After approval, choose inline or spawned
+implementation. Both modes keep the selected checkout and use independent
+reviewers and final verification.
 
 Before approval, Mission output includes one contract-bound execution policy:
 worker and reviewer profiles, the exact verification executable and command,

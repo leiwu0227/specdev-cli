@@ -4,14 +4,13 @@
 
 Direct work answers, inspects, or writes a small user-requested documentation
 artifact without creating workflow state, a receipt, or an automatic commit.
-The write qualifies only when it does not change product, runtime,
-public-contract, or governed workflow behavior. For low-risk Direct
-documentation, announce once, read destination instructions and only the facts
-needed, write first, and verify narrowly; broad project orientation is not a
-prerequisite.
+The write must not change product, runtime, public-contract, or governed
+workflow behavior. For low-risk Direct documentation, announce the write once.
+Read the destination instructions and the facts needed. Write the document,
+then check it narrowly. A broad project review is not required.
 
-Use Adhoc only when the user explicitly chooses it for a concrete bounded edit
-but the Assignment contract/review cycle would be ceremony. Adhoc has no
+Use Adhoc only when the user explicitly chooses it for a bounded edit
+that does not need an Assignment contract and review cycle. Adhoc has no
 RippleGraph run. `adhoc start` requires an existing Git HEAD and a clean
 worktree unless `--adopt-dirty` explicitly adopts the exact expanded eligible
 path manifest for all existing changes.
@@ -26,8 +25,8 @@ execution/Git boundaries, unsupported positions, live or ambiguous Attempts,
 dirty product work, pending revalidation, or uncertain ownership block before
 state creation, and `--adopt-dirty` cannot absorb the conflict.
 
-Focused advancement remains blocked during the detour. Finish and cancel retain
-the same focused owner and record a post-detour obligation. Recheck affected
+The focused workflow cannot advance during the detour. Finish and cancel keep
+the same owner and record the required check after the detour. Recheck affected
 contract assumptions, then run `specdev adhoc revalidate --contract=unchanged
 --outcome="<summary>"` before the next approval, execution, or Git boundary.
 Reporting `--contract=changed` keeps that gate closed. Shelving and abandonment
@@ -49,14 +48,13 @@ Examples make the routing boundary concrete:
 - “Use SpecDev Adhoc to update the public API manual and commit it” is Adhoc and
   retains the receipt and final delivery commit.
 
-Callable-owned paths refuse the whole adoption rather than being filtered.
+If a callable owns any requested path, the whole adoption is refused.
 `adhoc finish` requires an unchanged HEAD, verifies the manifest, writes one
 small commit-derived receipt, and creates one delivery commit. `adhoc cancel`
-removes only the ignored active marker and leaves source changes untouched;
-when focused work coexists, both terminal paths leave its revalidation record.
-Receipts are not
-knowledge-index sources; `knowledge/workflow/adhoc-history.md` explains the
-explicit receipt and Git search path.
+removes only the ignored active marker and leaves source changes untouched.
+If focused work coexists, finish and cancel both leave its revalidation record.
+Receipts are not knowledge-index sources. `knowledge/workflow/adhoc-history.md`
+explains how to search receipts and Git history.
 
 ## Assignment
 
@@ -209,7 +207,7 @@ promotion.
 
 `specdev test-audit "<scope>"` is another isolated callable. It reads product
 code and tests but writes only `audit.md` and `assignment-contract.md` in its own
-folder. Each removal needs rationale, retained protection, cost impact, and
+folder. Each removal needs a reason, retained protection, cost impact, and
 confidence. `--complete` freezes the artifacts; `specdev assignment
 --from-test-audit=TA00001` copies the exact contract into the normal approval
 workflow before any test is changed.

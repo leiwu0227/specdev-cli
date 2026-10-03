@@ -1,36 +1,41 @@
 # SpecDev skills
 
-Core skills are compact reference guidance. Static RippleGraph packages and
+Core skills give compact reference guidance. Static RippleGraph packages and
 semantic CLI commands own lifecycle transitions and durable state.
 
-Request routing is deliberately outside the graph: Direct questions,
-inspection, and small non-behavioral documentation writes create no state,
-receipt, or automatic commit; explicitly user-selected Roadmap collaboration is
-stateless and restricted to `roadmap/forecast.md`, `roadmap/todo.md`, and
-bounded design Markdown files after exact user approval. Forecast treats designs
-as the target and lists only absent or incomplete code in dependency order,
-limited to fewer than 200 words per numbered Markdown section, with each section
-citing the Roadmap design note or notes it is based on. Todo records
-user-selected non-architecture future work in dependency order followed by user
-priority, using the same numbered-section format and word limit but omitting
-provenance. Neither list grants implementation authority. Code may be a
-superset; code-only features do not create forecast items or automatic design
-updates. Design notes are drafted as
-`*_draft.md`, reported by path only, promoted to final `.md` only after user
-approval, and automatically committed when published. Except for
-`source_code_folder_structure.md`, their prose moves from general descriptions
-toward more specific detail without a prescribed Markdown format. Notes other
-than `core_concepts.md` and `source_code_folder_structure.md` end by identifying
-their targeted source files and the maximum total completed-file line count for
-each, and may include a small relevant folder tree or pseudocode when helpful.
-Neither illustration is required. When the user explicitly requests a separate
-public-function design note, Roadmap may suggest typed, implementation-aligned
-signatures with CapCase classes, `snake_case` instance and returned-value names,
-and explicit return types and values. This is optional guidance, not a standard
-file, scaffold, fixed format, or validation rule. Roadmap has no active lifecycle; selecting
-another lane immediately supersedes it without an exit command or state
-transition. Explicitly user-selected Adhoc work creates one receipt and final
-commit but no RippleGraph run.
+Request routing happens outside the graph. Direct questions, inspection, and
+small non-behavioral documentation writes create no state, receipt, or automatic
+commit. The user must explicitly select Roadmap or Adhoc work.
+
+Roadmap is stateless. After exact user approval, it can edit
+`roadmap/forecast.md`, `roadmap/todo.md`, and bounded design Markdown files.
+Forecast treats designs as the target. It lists only absent or incomplete code
+in dependency order. Each numbered section has fewer than 200 words and cites
+the design notes it is based on. Todo records user-selected future work outside
+architecture. It orders items by dependency, then user priority. It uses the same
+numbered sections and word limit, but omits provenance.
+Neither list grants implementation authority. Code can contain more than the
+designs require. Those extra features create no forecast items or automatic
+design updates.
+
+Write design drafts as `*_draft.md` and report only their paths. Promote them
+to final `.md` files only after user approval. Commit them automatically when
+published. Except for `source_code_folder_structure.md`, design prose starts
+with general descriptions and then gives specific details. No fixed Markdown
+format is required. Notes other than `core_concepts.md` and
+`source_code_folder_structure.md` end with their targeted source files and the
+maximum total line count for each completed file. They may include a small folder
+tree or pseudocode when helpful. Neither illustration is required.
+
+When the user explicitly requests a separate public-function design note,
+Roadmap may suggest typed signatures that match the implementation.
+Classes use CapCase. Instance and returned-value names use `snake_case`.
+Signatures show return types and values. This is optional guidance, not a
+required file, scaffold, format, or validation rule.
+
+Roadmap has no active lifecycle. Selecting another lane immediately supersedes
+it without an exit command or state transition. Adhoc creates one receipt and
+one final commit, but no RippleGraph run.
 
 - `brainstorming`: interactive contract or Discussion authoring.
 - `reviewloop`: configured reviewer protocol and bounded rerun policy.

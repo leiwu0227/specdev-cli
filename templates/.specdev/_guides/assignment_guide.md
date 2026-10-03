@@ -17,7 +17,7 @@ behavior, decisions, constraints, authority, risks, verification authority, and
 inline acceptance IDs. Do not create a parallel YAML projection.
 
 Keep the contract proportional to the change. Reference existing project notes
-and repository rules instead of restating them, and state only decisions or
+and repository rules instead of repeating them. State only decisions or
 constraints specific to this work. Use the fewest independent observable
 acceptance criteria: normally 1-3 for a small change and rarely more than 5.
 Implementation tasks, file lists, generic quality expectations, and repeated
@@ -27,10 +27,10 @@ criteria. A required section may say that no change-specific item exists.
 Plan the simplest complete implementation of approved behavior. Understand the
 affected flow and callers, reuse existing code and project patterns, and prefer
 suitable standard-library, native, or installed capabilities before new machinery.
-Stop searching once a sound scoped approach is established. Fix root causes;
-abstractions, dependencies, configuration, compatibility paths, and fallbacks need
-concrete current justification. Preserve readability and useful architecture;
-single callers and line counts alone do not determine whether a design is sound.
+Stop searching once you have a sound approach within scope. Fix root causes.
+Abstractions, dependencies, configuration, compatibility paths, and fallbacks need
+a concrete current reason. Preserve readability and useful architecture.
+A single caller or a line count alone does not show whether a design is sound.
 
 In either execution mode, including Mission children and repairs, resolve routine
 choices within delegated authority. Ask only when material unknowns affect behavior,

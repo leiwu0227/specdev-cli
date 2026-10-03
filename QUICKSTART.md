@@ -20,11 +20,10 @@ For a repository that already contains `.specdev/`, use:
 specdev update
 ```
 
-Initialization installs the portable workflow under `.specdev/`, host skills
-for supported coding CLIs, and platform adapters such as `AGENTS.md` or
-`CLAUDE.md`. Managed runtime files can be regenerated; project notes,
-Assignments, Missions, Discussions, knowledge, and project guides are
-preserved.
+Initialization installs the workflow under `.specdev/`. It also installs skills
+for supported coding CLIs and platform adapters such as `AGENTS.md` or `CLAUDE.md`.
+Managed runtime files can be generated again. Project notes, Assignments,
+Missions, Discussions, knowledge, and project guides are preserved.
 
 After initialization or update, coding agents should prefer the generated
 `.specdev/cache/bin/specdev` wrapper. It prevents an older global executable
@@ -57,8 +56,8 @@ specdev status --json
 specdev continue
 ```
 
-Status is active-first in both formats. Use `specdev status --history` (or add
-`--json`) when you need the complete compatible run history.
+Both status formats show active work first. Use `specdev status --history`
+(or add `--json`) to see the complete compatible run history.
 
 ## 3. Make a bounded Adhoc change
 
@@ -93,9 +92,8 @@ contract, user approval, and automatic review.
 specdev assignment "add bounded retry handling"
 ```
 
-The coding agent collaborates with you in
-`brainstorm/contract.md`. Keep the contract specific to this change, normally
-with one to three observable acceptance criteria.
+The coding agent writes `brainstorm/contract.md` with you. Keep the contract
+specific to this change. Normally, use one to three observable acceptance criteria.
 
 ```bash
 specdev checkpoint brainstorm
@@ -220,14 +218,14 @@ specdev knowledge curate --repo-evidence=src/router.js#L20-L28 --json
 specdev knowledge distill
 ```
 
-Search uses precise all-term and quoted-phrase semantics by default, with a
-bounded labeled partial fallback; `--mode=broad` explicitly enables any-term
-discovery. Results report coverage and matched terms or phrases. Curation scans
-completed work, stale FAQs, existing owners, bounded tracked repository
-evidence, and project context without changing authoritative Markdown. An exact
-validated proposal requires user approval, publishes idempotently, records one
-receipt, and rebuilds the derived index. `knowledge distill` remains a read-only
-compatibility brief.
+Search matches all terms or quoted phrases by default. It can return a limited
+set of partial matches, which it labels. Use `--mode=broad` to match any term.
+Results show coverage and the terms or phrases matched. Curation scans completed
+work, stale FAQs, existing owners, bounded tracked repository evidence, and project
+context. This scan does not change authoritative Markdown. The user must approve
+the exact validated proposal before publication. Publication records one receipt
+and rebuilds the index. Repeating it does not duplicate the change.
+`knowledge distill` remains a read-only compatibility brief.
 
 ## Compact command reference
 
