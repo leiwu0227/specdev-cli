@@ -143,6 +143,9 @@ below own its detailed rules. Read only the sections needed for the current acti
   [_guides/workflow.md#profiles-and-guides](_guides/workflow.md#profiles-and-guides).
 - Before a delivery commit, read
   [_guides/workflow.md#commit-identity](_guides/workflow.md#commit-identity).
+  If a recent update left tracked managed changes, use
+  [_guides/update_guide.md#tracked-installed-updates](_guides/update_guide.md#tracked-installed-updates)
+  at the next authorized Git boundary, including a required clean start.
 - For runtime ownership, cleanup, or artifact counts, read
   [_guides/runtime.md](_guides/runtime.md).
 - Use [_index.md](_index.md) for command and path lookup. Read

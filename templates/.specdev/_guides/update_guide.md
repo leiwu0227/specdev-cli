@@ -32,6 +32,22 @@ Completed historical Assignments remain documents and do not need rewriting.
 For unfinished legacy work, run `specdev migrate` and inspect the generated
 inventory before approving any layout change.
 
+## Tracked installed updates
+
+A successful update needs no extra cleanup workflow. If it leaves tracked managed
+files changed, handle them once at the next authorized Git boundary. Inspect the
+diff and keep project-owned edits and unrelated workflow artifacts separate.
+
+If the next lane requires a clean start, checkpoint the inspected managed changes
+together before starting that lane. Otherwise include them in the next delivery
+only when its scope and ownership rules allow it. Use explicit adoption where
+required. Do not change HEAD inside an active Adhoc or another frozen Git boundary.
+An update does not grant permission to commit unrelated work or bypass ownership.
+
+After the installed changes are recorded, reuse that decision unless the files
+change again. Do not create one checkpoint per file or repeat update commands
+merely to obtain a clean status.
+
 ## Current orientation
 
 Every supported adapter should direct agents to read `.specdev/_main.md`.
