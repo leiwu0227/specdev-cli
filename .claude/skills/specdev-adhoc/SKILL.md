@@ -9,11 +9,11 @@ terminate an unrelated active Assignment. Start with `specdev adhoc start
 "<scope>"`.
 
 Make the smallest complete change within the selected scope. Understand the affected
-flow and callers, reuse existing code and patterns, and prefer suitable standard-library,
+flow and callers. Reuse existing code and patterns. Prefer suitable standard-library,
 native, or installed capabilities. New abstractions, dependencies, configuration, and
-fallbacks need a concrete current justification. Preserve readability, architectural
+fallbacks need a concrete current reason. Preserve readability, architectural
 boundaries, and required validation, security, accessibility, and error handling.
-Resolve routine choices autonomously within authority; ask when material unknowns
+Resolve routine choices within authority. Ask when material unknowns
 affect behavior or scope, authority is missing, or an actual conflict prevents delivery.
 Hypothetical concerns alone should not block work. Verify proportionally with
 authorization, reuse valid evidence, and finish when the change and existing delivery

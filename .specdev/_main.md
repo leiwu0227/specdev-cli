@@ -1,12 +1,12 @@
 # SpecDev workflow
 
-SpecDev treats tracked `.specdev/` as portable workflow state and the current
-coding CLI as the interactive worker. Run the Node.js CLI directly as `specdev
-<command>`; never install or invoke it with Python tooling.
+The tracked `.specdev/` directory stores portable workflow state.
+The current coding CLI works with the user. Run the Node.js CLI directly as
+`specdev <command>`. Never install or run it with Python tools.
 
-Resolve the launcher once per shell/session with this copyable contract. It
-selects an executable workspace wrapper when present and otherwise resolves the
-supported PATH command without first attempting a missing path:
+Resolve the launcher once per shell or session. Use the executable workspace
+wrapper when present. Otherwise, use the command on PATH. The following code
+does not try to run a missing wrapper:
 
 ```sh
 if [ -x .specdev/cache/bin/specdev ]; then
@@ -33,14 +33,21 @@ Keep exact quotations, paths, commands, identifiers, code, and required output
 formats unchanged. Existing document structure and word limits still apply.
 Apply this style when writing or editing prose; do not rewrite unrelated text.
 
+SpecDev's own prose follows the same rule. This includes guides, skills, prompts,
+template instructions, CLI help and errors, design notes, and user documentation.
+Update actively used guidance first. Update other prose when its files change.
+Keep historical contracts, receipts, and review records unchanged.
+Check that the text is clear, direct, consistent, and complete. Do not add a
+compliance score or approval gate for this style.
+
 ## Start here
 
-1. Read repository instructions. When starting a new Assignment or Mission,
-   also read `.specdev/project_notes/big_picture.md` unconditionally. For every
-   other lane, read it only when project-wide intent is materially relevant;
-   resumed work relies first on its durable contract and artifacts unless that
-   context is missing, stale, or changed. A command whose purpose is to inspect
-   or edit `big_picture.md` still reads its target file.
+1. Read repository instructions. Always read
+   `.specdev/project_notes/big_picture.md` before a new Assignment or Mission.
+   For other lanes, read it only when the project's overall intent matters.
+   Resume from the existing contract and artifacts first. Read wider context
+   if that information is missing, stale, or changed. A command that inspects
+   or edits `big_picture.md` still reads that file.
 2. Classify the user's request before creating anything: Direct, Roadmap,
    Adhoc, Discussion, Assignment, or Mission. Recommend a lane when useful, but
    let the user select it. Never silently turn every request into an Assignment.
@@ -75,11 +82,11 @@ request changes the destination repository's product, runtime, or workflow
 state, or explicitly requests SpecDev governance there, re-anchor in that
 repository and classify the work there before editing.
 
-Do not edit `.ripplegraph/` manually. Lifecycle state and approval events belong
-to RippleGraph while work is non-terminal; revisions and diffs belong to Git;
-contracts, outcomes, and receipts are the small durable human record. Successful
-Mission and standalone Assignment completion removes the terminal run and its
-owned Attempt records after their compact activity summary has been preserved.
+Do not edit `.ripplegraph/` manually. RippleGraph owns lifecycle state and
+approval events until work reaches a terminal state. Git stores revisions and
+diffs. Contracts, outcomes, and receipts form the durable record for people.
+Successful Mission and standalone Assignment completion preserves a compact
+activity summary. It then removes the terminal run and its owned Attempt records.
 Attempt execution records use IDs such as `Attempt-00001`; they are temporary
 worker, reviewer, or controller invocations, not Assignment identities. Legacy
 `ATT-*` records may remain while older in-flight work resumes.
@@ -95,16 +102,16 @@ are retained and reported. Shared caches and durable evidence are preserved.
 Assignment and Mission transitions are owned by their semantic commands;
 generic `specdev step`, `decide`, and `action` cannot advance those graphs.
 
-For project-facing review, prioritize `missions/` and `assignments/`: they hold
-the approved authority, delivery evidence, and outcomes. Installed workflow
-packages and skills are durable infrastructure. RippleGraph checkpoints and
-process records are temporary recovery infrastructure for non-terminal work;
-human summaries should count or group them instead of enumerating every file.
+For project reviews, start with `missions/` and `assignments/`. They hold the
+approved authority, delivery evidence, and outcomes. Keep installed workflow
+packages and skills as durable infrastructure. RippleGraph checkpoints and
+process records support recovery until work reaches a terminal state.
+In summaries for people, count or group these records rather than list every file.
 
 When an unfamiliar repository-specific failure or recurring hazard appears,
 search living knowledge with `specdev knowledge search "<keyword bag>"`.
-Precise all-term and quoted-phrase matching is the default; narrow partial/noisy
-results and use `--mode=broad` only for deliberate any-term discovery. Use
+Search matches all terms or quoted phrases by default. Narrow partial or noisy
+results. Use `--mode=broad` only when you want matches for any term. Use
 `--include-stale` only to recover older guidance and verify it before relying on
 it. Assignment planning searches with objective terms and carries useful paths
 into its plan. Mission planning searches once, gives relevant paths to children,
@@ -213,7 +220,7 @@ a scheduler, but only one may be active in a worktree.
 - Mission abandonment is a reasoned two-step terminal command. Its first pass is
   read-only; exact confirmation preserves branch and worktree identities, records
   no delivery, compacts only owned runtime, and never lands or deletes partial work.
-- Approval binds the exact final contract hash. Editing it invalidates approval.
+- Approval binds the exact final contract hash. A contract edit invalidates approval.
 - Before requesting Assignment or Mission contract approval, show the exact
   contract path and hash plus a concise 2-4 bullet preview covering objective,
   scope, and key acceptance criteria. The preview never replaces the contract.

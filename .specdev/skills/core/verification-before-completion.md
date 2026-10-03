@@ -1,8 +1,8 @@
 # Skill: Verification Before Completion
 
-**Always-apply.** Read at assignment start, follow throughout.
+**Always-apply.** Read at Assignment start. Apply throughout the work.
 
-**Core principle:** Evidence before claims, always. Spirit over letter — rephrasing the claim doesn't bypass the rule.
+**Core principle:** Obtain evidence before making a claim. Different wording does not bypass this rule.
 
 ## The Gate
 

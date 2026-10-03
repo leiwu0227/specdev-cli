@@ -9,8 +9,8 @@ Run `specdev assignment "<objective>"`. Collaborate directly with the user in
 When starting a new Assignment, read
 `.specdev/project_notes/big_picture.md` unconditionally, then run one bounded
 `specdev knowledge search "<objective terms>"` while shaping the contract.
-Read only relevant fresh result paths, keep repository instructions and the
-approved contract authoritative, and never bulk-load the knowledge directory.
+Read only relevant fresh result paths. Keep repository instructions and the
+approved contract authoritative. Never bulk-load the knowledge directory.
 Carry relevant paths into contract context or the implementation plan. Search
 again with symptom terms after an unexpected failure. Precise all-term and
 quoted-phrase matching is the default; narrow partial or noisy results first and
@@ -23,17 +23,17 @@ bulk-index source or publish the search result itself. Stale results require
 explicit retrieval and revalidation.
 
 Keep the contract proportional. Reference existing project context instead of
-restating it, record only change-specific decisions and constraints, and use the
-fewest independent observable acceptance criteria (normally 1-3 for a small
-change and rarely more than 5). Tasks, file lists, and generic quality checks
+repeating it. Record only decisions and constraints specific to the change.
+Use the fewest independent observable acceptance criteria: normally 1-3 for a small
+change and rarely more than 5. Tasks, file lists, and generic quality checks
 belong in the plan, not the contract.
 
 Use the selective context catalog returned by implementation and repair
-handoffs. It is a replaceable ordered projection of durable authority, current
-task state, bounded supporting paths, and permitted role history; read the
-owning artifacts rather than treating the catalog as authority. Missing required
-authority or task evidence blocks, optional absence never grants permission,
-and material change or uncertainty requires a regenerated bounded selection.
+handoffs. It lists durable authority, current task state, bounded supporting paths,
+and permitted role history in order. It can be replaced. Read the owning artifacts;
+the catalog itself is not authority. Missing required authority or task evidence
+blocks work. Missing optional context never grants permission. Regenerate the
+bounded selection after a material change or when its accuracy is uncertain.
 First independent reviewers receive no author history. Mission children may
 only narrow their parent-selected supporting envelope.
 

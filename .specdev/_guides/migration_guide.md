@@ -1,7 +1,7 @@
 # SpecDev layout migration guide
 
-Migration is an explicit, user-approved filesystem operation. Inspect first;
-never infer permission to move or delete project records.
+Migration changes files and requires explicit user approval. Inspect them first.
+Never assume permission to move or delete project records.
 
 ## Current anchors
 
@@ -30,8 +30,7 @@ normally be refreshed by `specdev update`, not moved manually.
 
 1. Inventory the existing tree without modifying it.
 2. Search source, tests, templates, and graph packages for every proposed path.
-   Referenced paths are load-bearing and stay in place until product code is
-   changed.
+   Keep referenced paths in place until product code is changed.
 3. Write `.specdev/migration/layout-plan.md` listing proposed moves, paths to
    leave untouched, conflicts, and open questions.
 4. Ask the user to approve the exact plan.

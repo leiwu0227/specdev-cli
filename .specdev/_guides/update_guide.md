@@ -1,19 +1,20 @@
 # SpecDev Update Guide
 
 `specdev update` replaces managed workflow files and installs versioned graph
-packages while preserving project-owned notes, work items, profiles, knowledge,
-project guides, custom tool skills, and existing platform adapters. Before
-mutating managed state, update checks every running Attempt. Live or ambiguously
-owned execution blocks with a recovery action; a provably stale local Attempt
-is recorded as interrupted before update proceeds. Do not add a self-exclusion
-or force bypass for an agent running under an Attempt.
+packages. It preserves project-owned notes, work items, profiles, knowledge,
+project guides, custom tool skills, and existing platform adapters.
+Before changing managed state, update checks every running Attempt.
+Live execution or uncertain ownership blocks the update and shows a recovery action.
+Update records a local Attempt as interrupted only when it is proven stale.
+Do not exclude the current agent or force a bypass when it runs under an Attempt.
 
 When an existing adapter contains stale SpecDev guidance, update returns a
 provider-neutral operation such as `UPD00001`. Reconcile only the reported
 SpecDev section, then run the exact emitted command, for example
-`specdev update --operation=UPD00001`. That command repeats the quiescence check, validates
-current orientation, removed obsolete references, and byte-preservation of
-project-owned sections before writing a terminal receipt.
+`specdev update --operation=UPD00001`. That command again checks for running Attempts.
+It checks that orientation is current and obsolete references are removed.
+It also checks that project-owned sections are unchanged, byte for byte.
+Only then does it write a terminal receipt.
 
 Use `specdev update --status` to discover interrupted update operations. If the
 reported boundary is ambiguous, do not rewrite it without user direction.

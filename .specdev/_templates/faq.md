@@ -16,7 +16,7 @@ sources:
 
 ## Symptom
 
-Describe the observable failure using likely search terms.
+Describe the failure that the user can observe. Use likely search terms.
 
 ## Applies when
 
@@ -25,7 +25,7 @@ guidance relevant.
 
 ## Resolution
 
-Give the smallest reliable resolution or diagnostic sequence.
+Give the shortest reliable steps to fix or diagnose the problem.
 
 ## Not evidence of
 
