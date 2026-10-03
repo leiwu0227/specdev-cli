@@ -24,8 +24,10 @@ change without adding mandatory sections, choices, or approval gates.
    answers rather than reopening settled decisions.
 3. Present a few meaningfully different approaches when a real choice exists,
    lead with a recommendation, and record the user's decisions.
-4. Check each section with the user as it develops. Do not wait until the whole
-   design is finished.
+4. Ask when an unresolved decision materially affects behavior, scope, constraints,
+   or authority. Reuse answers already given. For a small, clear change, prepare
+   the complete contract and request approval once. For larger changes, discuss
+   related decisions together. Do not require section-by-section confirmation.
 
 For an Assignment or Mission, edit its existing `brainstorm/contract.md`. Keep
 the required headings, remove every TODO, and use simple inline acceptance IDs

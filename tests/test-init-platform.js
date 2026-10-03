@@ -182,10 +182,10 @@ assert(
 )
 assert(
   normalizedProse(mainMd).includes(
-    'When starting a new Assignment or Mission, also read `.specdev/project_notes/big_picture.md` unconditionally'
+    'Always read `.specdev/project_notes/big_picture.md` before a new Assignment or Mission.'
   ) &&
     normalizedProse(mainMd).includes(
-      'For every other lane, read it only when project-wide intent is materially relevant'
+      "For other lanes, read it only when the project's overall intent matters."
     ),
   '_main.md limits unconditional project context loading to new Assignment and Mission starts'
 )
@@ -213,22 +213,21 @@ assert(
   '_main.md defines the cross-repository handoff-note ownership boundary'
 )
 assert(
-  normalizedProse(mainMd).includes(
-    '`todo.md` records user-selected non-architecture future work, not design-derived gaps'
-  ) &&
-    normalizedProse(mainMd).includes('omits provenance metadata and `Based on:` references') &&
-    normalizedProse(mainMd).includes('authority to implement Forecast or Todo items'),
-  '_main.md distinguishes Todo from Forecast without granting implementation authority'
+  mainMd.includes('(_guides/workflow.md#roadmap)') &&
+    mainMd.includes('(_guides/workflow.md#assignment)') &&
+    normalizedProse(mainMd).includes('do not read every lane at startup'),
+  '_main.md routes lane details to selective references'
 )
-assert(
-  normalizedProse(mainMd).includes(
-    'Only when the user explicitly requests a separate public-function design note'
-  ) &&
-    normalizedProse(mainMd).includes('concise typed signatures') &&
-    normalizedProse(mainMd).includes('named instances and returned values use `snake_case`') &&
-    normalizedProse(mainMd).includes('not a standard filename, scaffold, fixed format'),
-  '_main.md presents public-function note style as optional user-invoked guidance'
-)
+for (const match of mainMd.matchAll(/\]\(([^)]+)\)/g)) {
+  const [path, anchor] = match[1].split('#')
+  const destination = join(TEST_DIR, '.specdev', path)
+  assert(existsSync(destination), 'main-guide reference is installed: ' + path)
+  if (anchor && existsSync(destination)) {
+    const headings = [...readFileSync(destination, 'utf8').matchAll(/^#+ (.+)$/gm)]
+      .map((heading) => heading[1].toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/ /g, '-'))
+    assert(headings.includes(anchor), 'main-guide section exists: ' + match[1])
+  }
+}
 const workflowGuide = readFileSync(join(TEST_DIR, '.specdev', '_guides', 'workflow.md'), 'utf-8')
 assert(
   normalizedProse(workflowGuide).includes(
@@ -260,15 +259,15 @@ assert(
     '`roadmap/forecast.md`, `roadmap/todo.md`, and bounded design Markdown files'
   ) &&
     normalizedProse(skillsReadme).includes(
-      'Todo records user-selected non-architecture future work'
+      'Todo records user-selected future work outside architecture'
     ) &&
-    normalizedProse(skillsReadme).includes('omitting provenance') &&
+    normalizedProse(skillsReadme).includes('omits provenance') &&
     normalizedProse(skillsReadme).includes('Neither list grants implementation authority') &&
     normalizedProse(skillsReadme).includes(
       'When the user explicitly requests a separate public-function design note'
     ) &&
-    normalizedProse(skillsReadme).includes('CapCase classes') &&
-    normalizedProse(skillsReadme).includes('not a standard file, scaffold, fixed format'),
+    normalizedProse(skillsReadme).includes('Classes use CapCase') &&
+    normalizedProse(skillsReadme).includes('not a required file, scaffold, format'),
   'skills README includes Todo in the Roadmap boundary and preserves its authority distinction'
 )
 const specdevIndex = readFileSync(join(TEST_DIR, '.specdev', '_index.md'), 'utf-8')
@@ -302,7 +301,7 @@ for (const [adapterName, adapter] of [
   assert(
     normalizedProse(adapter).includes('small requested documentation artifacts') &&
       normalizedProse(adapter).includes('create no graph, receipt, or automatic commit') &&
-      normalizedProse(adapter).includes('read destination instructions') &&
+      /read destination instructions/i.test(normalizedProse(adapter)) &&
       normalizedProse(adapter).includes('Use SpecDev Adhoc to update the public API manual'),
     `${adapterName} exposes the Direct documentation fast path and explicit Adhoc example`
   )

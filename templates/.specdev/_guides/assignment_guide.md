@@ -74,8 +74,9 @@ primary repair verification. The lease binds the exact Assignment, role,
 provider session, frozen profile and permissions, contract, canonical working
 directory, candidate, findings, source Attempt, and round. Any mismatch,
 missing or expired state, unrelated candidate path, malformed capture, or resume
-failure produces an observable fresh read-only fallback. The continued round is
-still a distinct Attempt with a new verdict; durable findings and receipts stay
+failure produces an observable fresh read-only fallback. A failed resume permits
+only one fresh fallback. Each continued round is a distinct Attempt with a new
+verdict; durable findings and receipts stay
 authoritative. Resolver, arbiter, Mission, format-correction, non-reviewer, and
 other-provider paths remain fresh-only. Claude provider-local transcript
 persistence enables exact resume, but SpecDev does not retain that transcript or

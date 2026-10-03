@@ -54,7 +54,11 @@ compliance score or approval gate for this style.
 3. Run `specdev next --json` only when resuming a focused RippleGraph workflow.
 4. For explicit identities use `specdev mission status M00001` or `specdev
 discussion D00001`.
-5. Announce meaningful phase transitions with `Specdev: <action>`. Announce
+5. Read only the selected lane guidance listed below. Use the linked section of
+   the workflow reference; do not read every lane at startup. Read recovery and
+   supporting references only when the current action needs them. Reuse guidance
+   already read in this session unless it changes.
+6. Announce meaningful phase transitions with `Specdev: <action>`. Announce
    plan changes, failed verification, and blockers immediately; repeated
    read-only probes within an announced phase need no additional message.
 
@@ -82,185 +86,65 @@ request changes the destination repository's product, runtime, or workflow
 state, or explicitly requests SpecDev governance there, re-anchor in that
 repository and classify the work there before editing.
 
-Do not edit `.ripplegraph/` manually. RippleGraph owns lifecycle state and
-approval events until work reaches a terminal state. Git stores revisions and
-diffs. Contracts, outcomes, and receipts form the durable record for people.
-Successful Mission and standalone Assignment completion preserves a compact
-activity summary. It then removes the terminal run and its owned Attempt records.
-Attempt execution records use IDs such as `Attempt-00001`; they are temporary
-worker, reviewer, or controller invocations, not Assignment identities. Legacy
-`ATT-*` records may remain while older in-flight work resumes.
-Successful Assignment, Discussion, and Mission completion also removes owned
-raw logs and scratch results. Discussion completion preserves compact durable
-completion/activity metadata for listing and promotion. Explicit abandonment
-cleans owned temporary cache after its terminal record is preserved. Active,
-interrupted, failed/recoverable, and shelved work retains diagnostic cache.
-Use `specdev cleanup` to preview eligible leftovers and reclaimable bytes;
-`specdev cleanup --apply` revalidates ownership before removing them. Both accept
-`--json`. Unknown ownership, live/uncertain Attempts, symlinks, and unsafe paths
-are retained and reported. Shared caches and durable evidence are preserved.
-Assignment and Mission transitions are owned by their semantic commands;
-generic `specdev step`, `decide`, and `action` cannot advance those graphs.
+## Lane guidance
 
-For project reviews, start with `missions/` and `assignments/`. They hold the
-approved authority, delivery evidence, and outcomes. Keep installed workflow
-packages and skills as durable infrastructure. RippleGraph checkpoints and
-process records support recovery until work reaches a terminal state.
-In summaries for people, count or group these records rather than list every file.
+Use the matching installed SpecDev skill for a governed lane. The references
+below own its detailed rules. Read only the sections needed for the current action.
 
-When an unfamiliar repository-specific failure or recurring hazard appears,
-search living knowledge with `specdev knowledge search "<keyword bag>"`.
-Search matches all terms or quoted phrases by default. Narrow partial or noisy
-results. Use `--mode=broad` only when you want matches for any term. Use
-`--include-stale` only to recover older guidance and verify it before relying on
-it. Assignment planning searches with objective terms and carries useful paths
-into its plan. Mission planning searches once, gives relevant paths to children,
-and lets children search again only for child-specific unknowns. Adhoc searches
-only when behavior or conventions are unfamiliar. Unexpected symptoms trigger a
-second symptom-focused search. Treat results as historical leads, inspect
-current code for relevant hard-coded or closed-world assumptions, and route a
-reusable missing constraint through approved evidence-bound curation. Never
-bulk-load knowledge or product source directories.
+| Lane | Purpose | Reference |
+| --- | --- | --- |
+| Direct | Answer, inspect, or write a small non-behavioral document | Instructions above |
+| Roadmap | Collaborate on user-approved designs, Forecast, and Todo; no implementation authority | [_guides/workflow.md#roadmap](_guides/workflow.md#roadmap) |
+| Adhoc | Make one explicitly selected bounded change, with a receipt and delivery commit | [_guides/workflow.md#direct-and-adhoc](_guides/workflow.md#direct-and-adhoc) |
+| Assignment | Deliver one approved contract | [_guides/workflow.md#assignment](_guides/workflow.md#assignment) |
+| Mission | Deliver a parent objective through owned Assignment children | [_guides/workflow.md#mission](_guides/workflow.md#mission) |
+| Discussion | Explore with product code read-only | [_guides/workflow.md#discussion](_guides/workflow.md#discussion) |
+| Test Audit | Inspect tests and propose an exact Assignment; do not change tests | [_guides/workflow.md#test-audit](_guides/workflow.md#test-audit) |
 
-`specdev knowledge curate` is the bounded publication workflow: scan, draft,
-validate, exact user approval, journaled Markdown publication, durable receipt,
-and automatic index rebuild. Big-picture proposals require a separate exact
-approval. `specdev knowledge distill` remains a compatibility-only read-only
-brief; it never launches an agent or rewrites knowledge.
-Bounded `--repo-evidence=path#Lstart-Lend` can bind clean tracked current-code
-bytes and their Git revision to a proposal, but does not replace durable source,
-verification, ownership, destination approval, or rebuild requirements.
+## Shared authority
 
-## Work types
-
-- **Direct:** questions, explanations, status, read-only inspection, and small
-  non-behavioral user-requested documentation artifacts. No workflow, durable
-  receipt, or automatic commit.
-- **Roadmap:** explicitly user-selected, stateless collaboration on
-  `project_notes/roadmap/forecast.md`, `project_notes/roadmap/todo.md`, and
-  direct Markdown files under `project_notes/roadmap/designs/`. Run
-  `specdev roadmap`; show the exact
-  proposed edit and obtain user approval before writing. Every design file must
-  contain fewer than 800 words (maximum 799). Besides `core_concepts.md` and
-  `source_code_folder_structure.md`, each note covers one independent feature
-  or module with minimal overlap. Except for
-  `source_code_folder_structure.md`, each design note begins with general
-  descriptions and moves toward more specific detail without requiring fixed
-  sections or a particular Markdown format. Except for `core_concepts.md` and
-  `source_code_folder_structure.md`, each note ends by identifying every
-  targeted source file and giving the maximum total line count for the completed
-  file, and may include a small relevant folder tree or pseudocode when helpful
-  for clarifying the design. Neither illustration is required. Only when the
-  user explicitly requests a separate public-function design note, suggest
-  concise typed signatures aligned with the implementation or approved target.
-  Classes use CapCase; named instances and returned values use `snake_case`.
-  Show the return type and briefly describe the returned value. This is optional
-  guidance, not a standard filename, scaffold, fixed format, or validation rule.
-  `forecast.md` is
-  a future-work roadmap of
-  approved design requirements absent or incomplete in current code. Treat the
-  designs as the target state: identify code gaps versus designs, never design
-  gaps versus code. Code may be a superset; code-only features create neither
-  forecast items nor automatic design updates. The user separately initiates
-  Roadmap collaboration to incorporate those features into the designs. Quickly
-  inspect current code read-only and list code gaps in dependency order, one
-  numbered Markdown section per gap. Every forecast section must identify the
-  Roadmap design note or notes it is based on and contain fewer than 200 words
-  (maximum 199). `todo.md` records user-selected non-architecture future work,
-  not design-derived gaps. It uses the same dependency order followed by user
-  priority, numbered-section format, and fewer-than-200-word limit, but omits
-  provenance metadata and `Based on:` references. For design notes, report the
-  intended final destination and
-  concise scope, then write an approved `*_draft.md` draft and report only the
-  draft path. After user approval, promote it to the final `.md` path and
-  automatically commit the published design-note change. Report only the final
-  path and commit. Do not echo full content or diffs unless asked. Product code
-  and every other path are read-only. Roadmap creates no ID, workflow state,
-  receipt, or snapshot. Draft writes are not committed automatically; published
-  design-note changes are committed after user approval. Roadmap grants no
-  authority to implement Forecast or Todo items. It has no active lifecycle and
-  applies only during
-  explicit roadmap collaboration. Selecting another lane immediately supersedes
-  Roadmap without an exit command or state transition.
-- **Adhoc:** one explicitly user-selected bounded repository change with no graph,
-  scheduler, subagent, worktree, or approval gate. It records one concise
-  receipt and one final Git commit. Start with `specdev adhoc start "<scope>"`.
-- **Assignment:** one readable contract, one user approval, then automatic
-  Design + Implementation + evidence + review.
-- **Mission:** a foreground controller in the existing checkout. Immediately
-  after approval, explicitly choose inline (main session) or spawned workers.
-  Both execute sequential children with independent review and local checkpoints.
-  Mission is user-selected and does not imply multiple children.
-- **Discussion:** a concurrent code-read-only RippleGraph callable with required
-  proposal/design entry points plus safe supporting artifacts and nested folders;
-  it may later be promoted to fresh work.
-- **Test Audit:** a concurrent code-read-only callable that proposes exact test
-  pruning and a ready Assignment contract; it never removes tests itself.
-
-Only one focused Assignment or Mission scheduler exists. Discussion and Test
-Audit callables may coexist because their checkpoints are isolated. Adhoc is not
-a scheduler, but only one may be active in a worktree.
-
-## Hard rules
-
-- The foreground coding CLI authors Brainstorm with the user; do not spawn a
-  separate Brainstorm author for standalone work.
-- Assignment Brainstorm review defaults to optional and implementation review
-  defaults to required. The user may freeze another supported policy at
-  contract approval. A review waiver never waives acceptance evidence.
-- Mission Brainstorm review is optional and never approves the contract.
-  Multi-child Mission contracts receive review; a deterministic full-scope
-  single child reuses the approved parent authority without another Brainstorm
-  author or reviewer.
-- Mission approval stops at an explicit no-default implementation choice. Inline
-  assigns every child implementation, repair, and resolver to the current main
-  coding session; the Mission skill fulfills each returned obligation and reruns
-  the controller without routine user interaction. Spawned retains automatic
-  workers executing children sequentially. Reviewers remain independent in both modes.
-- Mission abandonment is a reasoned two-step terminal command. Its first pass is
-  read-only; exact confirmation preserves branch and worktree identities, records
-  no delivery, compacts only owned runtime, and never lands or deletes partial work.
-- Approval binds the exact final contract hash. A contract edit invalidates approval.
-- Before requesting Assignment or Mission contract approval, show the exact
-  contract path and hash plus a concise 2-4 bullet preview covering objective,
+- Do not edit `.ripplegraph/` manually. RippleGraph owns lifecycle state and
+  approval events until work reaches a terminal state. Git stores revisions and
+  diffs. Contracts, outcomes, and receipts form the durable record for people.
+- Assignment and Mission transitions belong to their semantic commands.
+  Generic `specdev step`, `decide`, and `action` cannot advance those graphs.
+- Only one focused Assignment or Mission scheduler exists. Discussion and Test
+  Audit may coexist through isolated ownership. Only one Adhoc may be active.
+  Preserve unrelated work and dirty-path ownership. Before an Adhoc detour,
+  read its coexistence and revalidation rules in the linked reference.
+- The foreground coding CLI authors Brainstorm with the user. Do not spawn a
+  separate Brainstorm author for standalone work. Use
+  [skills/core/brainstorming/SKILL.md](skills/core/brainstorming/SKILL.md)
+  when forming a contract or Discussion design.
+- Approval binds the exact final contract hash. A contract edit invalidates
+  approval. Before requesting Assignment or Mission approval, show the exact
+  contract path and hash plus a concise 2-4 bullet preview of the objective,
   scope, and key acceptance criteria. The preview never replaces the contract.
-- Adhoc classifies dirty product paths separately from independent Discussion
-  and Test Audit state. Concurrent callable state is preserved outside Adhoc
-  ownership; dirty product paths still require inspection, a separate
-  checkpoint, or explicit adoption. Assignment enforces the same product-tree
-  decision immediately before implementation.
-- Adhoc may temporarily coexist with a focused standalone Assignment or Mission
-  while its contract is forming or awaiting approval, and with an Assignment at
-  a later quiescent pre-implementation boundary. The focused identity, run,
-  contracts, approvals, children, artifacts, and Attempts stay outside Adhoc
-  ownership; established execution or Git boundaries, unsupported positions,
-  live or ambiguous Attempts, dirty product paths, pending revalidation, and
-  uncertain ownership block before mutation. Focused advancement remains
-  blocked throughout the detour. Finish or cancel creates a durable obligation
-  to recheck affected assumptions and run `specdev adhoc revalidate
---contract=unchanged --outcome="<summary>"` before the next approval,
-  execution, or Git boundary. Shelving and abandonment remain explicit terminal
-  user choices, never implicit Adhoc prerequisites.
-- SpecDev-owned delivery commits carry `SpecDev-*` trailers. Adhoc and
-  standalone Assignment create one final delivery commit; Mission checkpoints,
-  child deliveries, integrations, and completion identify their commit type.
-- Reviewers inspect and report; they never repair tracked code.
-- Only a review launched through `specdev reviewloop` can authorize a workflow
-  transition. A coding CLI's native review command is advisory because it does
-  not receive or validate the strict SpecDev result envelope.
-- Never run a full suite when narrower evidence answers the current question.
-  Repository confirmation rules always take precedence.
+- Reviewers inspect and report; they never repair tracked code. Only a review
+  launched through `specdev reviewloop` can authorize a workflow transition.
+  Native coding CLI review is advisory. Use [guides/review.md](guides/review.md)
+  when reviewing.
+- Run only authorized verification. Repository confirmation rules take precedence.
+  Reuse valid evidence. Never run a full suite when narrower evidence answers the
+  question. Read [_guides/workflow.md#verification](_guides/workflow.md#verification)
+  before selecting verification, including dependency changes.
 - Use the existing checkout for Assignments, Mission children, and Discussions.
-- Raw provider output, PID state, SQLite, and scratch data belong in ignored
-  `cache/`; ordinary interrupted source can be inspected and repaired.
-- A reviewed Mission child that only exceeds automatic authority pauses at an
-  exact user-reapproval identity. Repeated `mission run` and `mission status`
-  calls are provider-free until the user runs the displayed
-  `mission approve-divergence` or `mission reject-divergence` command.
-- Assignment implementation mode freezes at its Git boundary. Inline work and
-  repairs return resumable foreground obligations; spawned work preserves its
-  worker result and returns a blocked outcome. Finish the owned artifacts and
-  rerun to resume. Use `specdev implement --retry-worker` only for a frozen
-  spawned implementation that needs a replacement Attempt.
+  Raw provider output, PID state, SQLite, and scratch data belong in ignored
+  `cache/`. Ordinary interrupted source can be inspected and repaired.
 
-See `_index.md` for paths and `_guides/workflow.md` for the concise lifecycle.
+## References when needed
+
+- Before Assignment or Mission planning, or when unfamiliar behavior or an
+  unexpected failure needs investigation, read
+  [_guides/workflow.md#knowledge](_guides/workflow.md#knowledge).
+  It owns search, freshness, and knowledge publication rules. Never bulk-load
+  knowledge or product source directories.
+- For execution profiles, read
+  [_guides/workflow.md#profiles-and-guides](_guides/workflow.md#profiles-and-guides).
+- Before a delivery commit, read
+  [_guides/workflow.md#commit-identity](_guides/workflow.md#commit-identity).
+- For runtime ownership, cleanup, or artifact counts, read
+  [_guides/runtime.md](_guides/runtime.md).
+- Use [_index.md](_index.md) for command and path lookup. Read
+  [_guides/update_guide.md](_guides/update_guide.md) for updates and
+  [_guides/migration_guide.md](_guides/migration_guide.md) for layout migrations.

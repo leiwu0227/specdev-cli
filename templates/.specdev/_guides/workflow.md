@@ -106,6 +106,12 @@ Unrelated paths and index entries remain untouched. A real starting commit and
 attached checkout are required. History rewrites that lose recorded revisions
 block continuation; status and guarded abandonment remain available.
 
+Mission Brainstorm review is optional and never approves the contract.
+A reviewed child that only exceeds automatic authority pauses at an exact
+user-reapproval identity. Repeated `mission run` and `mission status` calls are
+provider-free until the user runs the displayed `mission approve-divergence`
+or `mission reject-divergence` command.
+
 A planned child may use `execution: evidence-only` only with an exact
 `observation_command` equal to the Mission final-verification command. A
 negative observation remains failed evidence but returns as
@@ -233,17 +239,8 @@ registered child worktrees, queue, evidence, and partial artifacts; it records
 no delivery, performs no landing or deletion, and makes every mutating Mission
 command refuse the terminal record.
 
-The first standalone Assignment primary implementation review is fresh. The
-Claude adapter may retain one ignored, 24-hour, single-use lease to resume that
-exact provider session for the immediately following repair-verification round.
-Every binding must match, the repaired candidate must be complete and remain
-within the reviewed product-path scope, and the resumed review creates a new
-linked Attempt and verdict. Missing, expired, malformed, unsupported, or
-mismatched state degrades to a fresh read-only Attempt; a failed resume permits
-only one fresh fallback. Resolver, arbiter, Mission, format correction, other
-roles, and other providers remain fresh-only. Provider-local transcript
-persistence is an operational prerequisite for Claude resume, not a durable
-SpecDev artifact or source of evidence.
+For standalone reviewer continuation and repair recovery, use
+`_guides/assignment_guide.md`.
 
 ## Knowledge
 
