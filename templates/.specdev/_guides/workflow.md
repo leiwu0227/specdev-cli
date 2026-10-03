@@ -263,6 +263,14 @@ verification, owner, destination-approval, receipt, or rebuild requirements.
 
 ## Verification
 
+When proposing a change, name the focused verification commands if they are known.
+Use existing explicit approval for those commands within the agreed task scope.
+If approval is missing, ask once for the known commands before running them.
+Necessary reruns after a fix use that approval unless the user limits or revokes it.
+Ask again only when a command, its effects, or the authorized scope changes, or
+repository instructions require separate approval for each run. Approval to edit
+does not itself authorize tests. Do not rerun passing checks without a reason.
+
 Focused evidence first. Reuse the same command on the same revision. A
 standalone Assignment may run a full suite at most once only when approved scope
 requires it. Mission children never run the full suite; the Mission may run one
