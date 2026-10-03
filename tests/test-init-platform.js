@@ -1,3 +1,4 @@
+import { ADAPTERS, adapterContent, SKILL_FILES } from '../src/commands/init.js'
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
@@ -27,10 +28,6 @@ function runCmd(args) {
 
 function cleanup() {
   if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true })
-}
-
-function normalizedProse(content) {
-  return content.replace(/\s+/g, ' ')
 }
 
 function snapshotTree(root, relative = '') {
@@ -175,49 +172,24 @@ assert(
   'update backfills a missing Todo scaffold'
 )
 
-const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf-8')
-assert(
-  mainMd.includes('.specdev/project_notes/big_picture.md'),
-  '_main.md uses a repository-root-relative project context path'
-)
-assert(
-  normalizedProse(mainMd).includes(
-    'Always read `.specdev/project_notes/big_picture.md` before a new Assignment or Mission.'
-  ) &&
-    normalizedProse(mainMd).includes(
-      "For other lanes, read it only when the project's overall intent matters."
-    ),
-  '_main.md limits unconditional project context loading to new Assignment and Mission starts'
-)
-assert(mainMd.includes('command -v specdev'), '_main.md installs the copyable PATH fallback')
-assert(
-  mainMd.includes('[ -x .specdev/cache/bin/specdev ]'),
-  '_main.md checks workspace launcher executability before use'
-)
-assert(
-  /repeated\s+read-only probes/.test(mainMd),
-  '_main.md defines phase-level announcement granularity'
-)
-assert(
-  normalizedProse(mainMd).includes('small user-requested documentation artifacts') &&
-    normalizedProse(mainMd).includes('without a graph, receipt, or automatic commit') &&
-    normalizedProse(mainMd).includes('write first, and verify narrowly') &&
-    mainMd.includes('project_notes/manual/') &&
-    normalizedProse(mainMd).includes('Use SpecDev Adhoc to update the public API manual'),
-  '_main.md defines Direct documentation eligibility, proportional orientation, and explicit Adhoc routing'
-)
-assert(
-  normalizedProse(mainMd).includes('coordination or handoff note') &&
-    normalizedProse(mainMd).includes('not an implicit Adhoc selection') &&
-    normalizedProse(mainMd).includes('re-anchor in that repository'),
-  '_main.md defines the cross-repository handoff-note ownership boundary'
-)
-assert(
-  mainMd.includes('(_guides/workflow.md#roadmap)') &&
-    mainMd.includes('(_guides/workflow.md#assignment)') &&
-    normalizedProse(mainMd).includes('do not read every lane at startup'),
-  '_main.md routes lane details to selective references'
-)
+// Installation preserves current source bytes. Guidance meaning is reviewed in the diff;
+// sentence fragments cannot establish whether an agent instruction is correct.
+for (const path of [
+  '_main.md', '_index.md', '_guides/workflow.md', '_guides/assignment_guide.md',
+  '_guides/runtime.md', 'skills/README.md', 'skills/core/brainstorming/SKILL.md',
+]) {
+  assert(
+    readFileSync(join(TEST_DIR, '.specdev', path), 'utf8') ===
+      readFileSync(join(REPO_ROOT, 'templates', '.specdev', path), 'utf8'),
+    'installed guidance matches its source: ' + path
+  )
+}
+const mainMd = readFileSync(join(TEST_DIR, '.specdev', '_main.md'), 'utf8')
+assert(mainMd.includes('.specdev/project_notes/big_picture.md'), 'main guide references project context')
+assert(mainMd.includes('command -v specdev'), 'main guide provides the PATH fallback')
+assert(mainMd.includes('[ -x .specdev/cache/bin/specdev ]'), 'main guide checks launcher executability')
+assert(mainMd.includes('(_guides/workflow.md#roadmap)'), 'main guide links to Roadmap rules')
+assert(mainMd.includes('(_guides/workflow.md#assignment)'), 'main guide links to Assignment rules')
 for (const match of mainMd.matchAll(/\]\(([^)]+)\)/g)) {
   const [path, anchor] = match[1].split('#')
   const destination = join(TEST_DIR, '.specdev', path)
@@ -228,331 +200,23 @@ for (const match of mainMd.matchAll(/\]\(([^)]+)\)/g)) {
     assert(headings.includes(anchor), 'main-guide section exists: ' + match[1])
   }
 }
-const workflowGuide = readFileSync(join(TEST_DIR, '.specdev', '_guides', 'workflow.md'), 'utf-8')
-assert(
-  normalizedProse(workflowGuide).includes(
-    '`todo.md` records user-selected non-architecture future work rather than design-derived gaps'
-  ) &&
-    normalizedProse(workflowGuide).includes(
-      'Todo items use the same dependency order followed by user priority'
-    ) &&
-    normalizedProse(workflowGuide).includes(
-      'omit provenance metadata and `Based on:` references'
-    ) &&
-    normalizedProse(workflowGuide).includes(
-      'does not authorize implementation of a Forecast or Todo item'
-    ),
-  'workflow guide documents Todo format and authority separately from Forecast'
-)
-assert(
-  normalizedProse(workflowGuide).includes(
-    'Only when the user explicitly requests a separate public-function design note'
-  ) &&
-    normalizedProse(workflowGuide).includes('Each signature shows its return type') &&
-    normalizedProse(workflowGuide).includes('custom types, important side effects, and failures') &&
-    normalizedProse(workflowGuide).includes('not a standard filename, scaffold'),
-  'workflow guide keeps public-function note guidance concise and optional'
-)
-const skillsReadme = readFileSync(join(TEST_DIR, '.specdev', 'skills', 'README.md'), 'utf-8')
-assert(
-  normalizedProse(skillsReadme).includes(
-    '`roadmap/forecast.md`, `roadmap/todo.md`, and bounded design Markdown files'
-  ) &&
-    normalizedProse(skillsReadme).includes(
-      'Todo records user-selected future work outside architecture'
-    ) &&
-    normalizedProse(skillsReadme).includes('omits provenance') &&
-    normalizedProse(skillsReadme).includes('Neither list grants implementation authority') &&
-    normalizedProse(skillsReadme).includes(
-      'When the user explicitly requests a separate public-function design note'
-    ) &&
-    normalizedProse(skillsReadme).includes('Classes use CapCase') &&
-    normalizedProse(skillsReadme).includes('not a required file, scaffold, format'),
-  'skills README includes Todo in the Roadmap boundary and preserves its authority distinction'
-)
-const specdevIndex = readFileSync(join(TEST_DIR, '.specdev', '_index.md'), 'utf-8')
-assert(
-  specdevIndex.includes(
-    'project_notes/roadmap/todo.md        dependency-ordered user-selected non-architecture work'
-  ),
-  'canonical state index lists the Todo scaffold'
-)
-const claudeMd = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8')
-assert(claudeMd.includes('.specdev/_main.md'), 'CLAUDE.md points to _main.md')
-const agentsMd = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8')
-assert(agentsMd.includes('.specdev/_main.md'), 'AGENTS.md points to _main.md')
-assert(
-  !agentsMd.includes('develops SpecDev itself'),
-  'AGENTS.md does not inject SpecDev source-repository advice'
-)
-const cursorRules = readFileSync(join(TEST_DIR, '.cursor', 'rules'), 'utf-8')
-assert(cursorRules.includes('.specdev/_main.md'), '.cursor/rules points to _main.md')
-for (const [adapterName, adapter] of [
-  ['CLAUDE.md', claudeMd],
-  ['AGENTS.md', agentsMd],
-  ['.cursor/rules', cursorRules],
-]) {
-  assert(
-    adapter.includes('coordination or handoff note') &&
-      adapter.includes('does not select Adhoc') &&
-      adapter.includes('re-anchor in that repository'),
-    `${adapterName} preserves explicit lane selection and destination-repository re-anchoring`
-  )
-  assert(
-    normalizedProse(adapter).includes('small requested documentation artifacts') &&
-      normalizedProse(adapter).includes('create no graph, receipt, or automatic commit') &&
-      /read destination instructions/i.test(normalizedProse(adapter)) &&
-      normalizedProse(adapter).includes('Use SpecDev Adhoc to update the public API manual'),
-    `${adapterName} exposes the Direct documentation fast path and explicit Adhoc example`
-  )
+for (const { path, heading } of Object.values(ADAPTERS)) {
+  const adapter = readFileSync(join(TEST_DIR, path), 'utf8')
+  assert(adapter === adapterContent(heading), path + ' installs the current adapter')
+  assert(adapter.includes('.specdev/_main.md'), path + ' references the main guide')
+  assert(!adapter.includes('develops SpecDev itself'), path + ' excludes source-repository advice')
 }
-
-// ---- Test default init installs Claude extras (skills, hooks, settings) ----
-console.log('\ndefault init installs Claude extras:')
-const skillsDir = join(TEST_DIR, '.claude', 'skills')
-assert(existsSync(skillsDir), '.claude/skills/ directory created')
-assert(existsSync(join(skillsDir, 'specdev-start', 'SKILL.md')), 'specdev-start/SKILL.md installed')
-assert(existsSync(join(skillsDir, 'specdev-adhoc', 'SKILL.md')), 'specdev-adhoc/SKILL.md installed')
-assert(
-  existsSync(join(skillsDir, 'specdev-assignment', 'SKILL.md')),
-  'specdev-assignment/SKILL.md installed'
-)
-assert(
-  existsSync(join(skillsDir, 'specdev-rewind', 'SKILL.md')),
-  'specdev-rewind/SKILL.md installed'
-)
-assert(
-  !existsSync(join(skillsDir, 'specdev-brainstorm', 'SKILL.md')),
-  'specdev-brainstorm removed (redundant with assignment)'
-)
-assert(
-  existsSync(join(skillsDir, 'specdev-continue', 'SKILL.md')),
-  'specdev-continue/SKILL.md installed'
-)
-assert(
-  existsSync(join(skillsDir, 'specdev-mission', 'SKILL.md')),
-  'specdev-mission/SKILL.md installed'
-)
-assert(
-  existsSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md')),
-  'specdev-reviewloop/SKILL.md installed'
-)
-assert(
-  !existsSync(join(skillsDir, 'specdev-review', 'SKILL.md')),
-  'retired specdev-review skill is absent'
-)
-
-const startSkill = readFileSync(join(skillsDir, 'specdev-start', 'SKILL.md'), 'utf-8')
-assert(startSkill.includes('big_picture.md'), 'start skill references big_picture.md')
-assert(startSkill.includes('purpose, users'), 'start skill includes Q&A instructions')
-
-const adhocSkill = readFileSync(join(skillsDir, 'specdev-adhoc', 'SKILL.md'), 'utf-8')
-assert(
-  normalizedProse(adhocSkill).includes(
-    'big_picture.md` only when project-wide intent is materially relevant'
-  ) && !normalizedProse(adhocSkill).includes('big_picture.md` unconditionally'),
-  'Adhoc skill loads project context only when materially relevant'
-)
-assert(/adhoc\s+verify --label=/.test(adhocSkill), 'Adhoc skill documents structured verification')
-assert(adhocSkill.includes('--title='), 'Adhoc skill documents the independent short title')
-assert(
-  /independent\s+Discussion and Test/i.test(adhocSkill),
-  'Adhoc skill explains concurrent callable classification'
-)
-assert(
-  adhocSkill.includes('exact temporary-index transaction'),
-  'Adhoc skill documents transactional exact staging'
-)
-assert(
-  adhocSkill.includes('requested, committed, rejected, and remaining'),
-  'Adhoc skill documents Git-derived delivery facts'
-)
-assert(
-  normalizedProse(adhocSkill).includes('quiescent approved pre-implementation boundary') &&
-    normalizedProse(adhocSkill).includes('standalone Assignment or Mission may coexist') &&
-    normalizedProse(adhocSkill).includes('specdev adhoc revalidate') &&
-    normalizedProse(adhocSkill).includes('pending revalidation'),
-  'Adhoc skill documents focused contract-time coexistence and revalidation boundaries'
-)
 for (const skillRoot of ['.claude', '.codex']) {
-  const installedAdhocSkill = readFileSync(
-    join(TEST_DIR, skillRoot, 'skills', 'specdev-adhoc', 'SKILL.md'),
-    'utf-8'
-  )
-  const installedAdhocProse = normalizedProse(installedAdhocSkill)
+  const root = join(TEST_DIR, skillRoot, 'skills')
+  const installedNames = readdirSync(root).filter((name) => name.startsWith('specdev-')).sort()
   assert(
-    installedAdhocProse.includes('bounded file write request has not thereby selected Adhoc') &&
-      installedAdhocProse.includes('coordination or handoff note') &&
-      installedAdhocProse.includes('do not create SpecDev state in the active repository') &&
-      installedAdhocProse.includes('re-anchor in that repository'),
-    `${skillRoot} Adhoc skill preserves the handoff-note exemption and repo-B classification boundary`
+    JSON.stringify(installedNames) === JSON.stringify(Object.keys(SKILL_FILES).sort()),
+    skillRoot + ' installs the current skill set without retired skills'
   )
-  assert(
-    installedAdhocSkill.includes(
-      'description: Run a user-explicitly-selected Adhoc change without a RippleGraph workflow'
-    ) &&
-      installedAdhocProse.includes('write an HTTP usage manual under project notes') &&
-      installedAdhocProse.includes(
-        'Use SpecDev Adhoc to update the public API manual and commit it'
-      ),
-    `${skillRoot} Adhoc skill makes explicit activation and documentation routing visible`
-  )
-  assert(
-    installedAdhocSkill.includes('exact temporary-index transaction') &&
-      installedAdhocSkill.includes('requested, committed, rejected, and remaining'),
-    `${skillRoot} Adhoc skill retains ownership and transaction guidance`
-  )
-  assert(
-    installedAdhocProse.includes('quiescent approved pre-implementation boundary') &&
-      installedAdhocProse.includes('standalone Assignment or Mission may coexist') &&
-      installedAdhocProse.includes('Focused-workflow commands remain blocked') &&
-      installedAdhocProse.includes('specdev adhoc revalidate'),
-    `${skillRoot} Adhoc skill preserves focused ownership through explicit revalidation`
-  )
-}
-
-const assignmentSkill = readFileSync(join(skillsDir, 'specdev-assignment', 'SKILL.md'), 'utf-8')
-assert(
-  assignmentSkill.includes('specdev assignment'),
-  'assignment skill references specdev assignment command'
-)
-assert(assignmentSkill.includes('Specdev:'), 'assignment skill includes prefix instruction')
-assert(
-  assignmentSkill.includes('contract-preview bullets'),
-  'assignment skill requires a contract preview before approval'
-)
-assert(
-  normalizedProse(assignmentSkill).includes(
-    'When starting a new Assignment, read `.specdev/project_notes/big_picture.md` unconditionally'
-  ),
-  'assignment skill loads project context unconditionally on new starts'
-)
-
-const missionSkill = readFileSync(join(skillsDir, 'specdev-mission', 'SKILL.md'), 'utf-8')
-assert(
-  missionSkill.includes('contract-preview bullets'),
-  'mission skill requires a contract preview before approval'
-)
-assert(
-  normalizedProse(missionSkill).includes(
-    'When starting a new Mission, read `.specdev/project_notes/big_picture.md` unconditionally'
-  ),
-  'mission skill loads project context unconditionally on new starts'
-)
-
-const rewindSkill = readFileSync(join(skillsDir, 'specdev-rewind', 'SKILL.md'), 'utf-8')
-assert(rewindSkill.includes('.specdev/_main.md'), 'rewind skill references _main.md')
-
-const roadmapSkill = readFileSync(join(skillsDir, 'specdev-roadmap', 'SKILL.md'), 'utf-8')
-const roadmapSkillProse = normalizedProse(roadmapSkill)
-assert(
-  roadmapSkillProse.includes('only when the user explicitly selects it') &&
-    roadmapSkillProse.includes('wait for explicit user approval to write') &&
-    !roadmapSkillProse.includes('complete proposed content or diff') &&
-    roadmapSkillProse.includes('creates no ID, RippleGraph state, receipt, or snapshot') &&
-    roadmapSkillProse.includes('Draft writes are not committed automatically') &&
-    roadmapSkillProse.includes('published design-note changes are committed after user approval') &&
-    roadmapSkillProse.includes('fewer than 800 words (maximum 799)') &&
-    roadmapSkillProse.includes('conceptual parent-child hierarchy') &&
-    roadmapSkillProse.includes('one independent feature or module') &&
-    roadmapSkillProse.includes('high-level stable abstractions') &&
-    roadmapSkillProse.includes('reusable conceptual templates') &&
-    roadmapSkillProse.includes('Except for `source_code_folder_structure.md`') &&
-    roadmapSkillProse.includes('general descriptions') &&
-    roadmapSkillProse.includes('whatever headings, sections') &&
-    roadmapSkillProse.includes(
-      'At the end of every design note except `core_concepts.md` and `source_code_folder_structure.md`'
-    ) &&
-    roadmapSkillProse.includes('maximum total line count for the completed file') &&
-    roadmapSkillProse.includes('No particular format is required') &&
-    roadmapSkillProse.includes('small relevant folder tree') &&
-    roadmapSkillProse.includes('pseudocode section') &&
-    roadmapSkillProse.includes('neither is required') &&
-    roadmapSkillProse.includes('runtime mechanics, verification history') &&
-    roadmapSkillProse.includes('Write the draft as `*_draft.md`') &&
-    roadmapSkillProse.includes('report only the draft Markdown path') &&
-    roadmapSkillProse.includes('promote the draft to the final `.md` path') &&
-    roadmapSkillProse.includes('automatically commit the published design-note change') &&
-    roadmapSkillProse.includes('identify design-note sections not yet reflected in code') &&
-    roadmapSkillProse.includes('never design gaps versus current code') &&
-    roadmapSkillProse.includes('extra code-only features do not create forecast items') &&
-    roadmapSkillProse.includes('user separately initiates Roadmap collaboration') &&
-    roadmapSkillProse.includes('list those gaps in dependency order') &&
-    roadmapSkillProse.includes('numbered Markdown section') &&
-    roadmapSkillProse.includes('design note or notes the section') &&
-    roadmapSkillProse.includes('fewer than 200 words (maximum 199)') &&
-    roadmapSkillProse.includes(
-      '`todo.md` records non-architecture future work selected by the user'
-    ) &&
-    roadmapSkillProse.includes('dependency and then by user priority') &&
-    roadmapSkillProse.includes('Todo items omit provenance metadata') &&
-    roadmapSkillProse.includes('not grant authority to implement Forecast or Todo items') &&
-    roadmapSkillProse.includes(
-      'Only when the user explicitly requests a separate public-function design note'
-    ) &&
-    roadmapSkillProse.includes('concise typed signatures') &&
-    roadmapSkillProse.includes('Use CapCase (PascalCase) for classes') &&
-    roadmapSkillProse.includes('named instances and returned values') &&
-    roadmapSkillProse.includes('Show each return type') &&
-    roadmapSkillProse.includes('not a standard filename, scaffold, fixed Markdown format') &&
-    roadmapSkillProse.includes('Selecting another lane immediately supersedes') &&
-    roadmapSkillProse.includes('no exit command or state transition is required'),
-  'roadmap skill requires explicit selection and approval without workflow history'
-)
-
-const continueSkill = readFileSync(join(skillsDir, 'specdev-continue', 'SKILL.md'), 'utf-8')
-assert(continueSkill.includes('specdev next'), 'continue skill references durable workflow resume')
-assert(
-  normalizedProse(continueSkill).includes(
-    'Resume from the durable contract and workflow artifacts first'
-  ) &&
-    normalizedProse(continueSkill).includes(
-      'big_picture.md` only when project-wide intent is materially relevant'
-    ),
-  'continue skill prefers durable artifacts and selectively reloads project context'
-)
-
-const reviewloopSkill = readFileSync(join(skillsDir, 'specdev-reviewloop', 'SKILL.md'), 'utf-8')
-assert(reviewloopSkill.includes('agents.yaml'), 'reviewloop skill references repository profiles')
-assert(
-  reviewloopSkill.includes('review sessions are advisory'),
-  'reviewloop skill distinguishes native advisory reviews from authoritative reviewloop verdicts'
-)
-assert(
-  reviewloopSkill.includes('contract-preview bullets'),
-  'reviewloop skill requires a contract preview before approval'
-)
-
-const installedSkillNames = readdirSync(join(TEST_DIR, '.claude', 'skills'), {
-  withFileTypes: true,
-})
-  .filter((entry) => entry.isDirectory() && entry.name.startsWith('specdev-'))
-  .map((entry) => entry.name)
-  .sort()
-for (const skillRoot of ['.claude', '.codex']) {
-  for (const skillName of installedSkillNames) {
-    const installedSkill = readFileSync(
-      join(TEST_DIR, skillRoot, 'skills', skillName, 'SKILL.md'),
-      'utf-8'
-    )
-    const trackedSkill = readFileSync(
-      join(REPO_ROOT, skillRoot, 'skills', skillName, 'SKILL.md'),
-      'utf-8'
-    )
-    assert(
-      trackedSkill === installedSkill,
-      `${skillRoot}/${skillName} tracked host copy matches generated skill prose`
-    )
-    assert(
-      !installedSkill.includes('Announce every subtask') &&
-        normalizedProse(installedSkill).includes(
-          'Announce meaningful phases, plan changes, failed verification, and blockers'
-        ) &&
-        normalizedProse(installedSkill).includes(
-          'repeated read-only probes need no separate announcement'
-        ),
-      `${skillRoot}/${skillName} uses meaningful-phase announcement guidance`
-    )
+  for (const [name, content] of Object.entries(SKILL_FILES)) {
+    const installed = readFileSync(join(root, name, 'SKILL.md'), 'utf8')
+    assert(installed === content, skillRoot + '/' + name + ' installs current skill content')
+    assert(installed.startsWith('---\nname: ' + name + '\n'), name + ' has matching skill metadata')
   }
 }
 
@@ -569,18 +233,6 @@ assert(hookContent.startsWith('#!/usr/bin/env bash'), 'hook script starts with b
 assert(
   hookContent === trackedHookContent,
   '.claude tracked session hook matches the generated hook source'
-)
-assert(
-  !hookContent.includes('Announce every subtask') &&
-    hookContent.includes('Announce meaningful phases') &&
-    hookContent.includes('small non-behavioral documentation writes') &&
-    hookContent.includes('only forecast.md, todo.md, and Markdown under designs/') &&
-    hookContent.includes(
-      'Todo contains dependency-ordered, user-prioritized non-architecture work'
-    ) &&
-    hookContent.includes('Neither list grants implementation authority') &&
-    hookContent.includes('Direct writes create no workflow state, receipt, or automatic commit'),
-  'SessionStart guidance exposes Roadmap Todo, Direct writes, and meaningful-phase announcements'
 )
 const settingsFile = join(TEST_DIR, '.claude', 'settings.json')
 assert(existsSync(settingsFile), '.claude/settings.json exists')

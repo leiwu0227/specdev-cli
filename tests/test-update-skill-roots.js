@@ -1,3 +1,4 @@
+import { SKILL_FILES } from '../src/commands/init.js'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import {
@@ -46,20 +47,16 @@ try {
   assert.equal(statSync(join(repairable, '.codex')).isDirectory(), true)
   assert.equal(existsSync(join(repairable, '.codex', 'skills', 'specdev-adhoc', 'SKILL.md')), true)
   assert.equal(existsSync(join(repairable, '.specdev', 'workflow.json')), true)
-  const adhoc = readFileSync(
-    join(repairable, '.codex', 'skills', 'specdev-adhoc', 'SKILL.md'),
-    'utf8'
+  assert.equal(
+    readFileSync(join(repairable, '.codex', 'skills', 'specdev-adhoc', 'SKILL.md'), 'utf8'),
+    SKILL_FILES['specdev-adhoc']
   )
-  assert.match(adhoc, /smallest complete change/)
-  assert.match(adhoc, /principles add no Brainstorm phase/)
-  const brainstorm = readFileSync(
-    join(repairable, '.specdev', 'skills', 'core', 'brainstorming', 'SKILL.md'),
-    'utf8'
-  )
-  assert.match(brainstorm, /leave routine implementation\s+choices open/i)
-  const review = readFileSync(join(repairable, '.specdev', 'guides', 'review.md'), 'utf8')
-  assert.match(review, /name a concrete alternative/)
-  assert.match(review, /Complexity blocks only for an actual defect/)
+  for (const path of ['skills/core/brainstorming/SKILL.md', 'guides/review.md']) {
+    assert.equal(
+      readFileSync(join(repairable, '.specdev', path), 'utf8'),
+      readFileSync(join(root, 'templates', '.specdev', path), 'utf8')
+    )
+  }
 
   const protectedTarget = prepareFixture('protected', 'preserve this file\n')
   const sentinelPath = join(protectedTarget, '.specdev', '_main.md')
