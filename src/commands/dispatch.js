@@ -27,6 +27,10 @@ import { adhocCommand } from './adhoc.js'
 import { cleanupCommand } from './cleanup.js'
 import { resolveTargetDir } from '../utils/command-context.js'
 import { readFocusedRevalidation } from '../utils/adhoc-focused.js'
+import { readCurrentFocus } from '../utils/current.js'
+import { resolveAssignmentSelector } from '../utils/assignment.js'
+import { readMission, resolveMissionSelector } from '../utils/mission.js'
+import { missionClosureError } from './mission-close.js'
 
 const ASSIGNMENT_ADVANCING_COMMANDS = new Set([
   'start',
@@ -80,6 +84,7 @@ export async function dispatchCommand(command, positionalArgs, flags) {
     return
   }
   if (await blockFocusedAdvanceDuringAdhoc(command, flags)) return
+  if (await blockClosedMissionAdvance(command, positionalArgs, flags)) return
   if (await blockFocusedAdvanceForRevalidation(command, positionalArgs, flags)) return
   if (['do', 'decide', 'step', 'action', 'cancel'].includes(command)) {
     await engineCommand(command, positionalArgs, flags)
@@ -191,5 +196,30 @@ async function blockFocusedAdvanceForRevalidation(command, positionalArgs, flags
 function isExplicitTerminalResolution(command, positionalArgs) {
   if (command === 'cancel') return true
   if (command === 'assignment' && ['shelf', 'close'].includes(positionalArgs[0])) return true
-  return command === 'mission' && positionalArgs[0] === 'abandon'
+  return command === 'mission' && ['abandon', 'close'].includes(positionalArgs[0])
+}
+
+async function blockClosedMissionAdvance(command, positionalArgs, flags) {
+  if (!ASSIGNMENT_ADVANCING_COMMANDS.has(command)) return false
+  if (command === 'mission' && ['close', 'status', 'run'].includes(positionalArgs[0])) return false
+  const specdevPath = join(resolveTargetDir(flags), '.specdev')
+  const focus = await readCurrentFocus(specdevPath)
+  let missionId = flags.mission || (focus?.kind === 'mission' ? focus.id : null)
+  const assignmentId = flags.assignment || (focus?.kind === 'assignment' ? focus.id : null)
+  if (assignmentId) {
+    const resolved = await resolveAssignmentSelector(specdevPath, assignmentId)
+    const status = resolved?.path
+      ? await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
+      : null
+    missionId ||= status?.mission
+  }
+  if (!missionId) return false
+  const resolved = await resolveMissionSelector(specdevPath, missionId)
+  if (!resolved?.path) return false
+  const error = missionClosureError(await readMission(resolved.path))
+  if (!error) return false
+  if (flags.json) console.log(JSON.stringify({ command, status: 'error', error }))
+  else console.error(error)
+  process.exitCode = 1
+  return true
 }

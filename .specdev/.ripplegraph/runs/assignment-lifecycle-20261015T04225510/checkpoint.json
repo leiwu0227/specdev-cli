@@ -1,0 +1,86 @@
+{
+  "runId": "assignment-lifecycle-20261015T04225510",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-10-15T04:22:55.105Z",
+  "updatedAt": "2026-10-15T04:41:32.948Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00073",
+      "name": "00073_add-terminal-mission-closure-for-user-accepted-d",
+      "path": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d",
+      "description": "Add terminal Mission closure for user-accepted delivery with incomplete verification",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/brainstorm/contract.md",
+      "contract_hash": "801a12a725d993100b28ae79b834946983bea052bd5c47667eb555b8f94e3f25"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "801a12a725d993100b28ae79b834946983bea052bd5c47667eb555b8f94e3f25",
+      "actor": "user",
+      "approved_at": "2026-10-15T04:24:20.823Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "1f6733b9c9cf2949ff94c4821c2893f8d7c66d10"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/design/plan.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/implementation/progress.json",
+      "outcome": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/outcome.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/review/implementation-verdict.md",
+      "attempt": "Attempt-00190",
+      "disposition": "approved"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "801a12a725d993100b28ae79b834946983bea052bd5c47667eb555b8f94e3f25",
+      "actor": "user",
+      "approved_at": "2026-10-15T04:24:20.823Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "1f6733b9c9cf2949ff94c4821c2893f8d7c66d10"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.4.0",
+    "packagePath": "workflows/assignment-lifecycle@2.4.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/review/implementation-verdict.md",
+    "attempt": "Attempt-00190",
+    "disposition": "approved"
+  }
+}

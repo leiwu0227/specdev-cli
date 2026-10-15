@@ -191,7 +191,8 @@ async function resolveMissionCoexistence(specdevPath, selector) {
   if (!mission?.id || !mission?.run_id) {
     return ambiguousOwner(owner, 'The focused Mission record is missing or invalid.')
   }
-  if (['completed', 'failed', 'abandoned'].includes(mission.status)) return { status: 'none' }
+  if (['completed', 'failed', 'abandoned', 'closed'].includes(mission.status))
+    return { status: 'none' }
   if (mission.adhoc_revalidation?.status === 'required') {
     return revalidationBlocked(owner, mission.adhoc_revalidation)
   }

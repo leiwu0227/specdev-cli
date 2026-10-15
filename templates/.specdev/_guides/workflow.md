@@ -230,6 +230,23 @@ command refuse the terminal record.
 For standalone reviewer continuation and repair recovery, use
 `_guides/assignment_guide.md`.
 
+For delivery that the user accepts with incomplete verification, use
+`specdev mission close M00001 --outcome=accepted-with-limitations
+--evidence=<acceptance-note>`. The note must record the limitations and the user's
+acceptance. Present the read-only plan and obtain explicit user acceptance before
+repeating the command with its exact `--confirm=<plan-digest>`. Never infer
+acceptance from a failed check or from an instruction to continue implementation.
+Changed evidence or lifecycle state requires a new plan and confirmation.
+
+Closure records terminal status `closed` and outcome `accepted-with-limitations`.
+Verification remains incomplete. Contracts, failures, missing evidence, code,
+artifacts, and runtime history remain intact. Unfinished owned children close
+without verified completion. The owned scheduler stops, focus is released, and
+an exact local closure commit records the transition. No landing occurs.
+Live or ambiguous execution blocks closure. Retry the exact confirmed command
+after an interrupted closure. A closed Mission cannot resume. Subsequent Adhoc
+work can start; unrelated dirty work still follows normal adoption rules.
+
 ## Knowledge
 
 Markdown under `knowledge/` is durable; `cache/knowledge.sqlite` is generated.

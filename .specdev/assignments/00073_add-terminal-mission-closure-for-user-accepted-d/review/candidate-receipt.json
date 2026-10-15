@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "b562bf0b8dda8b3606be531432037a5c51410abf9ebc8a46b9ee5555d1f615a8",
+  "assignment": {
+    "id": "00073",
+    "folder": "00073_add-terminal-mission-closure-for-user-accepted-d"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-10-15T04:25:36.826Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/brainstorm/contract.md",
+    "hash": "801a12a725d993100b28ae79b834946983bea052bd5c47667eb555b8f94e3f25"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "`node tests/test-mission-closure.js`: missing evidence, unsupported outcomes, live execution, and changed note/artifact/queue/product state refuse closure without lifecycle mutation.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "`node tests/test-mission-closure.js`: failed verification, missing evidence, contracts, product bytes, nested scheduler outputs and history remain retained; outcome stays unverified. `npm run test:mission-abandonment` and `npm run test:m...",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "`node tests/test-mission-closure.js`: active child termination, four interruption boundaries, exact retries, terminal mutation guards, unrelated index/worktree preservation, later focus preservation, and successful subsequent Adhoc start.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 8,
+    "items": [
+      {
+        "command": "npm run test:mission-landing",
+        "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+        "scope": "Existing landing and checkout behavior",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:mission-abandonment",
+        "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+        "scope": "Existing abandonment behavior",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 2,
+        "superseded": 1,
+        "history_counts": {
+          "passed": 1,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-closure.js",
+        "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+        "scope": "Mission closure regression",
+        "status": "passed",
+        "duration_ms": 0,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 5,
+        "superseded": 4,
+        "history_counts": {
+          "passed": 1,
+          "failed": 4,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 5,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 3,
+        "failed": 5,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 8,
+      "counts": {
+        "passed": 3,
+        "failed": 5,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 3,
+          "failed": 5,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 3,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 5,
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:mission-landing",
+        "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:mission-abandonment",
+        "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-closure.js",
+        "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 14,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "README.md",
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 9,
+        "paths": [
+          "src/commands/dispatch.js",
+          "src/commands/focus.js",
+          "src/commands/help.js",
+          "src/commands/mission-close.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/adhoc-focused.js",
+          "src/utils/assignment-lifecycle.js"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "templates",
+        "count": 2,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-mission-closure.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "Closure refuses historical parallel or ambiguous child execution ownership. External",
+      "processes can race file checks; detected changes stop closure and retain its recovery",
+      "state. Unrelated dirty product work still requires the normal Adhoc ownership decision."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/brainstorm/contract.md",
+      "exists": true,
+      "digest": "801a12a725d993100b28ae79b834946983bea052bd5c47667eb555b8f94e3f25"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/design/plan.md",
+      "exists": true,
+      "digest": "6139942abb2384c511ef78c128c097e0ba719787a16a39e30a41bc589e1160ab"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/implementation/progress.json",
+      "exists": true,
+      "digest": "cea329c726a8f754b04f38cf25eb9a94070774ee3a4293b1e1e9b4918436cc1a"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00073_add-terminal-mission-closure-for-user-accepted-d/outcome.md",
+      "exists": true,
+      "digest": "3bb6b2662a2b2b061d25fda98181be787afa33327db55145360252d38ff3a838"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

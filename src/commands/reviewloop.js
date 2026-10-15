@@ -90,10 +90,10 @@ export async function reviewMissionBrainstorm(flags = {}) {
   if (!resolved || resolved.ambiguous)
     return fail(flags, `Mission not found or ambiguous: ${selector}`)
   const mission = await readMission(resolved.path)
-  if (mission.status === 'abandoned') {
+  if (['abandoned', 'closed', 'closing'].includes(mission.status)) {
     return fail(
       flags,
-      `Mission ${mission.id} is abandoned and immutable; Brainstorm review is closed`
+      `Mission ${mission.id} is ${mission.status} and immutable; Brainstorm review is closed`
     )
   }
   const graph = getState({ workflowRoot: workflowRootFor(targetDir) })

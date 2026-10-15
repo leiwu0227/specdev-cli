@@ -39,9 +39,17 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
     return fail(flags, `Work item not found or ambiguous: ${selector}`)
   if (kind === 'mission') {
     const mission = await readMission(resolved.path).catch(() => null)
-    if (mission?.status === 'abandoned') {
-      return fail(flags, `Mission ${mission.id} is abandoned and immutable; it cannot be focused`)
+    if (['abandoned', 'closed', 'closing'].includes(mission?.status)) {
+      return fail(
+        flags,
+        `Mission ${mission.id} is ${mission.status} and immutable; it cannot be focused`
+      )
     }
+  }
+  if (kind === 'assignment') {
+    const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
+    if (status?.status === 'closed')
+      return fail(flags, `Assignment ${status.id} is closed and immutable`)
   }
   await writeCurrentFocus(specdevPath, { kind, id: resolved.id })
   const assignmentStatus =

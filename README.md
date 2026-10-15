@@ -199,6 +199,24 @@ canonical child branch remain untouched, even when dirty. Unknown ownership,
 unregistered pool contents, and dirty children of the retiring Mission still
 block abandonment.
 
+To accept delivered work with incomplete verification, write a note that records
+the limitations and the user's explicit acceptance, then run:
+
+```bash
+specdev mission close M00001 \
+  --outcome=accepted-with-limitations \
+  --evidence=acceptance.md
+```
+
+Inspect the plan with the user. After explicit acceptance, repeat the command
+with `--confirm=<plan-digest>`. Closure records a distinct terminal outcome,
+preserves failed checks and missing evidence, closes unfinished child execution,
+and releases focus and ownership. It retains code, artifacts, and runtime history
+and creates one exact local closure commit. It does not claim verification passed
+or perform landing. A subsequent Adhoc can start; unrelated dirty work still
+requires its normal ownership decision. Retry the same confirmed command after
+an interruption. Closed Missions cannot resume.
+
 If an interrupted controller has no local process marker, inspect it before
 using `specdev mission pause M00001` to record the interruption. Pause refuses a
 live local controller. Record the pause changes in a local commit before

@@ -155,11 +155,17 @@ import {
   inspectAbandonedMission,
 } from './mission-abandon.js'
 
+import { closeMissionCommand, missionClosureError, inspectMissionClosure } from './mission-close.js'
+
 const execFile = promisify(execFileCallback)
 
 export async function missionCommand(positionalArgs = [], flags = {}) {
   const subcommand = positionalArgs[0]
   const rest = positionalArgs.slice(1)
+  if (subcommand === 'close') {
+    const context = await missionContext(rest[0], flags)
+    return context ? closeMissionCommand(context, flags) : null
+  }
   if (subcommand === 'land') return missionLand(rest[0], flags)
   if (subcommand === 'checkpoint' && flags.push) {
     process.exitCode = 1
@@ -178,6 +184,11 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
   if (subcommand !== 'status' && subcommand !== 'create') {
     const context = await missionContext(rest[0], flags)
     if (!context) return null
+    if (missionClosureError(context.mission)) {
+      if (subcommand === 'run')
+        return emit(flags, await inspectMissionClosure(context, 'mission run'))
+      return fail(flags, missionClosureError(context.mission))
+    }
     try {
       if (!['failed', 'abandoned'].includes(context.mission.status) || subcommand !== 'run') {
         await assertMissionCheckout(context.targetDir, context.mission, {
@@ -207,7 +218,7 @@ export async function missionCommand(positionalArgs = [], flags = {}) {
     return decideMissionDivergence(rest[0], flags, 'reject')
   }
   console.error(
-    'Usage: specdev mission <create | run | abandon | migrate | status | approve-divergence | reject-divergence | land | pause | checkpoint | handoff | adopt-successor>'
+    'Usage: specdev mission <create | run | close | abandon | migrate | status | approve-divergence | reject-divergence | land | pause | checkpoint | handoff | adopt-successor>'
   )
   process.exitCode = 1
 }
@@ -2637,6 +2648,7 @@ ${unresolved.map((criterion) => `- ${criterion.id}: ${criterion.text}`).join('\n
 async function missionStatus(selector, flags) {
   const context = await missionContext(selector, flags, { recoverCompleted: true })
   if (!context) return null
+  if (missionClosureError(context.mission)) return emit(flags, await inspectMissionClosure(context))
   const queue = await readMissionQueue(context.missionPath).catch(() => null)
   const assignments = queue?.assignments || []
   const phase = readMissionPhase(context.specdevPath, context.mission.run_id)
@@ -3576,6 +3588,12 @@ function emit(flags, payload) {
       }
       console.log('Delivery: none')
     }
+    if (payload.closure) {
+      console.log(`Outcome: ${payload.closure.outcome}; verification remains incomplete`)
+      console.log(`Acceptance: ${payload.closure.artifact}`)
+      if (payload.repository?.terminal_commit)
+        console.log(`Closure commit: ${payload.repository.terminal_commit}`)
+    }
     if (payload.last_checkpoint)
       console.log(
         `Last checkpoint: ${payload.last_checkpoint.revision || payload.last_checkpoint.created_at || payload.last_checkpoint.base_revision}`
@@ -3603,7 +3621,8 @@ function fail(flags, message) {
 }
 
 function rejectAbandonedMission(context, flags, operation) {
-  const message = abandonedMissionError(context.mission, operation)
+  const message =
+    missionClosureError(context.mission) || abandonedMissionError(context.mission, operation)
   if (!message) return false
   fail(flags, message)
   return true

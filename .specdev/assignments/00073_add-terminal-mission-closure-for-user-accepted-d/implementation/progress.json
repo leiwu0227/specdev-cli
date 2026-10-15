@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Mission closure regression",
+      "status": "failed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Nested checkpoint fixture omitted required stack schema fields; corrected."
+    },
+    {
+      "command": "npm run test:mission-abandonment",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Existing abandonment behavior",
+      "status": "failed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Focus error wording changed; restored existing immutable wording."
+    },
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Mission closure regression",
+      "status": "failed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Uncommitted closure records blocked Adhoc; added exact terminal closure publication."
+    },
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Mission closure regression",
+      "status": "failed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Fixture worker had unknown liveness; changed fixture to identify a proven dead process."
+    },
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Mission closure regression",
+      "status": "failed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Queue comment changed bytes but not parsed state; bound exact mutable-file hashes."
+    },
+    {
+      "command": "npm run test:mission-landing",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Existing landing and checkout behavior",
+      "status": "passed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Existing exact ownership and removed landing compatibility regressions passed."
+    },
+    {
+      "command": "npm run test:mission-abandonment",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Existing abandonment behavior",
+      "status": "passed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Existing terminal abandonment and recovery regressions passed after wording repair."
+    },
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@952d61e18053ef97d9ab1ea88a7a8053ba26b818",
+      "scope": "Mission closure regression",
+      "status": "passed",
+      "duration_ms": 0,
+      "duration_note": "Total wall time was not captured; zero is an unmeasured placeholder.",
+      "role": "authoritative_acceptance",
+      "note": "Latest candidate includes acceptance, retained evidence, exact publication, four recovery boundaries, terminal guards, Adhoc start, and unrelated index/focus preservation."
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}
