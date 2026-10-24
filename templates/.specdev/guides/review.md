@@ -10,6 +10,9 @@ instructions. Report only blocking defects or materially useful findings.
 - In Brainstorm, distinguish concrete needs from speculative scope or premature
   architectural commitments. In implementation, check complete delivery and
   unnecessary machinery within the approved scope.
+- For implementation review, inspect the final candidate and the simplification
+  result recorded in the existing outcome. A no-change result is valid. Do not
+  demand cosmetic refactoring or a separate cleanup round.
 - For a simplification finding, name a concrete alternative and explain why it
   preserves required behavior and architectural boundaries, including validation,
   security, accessibility, error handling, and evidence obligations.

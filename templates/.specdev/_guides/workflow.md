@@ -44,6 +44,21 @@ If focused work coexists, finish and cancel both leave its revalidation record.
 Receipts are not knowledge-index sources. `knowledge/workflow/adhoc-history.md`
 explains how to search receipts and Git history.
 
+After implementation, complete one required simplification checkpoint before final
+verification and delivery. Look for duplicated logic, production paths used only by
+tests, hard-coded checks, unnecessary data structures, repeated traversals, and
+excess abstraction. Preserve functionality, performance, required validation, and
+approved roadmap designs. Fewer loops or checks alone are not improvements. Prefer
+existing code and straightforward functions; do not introduce classes during this
+pass. Make only clear improvements within the approved scope. Edits are optional;
+if none are warranted, proceed unchanged. Record the result and any broader
+opportunity worth deferring in the existing delivery artifact. Do not create a new
+document or repeat cleanup indefinitely. Run only affected, authorized checks after
+edits and reuse valid evidence when unchanged.
+
+For Adhoc, include the brief result in `adhoc finish --outcome="..."` so the existing
+receipt retains it. This adds no contract approval or independent review gate.
+
 ## Assignment
 
 Use `_guides/assignment_guide.md`. Approval is the only routine user gate;

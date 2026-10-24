@@ -6,7 +6,8 @@ interactive Brainstorm
   -> one hash-bound user approval
   -> one frozen implementation decision (auto | inline | spawned)
   -> foreground inline Design + Implementation by default, or one spawned worker Attempt
-  -> focused evidence
+  -> required simplification checkpoint (edits optional)
+  -> final focused evidence
   -> required reviewer or evidence-safe policy waiver
   -> owner-preserving repair continuation and same-reviewer verification when needed
   -> complete
@@ -40,6 +41,21 @@ error handling, and acceptance evidence. Verify proportionally with authorizatio
 reuse valid receipts, and finish when approved behavior and delivery obligations
 are complete. Document actual limitations and revisit triggers in existing artifacts
 or comments when useful; do not create a debt ledger or speculative follow-up work.
+
+After implementation, complete one required simplification checkpoint before final
+verification and delivery. Look for duplicated logic, production paths used only by
+tests, hard-coded checks, unnecessary data structures, repeated traversals, and
+excess abstraction. Preserve functionality, performance, required validation, and
+approved roadmap designs. Fewer loops or checks alone are not improvements. Prefer
+existing code and straightforward functions; do not introduce classes during this
+pass. Make only clear improvements within the approved scope. Edits are optional;
+if none are warranted, proceed unchanged. Record the result and any broader
+opportunity worth deferring in the existing delivery artifact. Do not create a new
+document or repeat cleanup indefinitely. Run only affected, authorized checks after
+edits and reuse valid evidence when unchanged.
+
+Record the brief result under `## Delivered behavior` in `outcome.md`. Required
+independent review inspects the final candidate, including any simplification.
 
 `design/plan.md` uses ordered Task IDs and acceptance references. Tasks run
 inline by default; they do not imply subagents, worktrees, commits, reviews, or

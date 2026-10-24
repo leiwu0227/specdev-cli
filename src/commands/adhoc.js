@@ -19,6 +19,7 @@ import {
   summarizeGitPaths,
   synchronizeIndexPaths,
 } from '../utils/git-delivery.js'
+import { simplificationGuidance } from '../utils/assignment-execution.js'
 import { relativeToRepo } from '../utils/assignment-vnext.js'
 import {
   completeFocusedRevalidation,
@@ -184,8 +185,9 @@ async function startAdhoc(targetDir, specdevPath, scopeArgs, flags) {
     adoption_manifest: state.adoption_manifest,
     ...coexistencePayloadFields(focusedCoexistence),
     worktree: state.starting_worktree_decision,
+    simplification_guidance: simplificationGuidance,
     next_action:
-      'Make the bounded change directly. Optionally capture commands with adhoc verify, then finish with an outcome and passing evidence or --verification.',
+      'Make the bounded change, complete the required simplification checkpoint, then capture authorized final checks with adhoc verify. Finish with the simplification result in the outcome and passing evidence or --verification.',
   })
 }
 
@@ -1102,6 +1104,7 @@ function emit(flags, payload) {
     if (payload.path_facts) printPathFacts(payload.path_facts)
     if (typeof payload.product_worktree_clean === 'boolean')
       console.log(`Product worktree clean: ${payload.product_worktree_clean ? 'yes' : 'no'}`)
+    if (payload.simplification_guidance) console.log(payload.simplification_guidance)
     if (payload.next_action) console.log(`Next: ${payload.next_action}`)
   }
   return payload

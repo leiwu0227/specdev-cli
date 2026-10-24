@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import fse from 'fs-extra'
+import { simplificationGuidance } from '../utils/assignment-execution.js'
 import { blankLine, printLines, printSection } from '../utils/output.js'
 import { skillsInstallCommand } from './skills-install.js'
 import { scanSkillsDir } from '../utils/skills.js'
@@ -65,15 +66,19 @@ or automatic review gate.
    Read only relevant results and verify them against current code.
 3. Run \`specdev adhoc start "<scope>"\`. Use \`--title="..."\` for a short
    commit subject. Resolve reported ownership conflicts before making changes.
-4. Make the bounded change directly. Use the Verification section of
+4. Make the bounded change directly, then complete the required simplification
+   checkpoint below before final verification. Use the Verification section of
    [the workflow reference](.specdev/_guides/workflow.md#verification).
    Record authorized commands with \`specdev adhoc verify --label="..." -- <command>\`.
 5. Finish with \`specdev adhoc finish --outcome="..."\` when the latest evidence
    for every label passes. For manual checks, use \`--verification="..."\`.
-   Finish creates the receipt and delivery commit. Inspect its remaining-path report.
+   Include the simplification result in the outcome. Finish creates the receipt
+   and delivery commit. Inspect its remaining-path report.
 6. If focused work coexists, recheck its contract assumptions and follow the
    reference's revalidation rules before that work advances. To cancel the detour,
    use \`specdev adhoc cancel\`; source changes remain untouched.
+
+${simplificationGuidance}
 
 Announce meaningful phases, plan changes, failed verification, and blockers
 with "Specdev: <action>"; repeated read-only probes need no separate announcement.
@@ -185,6 +190,8 @@ classification. If review changed the contract, run \`specdev checkpoint
 brainstorm\` once more to present the final hash. Only after explicit user
 agreement run \`specdev approve brainstorm\`, then \`specdev implement\` for the
 automatic section.
+
+${simplificationGuidance}
 
 Announce meaningful phases, plan changes, failed verification, and blockers
 with "Specdev: <action>"; repeated read-only probes need no separate announcement.

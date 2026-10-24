@@ -6,11 +6,15 @@ import { resolveGuides } from './guides.js'
 
 const EXECUTION_MODES = new Set(['auto', 'inline', 'spawned'])
 
+export const simplificationGuidance = `Required simplification checkpoint: after implementation and before final verification and delivery, review the candidate once for clear simplification opportunities. Preserve functionality, performance, required validation, and approved roadmap designs. Look for duplicated logic, production paths used only by tests, hard-coded checks, unnecessary data structures, repeated traversals, and excess abstraction. Fewer loops or checks alone are not improvements. Prefer existing code and straightforward functions; do not introduce classes during this pass.
+Make only clear improvements within the approved scope. Edits are optional; if none are warranted, proceed unchanged. Record a brief result, including any broader opportunity worth deferring, in the existing Assignment outcome or Adhoc receipt outcome. Do not create another document or repeat cleanup indefinitely. After edits, run only affected, authorized checks; reuse valid evidence when unchanged. Required Assignment review must inspect the final candidate.`
+
 export const implementationGuidance = `Deliver the simplest complete implementation of approved behavior. Understand the affected flow and relevant callers before editing. Fix the actual source of a problem.
 Prefer existing code and project patterns, standard-library or native capabilities, and suitable installed dependencies. Stop searching once you have a sound approach within scope.
 New abstractions, dependencies, configuration, compatibility paths, and fallbacks need a concrete current reason. Preserve readability and useful architectural boundaries. A single caller or fewer lines alone does not establish a better design.
 Resolve routine choices within delegated authority without reopening settled scope. Ask when missing information materially affects behavior, scope, or authority. Also ask when an actual conflict prevents delivery. Hypothetical concerns alone do not justify blocking.
 Preserve requested behavior, required validation, security, accessibility, error handling, and acceptance evidence. Run only proportionate authorized verification and reuse valid receipts.
+${simplificationGuidance}
 Finish when approved behavior and delivery obligations are complete. Record actual limitations and revisit triggers in existing artifacts or comments when useful. Ordinary simplicity needs no debt ledger or speculative follow-up work.`
 
 export async function resolveAssignmentExecution(
