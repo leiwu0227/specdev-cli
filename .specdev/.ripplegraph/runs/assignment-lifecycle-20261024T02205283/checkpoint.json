@@ -1,0 +1,90 @@
+{
+  "runId": "assignment-lifecycle-20261024T02205283",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-10-24T02:20:52.840Z",
+  "updatedAt": "2026-10-24T02:46:45.370Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00074",
+      "name": "00074_fix-mission-child-verification-ownership-and-rec",
+      "path": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec",
+      "description": "Fix Mission child verification ownership and recover approved verification-order deadlocks",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/brainstorm/contract.md",
+      "contract_hash": "bee43133b98466705d30fbb1abb02ef6c6fc67c11e3b47fd2cd109c0b08c5123"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "bee43133b98466705d30fbb1abb02ef6c6fc67c11e3b47fd2cd109c0b08c5123",
+      "actor": "user",
+      "approved_at": "2026-10-24T02:22:31.493Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "b24262c8837d11751bca3ef17bf5b9942499de29"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/design/plan.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/implementation/progress.json",
+      "outcome": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/outcome.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/review/implementation-verdict.md",
+      "attempt": "Attempt-00192",
+      "disposition": "approved"
+    },
+    "repair": {
+      "attempt": "inline-foreground",
+      "result": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/implementation/repair-result.md"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "bee43133b98466705d30fbb1abb02ef6c6fc67c11e3b47fd2cd109c0b08c5123",
+      "actor": "user",
+      "approved_at": "2026-10-24T02:22:31.493Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "b24262c8837d11751bca3ef17bf5b9942499de29"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.4.0",
+    "packagePath": "workflows/assignment-lifecycle@2.4.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/review/implementation-verdict.md",
+    "attempt": "Attempt-00192",
+    "disposition": "approved"
+  }
+}

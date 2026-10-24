@@ -95,6 +95,11 @@ The authorized executor may remain unavailable.
 - Initial child plan: single
 - Split reason: none
 
+## Verification ownership
+
+- Child acceptance: AC-1, AC-2
+- Mission acceptance: none
+
 ## Final integrated verification
 
 - Command: \`node --version\`
@@ -280,6 +285,11 @@ executors:
     .replace('Required services: none', 'Required services: postgres')
     .replace('Required platforms: current', 'Required platforms: test-platform')
     .replace('Required secrets: none', 'Required secrets: TEST_DATABASE_URL')}
+## Verification ownership
+
+- Child acceptance: AC-1, AC-2
+- Mission acceptance: none
+
 ## Final integrated verification
 
 - Command: \`node --version\`

@@ -4,6 +4,7 @@ import { join, relative } from 'node:path'
 import { promisify } from 'node:util'
 import fse from 'fs-extra'
 import { getState, readCheckpoint, readCurrent as readRippleCurrent } from 'ripplegraph'
+import { readVerificationBoundary } from './mission-verification-boundary.js'
 import { workflowRootFor } from './engine.js'
 import { parseGitPorcelainPaths } from './workspace-changes.js'
 
@@ -95,7 +96,14 @@ export function reviewPolicyFromFlags(flags = {}, fallback = DEFAULT_REVIEW_POLI
 
 export async function validateAssignmentContract(assignmentPath) {
   const path = join(assignmentPath, 'brainstorm', 'contract.md')
-  return validateContractPath(path)
+  const contract = await validateContractPath(path)
+  const boundary = await readVerificationBoundary(assignmentPath)
+  if (boundary) {
+    contract.originalAcceptanceIds = contract.acceptanceIds
+    contract.acceptanceIds = boundary.mapping.child_acceptance
+    contract.verificationBoundary = boundary
+  }
+  return contract
 }
 
 export async function validateContractPath(path) {

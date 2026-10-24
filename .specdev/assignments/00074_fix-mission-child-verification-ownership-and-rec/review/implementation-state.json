@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "mode": "automatic",
+  "stage": "complete",
+  "primary_round": 2,
+  "round": 2,
+  "history": [
+    {
+      "round": 1,
+      "candidate_digest": "eaa58e45b9e0afaf98e7ed62e51da669d9f9cb53181632d21fe19d42f7832c29",
+      "findings_digest": "ebcc3703a9aaeb9a9e9352b3cf06f552845ec70c561c8de16d05b516ad066b6f"
+    },
+    {
+      "round": 2,
+      "candidate_digest": "b215743b04e733e44ac2846b6aac845e5d834d42b4791cb74274fbc4ee8ac8c9",
+      "findings_digest": "1dfad2814afb41246406eac9de2b998876fb470a0d55764a2c166297b6a6e782"
+    }
+  ],
+  "profile": {
+    "provider": "claude",
+    "model": "opus",
+    "effort": "xhigh",
+    "filesystem": "read-only",
+    "network": false,
+    "timeout_ms": 1200000
+  },
+  "guide_ids": [],
+  "contract_hash": "bee43133b98466705d30fbb1abb02ef6c6fc67c11e3b47fd2cd109c0b08c5123",
+  "candidate_receipt_identity": "85de31a46a8f74a27f6bd07a745fdd2dd1e41c73b2c0cd7e533ef2523712cdf4",
+  "status": "approved",
+  "candidate_digest": "b215743b04e733e44ac2846b6aac845e5d834d42b4791cb74274fbc4ee8ac8c9",
+  "findings_digest": "1dfad2814afb41246406eac9de2b998876fb470a0d55764a2c166297b6a6e782",
+  "attempt": "Attempt-00192",
+  "updated_at": "2026-10-24T02:46:45.318Z",
+  "reviewer_continuity": {
+    "mode": "continued",
+    "source_attempt": "Attempt-00191"
+  },
+  "material_divergence": false,
+  "scope_divergence": "none",
+  "procedure_divergence": "none",
+  "evidence_integrity": "complete",
+  "user_reapproval_required": false,
+  "taxonomy_source": "structured",
+  "reviewer_continuation_lease": "unavailable",
+  "repair_attempt": "inline-foreground"
+}

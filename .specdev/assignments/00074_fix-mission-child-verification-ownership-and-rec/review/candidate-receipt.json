@@ -1,0 +1,272 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "85de31a46a8f74a27f6bd07a745fdd2dd1e41c73b2c0cd7e533ef2523712cdf4",
+  "assignment": {
+    "id": "00074",
+    "folder": "00074_fix-mission-child-verification-ownership-and-rec"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-10-24T02:22:32.758Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/brainstorm/contract.md",
+    "hash": "bee43133b98466705d30fbb1abb02ef6c6fc67c11e3b47fd2cd109c0b08c5123"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "Explicit ownership generation and receipt regressions; Mission environment and review-loop mode checks passed.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Recovery regression covers preview, immutable contracts, stale confirmation, wrong child, material mapping edits, live attempts, changed candidates, retained history, interrupted retry, and terminal idempotence.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Isolated blocked-child fixture completes after fresh review and passing final verification; missing or failed final evidence cannot complete. Qualification-only evidence alone remains insufficient.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification": {
+    "total": 4,
+    "items": [
+      {
+        "command": "npm run test:mission-environment",
+        "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+        "scope": "AC-1 AC-3: Mission executor and integrated verification gates",
+        "status": "passed",
+        "duration_ms": 5340,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+        "scope": "AC-1 AC-3: independent review and foreground continuation gates",
+        "status": "passed",
+        "duration_ms": 13330,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-verification-boundary.js",
+        "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+        "scope": "AC-1 AC-2 AC-3: new child ownership, immutable recovery, stale/live guards, interrupted retries, fresh review, final passing and failing controller verification",
+        "status": "passed",
+        "duration_ms": 13260,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 2,
+        "superseded": 1,
+        "history_counts": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 4,
+      "counts": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 3,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 1,
+    "authoritative_evidence": [
+      {
+        "command": "npm run test:mission-environment",
+        "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:reviewloop-modes",
+        "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+        "status": "passed"
+      },
+      {
+        "command": "node tests/test-mission-verification-boundary.js",
+        "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 15,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 2,
+        "paths": [
+          "README.md",
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 8,
+        "paths": [
+          "src/commands/help.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/assignment-delivery.js",
+          "src/utils/assignment-vnext.js",
+          "src/utils/delivery-artifacts.js",
+          "src/utils/mission-verification-boundary.js",
+          "src/utils/mission.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 1,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 4,
+        "paths": [
+          "tests/test-engine-integration.js"
+        ],
+        "omitted": 3
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "No known blocking risk in the approved scope. Recovery is deliberately limited to",
+      "single full-scope children at review or repair. Evidence sufficiency remains subject",
+      "to the explicit user confirmation and independent reviewer. The affected Oceanshed",
+      "repository was read-only; no recovery, installation, or publication was performed."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/brainstorm/contract.md",
+      "exists": true,
+      "digest": "bee43133b98466705d30fbb1abb02ef6c6fc67c11e3b47fd2cd109c0b08c5123"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/design/plan.md",
+      "exists": true,
+      "digest": "d4f84c4e2fca9c6bfae31dc4a3cf2e1ae489d278791dcb2095f60eabd2f0f8a2"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/implementation/progress.json",
+      "exists": true,
+      "digest": "af524d1b2867fceba06175fba3dc3b70b9a1b455087a0eb7de8e3bc68d8a416e"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00074_fix-mission-child-verification-ownership-and-rec/outcome.md",
+      "exists": true,
+      "digest": "06b20beedd27e9f34980c2a13906fe5e041ffabf3a63ce6fc00c5299f25fa220"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

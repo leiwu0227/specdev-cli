@@ -1095,6 +1095,9 @@ export async function reviewImplementation(flags = {}) {
       ? 'Arbitrate the automatic Assignment review in one final Attempt. Do not modify tracked files.'
       : 'Review the frozen Assignment candidate. Do not modify tracked files.',
     `Approved contract: ${relativeToRepo(targetDir, join(assignmentPath, 'brainstorm', 'contract.md'))}`,
+    contract.verificationBoundary
+      ? `Confirmed verification boundary: ${relativeToRepo(targetDir, join(assignmentPath, 'verification-boundary.json'))} @ ${contract.verificationBoundary.digest}. Evaluate child criteria ${contract.acceptanceIds.join(', ')}. Parent criteria ${contract.verificationBoundary.mapping.mission_acceptance.join(', ')} remain pending for the controller. Inspect the explicit evidence selection and candidate binding; original qualification receipts and blocked verdicts remain historical.`
+      : null,
     `Design plan: ${relativeToRepo(targetDir, join(assignmentPath, 'design', 'plan.md'))}`,
     `Progress and verification receipts: ${relativeToRepo(targetDir, join(assignmentPath, 'implementation', 'progress.json'))}`,
     `Outcome: ${relativeToRepo(targetDir, join(assignmentPath, 'outcome.md'))}`,

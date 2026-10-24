@@ -157,11 +157,31 @@ import {
 
 import { closeMissionCommand, missionClosureError, inspectMissionClosure } from './mission-close.js'
 
+import {
+  declaredVerificationOwnership,
+  selectChildAcceptance,
+  recoverVerificationBoundary,
+  readVerificationBoundary,
+} from '../utils/mission-verification-boundary.js'
+
 const execFile = promisify(execFileCallback)
 
 export async function missionCommand(positionalArgs = [], flags = {}) {
   const subcommand = positionalArgs[0]
   const rest = positionalArgs.slice(1)
+  if (subcommand === 'verification-boundary') {
+    const context = await missionContext(rest[0], flags)
+    if (!context) return null
+    try {
+      return emit(flags, {
+        command: 'mission verification-boundary',
+        mission: context.mission.id,
+        ...(await recoverVerificationBoundary(context, flags)),
+      })
+    } catch (error) {
+      return fail(flags, error.message)
+    }
+  }
   if (subcommand === 'close') {
     const context = await missionContext(rest[0], flags)
     return context ? closeMissionCommand(context, flags) : null
@@ -353,6 +373,7 @@ async function createMission(args, flags) {
   }).replace('# Assignment contract', '# Mission contract')
   contract +=
     '\n## Mission execution shape\n\n- Initial child plan: single\n- Split reason: none\n\n<!-- Use planned only for a concrete context, dependency, decision, or independent verification/rollback boundary. -->\n' +
+    '\n## Verification ownership\n\n- Child acceptance: TODO\n- Mission acceptance: TODO\n\n<!-- Partition all parent AC IDs explicitly. Use none for an empty Mission list. -->\n' +
     missionExecutionPolicyTemplate() +
     '\n## Final integrated verification\n\n- Command: `TODO`\n'
   await fse.writeFile(join(missionPath, 'brainstorm', 'contract.md'), contract, 'utf-8')
@@ -600,6 +621,7 @@ async function runMission(selector, flags) {
           'The current Mission Brainstorm review is not approved. Address it and rerun review, or explicitly use --override-review.'
         )
       }
+      if (contract.executionShape === 'single') declaredVerificationOwnership(contract)
       mission.base_branch = git.branch
       await assertMissionCheckout(targetDir, mission)
       const approvedAt = new Date().toISOString()
@@ -1358,6 +1380,7 @@ async function authorChildContract(context, child, assignmentPath) {
       'Write a concise delta contract. Reference the Mission path and approved hash; inherit unchanged constraints, non-goals, behavior, and reserved authority instead of restating them.',
       'Keep every exact required Assignment heading: ## Objective and context; ## Scope and non-goals; ## Expected behavior; ## Important decisions; ## Constraints and invariants; ## Delegated and reserved authority; ## Risks and assumptions; ## Verification authority; and ## Acceptance criteria. Do not rename, combine, or omit these headings.',
       'Use one short paragraph or list under each heading. Put prerequisite outcome references in Objective and context or Risks and assumptions instead of creating another heading. Include only the child objective and scope, child-specific decisions and risks, focused verification authority, and the fewest independent observable acceptance criteria (normally 1-3 for a bounded child).',
+      'Separate child-owned focused acceptance from controller-owned final integrated verification. Do not require a later controller receipt before this child can pass review. Preserve parent obligations and state the division explicitly in Verification authority.',
       'Do not turn implementation tasks, file lists, repository conventions, or generic code quality into acceptance criteria. Keep the child wholly within Mission authority.',
       child.execution === 'evidence-only'
         ? 'This child is explicitly evidence-only. Its acceptance criteria must require executing and recording the authorized observation, not require a positive command outcome. A negative observation remains failed evidence, sets follow_up: required, and returns completed-with-follow-up without product repair or a rerun.'
@@ -1375,15 +1398,20 @@ async function deriveSingleChildContract(context, child, assignmentPath) {
   const { targetDir, missionPath, mission } = context
   const missionContractPath = join(missionPath, 'brainstorm', 'contract.md')
   const missionContract = await validateMissionContract(missionPath)
-  const acceptance = contractSection(missionContract.content, 'Acceptance criteria')
+  const ownership = declaredVerificationOwnership(missionContract, { legacyApproved: true })
+  const acceptance = selectChildAcceptance(
+    contractSection(missionContract.content, 'Acceptance criteria'),
+    ownership
+  )
   if (!acceptance.trim()) throw new Error('Mission contract has no reusable acceptance criteria')
   const parentPath = relativeToRepo(targetDir, missionContractPath)
   const knowledgePaths = await missionKnowledgeContext(missionPath)
-  const content = `# Assignment contract\n\nKind: ${child.kind || 'change'}\n\nParent Mission contract: \`${parentPath}\`\nParent approved hash: \`${mission.approved_contract_hash}\`\n\n## Objective and context\n\nDeliver the complete approved Mission objective: ${mission.objective}\n\nParent-selected knowledge paths: ${knowledgePaths.length > 0 ? knowledgePaths.map((path) => `\`${path}\``).join(', ') : 'none'}.\n\n## Scope and non-goals\n\nInherit the complete parent scope and non-goals without expansion.\n\n## Expected behavior\n\nInherit the parent behavior unchanged.\n\n## Important decisions\n\nNo child-specific decision; ordinary implementation details are delegated.\n\n## Constraints and invariants\n\nInherit the parent constraints and invariants unchanged.\n\n## Delegated and reserved authority\n\n- Delegated: implementation details within the approved parent authority.\n- Reserved for the user: parent-reserved decisions and any material contract change.\n\n## Risks and assumptions\n\nInherit the parent risks and assumptions; report material deviations in progress.json.\n\n## Verification authority\n\n- Focused tests for changed modules: allowed after repository instructions are satisfied.\n- Parent final verification: reserved for the Mission controller.\n- Full suite: prohibited unless this child contract is amended and reapproved.\n\n## Acceptance criteria\n\n${acceptance.trim()}\n`
+  const content = `# Assignment contract\n\nKind: ${child.kind || 'change'}\n\nParent Mission contract: \`${parentPath}\`\nParent approved hash: \`${mission.approved_contract_hash}\`\n\n## Objective and context\n\nDeliver the complete approved Mission objective: ${mission.objective}\n\nParent-selected knowledge paths: ${knowledgePaths.length > 0 ? knowledgePaths.map((path) => `\`${path}\``).join(', ') : 'none'}.\n\n## Scope and non-goals\n\nInherit the complete parent scope and non-goals without expansion.\n\n## Expected behavior\n\nInherit the parent behavior unchanged.\n\n## Important decisions\n\nNo child-specific decision; ordinary implementation details are delegated.\n\n## Constraints and invariants\n\nInherit the parent constraints and invariants unchanged.\n\n## Delegated and reserved authority\n\n- Delegated: implementation details within the approved parent authority.\n- Reserved for the user: parent-reserved decisions and any material contract change.\n\n## Risks and assumptions\n\nInherit the parent risks and assumptions; report material deviations in progress.json.\n\n## Verification authority\n\n- Focused tests for changed modules: allowed after repository instructions are satisfied.\n- Parent final verification: reserved for the Mission controller.\n- Focused acceptance receipts must use role: authoritative_acceptance and cover child criteria.\n- Controller-owned parent criteria: ${ownership.mission_acceptance.join(', ') || 'none'}. These remain pending until controller verification.\n- Full suite: reserved for the Mission controller; child contracts stay immutable.\n\n## Acceptance criteria\n\n${acceptance.trim()}\n`
   await fse.writeFile(join(assignmentPath, 'brainstorm', 'contract.md'), content, 'utf-8')
   await writeAssignmentStatus(assignmentPath, {
     contract_source: {
       type: 'mission-full-scope',
+      verification_ownership: ownership,
       mission: mission.id,
       parent_path: parentPath,
       parent_hash: mission.approved_contract_hash,
@@ -1461,6 +1489,7 @@ async function reviewMission(context) {
       `Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Ordered queue and child outcomes: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
       state.round > 0 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
+      'Controller-owned acceptance remains pending until the later final-verification step. Check readiness and implementation coverage without requiring that later receipt now.',
       'Check acceptance coverage, integration seams, unresolved risks, and whether final verification is ready. Reuse receipts; never run the full suite.',
       arbitration
         ? 'Return approved for satisfied convergence, needs_changes only for a nonblocking disagreement eligible for strict host evidence validation, and blocked for objective acceptance, verification, authority, or safety failure.'
@@ -1580,6 +1609,12 @@ async function reusableSingleChildReview(context) {
     return null
   const contract = await validateContractPath(join(assignmentPath, 'brainstorm', 'contract.md'))
   if (!contract.valid || state.contract_hash !== contract.hash) return null
+  const boundary = await readVerificationBoundary(assignmentPath)
+  if (
+    boundary?.mapping.mission_acceptance.length ||
+    assignmentStatus.contract_source.verification_ownership?.mission_acceptance.length
+  )
+    return null
   const currentDigest = await productStateDigest(targetDir)
   if (!currentDigest || currentDigest !== state.candidate_digest) return null
   return { child, state, verdictPath }
@@ -3522,6 +3557,39 @@ function emit(flags, payload) {
       console.log(
         `Review note: the saved verdict covered older contract hash ${payload.review.reviewed_contract_hash}`
       )
+    if (payload.command === 'mission verification-boundary' && payload.plan) {
+      const plan = payload.plan
+      console.log(
+        JSON.stringify(
+          {
+            child: plan.child,
+            parent_contract_hash: plan.parent_contract_hash,
+            child_contract_hash: plan.child_contract_hash,
+            child_approval: plan.child_approval,
+            old_boundary: plan.old_boundary,
+            proposed_boundary: plan.mapping,
+            final_command: plan.final_command,
+            revision: plan.revision,
+            product_digest: plan.product_digest,
+            evidence: plan.evidence,
+            review_state: plan.artifacts['review/implementation-state.json']
+              ? JSON.parse(
+                  Buffer.from(
+                    plan.artifacts['review/implementation-state.json'],
+                    'base64'
+                  ).toString()
+                )
+              : null,
+            retained_artifacts: Object.keys(plan.artifacts).filter(
+              (name) => plan.artifacts[name] !== null
+            ),
+            digest: plan.digest,
+          },
+          null,
+          2
+        )
+      )
+    }
     if (payload.plan?.operation === 'mission-adopt-successor') {
       const plan = payload.plan
       console.log(`Blocked child: ${plan.blocked_child.id} (${plan.blocked_child.folder})`)

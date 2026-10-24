@@ -1,3 +1,4 @@
+import { readVerificationBoundary } from './mission-verification-boundary.js'
 import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import fse from 'fs-extra'
@@ -71,7 +72,18 @@ export async function missionChildFollowUp(specdevPath, child) {
   }
   if (verificationReceiptsRequireFollowUp(progress?.verification)) return 'required'
   const outcome = await fse.readFile(join(assignmentPath, 'outcome.md'), 'utf-8').catch(() => '')
-  if (/^\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/im.test(outcome)) return 'required'
+  const boundary = await readVerificationBoundary(assignmentPath)
+  const childOutcome = outcome
+    .split('\n')
+    .filter(
+      (line) =>
+        !(
+          boundary?.mapping.mission_acceptance.includes(line.match(/^\|\s*(AC-\d+)\s*\|/)?.[1]) &&
+          /\|\s*Blocked\s*\|\s*$/i.test(line)
+        )
+    )
+    .join('\n')
+  if (/^\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/im.test(childOutcome)) return 'required'
   return 'none'
 }
 
@@ -187,15 +199,22 @@ export async function missionChildFindings(specdevPath, child) {
   const declared = normalizeMissionFindings(progress?.findings)
   if (declared.length > 0) return declared
   const outcome = await fse.readFile(join(assignmentPath, 'outcome.md'), 'utf-8').catch(() => '')
-  return [...outcome.matchAll(/^\|\s*(AC-\d+)\s*\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/gim)].map(
-    (match) => ({
+  const boundary = await readVerificationBoundary(assignmentPath)
+  return [...outcome.matchAll(/^\|\s*(AC-\d+)\s*\|[^\n]*\|\s*(Failed|Blocked)\s*\|\s*$/gim)]
+    .filter(
+      (match) =>
+        !(
+          match[2].toLowerCase() === 'blocked' &&
+          boundary?.mapping.mission_acceptance.includes(match[1].toUpperCase())
+        )
+    )
+    .map((match) => ({
       acceptance: match[1].toUpperCase(),
       type: match[2].toLowerCase() === 'blocked' ? 'evidence' : 'product',
       status: 'open',
       required: `Resolve ${match[1].toUpperCase()} from ${child.id}.`,
       supersedes: [],
-    })
-  )
+    }))
 }
 
 export async function validateAndReserveReplannedQueue(specdevPath, original, revised) {

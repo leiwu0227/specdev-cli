@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import fse from 'fs-extra'
+import { readVerificationBoundary } from './mission-verification-boundary.js'
 import { resolveGuides } from './guides.js'
 
 export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acceptanceIds) {
@@ -22,7 +23,12 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
       throw new Error(`design/plan.md does not cover ${id}`)
     }
   }
-  const knownAcceptanceIds = new Set(acceptanceIds.map((id) => id.toUpperCase()))
+  const boundary = await readVerificationBoundary(assignmentPath)
+  const knownAcceptanceIds = new Set(
+    [...acceptanceIds, ...(boundary?.mapping.mission_acceptance || [])].map((id) =>
+      id.toUpperCase()
+    )
+  )
   const referencedAcceptanceIds = new Set(
     [...plan.matchAll(/\bAC-\d+\b/gi)].map((match) => match[0].toUpperCase())
   )

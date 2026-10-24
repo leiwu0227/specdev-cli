@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-mission-verification-boundary.js",
+      "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+      "scope": "AC-1 AC-2 AC-3: new child ownership, immutable recovery, stale/live guards, interrupted retries, fresh review, final passing and failing controller verification",
+      "status": "passed",
+      "duration_ms": 13420,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:mission-environment",
+      "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+      "scope": "AC-1 AC-3: Mission executor and integrated verification gates",
+      "status": "passed",
+      "duration_ms": 5340,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:reviewloop-modes",
+      "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+      "scope": "AC-1 AC-3: independent review and foreground continuation gates",
+      "status": "passed",
+      "duration_ms": 13330,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-mission-verification-boundary.js",
+      "revision": "working-tree@b24262c8837d11751bca3ef17bf5b9942499de29",
+      "scope": "AC-1 AC-2 AC-3: new child ownership, immutable recovery, stale/live guards, interrupted retries, fresh review, final passing and failing controller verification",
+      "status": "passed",
+      "duration_ms": 13260,
+      "role": "authoritative_acceptance",
+      "notes": "Repair rerun includes pre-upgrade approved contracts without declarations, new-approval rejection, and exact retry after mapping cache deletion."
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

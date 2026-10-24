@@ -43,6 +43,7 @@ export function helpCommand(flags = {}) {
     '  specdev mission run M00001 --inline           # explicit main-session implementation',
     '  specdev mission run M00001 --spawned          # explicit worker implementation',
     '  specdev mission status M00001      # includes consolidated execution policy',
+    '  specdev mission verification-boundary M00001 --child=00084 --mapping=<JSON-file> [--confirm=<digest>]',
     '  specdev mission abandon M00001 --reason="objective withdrawn"',
     '  specdev mission close M00001 --outcome=accepted-with-limitations --evidence=<acceptance-note>',
     '    Inspect the plan; obtain explicit user acceptance; repeat with --confirm=<plan-digest>.',

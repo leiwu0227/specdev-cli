@@ -127,7 +127,7 @@ function writeMissionContract(path) {
   const contractPath = join(path, 'brainstorm', 'contract.md')
   writeFileSync(
     contractPath,
-    `${readFileSync(contractPath, 'utf8')}\n## Mission execution shape\n\n- Initial child plan: single\n- Split reason: none\n\n## Final integrated verification\n\n- Command: \`node --check package.json\`\n`,
+    `${readFileSync(contractPath, 'utf8')}\n## Mission execution shape\n\n- Initial child plan: single\n- Split reason: none\n\n## Verification ownership\n\n- Child acceptance: AC-1\n- Mission acceptance: none\n\n## Final integrated verification\n\n- Command: \`node --check package.json\`\n`,
     'utf8'
   )
 }

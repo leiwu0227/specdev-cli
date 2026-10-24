@@ -223,6 +223,60 @@ live local controller. Record the pause changes in a local commit before
 retrying abandonment, which requires a clean worktree. Do not resume an unwanted
 Mission just to clear its controller record.
 
+### Mission verification ownership
+
+Single-child Mission contracts declare which criteria the child must prove before
+review, and which remain pending for the controller:
+
+```markdown
+## Verification ownership
+
+- Child acceptance: AC-1, AC-2, AC-3, AC-4
+- Mission acceptance: AC-5
+```
+
+List every parent criterion exactly once. Use `none` for an empty Mission list.
+Keep mixed obligations in the parent; split criteria before approval when necessary.
+The generated child inherits all behavior and scope, but only child-owned acceptance.
+Older approved contracts without this section keep their original full-scope child
+acceptance. Use the confirmed recovery below if that child reaches an evidence cycle.
+The exact final integrated command remains a required controller gate. Child readiness
+is not Mission success. Focused child receipts need explicit acceptance authority.
+
+An existing approved full-scope child can recover a verification-order conflict
+without changing either approved contract. Prepare an explicit JSON mapping:
+
+```json
+{
+  "child_acceptance": ["AC-1", "AC-2", "AC-3", "AC-4"],
+  "mission_acceptance": ["AC-5"],
+  "evidence": [{ "index": 6, "acceptance": ["AC-1", "AC-2", "AC-3", "AC-4"] }]
+}
+```
+
+Evidence indices are zero-based positions in the child's progress verification array.
+Select only focused evidence whose command and scope prove the listed criteria.
+The command validates passing status, revision, supersession, and current product
+ownership. Confirmation authorizes those exact receipts on that exact candidate.
+Original qualification receipts remain unchanged. Omit `evidence` to collect new
+authoritative focused evidence instead. A saved amendment approval does not confirm
+this new plan. Store the mapping under `.specdev/cache/` to keep it outside product ownership.
+
+```bash
+specdev mission verification-boundary M00001 --child=00084 --mapping=.specdev/cache/boundary.json
+specdev mission verification-boundary M00001 --child=00084 --mapping=.specdev/cache/boundary.json --confirm=<preview-digest>
+```
+
+Inspect the preview's old approval, proposed mapping, selected receipts, candidate,
+and retained review state before confirmation. Recovery requires the active child
+at implementation review or repair and refuses live or ambiguous execution. Retry
+an interrupted operation with the same mapping and digest. Original contracts,
+receipts, and blocked review artifacts remain in history. Review starts fresh under
+the confirmed boundary. At a repair node, provide the normal foreground repair result.
+Then run `specdev mission run M00001`. Only passing final integrated evidence and
+required review can complete the Mission. This command cannot change product scope
+or serve as a general contract amendment.
+
 ## Learn more
 
 See [QUICKSTART.md](QUICKSTART.md) for an end-to-end walkthrough, or run:

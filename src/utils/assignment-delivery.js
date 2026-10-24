@@ -25,6 +25,8 @@ import { validateDeliveryArtifacts } from './delivery-artifacts.js'
 import { resolveMissionSelector, readMission } from './mission.js'
 import { assertMissionCheckout } from './mission-checkout.js'
 
+import { boundaryVerificationReceipts } from './mission-verification-boundary.js'
+
 const RECEIPT_LIMITS = Object.freeze({ items: 12, groups: 8, text: 240 })
 
 export async function buildStandaloneAssignmentCandidateReceipt({
@@ -55,7 +57,10 @@ export async function buildStandaloneAssignmentCandidateReceipt({
   const progress = await readJsonIfPresent(paths.progress)
   const outcome = await readTextIfPresent(paths.outcome)
   const acceptance = summarizeAcceptance(contract.acceptanceIds || [], outcome, issues)
-  const verification = summarizeVerification(progress?.verification, issues)
+  const verification = summarizeVerification(
+    await boundaryVerificationReceipts(assignmentPath, progress?.verification),
+    issues
+  )
   const risks = summarizeRisks(outcome, issues)
   if (progress?.follow_up === 'required') issues.push('follow_up_required')
 
@@ -64,6 +69,9 @@ export async function buildStandaloneAssignmentCandidateReceipt({
   const identityInputs = {
     assignment_id: String(assignmentStatus?.id || '').trim() || null,
     implementation_execution: assignmentStatus?.implementation_execution || null,
+    ...(contract.verificationBoundary
+      ? { verification_boundary: contract.verificationBoundary.digest }
+      : {}),
     contract_hash: contract.hash || null,
     product_digest: productDigest,
     artifact_digests: Object.fromEntries(
@@ -87,6 +95,13 @@ export async function buildStandaloneAssignmentCandidateReceipt({
     implementation_execution: assignmentStatus?.implementation_execution || null,
     contract: { path: artifacts.contract.path, hash: contract.hash || null },
     acceptance,
+    verification_boundary: contract.verificationBoundary
+      ? {
+          digest: contract.verificationBoundary.digest,
+          child_acceptance: contract.acceptanceIds,
+          mission_acceptance_pending: contract.verificationBoundary.mapping.mission_acceptance,
+        }
+      : null,
     verification,
     changed_project_paths: groupProjectPaths(projectPaths),
     unresolved_risks: risks,
@@ -491,7 +506,10 @@ export async function buildStandaloneAssignmentReceipt({
   if (!contractHashMatchesReview) issues.push('contract_review_identity_incomplete')
 
   const acceptance = summarizeAcceptance(contract.acceptanceIds || [], outcome, issues)
-  const verification = summarizeVerification(progress?.verification, issues)
+  const verification = summarizeVerification(
+    await boundaryVerificationReceipts(assignmentPath, progress?.verification),
+    issues
+  )
   const risks = summarizeRisks(outcome, issues)
   const review = summarizeReview(reviewState, reviewResult, candidateReceipt, issues)
 

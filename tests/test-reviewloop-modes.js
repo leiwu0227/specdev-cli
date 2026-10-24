@@ -113,6 +113,11 @@ function writeMissionContract(path) {
 - Initial child plan: single
 - Split reason: none
 
+## Verification ownership
+
+- Child acceptance: AC-1
+- Mission acceptance: none
+
 ## Final integrated verification
 
 - Command: \`node --check package.json\`
@@ -147,6 +152,7 @@ function writeImplementationDelivery(path) {
     `${JSON.stringify(
       {
         version: 1,
+        owned_paths: [],
         tasks: [{ id: 'T-1', status: 'completed' }],
         selected_guides: { implementation: [], review: [] },
         verification: [
@@ -390,6 +396,15 @@ fi
   assert.match(discussionProductMutation.error, /Reviewer modified/)
   rmSync(join(root, 'discussion-review-product-mutation.txt'), { force: true })
 
+  for (const args of [
+    ['config', 'user.name', 'Fixture'],
+    ['config', 'user.email', 'fixture@example.test'],
+    ['add', '.'],
+    ['commit', '-m', 'Initial review fixture'],
+  ]) {
+    const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+  }
   const mission = runJson(['mission', 'create', 'Exercise interactive Mission review', '--json'])
   const missionPath = join(root, mission.path)
   writeMissionContract(missionPath)
