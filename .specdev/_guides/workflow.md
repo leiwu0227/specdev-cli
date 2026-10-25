@@ -2,12 +2,8 @@
 
 ## Direct and Adhoc
 
-Direct work answers, inspects, or writes a small user-requested documentation
-artifact without creating workflow state, a receipt, or an automatic commit.
-The write must not change product, runtime, public-contract, or governed
-workflow behavior. For low-risk Direct documentation, announce the write once.
-Read the destination instructions and the facts needed. Write the document,
-then check it narrowly. A broad project review is not required.
+Use [the main guide](../_main.md) for request routing, Direct documentation,
+and cross-repository notes. This section owns Adhoc lifecycle and delivery rules.
 
 Use Adhoc only when the user explicitly chooses it for a bounded edit
 that does not need an Assignment contract and review cycle. Adhoc has no
@@ -32,25 +28,17 @@ contract assumptions, then run `specdev adhoc revalidate --contract=unchanged
 Reporting `--contract=changed` keeps that gate closed. Shelving and abandonment
 remain explicit terminal user choices.
 
-Selecting a bounded file write does not itself select Adhoc. An explicitly
-requested coordination or handoff note in another repository is an auxiliary
-artifact: write only the note, follow destination instructions, and create no
-SpecDev state in the active repository. Re-anchor and classify in the
-destination repository when the request changes its product, runtime, or
-workflow state, or explicitly requests SpecDev governance there.
-
-Examples make the routing boundary concrete:
-
-- “Write an HTTP usage manual under `project_notes/manual/`” is Direct when it
-  documents existing behavior.
-- “Write this workflow handoff note into the SpecDev CLI thoughts directory” is
-  a Direct auxiliary write governed by that destination's instructions.
-- “Use SpecDev Adhoc to update the public API manual and commit it” is Adhoc and
-  retains the receipt and final delivery commit.
-
-If a callable owns any requested path, the whole adoption is refused.
+Start classifies every expanded dirty path. Independent Discussion and Test Audit
+paths remain outside Adhoc ownership. If a callable owns any requested path,
+the whole adoption is refused. An accepted adoption persists the exact path/status
+manifest at the starting revision. An execution or Git boundary, live or ambiguous
+worker, reviewer, or controller Attempt, or uncertain ownership blocks start.
 `adhoc finish` requires an unchanged HEAD, verifies the manifest, writes one
-small commit-derived receipt, and creates one delivery commit. `adhoc cancel`
+small commit-derived receipt, and creates one delivery commit. It stages the
+persisted manifest and valid Adhoc-owned paths through an exact temporary-index
+transaction. It clears active state only after checking the delivery commit and
+remaining owned changes. Requested, committed, rejected, and remaining facts
+come from Git. Failed verification attempts and passing reruns stay in the receipt. `adhoc cancel`
 removes only the ignored active marker and leaves source changes untouched.
 If focused work coexists, finish and cancel both leave its revalidation record.
 Receipts are not knowledge-index sources. `knowledge/workflow/adhoc-history.md`
@@ -105,6 +93,12 @@ records `owned_paths` as product paths with their final SHA256 byte identities.
 Unrelated paths and index entries remain untouched. A real starting commit and
 attached checkout are required. History rewrites that lose recorded revisions
 block continuation; status and guarded abandonment remain available.
+
+Mission Brainstorm review is optional and never approves the contract.
+A reviewed child that only exceeds automatic authority pauses at an exact
+user-reapproval identity. Repeated `mission run` and `mission status` calls are
+provider-free until the user runs the displayed `mission approve-divergence`
+or `mission reject-divergence` command.
 
 A planned child may use `execution: evidence-only` only with an exact
 `observation_command` equal to the Mission final-verification command. A
@@ -233,17 +227,8 @@ registered child worktrees, queue, evidence, and partial artifacts; it records
 no delivery, performs no landing or deletion, and makes every mutating Mission
 command refuse the terminal record.
 
-The first standalone Assignment primary implementation review is fresh. The
-Claude adapter may retain one ignored, 24-hour, single-use lease to resume that
-exact provider session for the immediately following repair-verification round.
-Every binding must match, the repaired candidate must be complete and remain
-within the reviewed product-path scope, and the resumed review creates a new
-linked Attempt and verdict. Missing, expired, malformed, unsupported, or
-mismatched state degrades to a fresh read-only Attempt; a failed resume permits
-only one fresh fallback. Resolver, arbiter, Mission, format correction, other
-roles, and other providers remain fresh-only. Provider-local transcript
-persistence is an operational prerequisite for Claude resume, not a durable
-SpecDev artifact or source of evidence.
+For standalone reviewer continuation and repair recovery, use
+`_guides/assignment_guide.md`.
 
 ## Knowledge
 
@@ -277,6 +262,14 @@ bytes and their Git boundary to a proposal, but never replaces durable-source,
 verification, owner, destination-approval, receipt, or rebuild requirements.
 
 ## Verification
+
+When proposing a change, name the focused verification commands if they are known.
+Use existing explicit approval for those commands within the agreed task scope.
+If approval is missing, ask once for the known commands before running them.
+Necessary reruns after a fix use that approval unless the user limits or revokes it.
+Ask again only when a command, its effects, or the authorized scope changes, or
+repository instructions require separate approval for each run. Approval to edit
+does not itself authorize tests. Do not rerun passing checks without a reason.
 
 Focused evidence first. Reuse the same command on the same revision. A
 standalone Assignment may run a full suite at most once only when approved scope
