@@ -30,15 +30,33 @@ import {
   updateAttemptRecord,
 } from '../utils/process-record.js'
 
+import { closeAcceptedAssignment } from './assignment-accepted-close.js'
+
 const execFile = promisify(execFileCallback)
-const TERMINAL_STATUSES = new Set(['completed', 'abandoned', 'shelved', 'unsupported'])
+const TERMINAL_STATUSES = new Set([
+  'completed',
+  'abandoned',
+  'shelved',
+  'unsupported',
+  'closed',
+  'closing',
+])
 const COMMIT_TYPE = 'unsupported-terminal'
 const JOURNAL_VERSION = 1
 
 export function closeAssignmentHelp() {
   console.log(`Usage: specdev assignment close <id> --outcome=unsupported --reason="<reason>" --evidence=<path[,path]> [--snapshot=owned]
+       specdev assignment close <id> --outcome=accepted-with-limitations --evidence=<acceptance-note> [--confirm=<plan-digest>]
 
-Close an eligible standalone Assignment with an evidence-bearing unsupported conclusion.
+For accepted-with-limitations, supply a written note with explicit user acceptance
+and known limitations. Preview first, then confirm the exact --confirm digest.
+The approved implementation candidate must have incomplete acceptance evidence.
+Closure retains runtime history, contracts, failed evidence and review facts,
+releases focus, and creates an exact local commit without claiming verification.
+Mission children must use Mission closure. Interrupted closure uses the same
+note path and digest to resume; terminal records cannot reopen.
+
+For unsupported, close with an evidence-bearing negative conclusion.
 
 The first invocation is a read-only planning pass over tracked workflow state. It
 prints the exact HEAD, evidence identities, Assignment-owned commit manifest, and
@@ -53,6 +71,8 @@ closure; it never reopens the source Assignment.`)
 }
 
 export async function closeAssignmentCommand(targetDir, specdevPath, positionalArgs, flags = {}) {
+  if (flags.outcome === 'accepted-with-limitations')
+    return closeAcceptedAssignment(targetDir, specdevPath, positionalArgs[0], flags)
   const selector = String(positionalArgs[0] || '').trim()
   if (!selector) return fail(flags, 'Usage: specdev assignment close <id> --outcome=unsupported')
   if (String(flags.outcome || '').trim() !== 'unsupported') {
@@ -190,7 +210,15 @@ export async function closeAssignmentCommand(targetDir, specdevPath, positionalA
   }
 }
 
-async function buildClosePlan(targetDir, specdevPath, resolved, status, reason, evidencePaths) {
+export async function buildClosePlan(
+  targetDir,
+  specdevPath,
+  resolved,
+  status,
+  reason,
+  evidencePaths,
+  { retainRuntime = false } = {}
+) {
   let approval
   try {
     approval = await assertApprovedContract(targetDir, resolved.path)
@@ -241,7 +269,8 @@ async function buildClosePlan(targetDir, specdevPath, resolved, status, reason, 
     specdevPath,
     resolved,
     status,
-    attempts.records
+    attempts.records,
+    retainRuntime ? 'closure.md' : 'unsupported.md'
   )
   const owned = new Set(trackedEffects)
   const compacted = new Set()
@@ -255,13 +284,18 @@ async function buildClosePlan(targetDir, specdevPath, resolved, status, reason, 
       head,
       attempts.records
     )
-    if (classification.transient) {
+    if (classification.transient && retainRuntime && entry.path !== '.specdev/.current') {
+      owned.add(entry.path)
+    } else if (classification.transient) {
       if (await gitObjectExists(targetDir, `${head}:${entry.path}`)) owned.add(entry.path)
       else compacted.add(entry.path)
     } else if (classification.owned) owned.add(entry.path)
     else excluded.push({ path: entry.path, ...classification.detail })
   }
-  const artifact = relativeToRepo(targetDir, join(resolved.path, 'unsupported.md'))
+  const artifact = relativeToRepo(
+    targetDir,
+    join(resolved.path, retainRuntime ? 'closure.md' : 'unsupported.md')
+  )
   const statusPath = relativeToRepo(targetDir, join(resolved.path, 'status.json'))
   owned.add(artifact)
   owned.add(statusPath)
@@ -594,8 +628,13 @@ async function assertPlanEvidence(targetDir, plan) {
     throw new Error('evidence identity changed after the displayed plan')
 }
 
-async function inspectAttempts(specdevPath, assignmentName) {
-  const records = await listAttemptRecords(specdevPath, { assignment: assignmentName })
+export async function inspectAttempts(specdevPath, assignmentName) {
+  const records = (await listAttemptRecords(specdevPath)).filter(
+    (record) =>
+      record.assignment === assignmentName ||
+      (/^\d+$/.test(String(record.assignment)) &&
+        Number(record.assignment) === Number(assignmentName.slice(0, 5)))
+  )
   const blocking = []
   const stale = []
   for (const attempt of records.filter((item) => item.status === 'running')) {
@@ -606,7 +645,14 @@ async function inspectAttempts(specdevPath, assignmentName) {
   return { records, blocking, stale }
 }
 
-async function prospectiveTrackedEffects(targetDir, specdevPath, resolved, status, attempts) {
+async function prospectiveTrackedEffects(
+  targetDir,
+  specdevPath,
+  resolved,
+  status,
+  attempts,
+  artifact = 'unsupported.md'
+) {
   const candidates = [
     '.specdev/.current',
     '.specdev/.ripplegraph/current.json',
@@ -619,7 +665,7 @@ async function prospectiveTrackedEffects(targetDir, specdevPath, resolved, statu
     for (const path of output.split('\0').filter(Boolean)) tracked.add(path)
   }
   tracked.add(relativeToRepo(targetDir, join(resolved.path, 'status.json')))
-  tracked.add(relativeToRepo(targetDir, join(resolved.path, 'unsupported.md')))
+  tracked.add(relativeToRepo(targetDir, join(resolved.path, artifact)))
   return [...tracked]
 }
 

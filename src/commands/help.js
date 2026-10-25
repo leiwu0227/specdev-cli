@@ -25,6 +25,7 @@ export function helpCommand(flags = {}) {
     '  specdev implement                   # auto defaults to foreground inline execution',
     '  specdev implement --spawned --execution-reason="unattended run"',
     '  specdev assignment shelf 00001 --reason="pause useful unfinished work"',
+    '  specdev assignment close 00001 --outcome=accepted-with-limitations --evidence=<acceptance-note>',
     '  specdev assignment close 00001 --outcome=unsupported --reason="verified limit" --evidence=<path>',
     '  specdev assignment --from-assignment=00001  # fresh successor from immutable history',
     '  specdev cancel "work is no longer wanted"   # irreversible abandonment',

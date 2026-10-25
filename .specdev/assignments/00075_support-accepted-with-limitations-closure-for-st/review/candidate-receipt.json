@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "c95758307ebd0d3d3c49a99ee2f0ba6f717c96ce388e593efcff9fec76be76d8",
+  "assignment": {
+    "id": "00075",
+    "folder": "00075_support-accepted-with-limitations-closure-for-st"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-10-25T01:36:19.079Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00075_support-accepted-with-limitations-closure-for-st/brainstorm/contract.md",
+    "hash": "128a461185c0debba9e2dbcc42eb1c88fd654bcade81dc0ca877f02175ec0ba9"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "node tests/test-assignment-accepted-limitations.js: acceptance_not_passed, explicit preview/confirm, preserved contract and failed evidence, complete-evidence refusal.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "Same isolated command: exact terminal commit, excluded dirt, retained history, Adhoc start, immutable guards, interrupted artifact/focus recovery, terminal retries.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "Same isolated command: changed candidate/note/contract, wrong focus, Mission child, live/unknown Attempts; npm run test:assignment-unsupported and npm run test:assignment-shelf pass.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification_boundary": null,
+  "verification": {
+    "total": 3,
+    "items": [
+      {
+        "command": "node tests/test-assignment-accepted-limitations.js",
+        "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+        "scope": "Assignment accepted-with-limitations closure and existing terminal regression fixtures",
+        "status": "passed",
+        "duration_ms": 12485,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:assignment-unsupported",
+        "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+        "scope": "Assignment accepted-with-limitations closure and existing terminal regression fixtures",
+        "status": "passed",
+        "duration_ms": 3761,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:assignment-shelf",
+        "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+        "scope": "Assignment accepted-with-limitations closure and existing terminal regression fixtures",
+        "status": "passed",
+        "duration_ms": 13438,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 3,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 3,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-assignment-accepted-limitations.js",
+        "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:assignment-unsupported",
+        "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+        "status": "passed"
+      },
+      {
+        "command": "npm run test:assignment-shelf",
+        "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 9,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 6,
+        "paths": [
+          "src/commands/assignment-accepted-close.js",
+          "src/commands/assignment-close.js",
+          "src/commands/assignment-shelf.js",
+          "src/commands/focus.js",
+          "src/commands/help.js",
+          "src/utils/assignment-vnext.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 1,
+        "paths": [
+          "templates/.specdev/_guides/assignment_guide.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-assignment-accepted-limitations.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "Explicit acceptance is a user decision; the CLI binds the written note and confirmed",
+      "candidate, and does not interpret natural-language consent. Active Adhoc guards still",
+      "apply to all Assignment commands; finish or cancel an Adhoc before a historical retry.",
+      "No remote publication, installation, or closure in another repository was performed."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00075_support-accepted-with-limitations-closure-for-st/brainstorm/contract.md",
+      "exists": true,
+      "digest": "128a461185c0debba9e2dbcc42eb1c88fd654bcade81dc0ca877f02175ec0ba9"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00075_support-accepted-with-limitations-closure-for-st/design/plan.md",
+      "exists": true,
+      "digest": "293424fc2c76742c156c7bb3cdb251c44121fe6f86696a6c5fafa8a282462d20"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00075_support-accepted-with-limitations-closure-for-st/implementation/progress.json",
+      "exists": true,
+      "digest": "477315eb94a964f3a147ea1152e73a1002d6a5f1153edd4ad1c8536f5c9359fa"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00075_support-accepted-with-limitations-closure-for-st/outcome.md",
+      "exists": true,
+      "digest": "8ca4bbd5456d03d12dbbb6e90e020263efd5f93ee4f080950489c52e17e1605b"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

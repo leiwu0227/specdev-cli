@@ -235,6 +235,9 @@ export async function currentAssignmentNode(targetDir) {
 }
 
 export async function assertCurrentAssignmentPath(targetDir, assignmentPath) {
+  const record = await fse.readJson(join(assignmentPath, 'status.json'))
+  if (['closing', 'closed'].includes(record.status))
+    throw new Error(`Assignment ${record.id} is ${record.status} and immutable`)
   const state = await currentAssignmentNode(targetDir)
   if (!state) throw new Error('The focused workflow is not an Assignment')
   const actual = assignmentPath.split(/[/\\]/).pop()

@@ -48,7 +48,7 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
   }
   if (kind === 'assignment') {
     const status = await fse.readJson(join(resolved.path, 'status.json')).catch(() => null)
-    if (status?.status === 'closed')
+    if (['closed', 'closing'].includes(status?.status))
       return fail(flags, `Assignment ${status.id} is closed and immutable`)
   }
   await writeCurrentFocus(specdevPath, { kind, id: resolved.id })

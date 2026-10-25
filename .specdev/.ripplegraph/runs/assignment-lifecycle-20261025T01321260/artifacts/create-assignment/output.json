@@ -1,0 +1,10 @@
+{
+  "id": "00075",
+  "name": "00075_support-accepted-with-limitations-closure-for-st",
+  "path": ".specdev/assignments/00075_support-accepted-with-limitations-closure-for-st",
+  "description": "Support accepted-with-limitations closure for standalone Assignments",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  }
+}

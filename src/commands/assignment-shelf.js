@@ -18,7 +18,13 @@ import { compactShelvedWorkflowRuntime } from '../utils/artifact-retention.js'
 import { commitDelivery, isConcurrentCallablePath } from '../utils/git-delivery.js'
 
 const execFile = promisify(execFileCallback)
-const TERMINAL_ASSIGNMENT_STATUSES = new Set(['completed', 'abandoned'])
+const TERMINAL_ASSIGNMENT_STATUSES = new Set([
+  'completed',
+  'abandoned',
+  'closed',
+  'closing',
+  'unsupported',
+])
 const SNAPSHOT_COMMIT_TYPE = 'shelf-snapshot'
 const TERMINAL_COMMIT_TYPE = 'shelf-terminal'
 const SUMMARY_LIMIT = 8

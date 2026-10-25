@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-assignment-accepted-limitations.js",
+      "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+      "scope": "Assignment accepted-with-limitations closure and existing terminal regression fixtures",
+      "status": "passed",
+      "duration_ms": 12485,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:assignment-unsupported",
+      "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+      "scope": "Assignment accepted-with-limitations closure and existing terminal regression fixtures",
+      "status": "passed",
+      "duration_ms": 3761,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "npm run test:assignment-shelf",
+      "revision": "working-tree@1a4629ebbcb3bc53e55a56a1445ecd4d986a37cf",
+      "scope": "Assignment accepted-with-limitations closure and existing terminal regression fixtures",
+      "status": "passed",
+      "duration_ms": 13438,
+      "role": "authoritative_acceptance"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none",
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  }
+}

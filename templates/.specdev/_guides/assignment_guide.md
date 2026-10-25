@@ -134,3 +134,28 @@ contracts receive it because the Mission supplies child approval. A single
 full-scope Mission child is derived from the approved parent and skips duplicate
 contract author/reviewer calls, while its implementation review remains
 required.
+
+## User-accepted delivery with limitations
+
+When an approved standalone implementation cannot pass acceptance preflight, the
+user can explicitly accept its current delivery and limitations. Save a written
+acceptance note, then preview:
+
+```sh
+specdev assignment close <id> --outcome=accepted-with-limitations --evidence=<note>
+```
+
+Show the user the exact candidate, contract, failed or missing evidence, review
+facts, owned paths, and effects. A generic approval does not accept limitations.
+After explicit user acceptance, repeat with the displayed `--confirm=<digest>`.
+A changed candidate or evidence requires a new preview and acceptance. The note
+must be in this Assignment or a durable repository path outside other workflows.
+
+Closure records a distinct terminal outcome and an exact local commit. It retains
+code, artifacts, failures and runtime history, without claiming verification or
+review passed. It stops owned execution and releases focus for a subsequent Adhoc.
+Live or ambiguous Attempts and Mission children cannot close this way. Use normal
+review and delivery when acceptance evidence is complete.
+
+If interrupted, retry with the same note path and confirmed digest. Do not edit
+closure state or reopen the terminal Assignment. The command never pushes.
