@@ -111,7 +111,7 @@ export async function closeMissionCommand(context, flags = {}) {
         idempotent: true,
       })
     }
-    if (['completed', 'failed', 'abandoned'].includes(mission.status)) {
+    if (['completed', 'abandoned'].includes(mission.status)) {
       throw new Error(`Mission ${mission.id} is already ${mission.status} and is immutable`)
     }
     const plan = await buildPlan(context, source)
@@ -173,16 +173,24 @@ async function buildPlan(context, source) {
     throw new Error('Acceptance evidence must be non-empty written user acceptance and limitations')
   const children = await ownedChildren(context)
   const checkpoint = readCheckpoint(specdevPath, mission.run_id)
+  const terminalFailure =
+    mission.status === 'failed' &&
+    checkpoint.status === 'completed' &&
+    checkpoint.position.graph === 'mission-lifecycle' &&
+    checkpoint.position.node === 'failed' &&
+    checkpoint.stack.length === 0
   if (
     checkpoint.rootGraph !== 'mission-lifecycle' ||
-    !['active', 'suspended'].includes(checkpoint.status)
+    (!['active', 'suspended'].includes(checkpoint.status) && !terminalFailure)
   ) {
-    throw new Error('Mission close requires an active or suspended Mission lifecycle')
+    throw new Error(
+      'Mission close requires an active, suspended, or terminal failed Mission lifecycle'
+    )
   }
   const rippleFocus = readCurrent(specdevPath).focusedRunId
   if (
     (checkpoint.status === 'active' && rippleFocus !== mission.run_id) ||
-    (checkpoint.status === 'suspended' && rippleFocus)
+    (checkpoint.status !== 'active' && rippleFocus)
   ) {
     throw new Error('Mission run/focus mismatch; another workflow must not be displaced')
   }
@@ -370,7 +378,13 @@ async function applyClosure(context, closure, flags) {
   const { status: oldStatus, updatedAt: oldUpdated, ...oldState } = plan.checkpoint
   const { status, updatedAt, ...state } = checkpoint
   // resumeRun may add no semantic changes; abandonment retains node outputs and stack.
-  if (!same(state, oldState) || ![oldStatus, 'active', 'abandoned'].includes(status))
+  const allowedStatuses =
+    oldStatus === 'completed' ? [oldStatus] : [oldStatus, 'active', 'abandoned']
+  if (
+    !same(state, oldState) ||
+    !allowedStatuses.includes(status) ||
+    (oldStatus === 'completed' && !same(checkpoint, plan.checkpoint))
+  )
     throw new Error('Mission runtime changed during closure')
   const rippleFocus = readCurrent(specdevPath).focusedRunId
   if (rippleFocus && rippleFocus !== plan.mission.run_id)
@@ -431,9 +445,13 @@ async function applyClosure(context, closure, flags) {
       throw new Error(`Attempt changed during closure: ${record.id}`)
   }
 
+  const runtimeClosure =
+    plan.checkpoint.status === 'completed'
+      ? 'The already terminal failed lifecycle remains unchanged.'
+      : 'The scheduler is stopped through RippleGraph abandonment.'
   await atomicText(
     join(missionPath, 'closure.md'),
-    `# Mission closure\n\n- Mission: ${plan.mission.id}\n- Outcome: ${OUTCOME}\n- Verification: incomplete; failures and missing evidence remain unchanged\n- Confirmed plan: ${plan.digest}\n- Acceptance source: ${plan.evidence.source}\n- Acceptance SHA-256: ${plan.evidence.sha256}\n\n## User acceptance and limitations\n\n${plan.evidence.text}\n\n## Execution closure\n\nUnfinished children are closed without verified completion. The scheduler is stopped through RippleGraph abandonment; the Mission outcome is accepted-with-limitations. Code, artifacts, verification records, and runtime history are retained. No landing is performed.\n`
+    `# Mission closure\n\n- Mission: ${plan.mission.id}\n- Source status: ${plan.mission.status}\n- Outcome: ${OUTCOME}\n- Verification: incomplete; failures and missing evidence remain unchanged\n- Confirmed plan: ${plan.digest}\n- Acceptance source: ${plan.evidence.source}\n- Acceptance SHA-256: ${plan.evidence.sha256}\n\n## User acceptance and limitations\n\n${plan.evidence.text}\n\n## Execution closure\n\nUnfinished children are closed without verified completion. ${runtimeClosure} The Mission outcome is accepted-with-limitations. Code, artifacts, verification records, and runtime history are retained. No landing is performed.\n`
   )
   if (queue) await writeMissionQueue(missionPath, queue)
   for (const child of plan.children) {

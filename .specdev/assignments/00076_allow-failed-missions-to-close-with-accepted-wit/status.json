@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "00076",
+  "kind": "change",
+  "description": "Allow failed Missions to close with accepted-with-limitations while preserving failure history",
+  "run_id": "assignment-lifecycle-20261028T23445756",
+  "created_at": "2026-10-28T23:44:57.567Z",
+  "review_policy": {
+    "brainstorm": "optional",
+    "implementation": "required"
+  },
+  "updated_at": "2026-10-29T00:05:54.956Z",
+  "review_policy_frozen_at": "2026-10-28T23:58:58.947Z",
+  "approved_at": "2026-10-28T23:58:58.947Z",
+  "git_boundary": {
+    "version": 1,
+    "starting_git_commit_hash": "88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+    "starting_branch": "main",
+    "starting_worktree": "clean",
+    "adopted_path_count": 0,
+    "established_at": "2026-10-28T23:59:07.693Z"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-10-28T23:59:07.646Z"
+  },
+  "status": "completed",
+  "completed_at": "2026-10-29T00:05:54.873Z",
+  "activity": {
+    "attempt_count": 1,
+    "orchestration_attempt_count": 0,
+    "provider_attempt_count": 1,
+    "provider_attempts": {
+      "total": 1,
+      "completed": 1,
+      "failed": 0,
+      "blocked": 0,
+      "interrupted": 0,
+      "running": 0
+    },
+    "elapsed_ms": 415926,
+    "agent_duration_ms": 106297,
+    "provider_reported_tokens": null
+  },
+  "delivery_phase": "ready",
+  "delivery_prepared_at": "2026-10-29T00:05:54.956Z"
+}

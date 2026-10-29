@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "1bb865f3ebd39777457d2cb54175e121abd96330a1d569ffa9c13bf9ccfcaac8",
+  "assignment": {
+    "id": "00076",
+    "folder": "00076_allow-failed-missions-to-close-with-accepted-wit"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-10-28T23:59:07.646Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00076_allow-failed-missions-to-close-with-accepted-wit/brainstorm/contract.md",
+    "hash": "02ca52db761fab5bcb65b16d779df7c30ae8ddb0d28214e0543a368ac4d3cda6"
+  },
+  "acceptance": {
+    "total": 3,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "node tests/test-mission-closure.js: failed active, suspended, and terminal runtime closure, preview and exact confirmation.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "node tests/test-mission-closure.js: original failure snapshot and details, outcome and verification files, terminal checkpoint and transition-log byte preservation.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "node tests/test-mission-closure.js: stale-plan refusal, live execution and focus guards, unrelated work preservation, four interrupted recovery boundaries, idempotent retries and terminal policy. npm run test:mission-abandonment and npm...",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification_boundary": null,
+  "verification": {
+    "total": 3,
+    "items": [
+      {
+        "command": "node tests/test-mission-closure.js",
+        "revision": "working-tree@88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+        "scope": "Failed Mission closure, confirmation, terminal history, retries and ownership safeguards",
+        "status": "passed",
+        "duration_ms": 42642,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:mission-abandonment",
+        "revision": "working-tree@88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+        "scope": "Existing Mission abandonment behavior",
+        "status": "passed",
+        "duration_ms": 30896,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "npm run test:mission-landing",
+        "revision": "working-tree@88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+        "scope": "Existing Mission checkout ownership and landing behavior",
+        "status": "passed",
+        "duration_ms": 4822,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 1,
+        "superseded": 0,
+        "history_counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 3,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 3,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 0,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-mission-closure.js",
+        "revision": "working-tree@88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 4,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "package.json"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 1,
+        "paths": [
+          "src/commands/mission-close.js"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "templates",
+        "count": 1,
+        "paths": [
+          "templates/.specdev/_guides/workflow.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "tests",
+        "count": 1,
+        "paths": [
+          "tests/test-mission-closure.js"
+        ],
+        "omitted": 0
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "Existing restrictions on ambiguous ownership, live execution, and unsupported historical layouts remain. The first closure test run exposed a missing child graph in the new paused test fixture; using a parent-only paused fixture resolved..."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00076_allow-failed-missions-to-close-with-accepted-wit/brainstorm/contract.md",
+      "exists": true,
+      "digest": "02ca52db761fab5bcb65b16d779df7c30ae8ddb0d28214e0543a368ac4d3cda6"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00076_allow-failed-missions-to-close-with-accepted-wit/design/plan.md",
+      "exists": true,
+      "digest": "f2d5e5e5e57433b84e548be0fc902909518db4205539725968077a63bb7004ce"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00076_allow-failed-missions-to-close-with-accepted-wit/implementation/progress.json",
+      "exists": true,
+      "digest": "e97bb9033502b869278d7443827f57626c91212e640ab4fb5fbe8e1b7bebb12f"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00076_allow-failed-missions-to-close-with-accepted-wit/outcome.md",
+      "exists": true,
+      "digest": "c3f09ada15abe7027bbf63ffafb5ca4c076a8055ed604f489209dc258c97e616"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

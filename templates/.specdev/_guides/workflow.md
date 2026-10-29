@@ -308,6 +308,9 @@ acceptance from a failed check or from an instruction to continue implementation
 Changed evidence or lifecycle state requires a new plan and confirmation.
 
 Closure records terminal status `closed` and outcome `accepted-with-limitations`.
+Failed Missions can use this same confirmation flow. The closure record retains
+the original failure state. An already terminal failed lifecycle remains unchanged;
+closure does not restart it or turn failed verification into success.
 Verification remains incomplete. Contracts, failures, missing evidence, code,
 artifacts, and runtime history remain intact. Unfinished owned children close
 without verified completion. The owned scheduler stops, focus is released, and

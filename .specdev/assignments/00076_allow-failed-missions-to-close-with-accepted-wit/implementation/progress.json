@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+      "scope": "Failed Mission closure, confirmation, terminal history, retries and ownership safeguards",
+      "status": "passed",
+      "role": "authoritative_acceptance",
+      "duration_ms": 42642
+    },
+    {
+      "command": "npm run test:mission-abandonment",
+      "revision": "working-tree@88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+      "scope": "Existing Mission abandonment behavior",
+      "status": "passed",
+      "role": "qualification",
+      "duration_ms": 30896
+    },
+    {
+      "command": "npm run test:mission-landing",
+      "revision": "working-tree@88ac208243808d015c7ee4314c1b9d4fd92fd8cc",
+      "scope": "Existing Mission checkout ownership and landing behavior",
+      "status": "passed",
+      "role": "qualification",
+      "duration_ms": 4822
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none"
+}

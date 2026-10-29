@@ -12,7 +12,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { readCheckpoint, writeCheckpoint, suspendRun } from 'ripplegraph'
+import { readCheckpoint, writeCheckpoint, suspendRun, stepRun } from 'ripplegraph'
 import { parse, stringify } from 'yaml'
 import { createAttemptRecord, writeLocalProcessMarker } from '../src/utils/process-record.js'
 
@@ -50,7 +50,7 @@ function snapshot(root) {
   visit(root)
   return files
 }
-function fixture({ child = true, paused = false } = {}) {
+function fixture({ child = true, paused = false, failed = false, terminal = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'specdev-mission-closure-'))
   roots.push(root)
   git(root, ['init', '-b', 'main'])
@@ -64,8 +64,25 @@ function fixture({ child = true, paused = false } = {}) {
   const missionPath = join(root, created.path)
   const specdev = join(root, '.specdev')
   const mission = parse(readFileSync(join(missionPath, 'mission.yaml'), 'utf8'))
-  mission.status = 'blocked'
+  mission.status = failed ? 'failed' : 'blocked'
   mission.blocker = 'Verification failed; acceptance evidence is missing'
+  if (failed) {
+    mission.failed_at = new Date().toISOString()
+    mission.disposition = 'semantic-failure'
+    write(
+      join(missionPath, 'status.json'),
+      JSON.stringify({
+        status: 'failed',
+        failed_at: mission.failed_at,
+        disposition: mission.disposition,
+        reason: mission.blocker,
+      })
+    )
+    write(
+      join(missionPath, 'outcome.md'),
+      '# Mission outcome\n\nSemantic failure remains unresolved.\n'
+    )
+  }
   mission.approved_contract_hash = 'a'.repeat(64)
   write(join(missionPath, 'mission.yaml'), stringify(mission))
   write(
@@ -128,6 +145,22 @@ function fixture({ child = true, paused = false } = {}) {
     checkpoint.outputs['child-00001/verification'] = { status: 'failed' }
     writeCheckpoint(specdev, checkpoint)
   }
+  if (terminal) {
+    const checkpoint = readCheckpoint(specdev, mission.run_id)
+    checkpoint.position = { graph: 'mission-lifecycle', node: 'mission-review' }
+    checkpoint.stack = []
+    writeCheckpoint(specdev, checkpoint)
+    stepRun({
+      workflowRoot: specdev,
+      output: {
+        approved: false,
+        verdict: 'review/verification.json',
+        attempt: 'failed-review',
+        disposition: 'semantic-failure',
+      },
+    })
+    assert.equal(readCheckpoint(specdev, mission.run_id).status, 'completed')
+  }
   if (paused) suspendRun({ workflowRoot: specdev, note: 'pause for acceptance' })
   git(root, ['add', '--all'])
   git(root, ['commit', '-m', 'accepted candidate with incomplete evidence'])
@@ -141,6 +174,44 @@ function fixture({ child = true, paused = false } = {}) {
   return { root, specdev, missionPath, mission, childPath, args }
 }
 try {
+  for (const options of [
+    { failed: true },
+    { failed: true, paused: true, child: false },
+    { failed: true, terminal: true },
+  ]) {
+    const f = fixture(options)
+    const before = snapshot(f.root)
+    const plan = run(f.root, f.args).plan
+    assert.equal(plan.mission.status, 'failed')
+    assert.deepEqual(snapshot(f.root), before)
+    run(f.root, [...f.args, `--confirm=${'0'.repeat(64)}`], 1)
+    assert.deepEqual(snapshot(f.root), before)
+    const args = [...f.args, `--confirm=${plan.digest}`]
+    const result = run(f.root, args)
+    assert.equal(result.status, 'closed')
+    assert.equal(result.disposition, 'accepted-with-limitations')
+    assert.equal(result.verification, 'incomplete')
+    assert.equal(result.closure.source_status, 'failed')
+    const closed = parse(readFileSync(join(f.missionPath, 'mission.yaml'), 'utf8'))
+    assert.deepEqual(closed.closure.plan.mission, f.mission)
+    assert.equal(closed.blocker, f.mission.blocker)
+    assert.equal(closed.failed_at, f.mission.failed_at)
+    for (const path of ['outcome.md', 'review/verification.json']) {
+      const relativePath = relative(f.root, join(f.missionPath, path))
+      assert.equal(readFileSync(join(f.root, relativePath), 'utf8'), before[relativePath])
+    }
+    if (options.terminal) {
+      for (const name of ['checkpoint.json', 'transition-log.jsonl']) {
+        const path = `.specdev/.ripplegraph/runs/${f.mission.run_id}/${name}`
+        assert.equal(readFileSync(join(f.root, path), 'utf8'), before[path])
+      }
+    }
+    const after = snapshot(f.root)
+    const head = git(f.root, ['rev-parse', 'HEAD'])
+    assert.equal(run(f.root, args).idempotent, true)
+    assert.deepEqual(snapshot(f.root), after)
+    assert.equal(git(f.root, ['rev-parse', 'HEAD']), head)
+  }
   {
     const f = fixture()
     const { root, missionPath, mission, specdev, childPath, args } = f
@@ -218,28 +289,30 @@ try {
     assert.deepEqual(snapshot(root), terminal)
     assert.equal(run(root, ['adhoc', 'start', 'follow-on']).status, 'started')
   }
-  for (const phase of ['authority-confirmed', 'terminal-written', 'run-closed', 'prepared']) {
-    const f = fixture()
-    const attempt = await createAttemptRecord(f.specdev, {
-      kind: 'worker',
-      assignment: '00001_child',
-      workspace: '.',
-    })
-    await writeLocalProcessMarker(f.specdev, attempt.id, { pid: 2147483647, cwd: f.root })
-    git(f.root, ['add', '--all'])
-    git(f.root, ['commit', '-m', 'record stale worker'])
-    const plan = run(f.root, f.args)
-    const args = [...f.args, `--confirm=${plan.plan.digest}`]
-    run(f.root, [...args, `--interrupt-after=${phase}`], 1)
-    assert.equal(run(f.root, ['mission', 'status', f.mission.id]).status, 'closing')
-    run(f.root, ['implement', '--assignment=00001'], 1)
-    run(f.root, ['mission', 'abandon', f.mission.id, '--reason=do not bypass pending closure'], 1)
-    assert.equal(run(f.root, args).status, 'closed')
-    assert.equal(run(f.root, args).idempotent, true)
-    const record = parse(readFileSync(join(f.specdev, 'processes', `${attempt.id}.yaml`), 'utf8'))
-    assert.equal(record.status, 'interrupted')
-    assert.equal(record.closure_plan, plan.plan.digest)
-    assert.equal(run(f.root, ['adhoc', 'start', 'after recovered closure']).status, 'started')
+  for (const terminal of [false, true]) {
+    for (const phase of ['authority-confirmed', 'terminal-written', 'run-closed', 'prepared']) {
+      const f = fixture({ failed: terminal, terminal })
+      const attempt = await createAttemptRecord(f.specdev, {
+        kind: 'worker',
+        assignment: '00001_child',
+        workspace: '.',
+      })
+      await writeLocalProcessMarker(f.specdev, attempt.id, { pid: 2147483647, cwd: f.root })
+      git(f.root, ['add', '--all'])
+      git(f.root, ['commit', '-m', 'record stale worker'])
+      const plan = run(f.root, f.args)
+      const args = [...f.args, `--confirm=${plan.plan.digest}`]
+      run(f.root, [...args, `--interrupt-after=${phase}`], 1)
+      assert.equal(run(f.root, ['mission', 'status', f.mission.id]).status, 'closing')
+      run(f.root, ['implement', '--assignment=00001'], 1)
+      run(f.root, ['mission', 'abandon', f.mission.id, '--reason=do not bypass pending closure'], 1)
+      assert.equal(run(f.root, args).status, 'closed')
+      assert.equal(run(f.root, args).idempotent, true)
+      const record = parse(readFileSync(join(f.specdev, 'processes', `${attempt.id}.yaml`), 'utf8'))
+      assert.equal(record.status, 'interrupted')
+      assert.equal(record.closure_plan, plan.plan.digest)
+      assert.equal(run(f.root, ['adhoc', 'start', 'after recovered closure']).status, 'started')
+    }
   }
   {
     const f = fixture({ child: false, paused: true })
@@ -247,7 +320,7 @@ try {
     assert.equal(run(f.root, [...f.args, `--confirm=${plan.plan.digest}`]).status, 'closed')
   }
   {
-    const f = fixture()
+    const f = fixture({ failed: true, terminal: true })
     write(join(f.root, 'unrelated.txt'), 'staged unrelated work\n')
     git(f.root, ['add', 'unrelated.txt'])
     write(join(f.root, 'unrelated.txt'), 'later unstaged work\n')
@@ -266,7 +339,7 @@ try {
     assert.equal(git(f.root, ['diff', '--cached', '--', 'unrelated.txt']), index)
   }
   for (const change of ['evidence', 'artifact', 'queue', 'product']) {
-    const f = fixture()
+    const f = fixture({ failed: true, terminal: true })
     const plan = run(f.root, f.args)
     const path = {
       evidence: 'acceptance.md',
@@ -280,7 +353,7 @@ try {
     assert.deepEqual(snapshot(f.root), before)
   }
   {
-    const f = fixture()
+    const f = fixture({ failed: true, terminal: true })
     const before = snapshot(f.root)
     for (const extra of ['--outcome=completed', '--evidence=missing.md', '--evidence'])
       run(f.root, [...f.args, extra], 1)
@@ -293,6 +366,29 @@ try {
     const live = snapshot(f.root)
     assert.match(run(f.root, f.args, 1).error, /Live or ambiguous/)
     assert.deepEqual(snapshot(f.root), live)
+  }
+  for (const status of ['completed', 'abandoned']) {
+    const f = fixture({ failed: true, terminal: true })
+    write(join(f.missionPath, 'mission.yaml'), stringify({ ...f.mission, status }))
+    const before = snapshot(f.root)
+    assert.match(run(f.root, f.args, 1).error, /immutable/)
+    assert.deepEqual(snapshot(f.root), before)
+  }
+  for (const mismatch of ['terminal-node', 'runtime-focus', 'workflow-focus']) {
+    const f = fixture({ failed: true, terminal: true })
+    if (mismatch === 'terminal-node') {
+      const checkpoint = readCheckpoint(f.specdev, f.mission.run_id)
+      checkpoint.position.node = 'done'
+      writeCheckpoint(f.specdev, checkpoint)
+    } else if (mismatch === 'runtime-focus') {
+      write(
+        join(f.specdev, '.ripplegraph/current.json'),
+        JSON.stringify({ focusedRunId: 'another-run' })
+      )
+    } else write(join(f.specdev, '.current'), 'kind: discussion\nid: D99999\n')
+    const before = snapshot(f.root)
+    run(f.root, f.args, 1)
+    assert.deepEqual(snapshot(f.root), before)
   }
   console.log('Mission closure tests passed')
 } finally {
