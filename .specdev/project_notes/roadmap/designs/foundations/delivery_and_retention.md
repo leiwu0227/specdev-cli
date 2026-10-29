@@ -29,6 +29,18 @@ RippleGraph runs, and Attempt records may be compacted after their bounded activ
 summary and delivery identity are preserved. Compaction occurs after durable
 authority, never before it.
 
+Cleanup authority follows the durable workflow owner and its remaining obligations.
+A runtime reaching a terminal node does not by itself make its records disposable.
+A failed Mission still needs its execution history for accepted closure or explicit
+recovery. Preserve those records while either operation depends on them. The Mission
+recovery design defines the durable failure and closure boundaries.
+
+Creating or delivering a successor does not grant cleanup authority over its
+predecessor. Shared cleanup verifies both the run's owner and the owner's lifecycle
+before removing records. Ambiguous ownership retains the records and reports the
+conflict. A delivery commit must not absorb predecessor deletions merely because
+those deletions already exist in the working tree.
+
 Failed or interrupted delivery leaves recoverable journals and does not reinterpret
 partial Git state as success. Ambiguous branches, parents, path ownership, or staged
 content fail closed.
@@ -39,3 +51,4 @@ content fail closed.
 - `src/utils/delivery-artifacts.js` — maximum 230 lines — evidence and review artifact validation.
 - `src/utils/artifact-retention.js` — maximum 250 lines — safe terminal compaction.
 - `src/utils/workspace-changes.js` — maximum 110 lines — workflow-aware path classification.
+- `src/utils/retention-owners.js` — maximum 160 lines — durable owner identity and lifecycle-based cleanup eligibility.

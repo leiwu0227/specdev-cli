@@ -12,6 +12,17 @@ product authority, bounded artifacts, role instructions, and a strict result
 envelope. Preflight validates reviewer configuration, executable availability,
 timeout, and writable review destinations before spawning a provider.
 
+Review handoffs define the meaning of ownership evidence whenever reviewers must
+validate it. For Mission `owned_paths`, each digest identifies both the entry type
+and its contents. SHA-256 covers the literal `file:` prefix followed by file bytes,
+or `executable:` followed by file bytes for an executable file. A symbolic link uses
+`symlink:` followed by its link target. A deleted path has a `null` digest.
+
+The same rule applies to primary review, repair verification, and arbitration.
+Reviewers compare evidence using its declared digest convention. Plain file hashes
+are not interchangeable with ownership digests. Handoffs provide enough context to
+interpret evidence without requiring reviewers to guess the encoding.
+
 Interactive mode returns findings to the implementation owner one round at a time.
 Automatic mode uses bounded stages: primary review, optional artifact repair,
 resolver execution, and fresh arbitration. Limits prevent an unbounded repair loop.

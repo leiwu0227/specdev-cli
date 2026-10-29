@@ -24,6 +24,29 @@ contracts, reviews, evidence, commands, environment, cleanup, and excluded dirt.
 Exact confirmation supersedes the predecessor without rerunning a provider or
 claiming unrelated work.
 
+A failed Mission retains its original failure and remains eligible for explicit
+closure with accepted limitations. Entering terminal failure records the failure
+state, checkpoint, and transition history in an exact local commit. This durable
+boundary preserves the actual failed state for later recovery.
+
+Successor handoff creates a fresh Assignment with its own approval boundary. It
+preserves the failed Mission's execution history and evidence. Handoff releases only
+owned focus so the successor can proceed. Successor delivery does not retire the
+predecessor's closure or recovery records. New evidence remains linked to the
+original failure; it does not rewrite that failure as success.
+
+Accepted closure uses a written acceptance note and explicit confirmation of an
+unchanged plan. It records status `closed`, outcome `accepted-with-limitations`,
+and incomplete verification. The original failure, evidence, and terminal execution
+history remain intact. Missing or inconsistent history requires explicit recovery;
+a Mission status label alone cannot replace it. Closure does not restart a failed
+lifecycle or claim that all acceptance criteria passed.
+
+Foreground focus selects the work item for interaction. Runtime focus identifies
+the scheduler that owns execution. Changing foreground focus does not restore or
+activate a runtime. Recovery and closure diagnostics identify which focus conflicts,
+its owner, and the required next action. They never displace another workflow.
+
 Mission completion requires an integrated reviewed candidate and passing final
 verification. It records a durable outcome and exact Mission commit, then attempts
 landing automatically. Landing validates source and destination branches, ancestry,
@@ -52,3 +75,7 @@ into focused modules so those ceilings can fall.
 - `src/utils/mission-landing.js` — maximum 300 lines — landing validation and Git operation.
 - `src/commands/mission-abandon.js` — maximum 1000 lines — two-step abandonment transaction.
 - `src/utils/mission-compatibility.js` — maximum 450 lines — current-state compatibility checks.
+- `src/commands/mission.js` — maximum 5000 lines — terminal failure publication and successor handoff; retain the parent note's transitional cap.
+- `src/commands/mission-close.js` — maximum 600 lines — accepted closure with preserved failure history and exact confirmation.
+- `src/utils/mission-closure-delivery.js` — maximum 150 lines — exact closure publication and retry recovery.
+- `src/commands/focus.js` — maximum 120 lines — foreground selection distinct from execution ownership.
