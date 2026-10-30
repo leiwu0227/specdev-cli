@@ -48,7 +48,13 @@ export async function assignmentBoundaryCommand(root, specdev, args, flags = {})
     if (recovery?.phase === 'pending') {
       if (flags.confirm !== recovery.digest)
         throw new Error('Boundary recovery is pending; retry its exact --confirm digest')
-      const actual = await snapshot(root, specdev, resolved, recovery.original_status, quiescent)
+      const actual = await snapshot(
+        root,
+        specdev,
+        resolved,
+        recovery.plan.snapshot.status,
+        quiescent
+      )
       // Review reset is the only candidate artifact changed by recovery itself.
       if (
         ![recovery.plan.snapshot.review, resetReview(recovery.digest)].some(
@@ -88,8 +94,6 @@ export async function assignmentBoundaryCommand(root, specdev, args, flags = {})
       ) !== boundaryHash(plan.snapshot)
     )
       throw new Error('Boundary inputs changed during confirmation; preview again')
-    const originalStatus = { ...status }
-    delete originalStatus.boundary_recovery
     status = await atomicJson(join(path, 'status.json'), {
       ...status,
       updated_at: new Date().toISOString(),
@@ -98,7 +102,6 @@ export async function assignmentBoundaryCommand(root, specdev, args, flags = {})
         phase: 'pending',
         digest: plan.digest,
         plan,
-        original_status: originalStatus,
         requires_reapproval: plan.assessment.contract === 'changed',
       },
     })

@@ -233,6 +233,14 @@ try {
       console.log = log
       process.exitCode = 0
     }
+    const pendingStatus = JSON.parse(readFileSync(join(interrupted.path, 'status.json')))
+    assert.equal(pendingStatus.boundary_recovery.original_status, undefined)
+    if (phase === 'applied') {
+      // Older pending records carried this extra field outside the confirmed plan.
+      pendingStatus.boundary_recovery.original_status =
+        pendingStatus.boundary_recovery.plan.snapshot.status
+      write(join(interrupted.path, 'status.json'), pendingStatus)
+    }
     assert.equal(
       run(interrupted.root, [
         'assignment',
