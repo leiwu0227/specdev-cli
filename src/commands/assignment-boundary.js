@@ -340,13 +340,10 @@ async function applyRecovery(root, specdev, resolved, status) {
   }
   await discardReviewerContinuationLease(specdev, resolved.path)
   await atomicJson(join(resolved.path, reviewFile), resetReview(digest))
-  let events = await lifecycleEvents(specdev, status.run_id)
-  if (
-    !events.some(
-      (event) =>
-        event.output?.actionId === 'assignment-boundary' && event.output?.output?.digest === digest
-    )
-  ) {
+  const matchesEvent = (event) =>
+    event.output?.actionId === 'assignment-boundary' && event.output?.output?.digest === digest
+  let event = (await lifecycleEvents(specdev, status.run_id)).find(matchesEvent)
+  if (!event) {
     recordSideChannelAction({
       workflowRoot: specdev,
       actionId: 'assignment-boundary',
@@ -354,12 +351,8 @@ async function applyRecovery(root, specdev, resolved, status) {
       output: { digest },
       note: 'User accepted intervening commits; contract and review obligations remain separate',
     })
-    events = await lifecycleEvents(specdev, status.run_id)
+    event = (await lifecycleEvents(specdev, status.run_id)).find(matchesEvent)
   }
-  const event = events.find(
-    (item) =>
-      item.output?.actionId === 'assignment-boundary' && item.output?.output?.digest === digest
-  )
   await atomicJson(join(resolved.path, 'status.json'), {
     ...status,
     updated_at: new Date().toISOString(),

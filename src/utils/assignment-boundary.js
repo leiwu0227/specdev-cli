@@ -84,11 +84,11 @@ export async function readBoundaryRecovery(path) {
     join(specdev, '.ripplegraph', 'runs', status.run_id, 'transition-log.jsonl')
   )
   const events = logExists ? await lifecycleEvents(specdev, status.run_id) : null
-  if (
-    events
-      ? !events.some((item) => boundaryHash(item) === boundaryHash(event))
-      : !terminal.has(status.status)
-  )
+  const containsEvent = (expected) => {
+    const digest = boundaryHash(expected)
+    return events.some((item) => boundaryHash(item) === digest)
+  }
+  if (events ? !containsEvent(event) : !terminal.has(status.status))
     throw new Error('Boundary recovery lifecycle history is missing or inconsistent')
   if (recovery.approval) {
     const approvalEvent = recovery.approval_event
@@ -97,7 +97,7 @@ export async function readBoundaryRecovery(path) {
       approvalEvent.output?.actionId !== 'assignment-boundary-reapproval' ||
       approvalEvent.output?.input?.digest !== digest ||
       boundaryHash(approvalEvent.output?.output) !== boundaryHash(recovery.approval) ||
-      (events && !events.some((item) => boundaryHash(item) === boundaryHash(approvalEvent)))
+      (events && !containsEvent(approvalEvent))
     )
       throw new Error('Boundary contract reapproval has no matching lifecycle authorization')
   }
