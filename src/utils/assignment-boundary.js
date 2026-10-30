@@ -21,14 +21,17 @@ export const readJson = async (path) =>
     if (error.code === 'ENOENT') return null
     throw error
   })
-export async function fileDigest(root, path) {
-  if (
-    typeof path !== 'string' ||
-    path.startsWith('/') ||
-    path.includes('\\') ||
-    path.split('/').some((part) => !part || part === '.' || part === '..')
+export function isRepositoryPath(path) {
+  return (
+    typeof path === 'string' &&
+    !path.startsWith('/') &&
+    !path.includes('\\') &&
+    path.split('/').every((part) => part && part !== '.' && part !== '..')
   )
-    throw new Error(`Invalid repository path: ${path}`)
+}
+
+export async function fileDigest(root, path) {
+  if (!isRepositoryPath(path)) throw new Error(`Invalid repository path: ${path}`)
   try {
     const stat = await fse.lstat(join(root, path))
     const bytes = stat.isSymbolicLink()

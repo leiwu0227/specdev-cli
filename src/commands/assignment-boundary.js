@@ -3,6 +3,7 @@ import {
   terminal,
   readJson,
   fileDigest,
+  isRepositoryPath,
   lifecycleEvents,
 } from '../utils/assignment-boundary.js'
 import { execFileSync } from 'node:child_process'
@@ -248,13 +249,7 @@ async function buildPlan(root, specdev, resolved, status, flags, quiescent) {
     if (assessment.contract === 'compatible' && contract.hash !== approval.contract_hash)
       throw new Error('Changed contract requires material-scope assessment and normal reapproval')
     for (const path of assessment.owned_paths) {
-      if (
-        typeof path !== 'string' ||
-        path.startsWith('/') ||
-        path.includes('\\') ||
-        path.split('/').some((part) => !part || part === '.' || part === '..') ||
-        path.startsWith('.specdev/')
-      )
+      if (!isRepositoryPath(path) || path.startsWith('.specdev/'))
         throw new Error(`Invalid owned product path: ${path}`)
     }
     if (assessment.contract === 'changed' && assessment.reuse_evidence.length)

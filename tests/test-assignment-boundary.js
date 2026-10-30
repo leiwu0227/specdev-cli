@@ -94,6 +94,14 @@ process.stdout.write(process.argv.includes('json') ? JSON.stringify({ session_id
 }
 try {
   const f = fixture()
+  const assessmentBytes = readFileSync(f.assessment, 'utf8')
+  for (const path of ['../outside', '.specdev/agents.yaml']) {
+    write(f.assessment, { ...JSON.parse(assessmentBytes), owned_paths: [path] })
+    assert.match(run(f.root, f.args, 1).error, /Invalid owned product path/)
+  }
+  write(f.assessment, assessmentBytes)
+  await assert.rejects(fileDigest(f.root, '../outside'), /Invalid repository path/)
+  assert.match(await fileDigest(f.root, '.specdev/agents.yaml'), /^[a-f0-9]{64}$/)
   const preview = run(f.root, f.args)
   assert.equal(preview.plan.original_boundary, f.before)
   assert.equal(preview.plan.commits.length, 1)
