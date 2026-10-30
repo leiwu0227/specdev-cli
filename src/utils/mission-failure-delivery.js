@@ -8,7 +8,7 @@ import { writeMission } from './mission.js'
 import { assertMissionCheckout } from './mission-checkout.js'
 import { inspectTree, safeStat } from './retention-files.js'
 import { assertInactiveAttempts, retentionAttempts, matchesOwner } from './cache-retention.js'
-import { missionChildOwners, retentionOwners } from './retention-owners.js'
+import { retentionOwners } from './retention-owners.js'
 import {
   commitExactDelivery,
   findCommitByTrailer,
@@ -59,7 +59,9 @@ export async function releaseFailedMissionFocus({ specdevPath, mission }) {
     throw new Error(
       `Ambiguous failed Mission runtime owner: ${mission.run_id}; resolve ownership before handoff`
     )
-  const children = await missionChildOwners(specdevPath, mission.id)
+  const children = owners
+    .filter((item) => item.owner.assignment && item.state?.mission === mission.id)
+    .map((item) => item.owner)
   const attempts = (await retentionAttempts(specdevPath)).filter((attempt) =>
     [{ mission: mission.id }, ...children].some((owner) => matchesOwner(attempt, owner))
   )

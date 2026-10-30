@@ -94,7 +94,8 @@ export async function missionChildOwners(specdevPath, mission) {
 
 export async function completedChildRuntimes(specdevPath, mission, parentRunId) {
   if (!mission) return []
-  const children = (await retentionOwners(specdevPath)).filter(
+  const owners = await retentionOwners(specdevPath)
+  const children = owners.filter(
     (item) =>
       item.owner.assignment && item.state?.mission === mission && item.status === 'completed'
   )
@@ -106,7 +107,7 @@ export async function completedChildRuntimes(specdevPath, mission, parentRunId) 
     if (!safeStat(specdevPath, path)) continue
     if (readCurrent(specdevPath).focusedRunId === id)
       throw new Error('cannot clean focused Mission child runtime')
-    await assertRuntimeCompactionOwner(specdevPath, id, child.owner, new Set(['completed']))
+    assertCompactionOwner(owners, id, child.owner, new Set(['completed']))
     inspectTree(specdevPath, path)
     if (
       safeStat(specdevPath, join(path, 'checkpoint.json')) &&
@@ -119,7 +120,10 @@ export async function completedChildRuntimes(specdevPath, mission, parentRunId) 
 }
 
 export async function assertRuntimeCompactionOwner(specdevPath, runId, owner, allowedStatuses) {
-  const owners = await retentionOwners(specdevPath)
+  assertCompactionOwner(await retentionOwners(specdevPath), runId, owner, allowedStatuses)
+}
+
+function assertCompactionOwner(owners, runId, owner, allowedStatuses) {
   const references = owners.filter((item) => item.state?.run_id === runId)
   const roots = references.filter((item) => !item.state?.mission)
   const matches = roots.length ? roots : references
