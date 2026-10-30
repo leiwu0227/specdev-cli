@@ -31,6 +31,12 @@ Inline and spawned modes share the same contract, artifacts, evidence, candidate
 identity, review policy, and delivery rules. Plans translate authority into work but
 cannot redefine it.
 
+An intervening commit does not silently replace a standalone Assignment's Git
+boundary. Explicit [boundary recovery](./assignment_boundary_recovery.md) can
+accept a reviewed commit range while preserving the Assignment identity and original
+approval provenance. Contract authority, evidence applicability, and required review
+remain separate obligations. Material scope changes require contract reapproval.
+
 Acceptance evidence addresses every criterion and remains bound to the current
 candidate. Candidate preflight keeps predictable artifact repair with the
 implementation owner before reviewer resources are used. Review findings return to
@@ -48,7 +54,7 @@ detour only at supported quiescent pre-execution boundaries and must be revalida
 before the Assignment advances.
 
 Child designs own execution modes, selective context, candidate preflight, reviewer
-continuation, and terminal operations.
+continuation, boundary recovery, and terminal operations.
 
 ## Source Targets
 

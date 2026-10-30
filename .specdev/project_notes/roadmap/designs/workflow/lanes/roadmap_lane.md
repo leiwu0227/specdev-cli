@@ -67,6 +67,22 @@ future work outside architecture, rather than gaps derived from designs.
 Roadmap grants no implementation authority. It creates no identity, graph, or
 receipt and requires no exit transition.
 
+## Publication during Assignment work
+
+Roadmap publication may coexist with an active Assignment, but publication approval
+does not amend its contract, adopt intervening commits, or waive review. Before
+publication, identify any established Assignment Git boundary and explain the effect
+of moving HEAD. Keep the publication commit limited to approved design paths;
+preserve implementation work and unrelated artifacts.
+
+If publication moves HEAD beyond an established standalone Assignment boundary,
+resume through explicit [Assignment boundary recovery](./assignment/assignment_boundary_recovery.md).
+Reassess the design against the approved contract. Material scope changes require
+contract reapproval even when the publication changes only Markdown. Guidance names
+the supported recovery command and distinguishes target behavior from commands
+available in the installed version. It never recommends manual state edits or
+silently resetting the boundary. Mission children remain under parent authority.
+
 ## Source Targets
 
 - `src/commands/roadmap.js` — maximum 140 lines — Roadmap rules and JSON/text output.
