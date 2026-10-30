@@ -20,6 +20,10 @@ export async function assertRetainedMissionRecords(targetDir) {
     .split('\n')
     .filter((path) => /^\.specdev\/missions\/M\d{5}_[^/]+\/mission.yaml$/.test(path))
   let owners
+  const deletedAssignments = deleted.filter((path) =>
+    /^\.specdev\/assignments\/[^/]+\/status.json$/.test(path)
+  )
+  const deletedAttempts = deleted.filter((path) => /^\.specdev\/processes\/[^/]+\.yaml$/.test(path))
   const deletedRecords = new Map()
   async function deletedRecord(path, decode) {
     if (!deletedRecords.has(path))
@@ -41,12 +45,15 @@ export async function assertRetainedMissionRecords(targetDir) {
     owners ??= await retentionOwners(join(targetDir, '.specdev'))
     const children = owners
       .filter((item) => item.state?.mission === mission.id)
-      .map((item) => ({ folder: item.owner.assignment, ...item.state }))
-    for (const entry of deleted.filter((entry) =>
-      /^\.specdev\/assignments\/[^/]+\/status.json$/.test(entry)
-    )) {
+      .map((item) => ({
+        id: item.state.id,
+        run_id: item.state.run_id,
+        folder: Object.hasOwn(item.state, 'folder') ? item.state.folder : item.owner.assignment,
+      }))
+    for (const entry of deletedAssignments) {
       const state = await deletedRecord(entry, JSON.parse)
-      if (state.mission === mission.id) children.push({ ...state, folder: entry.split('/')[2] })
+      if (state.mission === mission.id)
+        children.push({ id: state.id, run_id: state.run_id, folder: entry.split('/')[2] })
     }
     const roots = [
       dirname(path) + '/',
@@ -58,9 +65,7 @@ export async function assertRetainedMissionRecords(targetDir) {
     ]
 
     const lost = deleted.filter((entry) => roots.some((root) => entry.startsWith(root)))
-    for (const entry of deleted.filter((entry) =>
-      /^\.specdev\/processes\/[^/]+\.yaml$/.test(entry)
-    )) {
+    for (const entry of deletedAttempts) {
       const attempt = await deletedRecord(entry, parse)
       if (
         attempt?.mission === mission.id ||
