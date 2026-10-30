@@ -1,4 +1,6 @@
 import { join } from 'node:path'
+import { recordSideChannelAction } from 'ripplegraph'
+import { readBoundaryRecovery, lifecycleEvents } from '../utils/assignment-boundary.js'
 import fse from 'fs-extra'
 import { parseResultEnvelope } from '../utils/result-envelope.js'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
@@ -35,7 +37,9 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     process.exitCode = 1
     return
   }
-  if (state.position.node !== 'approve-contract') {
+  const recovery = await readBoundaryRecovery(assignmentPath)
+  const boundaryReapproval = recovery?.requires_reapproval && !recovery.approval
+  if (state.position.node !== 'approve-contract' && !boundaryReapproval) {
     console.error(
       'The Assignment is not awaiting contract approval. Run specdev checkpoint brainstorm first.'
     )
@@ -98,13 +102,29 @@ export async function approveCommand(positionalArgs = [], flags = {}) {
     review_policy: reviewPolicy,
     ...(git.revision ? { revision: git.revision } : {}),
   }
-  const result = decideGuidedNode(targetDir, 'approve-contract', decision)
+  if (boundaryReapproval && git.revision !== recovery.plan.snapshot.head)
+    throw new Error('HEAD changed during contract reapproval; recover the boundary before approval')
+  let approvalEvent
+  let result
+  if (boundaryReapproval) {
+    recordSideChannelAction({
+      workflowRoot: join(targetDir, '.specdev'),
+      actionId: 'assignment-boundary-reapproval',
+      input: { digest: recovery.digest },
+      output: decision,
+    })
+    approvalEvent = (await lifecycleEvents(join(targetDir, '.specdev'), statusRecord.run_id)).at(-1)
+    result = { synchronized: true }
+  } else result = decideGuidedNode(targetDir, 'approve-contract', decision)
   if (!result.synchronized) {
     console.error('Could not record contract approval in the focused Assignment workflow')
     process.exitCode = 1
     return
   }
   await writeAssignmentStatus(assignmentPath, {
+    ...(boundaryReapproval
+      ? { boundary_recovery: { ...recovery, approval: decision, approval_event: approvalEvent } }
+      : {}),
     review_policy: reviewPolicy,
     review_policy_frozen_at: decision.approved_at,
     approved_at: decision.approved_at,

@@ -13,110 +13,82 @@ interactive Brainstorm
   -> complete
 ```
 
-The single `brainstorm/contract.md` records objective, scope/non-goals,
-behavior, decisions, constraints, authority, risks, verification authority, and
-inline acceptance IDs. Do not create a parallel YAML projection.
+The single `brainstorm/contract.md` records objective, scope/non-goals, behavior, decisions, constraints, authority,
+risks, verification authority, and inline acceptance IDs. Do not create a parallel YAML projection.
 
-Keep the contract proportional to the change. Reference existing project notes
-and repository rules instead of repeating them. State only decisions or
-constraints specific to this work. Use the fewest independent observable
-acceptance criteria: normally 1-3 for a small change and rarely more than 5.
-Implementation tasks, file lists, generic quality expectations, and repeated
-project conventions belong in the plan or existing guidance, not acceptance
-criteria. A required section may say that no change-specific item exists.
+Keep the contract proportional to the change. Reference existing project notes and repository rules instead of repeating
+them. State only decisions or constraints specific to this work. Use the fewest independent observable acceptance
+criteria: normally 1-3 for a small change and rarely more than 5. Implementation tasks, file lists, generic quality
+expectations, and repeated project conventions belong in the plan or existing guidance, not acceptance criteria. A
+required section may say that no change-specific item exists.
 
-Plan the simplest complete implementation of approved behavior. Understand the
-affected flow and callers, reuse existing code and project patterns, and prefer
-suitable standard-library, native, or installed capabilities before new machinery.
-Stop searching once you have a sound approach within scope. Fix root causes.
-Abstractions, dependencies, configuration, compatibility paths, and fallbacks need
-a concrete current reason. Preserve readability and useful architecture.
-A single caller or a line count alone does not show whether a design is sound.
+Plan the simplest complete implementation of approved behavior. Understand the affected flow and callers, reuse existing
+code and project patterns, and prefer suitable standard-library, native, or installed capabilities before new machinery.
+Stop searching once you have a sound approach within scope. Fix root causes. Abstractions, dependencies, configuration,
+compatibility paths, and fallbacks need a concrete current reason. Preserve readability and useful architecture. A
+single caller or a line count alone does not show whether a design is sound.
 
-In either execution mode, including Mission children and repairs, resolve routine
-choices within delegated authority. Ask only when material unknowns affect behavior,
-scope, or authority, or an actual conflict prevents delivery. Hypothetical concerns
-alone should not block work. Preserve required validation, security, accessibility,
-error handling, and acceptance evidence. Verify proportionally with authorization,
-reuse valid receipts, and finish when approved behavior and delivery obligations
-are complete. Document actual limitations and revisit triggers in existing artifacts
-or comments when useful; do not create a debt ledger or speculative follow-up work.
+In either execution mode, including Mission children and repairs, resolve routine choices within delegated authority.
+Ask only when material unknowns affect behavior, scope, or authority, or an actual conflict prevents delivery.
+Hypothetical concerns alone should not block work. Preserve required validation, security, accessibility, error
+handling, and acceptance evidence. Verify proportionally with authorization, reuse valid receipts, and finish when
+approved behavior and delivery obligations are complete. Document actual limitations and revisit triggers in existing
+artifacts or comments when useful; do not create a debt ledger or speculative follow-up work.
 
-After implementation, complete one required simplification checkpoint before final
-verification and delivery. Look for duplicated logic, production paths used only by
-tests, hard-coded checks, unnecessary data structures, repeated traversals, and
-excess abstraction. Preserve functionality, performance, required validation, and
-approved roadmap designs. Fewer loops or checks alone are not improvements. Prefer
-existing code and straightforward functions; do not introduce classes during this
-pass. Make only clear improvements within the approved scope. Edits are optional;
-if none are warranted, proceed unchanged. Record the result and any broader
-opportunity worth deferring in the existing delivery artifact. Do not create a new
-document or repeat cleanup indefinitely. Run only affected, authorized checks after
-edits and reuse valid evidence when unchanged.
+After implementation, complete one required simplification checkpoint before final verification and delivery. Look for
+duplicated logic, production paths used only by tests, hard-coded checks, unnecessary data structures, repeated
+traversals, and excess abstraction. Preserve functionality, performance, required validation, and approved roadmap
+designs. Fewer loops or checks alone are not improvements. Prefer existing code and straightforward functions; do not
+introduce classes during this pass. Make only clear improvements within the approved scope. Edits are optional; if none
+are warranted, proceed unchanged. Record the result and any broader opportunity worth deferring in the existing delivery
+artifact. Do not create a new document or repeat cleanup indefinitely. Run only affected, authorized checks after edits
+and reuse valid evidence when unchanged.
 
-Record the brief result under `## Delivered behavior` in `outcome.md`. Required
-independent review inspects the final candidate, including any simplification.
+Record the brief result under `## Delivered behavior` in `outcome.md`. Required independent review inspects the final
+candidate, including any simplification.
 
-`design/plan.md` uses ordered Task IDs and acceptance references. Tasks run
-inline by default; they do not imply subagents, worktrees, commits, reviews, or
-full suites. `implementation/progress.json` owns compact Task state, selected
-guide IDs and versions, verification receipts, structured `deviations`, and
-`follow_up`. `outcome.md` uses the generated canonical structure: `# Outcome`,
-followed by `## Delivered behavior`, `## Deviations`, `## Unresolved risks`,
-and exactly one three-column `Acceptance | Evidence | Result` table. Each
-acceptance ID maps to evidence and a final `Passed`, `Failed`, or `Blocked`
-result. Verification receipts classify each command as `qualification` or
-`authoritative_acceptance`; classification records evidence and never grants
-authority to run a command. A waived implementation review completes only when every acceptance
-criterion is Passed, all receipts passed, deviations are empty, and follow-up
-is `none`.
+`design/plan.md` uses ordered Task IDs and acceptance references. Tasks run inline by default; they do not imply
+subagents, worktrees, commits, reviews, or full suites. `implementation/progress.json` owns compact Task state, selected
+guide IDs and versions, verification receipts, structured `deviations`, and `follow_up`. `outcome.md` uses the generated
+canonical structure: `# Outcome`, followed by `## Delivered behavior`, `## Deviations`, `## Unresolved risks`, and
+exactly one three-column `Acceptance | Evidence | Result` table. Each acceptance ID maps to evidence and a final
+`Passed`, `Failed`, or `Blocked` result. Verification receipts classify each command as `qualification` or
+`authoritative_acceptance`; classification records evidence and never grants authority to run a command. A waived
+implementation review completes only when every acceptance criterion is Passed, all receipts passed, deviations are
+empty, and follow-up is `none`.
 
-Every Assignment handoff receives a replaceable selective context catalog,
-ordered as binding authority, current task state, bounded supporting paths, and
-permitted same-role history. Entries identify repository-relative durable paths
-and purposes; they never copy source contents or replace the owning artifacts.
-Missing required authority or task evidence blocks. Optional supporting context
-may be absent, but absence never grants permission. Regenerate the projection
-on retry or material change. A first independent reviewer receives no author
-history, later primary rounds may receive durable prior findings, and fresh
-resolver or arbiter roles receive findings as task evidence rather than inherited
-reasoning. Mission children may only narrow the parent-selected supporting
-envelope and cannot expand parent or child authority.
+Every Assignment handoff receives a replaceable selective context catalog, ordered as binding authority, current task
+state, bounded supporting paths, and permitted same-role history. Entries identify repository-relative durable paths and
+purposes; they never copy source contents or replace the owning artifacts. Missing required authority or task evidence
+blocks. Optional supporting context may be absent, but absence never grants permission. Regenerate the projection on
+retry or material change. A first independent reviewer receives no author history, later primary rounds may receive
+durable prior findings, and fresh resolver or arbiter roles receive findings as task evidence rather than inherited
+reasoning. Mission children may only narrow the parent-selected supporting envelope and cannot expand parent or child
+authority.
 
-For a standalone Assignment, the first primary implementation reviewer is
-always fresh. A Claude review that requests ordinary repair may create one
-ignored, 24-hour, single-use continuation lease for the immediately following
-primary repair verification. The lease binds the exact Assignment, role,
-provider session, frozen profile and permissions, contract, canonical working
-directory, candidate, findings, source Attempt, and round. Any mismatch,
-missing or expired state, unrelated candidate path, malformed capture, or resume
-failure produces an observable fresh read-only fallback. A failed resume permits
-only one fresh fallback. Each continued round is a distinct Attempt with a new
-verdict; durable findings and receipts stay
-authoritative. Resolver, arbiter, Mission, format-correction, non-reviewer, and
-other-provider paths remain fresh-only. Claude provider-local transcript
-persistence enables exact resume, but SpecDev does not retain that transcript or
-raw session identity as durable evidence.
+For a standalone Assignment, the first primary implementation reviewer is always fresh. A Claude review that requests
+ordinary repair may create one ignored, 24-hour, single-use continuation lease for the immediately following primary
+repair verification. The lease binds the exact Assignment, role, provider session, frozen profile and permissions,
+contract, canonical working directory, candidate, findings, source Attempt, and round. Any mismatch, missing or expired
+state, unrelated candidate path, malformed capture, or resume failure produces an observable fresh read-only fallback. A
+failed resume permits only one fresh fallback. Each continued round is a distinct Attempt with a new verdict; durable
+findings and receipts stay authoritative. Resolver, arbiter, Mission, format-correction, non-reviewer, and
+other-provider paths remain fresh-only. Claude provider-local transcript persistence enables exact resume, but SpecDev
+does not retain that transcript or raw session identity as durable evidence.
 
-Installed configuration uses `implementation.mode: auto | inline | spawned` in
-`.specdev/agents.yaml`; omission is `auto`. For an ordinary standalone
-Assignment, `auto` freezes to `inline` at the Git boundary and returns a
-structured contract for the foreground agent to write the plan, progress,
-outcome, result, product changes, and authorized evidence. Rerun
-`specdev implement` to validate those artifacts and advance to independent
-review. Use fixed `spawned` configuration for unattended automation that relied
-on the former mandatory worker launch, or select `--spawned` before the boundary
-with a bounded `--execution-reason`. Mission children inherit their Mission-wide
-explicit post-approval choice instead of resolving this standalone default.
+Installed configuration uses `implementation.mode: auto | inline | spawned` in `.specdev/agents.yaml`; omission is
+`auto`. For an ordinary standalone Assignment, `auto` freezes to `inline` at the Git boundary and returns a structured
+contract for the foreground agent to write the plan, progress, outcome, result, product changes, and authorized
+evidence. Rerun `specdev implement` to validate those artifacts and advance to independent review. Use fixed `spawned`
+configuration for unattended automation that relied on the former mandatory worker launch, or select `--spawned` before
+the boundary with a bounded `--execution-reason`. Mission children inherit their Mission-wide explicit post-approval
+choice instead of resolving this standalone default.
 
-When a spawned worker returns blocked, its partial code and artifacts remain in
-place. A normal rerun reports the same blocker instead of launching another
-provider call. Once the current coding session has completed the artifacts and
-changed `worker-result.md` to `status: completed`, rerun `specdev implement` to
-reuse them. Use `specdev implement --retry-worker` only when the frozen mode is
-spawned and a fresh automatic Attempt is intended. Inline review and artifact
-repairs return bounded obligations to the foreground owner; they do not launch
-a repair worker.
+When a spawned worker returns blocked, its partial code and artifacts remain in place. A normal rerun reports the same
+blocker instead of launching another provider call. Once the current coding session has completed the artifacts and
+changed `worker-result.md` to `status: completed`, rerun `specdev implement` to reuse them. Use `specdev implement
+--retry-worker` only when the frozen mode is spawned and a fresh automatic Attempt is intended. Inline review and
+artifact repairs return bounded obligations to the foreground owner; they do not launch a repair worker.
 
 Review policy is separate from behavior authority:
 
@@ -125,37 +97,41 @@ brainstorm: optional # optional | required
 implementation: required # required | waived
 ```
 
-Set it at Assignment creation with `--brainstorm-review` and
-`--implementation-review`, or on `specdev approve brainstorm`. Approval freezes
-it with the contract hash.
+Set it at Assignment creation with `--brainstorm-review` and `--implementation-review`, or on `specdev approve
+brainstorm`. Approval freezes it with the contract hash.
 
-Standalone Brainstorm review is optional by default. Multi-child Mission
-contracts receive it because the Mission supplies child approval. A single
-full-scope Mission child is derived from the approved parent and skips duplicate
-contract author/reviewer calls, while its implementation review remains
-required.
+Standalone Brainstorm review is optional by default. Multi-child Mission contracts receive it because the Mission
+supplies child approval. A single full-scope Mission child is derived from the approved parent and skips duplicate
+contract author/reviewer calls, while its implementation review remains required.
 
 ## User-accepted delivery with limitations
 
-When an approved standalone implementation cannot pass acceptance preflight, the
-user can explicitly accept its current delivery and limitations. Save a written
-acceptance note, then preview:
+When an approved standalone implementation cannot pass acceptance preflight, the user can explicitly accept its current
+delivery and limitations. Save a written acceptance note, then preview:
 
-```sh
-specdev assignment close <id> --outcome=accepted-with-limitations --evidence=<note>
-```
+`specdev assignment close <id> --outcome=accepted-with-limitations --evidence=<note>`
 
-Show the user the exact candidate, contract, failed or missing evidence, review
-facts, owned paths, and effects. A generic approval does not accept limitations.
-After explicit user acceptance, repeat with the displayed `--confirm=<digest>`.
-A changed candidate or evidence requires a new preview and acceptance. The note
-must be in this Assignment or a durable repository path outside other workflows.
+Show the user the exact candidate, contract, failed or missing evidence, review facts, owned paths, and effects. A
+generic approval does not accept limitations. After explicit user acceptance, repeat with the displayed
+`--confirm=<digest>`. A changed candidate or evidence requires a new preview and acceptance. The note must be in this
+Assignment or a durable repository path outside other workflows.
 
-Closure records a distinct terminal outcome and an exact local commit. It retains
-code, artifacts, failures and runtime history, without claiming verification or
-review passed. It stops owned execution and releases focus for a subsequent Adhoc.
-Live or ambiguous Attempts and Mission children cannot close this way. Use normal
-review and delivery when acceptance evidence is complete.
+Closure records a distinct terminal outcome and an exact local commit. It retains code, artifacts, failures and runtime
+history, without claiming verification or review passed. It stops owned execution and releases focus for a subsequent
+Adhoc. Live or ambiguous Attempts and Mission children cannot close this way. Use normal review and delivery when
+acceptance evidence is complete.
 
-If interrupted, retry with the same note path and confirmed digest. Do not edit
-closure state or reopen the terminal Assignment. The command never pushes.
+If interrupted, retry with the same note path and confirmed digest. Do not edit closure state or reopen the terminal
+Assignment. The command never pushes.
+
+## Recover an intervening Git commit
+
+If HEAD moved after implementation started, inspect with `specdev assignment revalidate-boundary <id>`. Supply
+`--assessment=<json>` with `contract` (`compatible` or `changed`), `reason`, exact product `owned_paths`, and
+`reuse_evidence` receipt indices (normally empty). Show the preview to the user before adding `--confirm=<digest>`.
+Changed inputs require a fresh preview. Recovery preserves the original boundary and resets affected review authority.
+Evidence without matching recorded `input_digests` must be rerun; archive invalidated receipts before review. Material
+scope changes require an updated contract, `specdev checkpoint brainstorm`, and normal user approval through `specdev
+approve brainstorm` before continuation. Resume with `specdev implement`; required review remains required. Recovery
+excludes unrelated dirty paths from delivery and never pushes or rewrites Git history. Roadmap publication can move
+HEAD, but its approval does not amend the Assignment contract. Mission children use parent-controlled recovery instead.

@@ -81,7 +81,7 @@ export async function roadmapCommand(flags = {}) {
       writes: 'Only the reported roadmap paths after explicit user approval.',
     },
     history:
-      'No Roadmap IDs, workflow state, receipts, or snapshots. Draft writes are not committed automatically; published design-note changes are committed after user approval.',
+      'No Roadmap IDs, workflow state, receipts, or snapshots. Draft writes are not committed automatically; published design-note changes are committed after user approval. Before publication, identify an active Assignment Git boundary and explain that moving HEAD requires specdev assignment revalidate-boundary <id>. Publication does not amend the contract or waive review. Keep the commit limited to approved design paths; Mission children remain under parent authority.',
     next_action:
       'Read the current roadmap, agree one intended edit, report its destination and concise scope, and wait for explicit user approval before writing a draft.',
   }

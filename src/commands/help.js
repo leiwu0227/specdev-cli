@@ -24,6 +24,7 @@ export function helpCommand(flags = {}) {
     '  specdev approve brainstorm          # only after explicit user agreement',
     '  specdev implement                   # auto defaults to foreground inline execution',
     '  specdev implement --spawned --execution-reason="unattended run"',
+    '  specdev assignment revalidate-boundary 00001  # inspect intervening commits before explicit confirmation',
     '  specdev assignment shelf 00001 --reason="pause useful unfinished work"',
     '  specdev assignment close 00001 --outcome=accepted-with-limitations --evidence=<acceptance-note>',
     '  specdev assignment close 00001 --outcome=unsupported --reason="verified limit" --evidence=<path>',

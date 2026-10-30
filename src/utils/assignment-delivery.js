@@ -1,9 +1,11 @@
 import { assertRetainedMissionRecords } from './mission-retention.js'
+import { readBoundaryRecovery, recoveredDeliveryPaths } from './assignment-boundary.js'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import fse from 'fs-extra'
 import {
   commitDelivery,
+  commitExactDelivery,
   currentGitBranch,
   findCommitByTrailer,
   findCommitsByTrailer,
@@ -278,6 +280,7 @@ export async function ensureAssignmentGitBoundary({
   }
 
   const currentHead = await requireGitHead(targetDir)
+  await readBoundaryRecovery(assignmentPath)
   if (assignmentStatus?.git_boundary?.starting_git_commit_hash) {
     if (currentHead !== assignmentStatus.git_boundary.starting_git_commit_hash) {
       return {
@@ -285,8 +288,7 @@ export async function ensureAssignmentGitBoundary({
         state: 'head_changed',
         starting_git_commit_hash: assignmentStatus.git_boundary.starting_git_commit_hash,
         current_git_commit_hash: currentHead,
-        next_action:
-          'Inspect the intervening commits and restore or deliberately restart the Assignment boundary; SpecDev will not silently absorb them.',
+        next_action: `Inspect and explicitly accept the intervening range with specdev assignment revalidate-boundary ${assignmentStatus.id}; SpecDev will not silently absorb it.`,
       }
     }
     if (implementationExecution && !assignmentStatus?.implementation_execution) {
@@ -369,14 +371,24 @@ export async function finalizeStandaloneAssignmentDelivery({
   }
 
   await assertRetainedMissionRecords(targetDir)
-  await stageOwnedChanges(targetDir)
-  const endingGitCommitHash = await commitDelivery(targetDir, {
+  const exactPaths = await recoveredDeliveryPaths(targetDir, assignmentPath, assignmentStatus)
+  if (!exactPaths) await stageOwnedChanges(targetDir)
+  const options = {
     subject: `specdev(assignment): deliver ${id}`,
     trailers: {
       'SpecDev-Assignment': id,
       'SpecDev-Commit-Type': 'delivery',
     },
-  })
+  }
+  const endingGitCommitHash = exactPaths
+    ? (
+        await commitExactDelivery(targetDir, {
+          ...options,
+          expectedHead: currentHead,
+          paths: exactPaths,
+        })
+      ).commit
+    : await commitDelivery(targetDir, options)
   return {
     starting_git_commit_hash: startingGitCommitHash,
     ending_git_commit_hash: endingGitCommitHash,

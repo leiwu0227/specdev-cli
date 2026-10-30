@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { assertBoundaryEvidence } from './assignment-boundary.js'
 import fse from 'fs-extra'
 import { readVerificationBoundary } from './mission-verification-boundary.js'
 import { resolveGuides } from './guides.js'
@@ -39,6 +40,7 @@ export async function validateDeliveryArtifacts(specdevPath, assignmentPath, acc
   }
 
   const progress = await fse.readJson(progressPath)
+  await assertBoundaryEvidence(assignmentPath, progress.verification || [])
   if (!standalone && !Array.isArray(progress.owned_paths)) {
     throw new Error(
       'Mission child progress requires owned_paths: exact product path/sha256 entries (or [] for no product edits)'

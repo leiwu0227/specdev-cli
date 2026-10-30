@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { assignmentBoundaryCommand, assignmentBoundaryHelp } from './assignment-boundary.js'
 import fse from 'fs-extra'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { readBigPictureStatus } from '../utils/project-context.js'
@@ -30,6 +31,8 @@ import {
 const ASSIGNMENT_KIND_SET = new Set(ASSIGNMENT_KINDS)
 
 export async function assignmentCommand(positionalArgs = [], flags = {}) {
+  if (positionalArgs[0] === 'revalidate-boundary' && (flags.help || flags.h))
+    return assignmentBoundaryHelp()
   if (positionalArgs[0] === 'shelf' && (flags.help || flags.h)) {
     return shelfAssignmentHelp()
   }
@@ -39,6 +42,8 @@ export async function assignmentCommand(positionalArgs = [], flags = {}) {
   const targetDir = resolveTargetDir(flags)
   const specdevPath = join(targetDir, '.specdev')
   await requireSpecdevDirectory(specdevPath)
+  if (positionalArgs[0] === 'revalidate-boundary')
+    return assignmentBoundaryCommand(targetDir, specdevPath, positionalArgs.slice(1), flags)
   if (positionalArgs[0] === 'shelf') {
     return shelfAssignmentCommand(targetDir, specdevPath, positionalArgs.slice(1), flags)
   }

@@ -1,4 +1,6 @@
 import { join } from 'node:path'
+import { readBoundaryRecovery } from '../utils/assignment-boundary.js'
+import { writeAssignmentStatus } from '../utils/assignment-vnext.js'
 import fse from 'fs-extra'
 import { resolveAssignmentPath, assignmentName } from '../utils/assignment.js'
 import { resolveTargetDir } from '../utils/command-context.js'
@@ -50,7 +52,18 @@ export async function checkpointCommand(positionalArgs = [], flags = {}) {
     process.exitCode = 1
     return
   }
-  if (state.position.node === 'brainstorm') {
+  const recovery = await readBoundaryRecovery(assignmentPath)
+  if (recovery?.requires_reapproval && !recovery.approval) {
+    await writeAssignmentStatus(assignmentPath, {
+      boundary_recovery: {
+        ...recovery,
+        checkpoint: {
+          contract_hash: contract.hash,
+          contract: relativeToRepo(targetDir, contract.path),
+        },
+      },
+    })
+  } else if (state.position.node === 'brainstorm') {
     stepGuidedNode(targetDir, 'brainstorm', {
       contract: relativeToRepo(targetDir, contract.path),
       contract_hash: contract.hash,

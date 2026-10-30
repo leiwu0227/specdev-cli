@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { readBoundaryRecovery } from './assignment-boundary.js'
 import { execFile as execFileCallback } from 'node:child_process'
 import { join, relative } from 'node:path'
 import { promisify } from 'node:util'
@@ -188,10 +189,28 @@ function truncateContractPreviewLine(line, limit = 180) {
 }
 
 export async function approvedContractFor(targetDir) {
+  const node = await currentAssignmentNode(targetDir)
+  if (node?.assignment?.name) {
+    const recovery = await readBoundaryRecovery(
+      join(targetDir, '.specdev', 'assignments', node.assignment.name)
+    )
+    if (recovery?.requires_reapproval && !recovery.approval)
+      throw new Error(
+        'Boundary recovery requires contract reapproval: specdev checkpoint brainstorm, then specdev approve brainstorm'
+      )
+    if (recovery) return recovery.approval || recovery.plan.approved_contract
+  }
   return assignmentOutputFor(targetDir, 'approve-contract')
 }
 
 export async function checkpointedContractFor(targetDir) {
+  const node = await currentAssignmentNode(targetDir)
+  if (node?.assignment?.name) {
+    const recovery = await readBoundaryRecovery(
+      join(targetDir, '.specdev', 'assignments', node.assignment.name)
+    )
+    if (recovery?.requires_reapproval && !recovery.approval) return recovery.checkpoint || null
+  }
   return assignmentOutputFor(targetDir, 'brainstorm')
 }
 

@@ -134,6 +134,24 @@ for this narrow resume operation, but SpecDev retains neither that transcript no
 its raw session ID as durable evidence. Codex, Cursor, Mission, resolver,
 arbiter, and all other review paths remain fresh-only.
 
+### Recover after an intervening commit
+
+If an approved Roadmap publication moves HEAD after standalone Assignment implementation
+starts, preview the boundary recovery:
+
+```sh
+specdev assignment revalidate-boundary 00418
+```
+
+Save an assessment JSON file with `contract` (`compatible` or `changed`), a written
+`reason`, exact product `owned_paths`, and `reuse_evidence` receipt indices (normally
+`[]`). Preview again with `--assessment=<file>`, inspect the commit range, candidate,
+ownership and evidence decisions, then confirm with the displayed `--confirm=<digest>`.
+Recovery retains the original boundary and review history and excludes unrelated
+dirty paths from delivery. Changed scope requires contract checkpoint and user
+reapproval. Evidence without matching recorded `input_digests` must be rerun.
+Resume with `specdev implement`; required independent review remains required.
+
 ### Ask for a larger mission
 
 > Use a Mission to repair search end to end. Keep it running through the

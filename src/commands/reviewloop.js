@@ -47,12 +47,14 @@ import {
 } from '../utils/reviewer-continuation.js'
 import {
   buildStandaloneAssignmentCandidateReceipt,
+  ensureAssignmentGitBoundary,
   completeStandaloneAssignmentDelivery,
   formatStandaloneAssignmentReceipt,
   preflightStandaloneAssignmentCandidate,
   writeStandaloneAssignmentCandidateReceipt,
 } from '../utils/assignment-delivery.js'
 import { buildMissionReapproval, inspectMissionReapproval } from '../utils/mission-reapproval.js'
+import { readBoundaryRecovery } from '../utils/assignment-boundary.js'
 import {
   AUTOMATIC_ARTIFACT_REPAIR_LIMIT,
   initialAutomaticReviewState,
@@ -335,7 +337,12 @@ export async function reviewBrainstorm(flags = {}) {
   const context = await assignmentContext(flags)
   const { targetDir, specdevPath, assignmentPath, name, mission } = context
   const graph = await currentAssignmentNode(targetDir)
-  if (!graph || !['brainstorm', 'approve-contract'].includes(graph.position.node)) {
+  const boundaryRecovery = await readBoundaryRecovery(assignmentPath)
+  const boundaryReapproval = boundaryRecovery?.requires_reapproval && !boundaryRecovery.approval
+  if (
+    !graph ||
+    (!['brainstorm', 'approve-contract'].includes(graph.position.node) && !boundaryReapproval)
+  ) {
     return fail(flags, 'Brainstorm review is only available before contract approval')
   }
   const contract = await validateAssignmentContract(assignmentPath)
@@ -771,6 +778,16 @@ export async function reviewImplementation(flags = {}) {
   const context = await assignmentContext(flags)
   const { targetDir, specdevPath, assignmentPath, name, mission, implementationExecution } = context
   const { contract } = await assertApprovedContract(targetDir, assignmentPath)
+  const boundaryStatus = await fse.readJson(join(assignmentPath, 'status.json'))
+  if (boundaryStatus.boundary_recovery) {
+    const boundary = await ensureAssignmentGitBoundary({
+      targetDir,
+      specdevPath,
+      assignmentPath,
+      assignmentStatus: boundaryStatus,
+    })
+    if (!boundary.ok) return fail(flags, boundary.next_action)
+  }
   let graph = await currentAssignmentNode(targetDir)
   if (!graph || !['implementation-review', 'repair'].includes(graph.position.node)) {
     return fail(
