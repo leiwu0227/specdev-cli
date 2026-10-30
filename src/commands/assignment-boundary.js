@@ -44,11 +44,11 @@ export async function assignmentBoundaryCommand(root, specdev, args, flags = {})
         next_action: nextAction(recovery),
       })
     }
-    await assertQuiescent(root, specdev, resolved, status)
+    const quiescent = await assertQuiescent(specdev, resolved, status)
     if (recovery?.phase === 'pending') {
       if (flags.confirm !== recovery.digest)
         throw new Error('Boundary recovery is pending; retry its exact --confirm digest')
-      const actual = await snapshot(root, specdev, resolved, recovery.original_status)
+      const actual = await snapshot(root, specdev, resolved, recovery.original_status, quiescent)
       // Review reset is the only candidate artifact changed by recovery itself.
       if (
         ![recovery.plan.snapshot.review, resetReview(recovery.digest)].some(
@@ -63,7 +63,7 @@ export async function assignmentBoundaryCommand(root, specdev, args, flags = {})
     }
     if (recovery?.requires_reapproval && !recovery.approval)
       throw new Error('Complete contract reapproval before another boundary recovery')
-    const plan = await buildPlan(root, specdev, resolved, status, flags)
+    const plan = await buildPlan(root, specdev, resolved, status, flags, quiescent)
     if (!flags.confirm)
       return emit(flags, {
         status: 'awaiting_confirmation',
@@ -77,7 +77,15 @@ export async function assignmentBoundaryCommand(root, specdev, args, flags = {})
       )
     // Re-read immediately before preparing durable authority.
     if (
-      boundaryHash(await snapshot(root, specdev, resolved, status)) !== boundaryHash(plan.snapshot)
+      boundaryHash(
+        await snapshot(
+          root,
+          specdev,
+          resolved,
+          status,
+          await assertQuiescent(specdev, resolved, status)
+        )
+      ) !== boundaryHash(plan.snapshot)
     )
       throw new Error('Boundary inputs changed during confirmation; preview again')
     const originalStatus = { ...status }
@@ -101,7 +109,7 @@ export async function assignmentBoundaryCommand(root, specdev, args, flags = {})
   }
 }
 
-async function assertQuiescent(root, specdev, resolved, status) {
+async function assertQuiescent(specdev, resolved, status) {
   if (status.mission || terminal.has(status.status))
     throw new Error('Boundary recovery requires an unfinished standalone Assignment')
   if (await fse.pathExists(join(specdev, 'cache', 'adhoc.json')))
@@ -127,7 +135,8 @@ async function assertQuiescent(root, specdev, resolved, status) {
     throw new Error('Assignment is not at a supported quiescent implementation or review position')
   if (checkpoint.outputs['create-assignment']?.name !== resolved.name)
     throw new Error('Assignment runtime identity mismatch')
-  for (const attempt of await listAttemptRecords(specdev)) {
+  const attempts = await listAttemptRecords(specdev)
+  for (const attempt of attempts) {
     const live = await attemptLiveness(specdev, attempt.id)
     if (
       live.state === 'live_local' ||
@@ -135,10 +144,10 @@ async function assertQuiescent(root, specdev, resolved, status) {
     )
       throw new Error(`Live or ambiguous activity prevents recovery: ${attempt.id}`)
   }
+  return { checkpoint, attempts }
 }
 
-async function snapshot(root, specdev, resolved, originalStatus) {
-  await assertQuiescent(root, specdev, resolved, originalStatus)
+async function snapshot(root, specdev, resolved, originalStatus, quiescent) {
   const prefix = relative(root, resolved.path).replaceAll('\\', '/') + '/'
   const runPrefix = `.specdev/.ripplegraph/runs/${originalStatus.run_id}/`
   const entries = await gitStatusEntries(root)
@@ -184,7 +193,7 @@ async function snapshot(root, specdev, resolved, originalStatus) {
   return {
     head: git(root, ['rev-parse', 'HEAD']).trim(),
     branch: git(root, ['branch', '--show-current']).trim(),
-    checkpoint: readCheckpoint(specdev, originalStatus.run_id),
+    checkpoint: quiescent.checkpoint,
     status,
     files,
     dirty: entries.filter((entry) => included(entry.path)),
@@ -199,12 +208,12 @@ async function snapshot(root, specdev, resolved, originalStatus) {
     ),
     review_artifacts: reviewArtifacts,
     review: await readJson(join(resolved.path, reviewFile)),
-    attempts: await listAttemptRecords(specdev),
+    attempts: quiescent.attempts,
   }
 }
 
-async function buildPlan(root, specdev, resolved, status, flags) {
-  const snap = await snapshot(root, specdev, resolved, status)
+async function buildPlan(root, specdev, resolved, status, flags, quiescent) {
+  const snap = await snapshot(root, specdev, resolved, status, quiescent)
   const from = status.git_boundary.starting_git_commit_hash
   if (from === snap.head) throw new Error('HEAD already matches the effective Assignment boundary')
   try {
