@@ -68,15 +68,20 @@ export async function retentionOwners(specdevPath) {
       })
     }
   }
-  const missions = owners.filter((item) => item.owner.mission)
+  const counts = new Map()
+  const missions = new Map()
   for (const item of owners) {
-    if (owners.filter((other) => other.key === item.key).length > 1) {
+    counts.set(item.key, (counts.get(item.key) || 0) + 1)
+    const id = item.owner.mission
+    if (id) missions.set(id, missions.has(id) ? null : item)
+  }
+  for (const item of owners) {
+    if (counts.get(item.key) > 1) {
       item.eligible = false
       item.reason = 'ambiguous durable owner'
     }
     if (item.owner.assignment && item.state?.mission) {
-      const parent = missions.filter((mission) => mission.owner.mission === item.state.mission)
-      item.parent = parent.length === 1 ? parent[0] : null
+      item.parent = missions.get(item.state.mission) || null
       item.eligible = false
       item.reason = item.parent
         ? 'retained until parent Mission cleanup'
