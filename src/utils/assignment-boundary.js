@@ -110,12 +110,17 @@ export async function assertBoundaryEvidence(path, receipts) {
   const invalid = new Set(
     recovery.plan.evidence.filter((item) => item.action === 'invalidate').map((item) => item.digest)
   )
-  if (receipts.some((receipt) => invalid.has(boundaryHash(receipt))))
-    throw new Error(
-      'Boundary recovery invalidated verification receipts; archive them and record fresh evidence before review'
-    )
+  const receiptsByDigest = new Map()
+  for (const receipt of receipts) {
+    const digest = boundaryHash(receipt)
+    if (invalid.has(digest))
+      throw new Error(
+        'Boundary recovery invalidated verification receipts; archive them and record fresh evidence before review'
+      )
+    receiptsByDigest.set(digest, receipt)
+  }
   for (const item of recovery.plan.evidence.filter((item) => item.action === 'reuse')) {
-    const receipt = receipts.find((candidate) => boundaryHash(candidate) === item.digest)
+    const receipt = receiptsByDigest.get(item.digest)
     if (!receipt) continue
     for (const [input, digest] of Object.entries(receipt.input_digests)) {
       if ((await fileDigest(join(path, '../../..'), input)) !== digest)
