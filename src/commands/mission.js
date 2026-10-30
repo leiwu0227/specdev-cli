@@ -1,3 +1,8 @@
+import { missionOwnershipReviewGuidance } from '../utils/mission-ownership.js'
+import {
+  publishMissionFailure,
+  releaseFailedMissionFocus,
+} from '../utils/mission-failure-delivery.js'
 import { spawn } from 'node:child_process'
 import { execFile as execFileCallback } from 'node:child_process'
 import { basename, join, resolve, sep } from 'node:path'
@@ -91,7 +96,6 @@ import { implementCommand } from './implement.js'
 import { reviewBrainstorm } from './reviewloop.js'
 import {
   compactCompletedWorkflowRuntime,
-  compactFailedWorkflowRuntime,
   retireTransientArtifact,
 } from '../utils/artifact-retention.js'
 import {
@@ -449,6 +453,16 @@ async function runMission(selector, flags) {
     })
   }
   if (mission.status === 'failed') {
+    if (mission.failure_pending || mission.failure_publication) {
+      try {
+        await completeMissionFailure({ ...context, flags }, mission.blocker, mission.disposition)
+      } catch (error) {
+        return fail(
+          flags,
+          `${error.message}. Retry specdev mission run ${mission.id} to finish failure publication.`
+        )
+      }
+    }
     return emit(flags, {
       command: 'mission run',
       version: 1,
@@ -713,6 +727,16 @@ async function runMission(selector, flags) {
         return fail(
           flags,
           `Mission delivery completed but its completion checkpoint failed: ${error.message}. Retry with specdev mission checkpoint ${mission.id}`
+        )
+      }
+      if (mission.status === 'failed') {
+        await updateAttemptRecord(specdevPath, controller.id, {
+          status: 'failed',
+          error: error.message,
+        })
+        return fail(
+          flags,
+          `Mission failure is preserved; publication did not finish: ${error.message}. Retry specdev mission run ${mission.id}.`
         )
       }
       await updateAttemptRecord(specdevPath, controller.id, {
@@ -1486,6 +1510,7 @@ async function reviewMission(context) {
       arbitration
         ? 'Arbitrate Mission convergence in one final Attempt; do not modify tracked files.'
         : 'Review Mission convergence from existing evidence first; do not re-review every child from scratch and do not modify tracked files.',
+      missionOwnershipReviewGuidance,
       `Mission contract: ${relativeToRepo(targetDir, join(missionPath, 'brainstorm', 'contract.md'))}`,
       `Ordered queue and child outcomes: ${relativeToRepo(targetDir, join(missionPath, 'design', 'assignments.yaml'))}`,
       state.round > 0 ? `Previous findings: ${relativeToRepo(targetDir, verdictPath)}` : null,
@@ -2101,6 +2126,7 @@ async function completeMission(context) {
 }
 
 async function completeMissionFailure(context, reason, disposition = 'semantic-failure') {
+  if (context.mission.failure_publication) return publishMissionFailure(context)
   const { missionPath, mission } = context
   const queue = await readMissionQueue(missionPath)
   const lines = (queue.assignments || []).map(
@@ -2110,7 +2136,8 @@ async function completeMissionFailure(context, reason, disposition = 'semantic-f
   mission.status = 'failed'
   mission.disposition = disposition
   mission.gap_summary = gaps
-  mission.failed_at = new Date().toISOString()
+  mission.failed_at ||= new Date().toISOString()
+  mission.failure_pending = true
   mission.blocker = reason
   mission.next_action = null
   await writeMission(missionPath, mission)
@@ -2130,6 +2157,7 @@ async function completeMissionFailure(context, reason, disposition = 'semantic-f
     `# Mission outcome\n\n## Objective\n\n${mission.objective}\n\n## Assignments\n\n${lines.join('\n') || '- none'}\n\n## Gap convergence\n\n- Opened: ${gaps.opened}\n- Evidence-closed: ${gaps.closed}\n- Failed: ${gaps.failed}\n\n## Delivery\n\n${formatMissionFailure(disposition)}: ${reason}\n`,
     'utf-8'
   )
+  await publishMissionFailure(context)
 }
 
 async function validateAndReserveQueue(
@@ -2540,6 +2568,8 @@ async function handoffMission(selector, flags) {
   if (unresolved.length === 0) {
     return fail(flags, `Mission ${mission.id} has no unresolved acceptance criteria to hand off`)
   }
+  if (mission.failure_pending || mission.failure_publication)
+    await completeMissionFailure(context, mission.blocker, mission.disposition)
   const snapshot = await gitSnapshot(targetDir)
   await assertMissionCheckout(targetDir, mission)
   const candidate = {
@@ -2552,12 +2582,7 @@ async function handoffMission(selector, flags) {
     (receipt) => receipt.command === authorizedVerificationCommand(sourceContract.content)
   )
   const description = `Recover unresolved evidence from Mission ${mission.id}`
-  await compactFailedWorkflowRuntime(specdevPath, {
-    runId: mission.run_id,
-    attemptFilter: { mission: mission.id },
-    terminalOwner: { mission: mission.id, status: mission.status },
-    focus: { kind: 'mission', id: mission.id },
-  })
+  await releaseFailedMissionFocus(context)
   const nestedOutput = []
   const created = await withSuppressedOutput(
     () =>
@@ -2609,7 +2634,7 @@ async function handoffMission(selector, flags) {
       superseded_by: receipt.superseded_by || null,
     })),
     approval_boundary:
-      'This is a fresh Assignment. Its contract must be checkpointed and explicitly approved; the terminal Mission remains immutable.',
+      'This is a fresh Assignment. Its contract must be checkpointed and explicitly approved; the original Mission failure history remains immutable and accepted closure remains available.',
     created_at: new Date().toISOString(),
   }
   await fse.writeJson(handoffPath, handoff, { spaces: 2 })

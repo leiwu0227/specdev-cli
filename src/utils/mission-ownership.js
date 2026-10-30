@@ -136,3 +136,6 @@ export async function missionOwnedPaths(context) {
   }
   return owned
 }
+
+export const missionOwnershipReviewGuidance =
+  'Mission owned_paths digests use SHA-256 over the literal file: prefix followed by file bytes, or executable: followed by file bytes for executable files. Symlinks use symlink: followed by the link target text. Deleted paths have a null digest. Plain file SHA-256 is not an ownership digest. Apply this convention in primary review, repair verification, and arbitration.'

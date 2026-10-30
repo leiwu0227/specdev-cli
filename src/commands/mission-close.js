@@ -172,7 +172,14 @@ async function buildPlan(context, source) {
   if (!text.trim() || text.includes('\0'))
     throw new Error('Acceptance evidence must be non-empty written user acceptance and limitations')
   const children = await ownedChildren(context)
-  const checkpoint = readCheckpoint(specdevPath, mission.run_id)
+  let checkpoint
+  try {
+    checkpoint = readCheckpoint(specdevPath, mission.run_id)
+  } catch (error) {
+    throw new Error(
+      `Mission ${mission.id} runtime ${mission.run_id} is missing or unreadable: ${error.message}. Recover its exact failure checkpoint and history before closure; changing foreground focus cannot restore runtime.`
+    )
+  }
   const terminalFailure =
     mission.status === 'failed' &&
     checkpoint.status === 'completed' &&
@@ -192,11 +199,15 @@ async function buildPlan(context, source) {
     (checkpoint.status === 'active' && rippleFocus !== mission.run_id) ||
     (checkpoint.status !== 'active' && rippleFocus)
   ) {
-    throw new Error('Mission run/focus mismatch; another workflow must not be displaced')
+    throw new Error(
+      `Mission run/focus mismatch: runtime focus is ${rippleFocus || 'none'}, but ${mission.id} run ${mission.run_id} is ${checkpoint.status}. ${rippleFocus ? 'Finish or suspend the owning runtime workflow first.' : 'Recover the exact lifecycle state before closure; foreground focus does not activate runtime.'}`
+    )
   }
   const focus = await readCurrentFocus(specdevPath)
   if (focus && !ownsFocus(mission, children, focus))
-    throw new Error('Mission does not own the current workflow focus')
+    throw new Error(
+      `Foreground focus belongs to ${focus.kind} ${focus.id}; select Mission ${mission.id} before closure. Foreground selection does not change runtime focus.`
+    )
   const attempts = await inspectAttempts(context, children)
   const queue = await optionalQueue(missionPath)
   for (const child of queue?.assignments || []) {
@@ -373,7 +384,10 @@ async function applyClosure(context, closure, flags) {
   )
     throw new Error('Closure Attempts changed')
   const focus = await readCurrentFocus(specdevPath)
-  if (focus && !same(focus, plan.focus)) throw new Error('Workflow focus changed during closure')
+  if (focus && !same(focus, plan.focus))
+    throw new Error(
+      `Foreground focus changed to ${focus.kind} ${focus.id}; restore the confirmed selection before retrying closure`
+    )
   const checkpoint = readCheckpoint(specdevPath, plan.mission.run_id)
   const { status: oldStatus, updatedAt: oldUpdated, ...oldState } = plan.checkpoint
   const { status, updatedAt, ...state } = checkpoint
@@ -388,7 +402,9 @@ async function applyClosure(context, closure, flags) {
     throw new Error('Mission runtime changed during closure')
   const rippleFocus = readCurrent(specdevPath).focusedRunId
   if (rippleFocus && rippleFocus !== plan.mission.run_id)
-    throw new Error('Another workflow owns runtime focus; closure will not displace it')
+    throw new Error(
+      `Runtime focus belongs to ${rippleFocus}; finish or suspend that workflow before retrying closure`
+    )
 
   const queue = plan.queue ? structuredClone(plan.queue) : null
   for (const child of queue?.assignments || []) {

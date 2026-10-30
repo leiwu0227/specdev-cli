@@ -915,6 +915,35 @@ the existing API stable.
     frameCounter: 0,
     finalOutput: { completed: true },
   })
+  const durableMissionPath = join(specdevPath, 'missions', 'M00001_retention', 'mission.yaml')
+  await fse.outputJson(durableMissionPath, {
+    id: 'M00001',
+    run_id: completedRunId,
+    status: 'failed',
+  })
+  await assert.rejects(
+    compactCompletedWorkflowRuntime(specdevPath, {
+      runId: completedRunId,
+      attemptFilter: { mission: 'M00001' },
+    }),
+    /retain its closure and recovery records/
+  )
+  assert.equal(existsSync(join(specdevPath, '.ripplegraph', 'runs', completedRunId)), true)
+  await fse.outputJson(durableMissionPath, {
+    id: 'M00001',
+    run_id: completedRunId,
+    status: 'completed',
+  })
+  const ambiguousOwner = join(specdevPath, 'assignments', '00999_conflicting-owner', 'status.json')
+  await fse.outputJson(ambiguousOwner, { id: '00999', run_id: completedRunId, status: 'completed' })
+  await assert.rejects(
+    compactCompletedWorkflowRuntime(specdevPath, {
+      runId: completedRunId,
+      attemptFilter: { mission: 'M00001' },
+    }),
+    /Ambiguous or mismatched durable owner/
+  )
+  await fse.remove(join(ambiguousOwner, '..'))
   const compaction = await compactCompletedWorkflowRuntime(specdevPath, {
     runId: completedRunId,
     attemptFilter: { mission: 'M00001' },
@@ -943,6 +972,11 @@ the existing API stable.
   )
   assert.equal(existsSync(checkpointlessRunPath), true)
 
+  await fse.outputJson(join(specdevPath, 'missions', 'M00002_retention', 'mission.yaml'), {
+    id: 'M00002',
+    run_id: checkpointlessRunId,
+    status: 'completed',
+  })
   writeRippleCurrent(specdevPath, { focusedRunId: checkpointlessRunId })
   await assert.rejects(
     compactCompletedWorkflowRuntime(specdevPath, {

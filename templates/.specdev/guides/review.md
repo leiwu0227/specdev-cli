@@ -27,4 +27,7 @@ instructions. Report only blocking defects or materially useful findings.
   `material_divergence: true`; request changes only for an actual blocking
   finding.
 - Do not edit product code, tracked workflow state, or durable guides.
+- For Mission ownership evidence, hash the entry-type prefix and contents together:
+  `file:` or `executable:` plus file bytes, or `symlink:` plus link-target text.
+  A deleted path has a `null` digest. Plain file hashes are not ownership digests.
 - Return `approved` only when no blocking finding remains.

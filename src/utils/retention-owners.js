@@ -106,6 +106,7 @@ export async function completedChildRuntimes(specdevPath, mission, parentRunId) 
     if (!safeStat(specdevPath, path)) continue
     if (readCurrent(specdevPath).focusedRunId === id)
       throw new Error('cannot clean focused Mission child runtime')
+    await assertRuntimeCompactionOwner(specdevPath, id, child.owner, new Set(['completed']))
     inspectTree(specdevPath, path)
     if (
       safeStat(specdevPath, join(path, 'checkpoint.json')) &&
@@ -115,4 +116,31 @@ export async function completedChildRuntimes(specdevPath, mission, parentRunId) 
     paths.push(path)
   }
   return [...new Set(paths)]
+}
+
+export async function assertRuntimeCompactionOwner(specdevPath, runId, owner, allowedStatuses) {
+  const owners = await retentionOwners(specdevPath)
+  const references = owners.filter((item) => item.state?.run_id === runId)
+  const roots = references.filter((item) => !item.state?.mission)
+  const matches = roots.length ? roots : references
+  const selected = matches.find((item) => item.key === ownerDirectory(owner))
+  if (
+    matches.length !== 1 ||
+    !selected ||
+    selected.state.id !== (owner.mission || owner.assignment?.split('_')[0])
+  ) {
+    throw new Error(
+      `Ambiguous or mismatched durable owner for runtime ${runId}; resolve ownership before cleanup`
+    )
+  }
+  if (selected.state.mission && (!selected.parent || selected.parent.status === 'failed'))
+    throw new Error(
+      `Runtime ${runId} belongs to a failed or unresolved parent Mission; retain its closure and recovery records`
+    )
+  if (references.some((item) => item !== selected && item.state.mission !== selected.owner.mission))
+    throw new Error(`Ambiguous runtime references for ${runId}; resolve ownership before cleanup`)
+  if (!allowedStatuses.has(selected.status))
+    throw new Error(
+      `Runtime ${runId} belongs to ${selected.key} with status ${selected.status}; retain its closure and recovery records`
+    )
 }

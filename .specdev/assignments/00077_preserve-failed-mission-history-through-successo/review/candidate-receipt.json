@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "kind": "standalone_assignment_candidate",
+  "completeness": "complete",
+  "identity": "182f14996325ac020ab4cf92fafe6fed9505b27483ca66b9fd8e1044769c6d5f",
+  "assignment": {
+    "id": "00077",
+    "folder": "00077_preserve-failed-mission-history-through-successo"
+  },
+  "implementation_execution": {
+    "version": 1,
+    "configured_mode": "auto",
+    "effective_mode": "inline",
+    "source": "auto-default",
+    "reason": null,
+    "owner": "foreground-agent",
+    "frozen_at": "2026-10-29T23:43:09.928Z"
+  },
+  "contract": {
+    "path": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/brainstorm/contract.md",
+    "hash": "8b7aa7034de3e7d2799b49f13851e395d511b26894ee291b1e91c7917108abcb"
+  },
+  "acceptance": {
+    "total": 4,
+    "items": [
+      {
+        "id": "AC-1",
+        "evidence": "node tests/test-mission-environment.js: failure publication interruptions before and after commit, exact failed checkpoint and history, unchanged unrelated staged/unstaged bytes, frozen-state mutation refusal, and idempotent retry.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-2",
+        "evidence": "node tests/test-mission-environment.js: handoff through actual successor delivery and accepted closure preserves predecessor runtime; attempted predecessor deletion refuses delivery. node tests/test-vnext-foundations.js: failed/ambiguous...",
+        "result": "passed"
+      },
+      {
+        "id": "AC-3",
+        "evidence": "node tests/test-mission-closure.js: foreground selection leaves runtime focus unchanged, distinct ownership diagnostics, refusal preserves other workflows. node tests/test-mission-environment.js: missing runtime reports explicit recovery.",
+        "result": "passed"
+      },
+      {
+        "id": "AC-4",
+        "evidence": "node tests/test-reviewloop-modes.js: real captured primary, repair-verification, and arbiter prompts contain all four ownership digest conventions.",
+        "result": "passed"
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 4,
+      "failed": 0,
+      "blocked": 0,
+      "missing": 0
+    }
+  },
+  "verification_boundary": null,
+  "verification": {
+    "total": 21,
+    "items": [
+      {
+        "command": "node tests/test-mission-environment.js",
+        "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+        "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+        "status": "passed",
+        "duration_ms": 12959,
+        "role": "authoritative_acceptance",
+        "role_source": "explicit",
+        "attempts": 4,
+        "superseded": 3,
+        "history_counts": {
+          "passed": 2,
+          "failed": 2,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-vnext-foundations.js",
+        "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+        "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+        "status": "passed",
+        "duration_ms": 3067,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 4,
+        "superseded": 3,
+        "history_counts": {
+          "passed": 3,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-successor-adoption.js",
+        "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+        "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+        "status": "passed",
+        "duration_ms": 5359,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-reviewloop-modes.js",
+        "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+        "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+        "status": "passed",
+        "duration_ms": 17576,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 4,
+        "superseded": 3,
+        "history_counts": {
+          "passed": 2,
+          "failed": 2,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-abandonment.js",
+        "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+        "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+        "status": "passed",
+        "duration_ms": 35609,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      },
+      {
+        "command": "node tests/test-mission-closure.js",
+        "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+        "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+        "status": "passed",
+        "duration_ms": 48514,
+        "role": "qualification",
+        "role_source": "explicit",
+        "attempts": 3,
+        "superseded": 2,
+        "history_counts": {
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    ],
+    "omitted": 0,
+    "counts": {
+      "passed": 13,
+      "failed": 8,
+      "skipped": 0,
+      "missing": 0
+    },
+    "by_role": {
+      "qualification": {
+        "passed": 11,
+        "failed": 6,
+        "skipped": 0,
+        "missing": 0
+      },
+      "authoritative_acceptance": {
+        "passed": 2,
+        "failed": 2,
+        "skipped": 0,
+        "missing": 0
+      }
+    },
+    "raw": {
+      "total": 21,
+      "counts": {
+        "passed": 13,
+        "failed": 8,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 11,
+          "failed": 6,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 2,
+          "failed": 2,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "effective": {
+      "total": 6,
+      "counts": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "missing": 0
+      },
+      "by_role": {
+        "qualification": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        },
+        "authoritative_acceptance": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "missing": 0
+        }
+      }
+    },
+    "superseded": 15,
+    "authoritative_evidence": [
+      {
+        "command": "node tests/test-mission-environment.js",
+        "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+        "status": "passed"
+      }
+    ],
+    "authoritative_evidence_omitted": 0
+  },
+  "changed_project_paths": {
+    "count": 18,
+    "groups": [
+      {
+        "name": "(root)",
+        "count": 1,
+        "paths": [
+          "README.md"
+        ],
+        "omitted": 0
+      },
+      {
+        "name": "src",
+        "count": 10,
+        "paths": [
+          "src/commands/focus.js",
+          "src/commands/mission-close.js",
+          "src/commands/mission.js",
+          "src/commands/reviewloop.js",
+          "src/utils/artifact-retention.js",
+          "src/utils/assignment-delivery.js",
+          "src/utils/mission-failure-delivery.js",
+          "src/utils/mission-ownership.js",
+          "src/utils/mission-retention.js"
+        ],
+        "omitted": 1
+      },
+      {
+        "name": "templates",
+        "count": 3,
+        "paths": [
+          "templates/.specdev/_guides/runtime.md"
+        ],
+        "omitted": 2
+      },
+      {
+        "name": "tests",
+        "count": 4,
+        "paths": [
+          "tests/test-mission-closure.js"
+        ],
+        "omitted": 3
+      }
+    ],
+    "omitted_groups": 0
+  },
+  "unresolved_risks": {
+    "status": "present",
+    "items": [
+      "Already-deleted historical runtime is not reconstructed automatically. Legacy failed Missions without the new publication record retain their existing history; new failure publication is recoverable through mission run. External processe...",
+      "Initial checks exposed a private-helper import, generated adapters missing from a test fixture's Git boundary, and an over-strict ownership check for separately owned child cancellation. These were corrected. Later passing receipts super...",
+      "The pre-existing thought note and Assignment 00076 cleanup deletions remain outside this delivery through temporary local Git staging exclusions. Those exclusions are restored after delivery. No real user Mission was closed or repaired."
+    ],
+    "source": "canonical_section"
+  },
+  "artifacts": {
+    "contract": {
+      "path": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/brainstorm/contract.md",
+      "exists": true,
+      "digest": "8b7aa7034de3e7d2799b49f13851e395d511b26894ee291b1e91c7917108abcb"
+    },
+    "plan": {
+      "path": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/design/plan.md",
+      "exists": true,
+      "digest": "13cdc844eee8d89133bd45eb2ed1f651746686815650e5197fc1886a386d892f"
+    },
+    "progress": {
+      "path": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/implementation/progress.json",
+      "exists": true,
+      "digest": "dc8a6f6b321e05aeda9ecbdb1455a68bf5b04fd4bd36fd6f4c7b3ee4cc5f2619"
+    },
+    "outcome": {
+      "path": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/outcome.md",
+      "exists": true,
+      "digest": "3feeb8f5f8e6bbb4469b94916122398e0a78383e331485462516134668bb5250"
+    }
+  },
+  "issues": [],
+  "issues_omitted": 0
+}

@@ -1,0 +1,86 @@
+{
+  "runId": "assignment-lifecycle-20261029T23375428",
+  "status": "completed",
+  "rootGraph": "assignment-lifecycle",
+  "workflow": {
+    "id": "specdev-workspace",
+    "version": "1.0.0"
+  },
+  "position": {
+    "graph": "assignment-lifecycle",
+    "node": "done"
+  },
+  "createdAt": "2026-10-29T23:37:54.285Z",
+  "updatedAt": "2026-10-30T00:00:24.201Z",
+  "outputs": {
+    "create-assignment": {
+      "id": "00077",
+      "name": "00077_preserve-failed-mission-history-through-successo",
+      "path": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo",
+      "description": "Preserve failed Mission history through successor handoff and clarify ownership evidence",
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      }
+    },
+    "brainstorm": {
+      "contract": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/brainstorm/contract.md",
+      "contract_hash": "8b7aa7034de3e7d2799b49f13851e395d511b26894ee291b1e91c7917108abcb"
+    },
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "8b7aa7034de3e7d2799b49f13851e395d511b26894ee291b1e91c7917108abcb",
+      "actor": "user",
+      "approved_at": "2026-10-29T23:42:52.471Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "d6d14b628c9fceef0179df48a9d598eaf24dfed9"
+    },
+    "design": {
+      "plan": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/design/plan.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation": {
+      "progress": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/implementation/progress.json",
+      "outcome": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/outcome.md",
+      "attempt": "inline-foreground"
+    },
+    "implementation-review": {
+      "approved": true,
+      "verdict": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/review/implementation-verdict.md",
+      "attempt": "Attempt-00197",
+      "disposition": "approved"
+    }
+  },
+  "gateDecisions": {
+    "approve-contract": {
+      "approved": true,
+      "contract_hash": "8b7aa7034de3e7d2799b49f13851e395d511b26894ee291b1e91c7917108abcb",
+      "actor": "user",
+      "approved_at": "2026-10-29T23:42:52.471Z",
+      "review_override": false,
+      "review_policy": {
+        "brainstorm": "optional",
+        "implementation": "required"
+      },
+      "revision": "d6d14b628c9fceef0179df48a9d598eaf24dfed9"
+    }
+  },
+  "graphSource": {
+    "kind": "package",
+    "graphId": "assignment-lifecycle",
+    "graphVersion": "2.4.0",
+    "packagePath": "workflows/assignment-lifecycle@2.4.0"
+  },
+  "stack": [],
+  "frameCounter": 0,
+  "finalOutput": {
+    "approved": true,
+    "verdict": ".specdev/assignments/00077_preserve-failed-mission-history-through-successo/review/implementation-verdict.md",
+    "attempt": "Attempt-00197",
+    "disposition": "approved"
+  }
+}

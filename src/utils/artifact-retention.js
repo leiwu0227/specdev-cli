@@ -17,7 +17,11 @@ import {
   matchesOwner,
   retentionAttempts,
 } from './cache-retention.js'
-import { missionChildOwners, completedChildRuntimes } from './retention-owners.js'
+import {
+  missionChildOwners,
+  completedChildRuntimes,
+  assertRuntimeCompactionOwner,
+} from './retention-owners.js'
 import { safeStat, inspectTree, removeSafeTree } from './retention-files.js'
 import {
   clearLocalProcessMarker,
@@ -58,15 +62,6 @@ export async function compactCompletedWorkflowRuntime(specdevPath, options) {
     options,
     new Set(['completed']),
     new Set(['completed'])
-  )
-}
-
-export async function compactFailedWorkflowRuntime(specdevPath, options) {
-  return compactTerminalWorkflowRuntime(
-    specdevPath,
-    options,
-    new Set(['completed']),
-    new Set(['failed'])
   )
 }
 
@@ -174,6 +169,9 @@ async function compactTerminalWorkflowRuntime(
   } else if (runExists) {
     assertTerminalOwner(options?.terminalOwner, ownerFilter, allowedOwnerStatuses, runId)
   }
+
+  if (runExists)
+    await assertRuntimeCompactionOwner(specdevPath, runId, ownerFilter, allowedOwnerStatuses)
 
   const extraOwners = ownerFilter.mission
     ? await missionChildOwners(specdevPath, ownerFilter.mission)

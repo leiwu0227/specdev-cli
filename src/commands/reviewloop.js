@@ -1,3 +1,4 @@
+import { missionOwnershipReviewGuidance } from '../utils/mission-ownership.js'
 import { execFile as execFileCallback } from 'node:child_process'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -1098,6 +1099,7 @@ export async function reviewImplementation(flags = {}) {
     contract.verificationBoundary
       ? `Confirmed verification boundary: ${relativeToRepo(targetDir, join(assignmentPath, 'verification-boundary.json'))} @ ${contract.verificationBoundary.digest}. Evaluate child criteria ${contract.acceptanceIds.join(', ')}. Parent criteria ${contract.verificationBoundary.mapping.mission_acceptance.join(', ')} remain pending for the controller. Inspect the explicit evidence selection and candidate binding; original qualification receipts and blocked verdicts remain historical.`
       : null,
+    missionOwnershipReviewGuidance,
     `Design plan: ${relativeToRepo(targetDir, join(assignmentPath, 'design', 'plan.md'))}`,
     `Progress and verification receipts: ${relativeToRepo(targetDir, join(assignmentPath, 'implementation', 'progress.json'))}`,
     `Outcome: ${relativeToRepo(targetDir, join(assignmentPath, 'outcome.md'))}`,

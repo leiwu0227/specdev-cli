@@ -386,8 +386,18 @@ try {
         JSON.stringify({ focusedRunId: 'another-run' })
       )
     } else write(join(f.specdev, '.current'), 'kind: discussion\nid: D99999\n')
+    if (mismatch === 'runtime-focus') {
+      const focused = run(f.root, ['focus', f.mission.id])
+      assert.equal(focused.focus_scope, 'foreground-only')
+      assert.equal(focused.runtime_focus, 'another-run')
+      assert.equal(json(join(f.specdev, '.ripplegraph/current.json')).focusedRunId, 'another-run')
+    }
     const before = snapshot(f.root)
-    run(f.root, f.args, 1)
+    const refusal = run(f.root, f.args, 1)
+    if (mismatch === 'runtime-focus')
+      assert.match(refusal.error, /runtime focus is another-run.*Finish or suspend/)
+    if (mismatch === 'workflow-focus')
+      assert.match(refusal.error, /Foreground focus belongs to discussion D99999.*select Mission/)
     assert.deepEqual(snapshot(f.root), before)
   }
   console.log('Mission closure tests passed')

@@ -1,3 +1,4 @@
+import { finalizeStandaloneAssignmentDelivery } from '../src/utils/assignment-delivery.js'
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -14,7 +15,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { readCheckpoint, writeCheckpoint } from 'ripplegraph'
+import { readCheckpoint, writeCheckpoint, stepRun } from 'ripplegraph'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import {
   appendVerificationReceipt,
@@ -441,6 +442,9 @@ executors:
   )
   const missionPath = join(cliRoot, created.path)
   prepareMissionFixture(cliRoot, missionPath, { terminal: true })
+  const predecessor = parseYaml(readFileSync(join(missionPath, 'mission.yaml'), 'utf8'))
+  const predecessorRuntime = join(cliRoot, '.specdev', '.ripplegraph', 'runs', predecessor.run_id)
+  const runtimeBeforeHandoff = directorySnapshot(predecessorRuntime)
   const sourceBeforeHandoff = directorySnapshot(missionPath)
   const handoffResult = run(cliRoot, [
     'mission',
@@ -464,6 +468,70 @@ executors:
   assert.match(successorContract, /^- AC-2:/m)
   assert.doesNotMatch(successorContract, /^- AC-1:/m)
   assert.deepEqual(directorySnapshot(missionPath), sourceBeforeHandoff)
+  assert.deepEqual(directorySnapshot(predecessorRuntime), runtimeBeforeHandoff)
+  run(cliRoot, ['cleanup', '--apply', '--json'])
+  assert.deepEqual(directorySnapshot(predecessorRuntime), runtimeBeforeHandoff)
+  git(cliRoot, ['add', '--all'])
+  git(cliRoot, ['commit', '-m', 'prepare successor fixture'])
+  run(cliRoot, ['checkpoint', 'brainstorm', '--json'])
+  run(cliRoot, ['approve', 'brainstorm', '--implementation-review=waived', '--json'])
+  run(cliRoot, ['implement', '--json'])
+  const successorHead = git(cliRoot, ['rev-parse', 'HEAD'])
+  mkdirSync(join(successorPath, 'design'), { recursive: true })
+  mkdirSync(join(successorPath, 'implementation'), { recursive: true })
+  writeFileSync(
+    join(successorPath, 'design', 'plan.md'),
+    '# Plan\n\nImplementation Guides: none\nReview Guides: none\n\n- T-1 (AC-2): Record authorized executor evidence.\n'
+  )
+  const started = Date.now()
+  execFileSync(process.execPath, ['--version'])
+  writeFileSync(
+    join(successorPath, 'implementation', 'progress.json'),
+    JSON.stringify({
+      version: 1,
+      tasks: [{ id: 'T-1', status: 'completed' }],
+      selected_guides: { implementation: [], review: [] },
+      verification: [
+        {
+          command: 'node --version',
+          revision: 'working-tree@' + successorHead,
+          scope: 'AC-2 executor evidence',
+          status: 'passed',
+          duration_ms: Date.now() - started,
+          role: 'authoritative_acceptance',
+        },
+      ],
+      deviations: [],
+      follow_up: 'none',
+    })
+  )
+  writeFileSync(
+    join(successorPath, 'implementation', 'worker-result.md'),
+    '---\nstatus: completed\nfollow_up: none\n---\n\n## Changes\n\nRecorded executor evidence.\n'
+  )
+  writeFileSync(
+    join(successorPath, 'outcome.md'),
+    '# Outcome\n\n## Delivered behavior\n\nExecutor evidence recovered.\n\n## Deviations\n\nNone.\n\n## Unresolved risks\n\nNone.\n\n| Acceptance | Evidence | Result |\n| --- | --- | --- |\n| AC-2 | node --version passed | Passed |\n'
+  )
+  assert.equal(run(cliRoot, ['implement', '--json']).status, 'completed')
+  assert.deepEqual(directorySnapshot(predecessorRuntime), runtimeBeforeHandoff)
+  assert.deepEqual(directorySnapshot(missionPath), sourceBeforeHandoff)
+  writeFileSync(
+    join(cliRoot, 'acceptance.md'),
+    'I accept the failed Mission with limitations; successor evidence does not rewrite its failure.\n'
+  )
+  const closeArgs = [
+    'mission',
+    'close',
+    created.id,
+    '--outcome=accepted-with-limitations',
+    '--evidence=acceptance.md',
+    '--json',
+  ]
+  const closure = run(cliRoot, closeArgs)
+  assert.equal(closure.plan.mission.status, 'failed')
+  assert.equal(run(cliRoot, [...closeArgs, '--confirm=' + closure.plan.digest]).status, 'closed')
+  assert.deepEqual(directorySnapshot(predecessorRuntime), runtimeBeforeHandoff)
 
   const guardRoot = mkdtempSync(join(tmpdir(), 'specdev-mission-checkpoint-guard-'))
   roots.push(guardRoot)
@@ -527,6 +595,118 @@ executors:
     assert.equal(existsSync(join(localRoot, '.specdev', 'worktrees')), false)
     const repeated = run(localRoot, ['mission', 'run', mission.id, '--json'])
     assert.equal(repeated.final_revision, completed.final_revision)
+  }
+
+  // Publication recovery uses the actual terminal failed checkpoint, not an older active one.
+  for (const phase of ['failure-prepared', 'failure-committed']) {
+    const failureRoot = mkdtempSync(join(tmpdir(), 'specdev-failure-publication-'))
+    roots.push(failureRoot)
+    git(failureRoot, ['init', '-b', 'main'])
+    git(failureRoot, ['config', 'user.name', 'SpecDev Test'])
+    git(failureRoot, ['config', 'user.email', 'specdev@example.test'])
+    run(failureRoot, ['init', '--platform=none', '--json'])
+    git(failureRoot, ['add', '--all'])
+    git(failureRoot, ['commit', '-m', 'initial'])
+    const created = run(failureRoot, ['mission', 'create', 'Failure publication', '--json'])
+    const path = join(failureRoot, created.path)
+    const mission = prepareMissionFixture(failureRoot, path, { terminal: true })
+    mission.failure_pending = true
+    mission.blocker = 'Unresolved authority failure'
+    writeFileSync(join(path, 'mission.yaml'), stringifyYaml(mission))
+    mkdirSync(join(path, 'design'), { recursive: true })
+    writeFileSync(
+      join(path, 'design', 'assignments.yaml'),
+      stringifyYaml({ version: 2, assignments: [] })
+    )
+    const specdev = join(failureRoot, '.specdev')
+    const checkpoint = readCheckpoint(specdev, mission.run_id)
+    checkpoint.status = 'active'
+    checkpoint.position.node = 'mission-review'
+    delete checkpoint.finalOutput
+    writeCheckpoint(specdev, checkpoint)
+    stepRun({
+      workflowRoot: specdev,
+      output: {
+        approved: false,
+        disposition: 'semantic-failure',
+        verdict: 'review/failure.md',
+        attempt: 'fixture-review',
+      },
+    })
+    const runtimePath = join(specdev, '.ripplegraph', 'runs', mission.run_id)
+    const runtime = directorySnapshot(runtimePath)
+    writeFileSync(join(failureRoot, 'unrelated.txt'), 'staged\n')
+    git(failureRoot, ['add', 'unrelated.txt'])
+    writeFileSync(join(failureRoot, 'unrelated.txt'), 'unstaged\n')
+    const index = git(failureRoot, ['diff', '--cached', '--', 'unrelated.txt'])
+    const failed = run(
+      failureRoot,
+      ['mission', 'run', mission.id, '--interrupt-after=' + phase, '--json'],
+      1
+    )
+    assert.match(failed.error, /simulated interruption/)
+    assert.equal(parseYaml(readFileSync(join(path, 'mission.yaml'), 'utf8')).status, 'failed')
+    if (phase === 'failure-prepared') {
+      const prepared = readFileSync(join(path, 'mission.yaml'), 'utf8')
+      const altered = parseYaml(prepared)
+      altered.blocker = 'changed after preparation'
+      writeFileSync(join(path, 'mission.yaml'), stringifyYaml(altered))
+      assert.match(
+        run(failureRoot, ['mission', 'run', mission.id, '--json'], 1).error,
+        /Prepared Mission failure state changed/
+      )
+      writeFileSync(join(path, 'mission.yaml'), prepared)
+    }
+    assert.equal(run(failureRoot, ['mission', 'run', mission.id, '--json']).status, 'failed')
+    const head = git(failureRoot, ['rev-parse', 'HEAD'])
+    assert.match(
+      git(failureRoot, ['show', '-s', '--format=%B', head]),
+      /SpecDev-Commit-Type: failure/
+    )
+    assert.equal(git(failureRoot, ['diff', '--cached', '--', 'unrelated.txt']), index)
+    assert.equal(readFileSync(join(failureRoot, 'unrelated.txt'), 'utf8'), 'unstaged\n')
+    assert.deepEqual(directorySnapshot(runtimePath), runtime)
+    const checkpointAtCommit = JSON.parse(
+      git(failureRoot, [
+        'show',
+        head + ':' + relative(failureRoot, join(runtimePath, 'checkpoint.json')),
+      ])
+    )
+    assert.equal(checkpointAtCommit.status, 'completed')
+    assert.equal(checkpointAtCommit.position.node, 'failed')
+    assert.equal(run(failureRoot, ['mission', 'run', mission.id, '--json']).status, 'failed')
+    assert.equal(git(failureRoot, ['rev-parse', 'HEAD']), head)
+    const checkpointPath = join(runtimePath, 'checkpoint.json')
+    const savedCheckpoint = readFileSync(checkpointPath)
+    rmSync(checkpointPath)
+    const missing = run(
+      failureRoot,
+      [
+        'mission',
+        'close',
+        mission.id,
+        '--outcome=accepted-with-limitations',
+        '--evidence=unrelated.txt',
+        '--json',
+      ],
+      1
+    )
+    assert.match(missing.error, /runtime.*missing or unreadable/)
+    assert.match(
+      missing.error,
+      /foreground focus cannot restore runtime|changing foreground focus cannot restore runtime/
+    )
+    await assert.rejects(
+      finalizeStandaloneAssignmentDelivery({
+        targetDir: failureRoot,
+        assignmentPath: join(specdev, 'assignments', '99999_successor'),
+        assignmentStatus: { id: '99999', git_boundary: { starting_git_commit_hash: head } },
+      }),
+      /Refusing deletion of failed Mission/
+    )
+    assert.equal(git(failureRoot, ['rev-parse', 'HEAD']), head)
+    assert.equal(git(failureRoot, ['diff', '--cached', '--', 'unrelated.txt']), index)
+    writeFileSync(checkpointPath, savedCheckpoint)
   }
   console.log('Mission environment tests passed.')
 } finally {

@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T-1",
+      "status": "completed"
+    },
+    {
+      "id": "T-2",
+      "status": "completed"
+    },
+    {
+      "id": "T-3",
+      "status": "completed"
+    },
+    {
+      "id": "T-4",
+      "status": "completed"
+    }
+  ],
+  "selected_guides": {
+    "implementation": [],
+    "review": []
+  },
+  "selected_guide_versions": {
+    "implementation": [],
+    "review": []
+  },
+  "verification": [
+    {
+      "command": "node tests/test-mission-successor-adoption.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 94,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 97,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-environment.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 99,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-reviewloop-modes.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 243,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 258,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-abandonment.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 318,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-environment.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 1888,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 3152,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-successor-adoption.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 5422,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-reviewloop-modes.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "failed",
+      "duration_ms": 6290,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-abandonment.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 33746,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 47765,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 2938,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-environment.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 12205,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-reviewloop-modes.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 13925,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-vnext-foundations.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 3067,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-successor-adoption.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 5359,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-environment.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 12959,
+      "role": "authoritative_acceptance"
+    },
+    {
+      "command": "node tests/test-reviewloop-modes.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 17576,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-abandonment.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 35609,
+      "role": "qualification"
+    },
+    {
+      "command": "node tests/test-mission-closure.js",
+      "revision": "working-tree@d6d14b628c9fceef0179df48a9d598eaf24dfed9",
+      "scope": "Failed Mission retention, publication, closure and review handoff regressions",
+      "status": "passed",
+      "duration_ms": 48514,
+      "role": "qualification"
+    }
+  ],
+  "deviations": [],
+  "follow_up": "none"
+}

@@ -219,6 +219,14 @@ function mutateDuringNextReview(relativePath) {
   writeFileSync(join(root, '.git', 'specdev-review-mutation'), relativePath, 'utf8')
 }
 
+function assertOwnershipPrompt() {
+  const prompt = readFileSync(`${root}.last-review-prompt`, 'utf8')
+  assert.match(prompt, /SHA-256.*literal file:.*file bytes/)
+  assert.match(prompt, /executable:.*file bytes/)
+  assert.match(prompt, /symlink:.*link target text/)
+  assert.match(prompt, /Deleted paths have a null digest/)
+}
+
 try {
   mkdirSync(fakeBin)
   const fakeClaude = join(fakeBin, 'claude')
@@ -509,6 +517,7 @@ fi
   })
   const evidenceOnlyReview = runJson(['reviewloop', 'implementation', '--json'])
   assert.equal(evidenceOnlyReview.status, 'approved')
+  assertOwnershipPrompt()
   assert.equal(evidenceOnlyReview.disposition, 'approved')
   const reviewedEvidenceOnlyStatus = JSON.parse(readFileSync(evidenceOnlyStatusPath, 'utf8'))
   assert.equal(reviewedEvidenceOnlyStatus.status, 'completed')
@@ -562,6 +571,7 @@ fi
   writeCompletedContinuation(missionRepairResultPath)
   const resumedMissionRepair = runJson(['reviewloop', 'implementation', '--json'])
   assert.equal(resumedMissionRepair.status, 'approved')
+  assertOwnershipPrompt()
   assert.equal(readFileSync(`${root}.mission-repair-count`, 'utf8'), '1')
   assert.equal(existsSync(missionRepairResultPath), false)
   const missionRepairState = JSON.parse(
@@ -653,6 +663,11 @@ fi
   const resumedMissionResolver = runJson(['reviewloop', 'implementation', '--json'])
   assert.equal(resumedMissionResolver.status, 'approved')
   assert.equal(readFileSync(`${root}.mission-resolver-review-count`, 'utf8'), '1')
+  assertOwnershipPrompt()
+  assert.match(
+    readFileSync(`${root}.last-review-prompt`, 'utf8'),
+    /Arbitrate the automatic Assignment/
+  )
   assert.equal(existsSync(missionResolverResultPath), false)
   const missionResolverState = JSON.parse(
     readFileSync(join(missionResolverPath, 'review', 'implementation-state.json'), 'utf8')

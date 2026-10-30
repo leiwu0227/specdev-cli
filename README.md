@@ -191,6 +191,13 @@ history immutable and draft a fresh approval boundary with:
 specdev mission handoff M00001 --successor-assignment
 ```
 
+Terminal failure records its state and runtime history in an exact local failure
+commit. Handoff and successor delivery retain those records, so the failed Mission
+can later close with accepted limitations. If failure publication is interrupted,
+retry `specdev mission run <id>`; this finishes publication without restarting the
+failed execution. Missing or inconsistent historical runtime requires explicit
+recovery from the recorded failure state.
+
 To abandon an unwanted Mission, run `specdev mission abandon M00001
 --reason="objective withdrawn"`, inspect the plan, then rerun its exact
 `--confirm=<plan-digest>` command. The command preserves partial work and checks
@@ -199,7 +206,8 @@ canonical child branch remain untouched, even when dirty. Unknown ownership,
 unregistered pool contents, and dirty children of the retiring Mission still
 block abandonment.
 
-To accept delivered work with incomplete verification, write a note that records
+To accept delivered work, including a failed Mission after successor delivery,
+with incomplete verification, write a note that records
 the limitations and the user's explicit acceptance, then run:
 
 ```bash

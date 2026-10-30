@@ -308,7 +308,13 @@ acceptance from a failed check or from an instruction to continue implementation
 Changed evidence or lifecycle state requires a new plan and confirmation.
 
 Closure records terminal status `closed` and outcome `accepted-with-limitations`.
-Failed Missions can use this same confirmation flow. The closure record retains
+Failed Missions can use this same confirmation flow, including after successor
+handoff and delivery. Terminal failure records its state and runtime history in
+an exact local commit. Handoff releases only owned focus and retains the failed
+Mission's closure and recovery records. Retry interrupted failure publication with
+`specdev mission run <id>`; it does not restart failed execution.
+Foreground focus selects a work item; runtime focus controls execution. Changing
+foreground focus does not repair missing runtime or activate an older checkpoint. The closure record retains
 the original failure state. An already terminal failed lifecycle remains unchanged;
 closure does not restart it or turn failed verification into success.
 Verification remains incomplete. Contracts, failures, missing evidence, code,

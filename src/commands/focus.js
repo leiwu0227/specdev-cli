@@ -1,3 +1,4 @@
+import { readCurrent as readRuntimeFocus } from 'ripplegraph'
 import { join } from 'node:path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
 import { resolveAssignmentSelector } from '../utils/assignment.js'
@@ -64,6 +65,8 @@ export async function focusCommand(positionalArgs = [], flags = {}) {
     kind,
     id: resolved.id,
     name: resolved.name,
+    runtime_focus: readRuntimeFocus(specdevPath).focusedRunId,
+    focus_scope: 'foreground-only',
     path: resolved.path,
     ...(lifecycle
       ? {
@@ -81,6 +84,10 @@ function emit(flags, payload) {
     console.log(
       payload.cleared ? 'Cleared foreground focus.' : `Focused on ${payload.kind}: ${payload.name}`
     )
+    if (!payload.cleared)
+      console.log(
+        `Runtime focus remains ${payload.runtime_focus || 'none'}; foreground selection does not activate execution.`
+      )
     if (payload.lifecycle && payload.lifecycle !== 'active') {
       console.log(`Lifecycle: ${payload.lifecycle}${payload.immutable ? ' (immutable)' : ''}`)
       console.log(`Next: ${payload.next_action}`)

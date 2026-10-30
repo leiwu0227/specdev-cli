@@ -1,3 +1,4 @@
+import { assertRetainedMissionRecords } from './mission-retention.js'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import fse from 'fs-extra'
@@ -367,6 +368,7 @@ export async function finalizeStandaloneAssignmentDelivery({
     )
   }
 
+  await assertRetainedMissionRecords(targetDir)
   await stageOwnedChanges(targetDir)
   const endingGitCommitHash = await commitDelivery(targetDir, {
     subject: `specdev(assignment): deliver ${id}`,
