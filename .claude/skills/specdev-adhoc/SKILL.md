@@ -30,15 +30,20 @@ or automatic review gate.
    Read only relevant results and verify them against current code.
 3. Run `specdev adhoc start "<scope>"`. Use `--title="..."` for a short
    commit subject. Resolve reported ownership conflicts before making changes.
-4. Make the bounded change directly. Use the Verification section of
+4. Make the bounded change directly, then complete the required simplification
+   checkpoint below before final verification. Use the Verification section of
    [the workflow reference](.specdev/_guides/workflow.md#verification).
    Record authorized commands with `specdev adhoc verify --label="..." -- <command>`.
 5. Finish with `specdev adhoc finish --outcome="..."` when the latest evidence
    for every label passes. For manual checks, use `--verification="..."`.
-   Finish creates the receipt and delivery commit. Inspect its remaining-path report.
+   Include the simplification result in the outcome. Finish creates the receipt
+   and delivery commit. Inspect its remaining-path report.
 6. If focused work coexists, recheck its contract assumptions and follow the
    reference's revalidation rules before that work advances. To cancel the detour,
    use `specdev adhoc cancel`; source changes remain untouched.
+
+Required simplification checkpoint: after implementation and before final verification and delivery, review the candidate once for clear simplification opportunities. Preserve functionality, performance, required validation, and approved roadmap designs. Look for duplicated logic, production paths used only by tests, hard-coded checks, unnecessary data structures, repeated traversals, and excess abstraction. Fewer loops or checks alone are not improvements. Prefer existing code and straightforward functions; do not introduce classes during this pass.
+Make only clear improvements within the approved scope. Edits are optional; if none are warranted, proceed unchanged. Record a brief result, including any broader opportunity worth deferring, in the existing Assignment outcome or Adhoc receipt outcome. Do not create another document or repeat cleanup indefinitely. After edits, run only affected, authorized checks; reuse valid evidence when unchanged. Required Assignment review must inspect the final candidate.
 
 Announce meaningful phases, plan changes, failed verification, and blockers
 with "Specdev: <action>"; repeated read-only probes need no separate announcement.

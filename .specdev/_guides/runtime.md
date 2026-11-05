@@ -13,6 +13,12 @@ raw logs and scratch results. Discussion completion preserves compact durable
 completion/activity metadata for listing and promotion. Explicit abandonment
 cleans owned temporary cache after its terminal record is preserved. Active,
 interrupted, failed/recoverable, and shelved work retains diagnostic cache.
+Failed Missions retain their execution history and owned Attempt records through
+successor handoff and delivery. Terminal runtime status alone does not authorize
+cleanup. Cleanup verifies the durable owner and remaining lifecycle obligations.
+A successor cannot authorize deletion of its predecessor's recovery or closure
+records. Failure publication has its own exact commit and can be retried with
+`specdev mission run <id>` without restarting execution.
 Use `specdev cleanup` to preview eligible leftovers and reclaimable bytes;
 `specdev cleanup --apply` revalidates ownership before removing them. Both accept
 `--json`. Unknown ownership, live/uncertain Attempts, symlinks, and unsafe paths

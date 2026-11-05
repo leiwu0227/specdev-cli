@@ -10,6 +10,9 @@ instructions. Report only blocking defects or materially useful findings.
 - In Brainstorm, distinguish concrete needs from speculative scope or premature
   architectural commitments. In implementation, check complete delivery and
   unnecessary machinery within the approved scope.
+- For implementation review, inspect the final candidate and the simplification
+  result recorded in the existing outcome. A no-change result is valid. Do not
+  demand cosmetic refactoring or a separate cleanup round.
 - For a simplification finding, name a concrete alternative and explain why it
   preserves required behavior and architectural boundaries, including validation,
   security, accessibility, error handling, and evidence obligations.
@@ -24,4 +27,7 @@ instructions. Report only blocking defects or materially useful findings.
   `material_divergence: true`; request changes only for an actual blocking
   finding.
 - Do not edit product code, tracked workflow state, or durable guides.
+- For Mission ownership evidence, hash the entry-type prefix and contents together:
+  `file:` or `executable:` plus file bytes, or `symlink:` plus link-target text.
+  A deleted path has a `null` digest. Plain file hashes are not ownership digests.
 - Return `approved` only when no blocking finding remains.
