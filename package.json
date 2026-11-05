@@ -16,7 +16,7 @@
   "scripts": {
     "test:assignment-boundary": "node tests/test-assignment-boundary.js",
     "test:assignment-accepted-limitations": "node tests/test-assignment-accepted-limitations.js",
-    "test": "node ./tests/test-assignment-accepted-limitations.js && node ./tests/test-mission-verification-boundary.js && node ./tests/test-review-convergence.js && node ./tests/test-mission-gaps.js && node ./tests/test-mission-environment.js && node ./tests/test-mission-compatibility.js && node ./tests/test-mission-successor-adoption.js && node ./tests/test-mission-user-reapproval.js && node ./tests/test-mission-landing.js && node ./tests/test-mission-abandonment.js && node ./tests/test-mission-closure.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-attempt-progress.js && node ./tests/test-status-visibility.js && node ./tests/test-vnext-foundations.js && node ./tests/test-knowledge-curation.js && node ./tests/test-assignment-context.js && node ./tests/test-implement-recovery.js && node ./tests/test-assignment-boundary.js && node ./tests/test-engine-integration.js && node ./tests/test-assignment-shelf.js && node ./tests/test-assignment-unsupported.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
+    "test": "node ./tests/test-assignment-accepted-limitations.js && node ./tests/test-mission-verification-boundary.js && node ./tests/test-review-convergence.js && node ./tests/test-mission-gaps.js && node ./tests/test-mission-environment.js && node ./tests/test-mission-compatibility.js && node ./tests/test-mission-successor-adoption.js && node ./tests/test-mission-user-reapproval.js && node ./tests/test-mission-landing.js && node ./tests/test-mission-abandonment.js && node ./tests/test-mission-closure.js && node ./tests/test-reviewloop-modes.js && node ./tests/test-update-skill-roots.js && node ./tests/test-engine-graphpackages.js && node ./tests/test-engine-adapter.js && node ./tests/test-attempt-progress.js && node ./tests/test-status-visibility.js && node ./tests/test-vnext-foundations.js && node ./tests/test-knowledge-curation.js && node ./tests/test-assignment-context.js && node ./tests/test-implement-recovery.js && node ./tests/test-assignment-boundary.js && node ./tests/test-engine-integration.js && node ./tests/test-engine-operation-scope.js && node ./tests/test-assignment-shelf.js && node ./tests/test-assignment-unsupported.js && node ./tests/test-engine-packaging.js && npm run test:cleanup",
     "test:review-convergence": "node ./tests/test-review-convergence.js",
     "test:mission-gaps": "node ./tests/test-mission-gaps.js",
     "test:mission-verification-boundary": "node tests/test-mission-verification-boundary.js",
@@ -50,7 +50,8 @@
     "release": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
     "release:major": "npm version major && npm publish",
-    "test:mission-closure": "node ./tests/test-mission-closure.js"
+    "test:mission-closure": "node ./tests/test-mission-closure.js",
+    "test:engine-operation-scope": "node ./tests/test-engine-operation-scope.js"
   },
   "keywords": [
     "specdev",
@@ -65,7 +66,7 @@
   "dependencies": {
     "ajv": "^8.20.0",
     "fs-extra": "^11.2.0",
-    "ripplegraph": "git+https://github.com/leiwu0227/ripplegraph.git#8288620441e8fdcea2d70b52672d6b8f85436644",
+    "ripplegraph": "git+https://github.com/leiwu0227/ripplegraph.git#b3cd89d5e36fb2a062b2006a914e60293b1d38c8",
     "yaml": "^2.8.4"
   },
   "devDependencies": {

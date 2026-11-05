@@ -4,7 +4,7 @@ import { assertWorkspaceEngine, workflowRootFor } from './engine.js'
 export function startGuidedRun(projectRoot, graphId, options = {}) {
   assertWorkspaceEngine(projectRoot)
   const workflowRoot = workflowRootFor(projectRoot)
-  const current = getState({ workflowRoot })
+  const current = getState({ workflowRoot, context: options.context })
   if (current.status === 'ok' && current.run?.status === 'active') {
     if (current.run.rootGraph === graphId) {
       if (options.expectedNode && current.position?.node !== options.expectedNode) {
@@ -26,15 +26,16 @@ export function startGuidedRun(projectRoot, graphId, options = {}) {
   }
   const state = applyDispatchAction({
     workflowRoot,
+    context: options.context,
     action: { action: 'start_run', graphId },
   })
   return { synchronized: true, state, started: true }
 }
 
-export function stepGuidedNode(projectRoot, expectedNodes, output) {
+export function stepGuidedNode(projectRoot, expectedNodes, output, context) {
   assertWorkspaceEngine(projectRoot)
   const workflowRoot = workflowRootFor(projectRoot)
-  const current = getState({ workflowRoot })
+  const current = getState({ workflowRoot, context })
   if (current.status !== 'ok' || current.run?.status !== 'active') {
     return { synchronized: false, reason: 'no_active_run' }
   }
@@ -44,14 +45,14 @@ export function stepGuidedNode(projectRoot, expectedNodes, output) {
   }
   return {
     synchronized: true,
-    state: stepRun({ workflowRoot, output }),
+    state: stepRun({ workflowRoot, context, output }),
   }
 }
 
-export function decideGuidedNode(projectRoot, expectedNode, decision) {
+export function decideGuidedNode(projectRoot, expectedNode, decision, context) {
   assertWorkspaceEngine(projectRoot)
   const workflowRoot = workflowRootFor(projectRoot)
-  const current = getState({ workflowRoot })
+  const current = getState({ workflowRoot, context })
   if (
     current.status !== 'ok' ||
     current.run?.status !== 'active' ||
@@ -61,6 +62,6 @@ export function decideGuidedNode(projectRoot, expectedNode, decision) {
   }
   return {
     synchronized: true,
-    state: decideGate({ workflowRoot, decision }),
+    state: decideGate({ workflowRoot, context, decision }),
   }
 }

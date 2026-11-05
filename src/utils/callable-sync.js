@@ -9,12 +9,13 @@ import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { discussionCompletions } from './discussion-completion.js'
 
-export function startGuidedCall(projectRoot, graphId, callId, input = {}) {
+export function startGuidedCall(projectRoot, graphId, callId, input = {}, context) {
   assertWorkspaceEngine(projectRoot)
   return {
     synchronized: true,
     state: startCallableCall({
       workflowRoot: workflowRootFor(projectRoot),
+      context,
       graphId,
       callId,
       input,
@@ -22,7 +23,7 @@ export function startGuidedCall(projectRoot, graphId, callId, input = {}) {
   }
 }
 
-export function readGuidedCall(projectRoot, callId) {
+export function readGuidedCall(projectRoot, callId, context) {
   assertWorkspaceEngine(projectRoot)
   if (
     /^D\d{4,5}$/.test(callId) &&
@@ -37,25 +38,26 @@ export function readGuidedCall(projectRoot, callId) {
   }
   return {
     synchronized: true,
-    state: getCallableCall({ workflowRoot: workflowRootFor(projectRoot), callId }),
+    state: getCallableCall({ workflowRoot: workflowRootFor(projectRoot), context, callId }),
   }
 }
 
-export function stepGuidedCall(projectRoot, callId, output) {
+export function stepGuidedCall(projectRoot, callId, output, context) {
   assertWorkspaceEngine(projectRoot)
   return {
     synchronized: true,
     state: stepCallableCall({
       workflowRoot: workflowRootFor(projectRoot),
+      context,
       callId,
       output,
     }),
   }
 }
 
-export function listGuidedCalls(projectRoot, graphId = null) {
+export function listGuidedCalls(projectRoot, graphId = null, context) {
   assertWorkspaceEngine(projectRoot)
-  const result = listCallableCalls({ workflowRoot: workflowRootFor(projectRoot) })
+  const result = listCallableCalls({ workflowRoot: workflowRootFor(projectRoot), context })
   for (const record of discussionCompletions(workflowRootFor(projectRoot))) {
     if (!result.calls.some((call) => call.id === record.id))
       result.calls.push({

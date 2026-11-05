@@ -8,6 +8,7 @@ import {
   listRuns,
   recordSideChannelAction,
   stepRun,
+  withGraphOperationScope,
 } from 'ripplegraph'
 import { join } from 'path'
 import { resolveTargetDir, requireSpecdevDirectory } from '../utils/command-context.js'
@@ -31,7 +32,12 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
       command === 'cancel'
         ? await readFocusedAssignmentLifecycle(join(projectRoot, '.specdev'))
         : null
-    let result = runEngineCommand(workflowRoot, command, positionalArgs, flags)
+    // Only transition commands repeat package loads; keep single reads unscoped.
+    let result = ['do', 'decide', 'step', 'action', 'cancel'].includes(command)
+      ? await withGraphOperationScope({ workflowRoot }, (context) =>
+          runEngineCommand(workflowRoot, command, positionalArgs, flags, context)
+        )
+      : runEngineCommand(workflowRoot, command, positionalArgs, flags)
     if (command === 'next') {
       const assignment = await readFocusedAssignmentLifecycle(join(projectRoot, '.specdev'))
       const execution = assignmentExecutionProjection(
@@ -99,16 +105,16 @@ export async function engineCommand(command, positionalArgs = [], flags = {}) {
   }
 }
 
-export function runEngineCommand(workflowRoot, command, positionalArgs = [], flags = {}) {
-  if (command === 'do') return doCommand(workflowRoot, positionalArgs.join(' '))
-  if (command === 'next') return renderState(workflowRoot, getState({ workflowRoot }))
-  if (command === 'status') return statusCommand(workflowRoot)
-  if (command === 'decide') return decideCommand(workflowRoot, positionalArgs[0])
-  if (command === 'step') return stepCommand(workflowRoot, parseJsonFlag(flags.json))
+export function runEngineCommand(workflowRoot, command, positionalArgs = [], flags = {}, context) {
+  if (command === 'do') return doCommand(workflowRoot, positionalArgs.join(' '), context)
+  if (command === 'next') return renderState(workflowRoot, getState({ workflowRoot, context }))
+  if (command === 'status') return statusCommand(workflowRoot, context)
+  if (command === 'decide') return decideCommand(workflowRoot, positionalArgs[0], context)
+  if (command === 'step') return stepCommand(workflowRoot, parseJsonFlag(flags.json), context)
   if (command === 'action') {
-    return actionCommand(workflowRoot, positionalArgs[0], parseJsonFlag(flags.json, null))
+    return actionCommand(workflowRoot, positionalArgs[0], parseJsonFlag(flags.json, null), context)
   }
-  if (command === 'cancel') return cancelCommand(workflowRoot, positionalArgs.join(' '))
+  if (command === 'cancel') return cancelCommand(workflowRoot, positionalArgs.join(' '), context)
   throw new Error(`unknown engine command: ${command}`)
 }
 
@@ -116,8 +122,8 @@ function renderState(workflowRoot, state) {
   return toProductState(state, listRegisteredGraphs(workflowRoot))
 }
 
-function doCommand(workflowRoot, intent) {
-  const current = getState({ workflowRoot })
+function doCommand(workflowRoot, intent, context) {
+  const current = getState({ workflowRoot, context })
   if (current.status === 'ok' && current.run?.status === 'active') {
     return {
       status: 'blocked',
@@ -128,7 +134,7 @@ function doCommand(workflowRoot, intent) {
     }
   }
 
-  const request = getDispatchRequest({ workflowRoot, request: intent || '' })
+  const request = getDispatchRequest({ workflowRoot, context, request: intent || '' })
   const workflows = request.availableGraphs.filter((graph) => graph.kind === 'workflow')
   const { matched, ranked } = selectIntentMatches(intent, workflows)
   if (matched.length !== 1) {
@@ -147,18 +153,18 @@ function doCommand(workflowRoot, intent) {
   }
 
   const graph = matched[0]
-  const suspended = listRuns({ workflowRoot })
+  const suspended = listRuns({ workflowRoot, context })
     .runs.filter((run) => run.status === 'suspended' && run.rootGraph === graph.id)
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0]
   const action = suspended
     ? { action: 'resume_run', runId: suspended.id }
     : { action: 'start_run', graphId: graph.id }
-  return renderState(workflowRoot, applyDispatchAction({ workflowRoot, action }))
+  return renderState(workflowRoot, applyDispatchAction({ workflowRoot, context, action }))
 }
 
-function decideCommand(workflowRoot, rawValue) {
+function decideCommand(workflowRoot, rawValue, context) {
   if (!rawValue) throw new Error('decide requires <value-or-json>')
-  const state = getState({ workflowRoot })
+  const state = getState({ workflowRoot, context })
   const semanticBlock = semanticTransitionBlock(state, 'decide')
   if (semanticBlock) return semanticBlock
   const schema = state?.node?.gate?.decisionSchema
@@ -166,17 +172,17 @@ function decideCommand(workflowRoot, rawValue) {
   const value = parseJsonValue(rawValue)
   return renderState(
     workflowRoot,
-    decideGate({ workflowRoot, decision: wrapDecision(value, schema) })
+    decideGate({ workflowRoot, context, decision: wrapDecision(value, schema) })
   )
 }
 
-function stepCommand(workflowRoot, output) {
-  const currentState = getState({ workflowRoot })
+function stepCommand(workflowRoot, output, context) {
+  const currentState = getState({ workflowRoot, context })
   const semanticBlock = semanticTransitionBlock(currentState, 'step')
   if (semanticBlock) return semanticBlock
-  const result = renderState(workflowRoot, stepRun({ workflowRoot, output: output || {} }))
+  const result = renderState(workflowRoot, stepRun({ workflowRoot, context, output: output || {} }))
   if (result.state !== 'invalid') return result
-  const current = renderState(workflowRoot, getState({ workflowRoot }))
+  const current = renderState(workflowRoot, getState({ workflowRoot, context }))
   return {
     ...result,
     ...(current.prompt ? { prompt: current.prompt } : {}),
@@ -185,16 +191,16 @@ function stepCommand(workflowRoot, output) {
   }
 }
 
-function actionCommand(workflowRoot, actionId, input) {
+function actionCommand(workflowRoot, actionId, input, context) {
   if (!actionId) throw new Error('action requires <action-id>')
-  const state = getState({ workflowRoot })
+  const state = getState({ workflowRoot, context })
   const semanticBlock = semanticTransitionBlock(state, 'action')
   if (semanticBlock) return semanticBlock
   const available = (state?.node?.sideChannelActions || []).map((action) => action.id)
   if (!available.includes(actionId)) {
     throw new Error(`unknown action '${actionId}'; available: ${available.join(', ') || '(none)'}`)
   }
-  const result = recordSideChannelAction({ workflowRoot, actionId, input })
+  const result = recordSideChannelAction({ workflowRoot, context, actionId, input })
   return renderState(workflowRoot, result.state)
 }
 
@@ -209,12 +215,12 @@ function semanticTransitionBlock(state, operation) {
   }
 }
 
-function statusCommand(workflowRoot) {
+function statusCommand(workflowRoot, context) {
   const graphs = listRegisteredGraphs(workflowRoot)
-  const runs = listRuns({ workflowRoot })
+  const runs = listRuns({ workflowRoot, context })
   return {
     command: 'status',
-    ...renderState(workflowRoot, getState({ workflowRoot })),
+    ...renderState(workflowRoot, getState({ workflowRoot, context })),
     runs: runs.runs.map((run, index) => ({
       n: index + 1,
       workflow: graphTitle(run.rootGraph, graphs),
@@ -225,7 +231,7 @@ function statusCommand(workflowRoot) {
   }
 }
 
-function cancelCommand(workflowRoot, reason) {
+function cancelCommand(workflowRoot, reason, context) {
   if (!String(reason || '').trim()) {
     return {
       status: 'blocked',
@@ -234,7 +240,7 @@ function cancelCommand(workflowRoot, reason) {
       next_action: { command_line: 'specdev cancel "<reason>"' },
     }
   }
-  const current = getState({ workflowRoot })
+  const current = getState({ workflowRoot, context })
   if (current.status !== 'ok' || current.run?.status !== 'active') {
     return {
       status: 'blocked',
@@ -243,7 +249,7 @@ function cancelCommand(workflowRoot, reason) {
       next_action: { command_line: 'specdev do "<intent>"' },
     }
   }
-  abandonRun({ workflowRoot, reason: reason || undefined })
+  abandonRun({ workflowRoot, context, reason: reason || undefined })
   return {
     status: 'ok',
     state: 'cancelled',
