@@ -29,3 +29,16 @@ approved authority, delivery evidence, and outcomes. Keep installed workflow
 packages and skills as durable infrastructure. RippleGraph checkpoints and
 process records support recovery until work reaches a terminal state.
 In summaries for people, count or group these records rather than list every file.
+
+## Empty callable recovery
+
+If callable listing reports a missing checkpoint, use `specdev cleanup --empty-calls`
+to inspect directory shells. Use `specdev cleanup --empty-calls --apply` to remove
+only trees that contain no files or symlinks. Both commands require quiescent
+Attempts. Apply inspects current contents again; a previous preview does not
+authorize removal of new data. This mode does not perform ordinary terminal cleanup.
+
+Calls with checkpoints, other files, symlinks, or unsafe entries remain in place
+and appear in the retained-entry report. Recover substantive missing-checkpoint
+data through its owning workflow. Empty-shell recovery does not reconstruct or
+complete a call, change workflow history, or suppress callable listing errors.

@@ -9,12 +9,13 @@ import {
   assertInactiveAttempts,
   retentionAttempts,
 } from './cache-retention.js'
-import { inspectTree, safeStat } from './retention-files.js'
+import { inspectTree, safeStat, removeEmptyDirectories } from './retention-files.js'
 import {
   compactCompletedWorkflowRuntime,
   compactShelvedWorkflowRuntime,
 } from './artifact-retention.js'
 import { compactDiscussion } from './discussion-completion.js'
+import { inspectMaintenanceQuiescence } from './maintenance-quiescence.js'
 
 export async function planCleanup(specdevPath) {
   const owners = await retentionOwners(specdevPath)
@@ -107,7 +108,8 @@ export async function planCleanup(specdevPath) {
   return { groups, skipped }
 }
 
-export async function cleanup(specdevPath, { apply = false } = {}) {
+export async function cleanup(specdevPath, { apply = false, emptyCalls = false } = {}) {
+  if (emptyCalls) return cleanupEmptyCalls(specdevPath, apply)
   const plan = await planCleanup(specdevPath)
   const files = plan.groups.flatMap((group) => group.files)
   const result = {
@@ -176,4 +178,48 @@ export async function cleanup(specdevPath, { apply = false } = {}) {
 
 function repoPath(specdevPath, path) {
   return `.specdev/${relative(specdevPath, path).split('\\').join('/')}`
+}
+
+// Empty directory shells contain no lifecycle records. This explicit recovery
+// never infers terminal authority over a checkpoint or any other file.
+async function cleanupEmptyCalls(specdevPath, apply) {
+  const maintenance = await inspectMaintenanceQuiescence(specdevPath)
+  if (maintenance.status !== 'quiescent')
+    throw new Error(
+      'empty-call recovery requires quiescent Attempts; recover maintenance blockers first'
+    )
+  const result = {
+    command: 'cleanup',
+    version: 1,
+    status: apply ? 'completed' : 'preview',
+    candidates: [],
+    reclaimable_bytes: 0,
+    skipped: [],
+    removed: [],
+    errors: [],
+  }
+  const calls = join(specdevPath, '.ripplegraph', 'calls')
+  if (!safeStat(specdevPath, calls)) return result
+  // No asynchronous work between inspection and removal. rmdir cannot remove a
+  // newly created file, even if another process writes after inspection.
+  for (const id of fse.readdirSync(calls).sort()) {
+    const path = join(calls, id)
+    const displayPath = repoPath(specdevPath, path)
+    try {
+      if (!safeStat(specdevPath, path)?.isDirectory())
+        throw new Error('call entry is not a directory')
+      if (inspectTree(specdevPath, path).length)
+        throw new Error('call contains runtime data; empty-call recovery cannot remove it')
+      result.candidates.push({ path: displayPath, bytes: 0 })
+      if (apply) {
+        removeEmptyDirectories(specdevPath, path)
+        if (safeStat(specdevPath, path))
+          throw new Error('call directory changed during recovery; retained remaining contents')
+        result.removed.push(displayPath)
+      }
+    } catch (error) {
+      result.skipped.push({ path: displayPath, reason: error.message })
+    }
+  }
+  return result
 }

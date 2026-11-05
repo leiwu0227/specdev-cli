@@ -18,7 +18,7 @@ export const COMMANDS = [
   { name: 'cancel', usage: 'cancel <reason>', description: 'Abandon the focused guided workflow' },
   {
     name: 'cleanup',
-    usage: 'cleanup [--apply]',
+    usage: 'cleanup [--empty-calls] [--apply]',
     description: 'Preview or remove temporary files owned by terminal workflows',
   },
   {

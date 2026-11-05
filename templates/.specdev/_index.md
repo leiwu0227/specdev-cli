@@ -42,6 +42,8 @@ specdev approve brainstorm
 specdev implement
 specdev cleanup                       # preview eligible terminal leftovers
 specdev cleanup --apply               # revalidate and remove eligible files
+specdev cleanup --empty-calls         # preview empty callable runtime shells
+specdev cleanup --empty-calls --apply # remove empty shells only
 
 specdev roadmap
 
